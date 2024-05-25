@@ -11,8 +11,8 @@ typedef int FILE;
 #define __file_stderr 2
 
 /* TODO turn this into FILE * when we get proper stdio */
-#define stdin  ((FILE )__file_stdin)
-#define stdout ((FILE )__file_stdout)
-#define stderr ((FILE )__file_stderr)
+#define stdin ((FILE)__file_stdin)
+#define stdout ((FILE)__file_stdout)
+#define stderr ((FILE)__file_stderr)
 
 #endif /* __STDIO_H */

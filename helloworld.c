@@ -1,6 +1,8 @@
 #include "user.h" /* printf */
 
-int main(void) {
+int
+main(void)
+{
   printf("%s\n", "Hello world!");
   exit();
 }

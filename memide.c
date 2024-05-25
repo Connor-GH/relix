@@ -22,7 +22,7 @@ void
 ideinit(void)
 {
   memdisk = _binary_fs_img_start;
-  disksize = (uint)_binary_fs_img_size/BSIZE;
+  disksize = (uint)_binary_fs_img_size / BSIZE;
 }
 
 // Interrupt handler.
@@ -40,21 +40,21 @@ iderw(struct buf *b)
 {
   uchar *p;
 
-  if(!holdingsleep(&b->lock))
-    panic("iderw: buf not locked");
-  if((b->flags & (B_VALID|B_DIRTY)) == B_VALID)
-    panic("iderw: nothing to do");
-  if(b->dev != 1)
-    panic("iderw: request not for disk 1");
-  if(b->blockno >= disksize)
-    panic("iderw: block out of range");
+  if (!holdingsleep(&b->lock))
+	panic("iderw: buf not locked");
+  if ((b->flags & (B_VALID | B_DIRTY)) == B_VALID)
+	panic("iderw: nothing to do");
+  if (b->dev != 1)
+	panic("iderw: request not for disk 1");
+  if (b->blockno >= disksize)
+	panic("iderw: block out of range");
 
-  p = memdisk + b->blockno*BSIZE;
+  p = memdisk + b->blockno * BSIZE;
 
-  if(b->flags & B_DIRTY){
-    b->flags &= ~B_DIRTY;
-    memmove(p, b->data, BSIZE);
+  if (b->flags & B_DIRTY) {
+	b->flags &= ~B_DIRTY;
+	memmove(p, b->data, BSIZE);
   } else
-    memmove(b->data, p, BSIZE);
+	memmove(b->data, p, BSIZE);
   b->flags |= B_VALID;
 }

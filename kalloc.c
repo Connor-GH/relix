@@ -9,9 +9,10 @@
 #include "mmu.h"
 #include "spinlock.h"
 
-void freerange(void *vstart, void *vend);
+void
+freerange(void *vstart, void *vend);
 extern char end[]; // first address after kernel loaded from ELF file
-                   // defined by the kernel linker script in kernel.ld
+	// defined by the kernel linker script in kernel.ld
 
 struct run {
   struct run *next;
@@ -47,9 +48,9 @@ void
 freerange(void *vstart, void *vend)
 {
   char *p;
-  p = (char*)PGROUNDUP((uint)vstart);
-  for(; p + PGSIZE <= (char*)vend; p += PGSIZE)
-    kfree(p);
+  p = (char *)PGROUNDUP((uint)vstart);
+  for (; p + PGSIZE <= (char *)vend; p += PGSIZE)
+	kfree(p);
 }
 //PAGEBREAK: 21
 // Free the page of physical memory pointed at by v,
@@ -61,36 +62,35 @@ kfree(char *v)
 {
   struct run *r;
 
-  if((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
-    panic("kfree");
+  if ((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
+	panic("kfree");
 
   // Fill with junk to catch dangling refs.
   memset(v, 1, PGSIZE);
 
-  if(kmem.use_lock)
-    acquire(&kmem.lock);
-  r = (struct run*)v;
+  if (kmem.use_lock)
+	acquire(&kmem.lock);
+  r = (struct run *)v;
   r->next = kmem.freelist;
   kmem.freelist = r;
-  if(kmem.use_lock)
-    release(&kmem.lock);
+  if (kmem.use_lock)
+	release(&kmem.lock);
 }
 
 // Allocate one 4096-byte page of physical memory.
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
-char*
+char *
 kalloc(void)
 {
   struct run *r;
 
-  if(kmem.use_lock)
-    acquire(&kmem.lock);
+  if (kmem.use_lock)
+	acquire(&kmem.lock);
   r = kmem.freelist;
-  if(r)
-    kmem.freelist = r->next;
-  if(kmem.use_lock)
-    release(&kmem.lock);
-  return (char*)r;
+  if (r)
+	kmem.freelist = r->next;
+  if (kmem.use_lock)
+	release(&kmem.lock);
+  return (char *)r;
 }
-

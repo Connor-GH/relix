@@ -1,6 +1,7 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
+#include "stdio.h"
 
 char buf[512];
 
@@ -11,12 +12,12 @@ cat(int fd)
 
   while((n = read(fd, buf, sizeof(buf))) > 0) {
     if (write(1, buf, n) != n) {
-      printf(1, "cat: write error\n");
+      fprintf(stdout, "cat: write error\n");
       exit();
     }
   }
   if(n < 0){
-    printf(1, "cat: read error\n");
+    fprintf(stdout, "cat: read error\n");
     exit();
   }
 }
@@ -33,7 +34,7 @@ main(int argc, char *argv[])
 
   for(i = 1; i < argc; i++){
     if((fd = open(argv[i], 0)) < 0){
-      printf(1, "cat: cannot open %s\n", argv[i]);
+      fprintf(stdout, "cat: cannot open %s\n", argv[i]);
       exit();
     }
     cat(fd);

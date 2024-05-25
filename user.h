@@ -1,5 +1,8 @@
 struct stat;
 struct rtcdate;
+typedef unsigned int uint;
+#include "stdarg.h"
+#include <stdint.h> // TODO don't use builtin headers
 
 // system calls
 int fork(void);
@@ -30,7 +33,9 @@ char* strcpy(char*, const char*);
 void *memmove(void*, const void*, int);
 char* strchr(const char*, char c);
 int strcmp(const char*, const char*);
-void printf(int, const char*, ...);
+void vfprintf(int, const char*, va_list *argp);
+void fprintf(int, const char*, ...);
+void printf(const char*, ...);
 char* gets(char*, int max);
 uint strlen(const char*);
 void* memset(void*, int, uint);

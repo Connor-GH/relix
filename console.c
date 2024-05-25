@@ -14,15 +14,25 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
+#include <stdint.h> // TODO don't use builtin header
+#include "conscolor.h"
 
 static void consputc(int);
 
 static int panicked = 0;
+static uint8_t static_foreg = WHITE;
+static uint8_t static_backg = BLACK;
 
 static struct {
   struct spinlock lock;
   int locking;
 } cons;
+
+// color is default if it is set to 0xff
+static void set_term_color(uint8_t foreground, uint8_t background) {
+  static_foreg = (foreground == 0xff) ? static_foreg : foreground;
+  static_backg = (background == 0xff) ? static_backg : background;
+}
 
 static void
 printint(int xx, int base, int sign)
@@ -67,7 +77,41 @@ cprintf(char *fmt, ...)
 
   argp = (uint*)(void*)(&fmt + 1);
   for(i = 0; (c = fmt[i] & 0xff) != 0; i++){
-    if(c != '%'){
+    if(c != '%') {
+      // \ef1 gives foreground color 1, which is blue.
+      if (c == '\e') {
+        c = fmt[++i] & 0xff;
+        if (c == 0)
+          break;
+        switch (c) {
+        case 'f': {
+          c = fmt[++i] & 0xff;
+          if (c == 0)
+            break;
+            // if [0..10), use color_below10. else, try for hex to int.
+            // TODO make this easier to read with atoi or similar.
+          _Bool color_below10 = c-0x30 <= 0xf;
+          if (color_below10 ||
+              (((c-0x61)+10) >= 0xa && ((c-0x61)+0xa) <= 0xf)) {
+            set_term_color(c- (color_below10 ? 30 : 60), 0xff);
+            goto skip_printing;
+          }
+          break;
+        }
+        case 'b': {
+          c = fmt[++i] & 0xff;
+          if (c == 0)
+            break;
+          _Bool color_below10 = c-0x30 <= 0xf;
+          if (color_below10 ||
+              (((c-0x61)+0xa) >= 0xa && ((c-0x61)+0xa) <= 0xf)) {
+            set_term_color(0xff, c- (color_below10 ? 0x30 : 60));
+            goto skip_printing;
+          }
+          break;
+        }
+        }
+      }
       consputc(c);
       continue;
     }
@@ -97,6 +141,7 @@ cprintf(char *fmt, ...)
       consputc(c);
       break;
     }
+  skip_printing: ;
   }
 
   if(locking)
@@ -129,7 +174,7 @@ panic(char *s)
 static ushort *crt = (ushort*)P2V(0xb8000);  // CGA memory
 
 static void
-cgaputc(int c)
+cgaputc(int c, uint8_t fore, uint8_t back)
 {
   int pos;
 
@@ -143,8 +188,15 @@ cgaputc(int c)
     pos += 80 - pos%80;
   else if(c == BACKSPACE){
     if(pos > 0) --pos;
-  } else
-    crt[pos++] = (c&0xff) | 0x0700;  // black on white
+  } else {
+    uint8_t higher = back;
+    uint16_t together = 0; /* vga memory */
+    higher <<= 4;
+    higher |= fore;
+    together = higher;
+    together <<= 8;
+    crt[pos++] = (c&0xff) | together;
+  }
 
   if(pos < 0 || pos > 25*80)
     panic("pos under/overflow");
@@ -175,7 +227,7 @@ consputc(int c)
     uartputc('\b'); uartputc(' '); uartputc('\b');
   } else
     uartputc(c);
-  cgaputc(c);
+  cgaputc(c, static_foreg, static_backg);
 }
 
 #define INPUT_BUF 128

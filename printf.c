@@ -1,6 +1,8 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
+#include "stdarg.h"
+#include "stdio.h"
 
 static void
 putc(int fd, char c)
@@ -37,32 +39,32 @@ printint(int fd, int xx, int base, int sgn)
 
 // Print to the given fd. Only understands %d, %x, %p, %s.
 void
-printf(int fd, const char *fmt, ...)
+vfprintf(int fd, const char *fmt, va_list *argp)
 {
   char *s;
   int c, i, state;
-  uint *ap;
+  //uint *ap;
 
   state = 0;
-  ap = (uint*)(void*)&fmt + 1;
-  for(i = 0; fmt[i]; i++){
+  //ap = (uint*)(void*)&fmt + 1;
+  for (i = 0; fmt[i]; i++){
+    // 'floor' character down to bottom 255 chars
     c = fmt[i] & 0xff;
-    if(state == 0){
+    if (state == 0){
       if(c == '%'){
         state = '%';
       } else {
         putc(fd, c);
       }
-    } else if(state == '%'){
+    } else if (state == '%'){
       if(c == 'd'){
-        printint(fd, *ap, 10, 1);
-        ap++;
+        int d = va_arg(*argp, int);
+        printint(fd, d, 10, 1);
       } else if(c == 'x' || c == 'p'){
-        printint(fd, *ap, 16, 0);
-        ap++;
+        int x = va_arg(*argp, int);
+        printint(fd, x, 16, 0);
       } else if(c == 's'){
-        s = (char*)*ap;
-        ap++;
+        s = va_arg(*argp, char*);
         if(s == 0)
           s = "(null)";
         while(*s != 0){
@@ -70,8 +72,8 @@ printf(int fd, const char *fmt, ...)
           s++;
         }
       } else if(c == 'c'){
-        putc(fd, *ap);
-        ap++;
+        int c = va_arg(*argp, int);
+        putc(fd, c);
       } else if(c == '%'){
         putc(fd, c);
       } else {
@@ -82,4 +84,18 @@ printf(int fd, const char *fmt, ...)
       state = 0;
     }
   }
+}
+
+void fprintf(int fd, const char *fmt, ...) {
+  va_list listp;
+  va_start(listp, fmt);
+  vfprintf(fd, fmt, &listp);
+  va_end(listp);
+}
+
+void printf(const char *fmt, ...) {
+  va_list listp;
+  va_start(listp, fmt);
+  vfprintf(stdout, fmt, &listp);
+  va_end(listp);
 }

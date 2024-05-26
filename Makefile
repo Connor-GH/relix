@@ -1,32 +1,33 @@
-OBJS = \
-	bio.o\
-	console.o\
-	exec.o\
-	file.o\
-	fs.o\
-	ide.o\
-	ioapic.o\
-	kalloc.o\
-	kbd.o\
-	lapic.o\
-	log.o\
-	main.o\
-	mp.o\
-	picirq.o\
-	pipe.o\
-	proc.o\
-	sleeplock.o\
-	spinlock.o\
-	string.o\
-	swtch.o\
-	syscall.o\
-	sysfile.o\
-	sysproc.o\
-	trapasm.o\
-	trap.o\
-	uart.o\
-	vectors.o\
-	vm.o\
+BIN = bin
+#OBJS = \
+#	bio.o\
+#	console.o\
+#	exec.o\
+#file.o\
+#fs.o\
+#ide.o\
+#ioapic.o\
+#kalloc.o\
+#kbd.o\
+#lapic.o\
+#log.o\
+#main.o\
+#mp.o\
+#picirq.o\
+#pipe.o\
+#proc.o\
+#sleeplock.o\
+#spinlock.o\
+#string.o\
+#swtch.o\
+#syscall.o\
+#sysfile.o\
+#sysproc.o\
+#trapasm.o\
+#trap.o\
+#uart.o\
+#vectors.o\
+#vm.o\
 
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
@@ -72,7 +73,7 @@ QEMU = $(shell if which qemu > /dev/null; \
 endif
 
 # TODO get rid of these
-WNOFLAGS = -Wno-error=array-bounds -Wno-error=infinite-recursion -Wno-error
+WNOFLAGS = -Wno-error=array-bounds -Wno-error=infinite-recursion
 ARCHNOFLAGS = -mno-sse -mno-red-zone -mno-avx -mno-avx2
 
 CC = $(TOOLPREFIX)gcc
@@ -95,76 +96,30 @@ ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]nopie'),)
 CFLAGS += -fno-pie -nopie
 endif
 
-xv6.img: bootblock kernel
-	dd if=/dev/zero of=xv6.img count=10000
-	dd if=bootblock of=xv6.img conv=notrunc
-	dd if=kernel of=xv6.img seek=1 conv=notrunc
 
-xv6memfs.img: bootblock kernelmemfs
-	dd if=/dev/zero of=xv6memfs.img count=10000
-	dd if=bootblock of=xv6memfs.img conv=notrunc
-	dd if=kernelmemfs of=xv6memfs.img seek=1 conv=notrunc
 
-bootblock: bootasm.S bootmain.c
-	$(CC) $(CFLAGS) -fno-pic -O -nostdinc -I. -c bootmain.c
-	$(CC) $(CFLAGS) -fno-pic -nostdinc -I. -c bootasm.S
-	$(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o bootblock.o bootasm.o bootmain.o
-	$(OBJDUMP) -S bootblock.o > bootblock.asm
-	$(OBJCOPY) -S -O binary -j .text bootblock.o bootblock
-	./sign.pl bootblock
+IVARS = -I. -Iinclude/
 
-entryother: entryother.S
-	$(CC) $(CFLAGS) -fno-pic -nostdinc -I. -c entryother.S
-	$(LD) $(LDFLAGS) -N -e start -Ttext 0x7000 -o bootblockother.o entryother.o
-	$(OBJCOPY) -S -O binary -j .text bootblockother.o entryother
-	$(OBJDUMP) -S bootblockother.o > entryother.asm
+#tags: $(OBJS) entryother.S _init
+#	etags *.S *.c
 
-initcode: initcode.S
-	$(CC) $(CFLAGS) -nostdinc -I. -c initcode.S
-	objcopy --remove-section .note.gnu.property initcode.o
-	$(LD) $(LDFLAGS) -N -e start -Ttext 0 -o initcode.out initcode.o
-	$(OBJCOPY) -S -O binary initcode.out initcode
-	$(OBJDUMP) -S initcode.o > initcode.asm
+default: fs.img xv6.img
 
-kernel: $(OBJS) entry.o entryother initcode kernel.ld
-	$(LD) $(LDFLAGS) -T kernel.ld -o kernel entry.o $(OBJS) -b binary initcode entryother
-	$(OBJDUMP) -S kernel > kernel.asm
-	$(OBJDUMP) -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernel.sym
+include userspace/Makefile
+include kernel/Makefile
+#ULIB = ulib.o usys.o printf.o umalloc.o
 
-# kernelmemfs is a copy of kernel that maintains the
-# disk image in memory instead of writing to a disk.
-# This is not so useful for testing persistent storage or
-# exploring disk buffering implementations, but it is
-# great for testing the kernel on real hardware without
-# needing a scratch disk.
-MEMFSOBJS = $(filter-out ide.o,$(OBJS)) memide.o
-kernelmemfs: $(MEMFSOBJS) entry.o entryother initcode kernel.ld fs.img
-	$(LD) $(LDFLAGS) -T kernel.ld -o kernelmemfs entry.o  $(MEMFSOBJS) -b binary initcode entryother fs.img
-	$(OBJDUMP) -S kernelmemfs > kernelmemfs.asm
-	$(OBJDUMP) -t kernelmemfs | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernelmemfs.sym
 
-tags: $(OBJS) entryother.S _init
-	etags *.S *.c
 
-vectors.S: vectors.pl
-	./vectors.pl > vectors.S
-
-ULIB = ulib.o usys.o printf.o umalloc.o
-
-_%: %.o $(ULIB)
-	objcopy --remove-section .note.gnu.property ulib.o
-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $@ $^
-	$(OBJDUMP) -S $@ > $*.asm
-	$(OBJDUMP) -t $@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym
-
-_forktest: forktest.o $(ULIB)
+_forktest: $(BIN)/forktest.o $(ULIB)
 	# forktest has less library code linked in - needs to be small
 	# in order to be able to max out the proc table.
-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _forktest forktest.o ulib.o usys.o
-	$(OBJDUMP) -S _forktest > forktest.asm
+	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _forktest $(BIN)/forktest.o $(BIN)/ulib.o \
+		$(BIN)/usys.o $(BIN)/printf.o
+	#$(OBJDUMP) -S _forktest > forktest.asm
 
-mkfs: mkfs.c fs.h
-	gcc -Werror -Wall -o mkfs mkfs.c
+mkfs: mkfs.c
+	gcc -Wall -o mkfs mkfs.c $(KERNEL_INC)
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
 # that disk image changes after first build are persistent until clean.  More
@@ -172,23 +127,6 @@ mkfs: mkfs.c fs.h
 # http://www.gnu.org/software/make/manual/html_node/Chained-Rules.html
 .PRECIOUS: %.o
 
-UPROGS=\
-	_cat\
-	_echo\
-	_forktest\
-	_grep\
-	_helloworld\
-	_init\
-	_kill\
-	_ln\
-	_ls\
-	_mkdir\
-	_rm\
-	_sh\
-	_stressfs\
-	_usertests\
-	_wc\
-	_zombie\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
@@ -196,21 +134,24 @@ fs.img: mkfs README $(UPROGS)
 -include *.d
 
 clean:
-	rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
-	*.o *.d *.asm *.sym vectors.S bootblock entryother \
-	initcode initcode.out kernel xv6.img fs.img kernelmemfs \
-	xv6memfs.img mkfs .gdbinit \
-	$(UPROGS)
+	rm -f $(BIN)/*.o $(BIN)/*.sym $(BIN)/bootblock $(BIN)/entryother \
+	$(BIN)/initcode \
+	$(BIN)/initcode.out \
+	$(BIN)/kernel \
+	$(BIN)/xv6.img \
+	$(BIN)/fs.img \
+	$(BIN)/kernelmemfs \
+	$(BIN)/xv6memfs.img mkfs $(UPROGS)
 
 # make a printout
-FILES = $(shell grep -v '^\#' runoff.list)
-PRINT = runoff.list runoff.spec README toc.hdr toc.ftr $(FILES)
+#FILES = $(shell grep -v '^\#' runoff.list)
+#PRINT = runoff.list runoff.spec README toc.hdr toc.ftr $(FILES)
 
-xv6.pdf: $(PRINT)
-	./runoff
-	ls -l xv6.pdf
+#xv6.pdf: $(PRINT)
+#	./runoff
+#	ls -l xv6.pdf
 
-print: xv6.pdf
+#print: xv6.pdf
 
 # run in emulators
 
@@ -227,13 +168,13 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 ifndef CPUS
 CPUS := 2
 endif
-QEMUOPTS = -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp $(CPUS) -m 256 $(QEMUEXTRA)
+QEMUOPTS = -drive file=fs.img,index=1,media=disk,format=raw -drive file=$(BIN)/xv6.img,index=0,media=disk,format=raw -smp $(CPUS) -m 256 $(QEMUEXTRA)
 
 qemu: fs.img xv6.img
 	$(QEMU) -serial mon:stdio $(QEMUOPTS)
 
 qemu-memfs: xv6memfs.img
-	$(QEMU) -drive file=xv6memfs.img,index=0,media=disk,format=raw -smp $(CPUS) -m 256
+	$(QEMU) -drive file=$(BIN)/xv6memfs.img,index=0,media=disk,format=raw -smp $(CPUS) -m 256
 
 qemu-nox: fs.img xv6.img
 	$(QEMU) -nographic $(QEMUOPTS)
@@ -254,13 +195,13 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 # after running make dist, probably want to
 # rename it to rev0 or rev1 or so on and then
 # check in that version.
-
-EXTRA=\
-	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c helloworld.c kill.c\
-	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
-	printf.c umalloc.c\
-	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
-	.gdbinit.tmpl gdbutil\
+#
+#EXTRA=\
+#	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c helloworld.c kill.c\
+#	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
+#	printf.c umalloc.c\
+#	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
+#	.gdbinit.tmpl gdbutil\
 
 dist:
 	rm -rf dist

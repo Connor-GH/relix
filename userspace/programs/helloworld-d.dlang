@@ -1,0 +1,11 @@
+module helloworld_d;
+
+extern(C) @nogc nothrow:
+@system void printf(const char *s, ...);
+@system void exit();
+
+extern(C) int main() {
+  printf("Hello, world!\n");
+  exit();
+  return 0;
+}

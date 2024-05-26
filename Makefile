@@ -86,7 +86,13 @@ CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb 
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
 # FreeBSD ld wants ``elf_i386_fbsd''
-LDFLAGS += -m $(shell $(LD) -V | grep elf_i386 2>/dev/null | head -n 1)
+ifeq ($(HOST_OS),FreeBSD)
+	LDFLAGS += -m $(shell $(LD) -V | grep elf_i386 2>/dev/null | head -n 1)
+else
+	LDFLAGS += -m elf_i386
+endif
+LDFLAGS += -z noexecstack
+
 
 # Disable PIE when possible (for Ubuntu 16.10 toolchain)
 ifneq ($(shell $(CC) -dumpspecs 2>/dev/null | grep -e '[^f]no-pie'),)
@@ -119,7 +125,7 @@ _forktest: $(BIN)/forktest.o $(ULIB)
 	#$(OBJDUMP) -S _forktest > forktest.asm
 
 mkfs: mkfs.c
-	gcc -Wall -o mkfs mkfs.c $(KERNEL_INC)
+	$(CC) -Werror -Wall -o mkfs mkfs.c $(KERNEL_INC)
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
 # that disk image changes after first build are persistent until clean.  More

@@ -7,9 +7,16 @@
 #include "types.h"
 struct stat {
   short type; // Type of file
-  int dev; // File system's disk device
-  uint ino; // Inode number
-  short nlink; // Number of links to file
-  uint size; // Size of file in bytes
+  int st_dev; // File system's disk device
+  uint st_ino; // Inode number
+  short st_nlink; // Number of links to file
+  uint st_size; // Size of file in bytes
+#define S_IEXEC 0100
+#define S_IREAD 0400
+#define S_IWRITE 0200
+#define S_IFREG 0100000
+  uint st_mode;
+  uint st_uid;
+  uint st_gid;
 };
 #endif

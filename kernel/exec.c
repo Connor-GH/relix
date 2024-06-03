@@ -6,6 +6,8 @@
 #include "../include/defs.h"
 #include "include/x86.h"
 #include "boot/elf.h"
+#include "../include/stat.h"
+
 
 int
 exec(char *path, char **argv)
@@ -28,6 +30,13 @@ exec(char *path, char **argv)
   }
   ilock(ip);
   pgdir = 0;
+
+  // add back when proper file permissions are added.
+  /*if ((ip->mode & S_IEXEC) == S_IEXEC) {
+    end_op();
+    cprintf("exec: file is not executable!\n");
+    return -1;
+  }*/
 
   // Check ELF header
   if (readi(ip, (char *)&elf, 0, sizeof(elf)) != sizeof(elf))

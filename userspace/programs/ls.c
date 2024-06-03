@@ -2,6 +2,8 @@
 #include "../include/user.h"
 #include "../../kernel/include/fs.h"
 #include "../../include/stdbool.h"
+#include "../../include/stdlib.h"
+#include "../../include/stdio.h"
 
 char *
 fmtname(char *path)
@@ -22,8 +24,9 @@ fmtname(char *path)
   return buf;
 }
 
+// this ls(1) tries to follow __minimal__ POSIX stuff.
 void
-ls(char *path, bool lflag)
+ls(char *path, bool lflag, bool iflag)
 {
   char buf[512], *p;
   int fd;
@@ -31,25 +34,34 @@ ls(char *path, bool lflag)
   struct stat st;
 
   if ((fd = open(path, 0)) < 0) {
-	fprintf(2, "ls: cannot open %s\n", path);
+	fprintf(stderr, "ls: cannot open %s\n", path);
 	return;
   }
 
   if (fstat(fd, &st) < 0) {
-	fprintf(2, "ls: cannot stat %s\n", path);
+	fprintf(stderr, "ls: cannot stat %s\n", path);
 	close(fd);
 	return;
   }
 
   switch (st.type) {
   case T_FILE:
-	  lflag ? fprintf(1, "%s %d %d %d\n", fmtname(path), st.type, st.ino, st.size)
-	  : fprintf(1, "%s", fmtname(path));
+	  if (lflag) {
+      // inodes
+      if (iflag)
+        fprintf(stdout, "% 9d ", st.st_ino);
+      fprintf(stdout, "%d % 9d %s", st.type, st.st_size, fmtname(path));
+      if (st.st_nlink > 1)
+        fprintf(stdout, " -> %s", "TODO");
+    } else {
+      fprintf(stdout, "%s", fmtname(path));
+    }
+      fprintf(stdout, "\n");
 	break;
 
   case T_DIR:
 	if (strlen(path) + 1 + DIRSIZ + 1 > sizeof buf) {
-	  fprintf(1, "ls: path too long\n");
+	  fprintf(stdout, "ls: path too long\n");
 	  break;
 	}
 	strcpy(buf, path);
@@ -61,15 +73,26 @@ ls(char *path, bool lflag)
 	  memmove(p, de.name, DIRSIZ);
 	  p[DIRSIZ] = 0;
 	  if (stat(buf, &st) < 0) {
-		fprintf(1, "ls: cannot stat %s\n", buf);
+		fprintf(stdout, "ls: cannot stat %s\n", buf);
 		continue;
 	  }
-    lflag ? fprintf(1, "%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size)
-	  : fprintf(1, "%s      ", fmtname(buf), st.type);
+	  if (lflag) {
+      // inodes
+      if (iflag)
+        fprintf(stdout, "% 9d ", st.st_ino);
+      fprintf(stdout, "%d % 9d %s%s", st.type, st.st_size, fmtname(buf), ((st.st_mode & S_IEXEC) == S_IEXEC) ? "*" : "");
+      if (st.st_nlink > 1)
+        fprintf(stdout, " -> %s", "TODO");
+      fprintf(stdout, "\n");
+    } else {
+      fprintf(stdout, "%s", fmtname(buf));
+    }
 	}
 	break;
+  default:
+      break;
   }
-  fprintf(1, "%s", lflag ? "" : "\n");
+  fprintf(stdout, "%s", lflag ? "" : "\n");
   close(fd);
 }
 
@@ -78,11 +101,12 @@ main(int argc, char *argv[])
 {
   int i;
   bool lflag = false;
+  bool iflag = false;
   // index for filenames or directory names
   int arg_idx = 1;
 
   if (argc < 2) {
-	  ls(".", lflag);
+	  ls(".", lflag, iflag);
 	  exit();
   }
   for (int j = 1; j < argc; j++) {
@@ -90,6 +114,9 @@ main(int argc, char *argv[])
       switch (argv[j][1]) {
       case 'l':
         lflag = true;
+        break;
+      case 'i':
+        iflag = true;
         break;
       default:
         break;
@@ -100,11 +127,13 @@ main(int argc, char *argv[])
     }
   }
   if (arg_idx == argc) {
-    ls(".", lflag);
+    ls(".", lflag, iflag);
     exit();
   }
 
-  for (i = arg_idx; i < argc; i++)
-	  ls(argv[i], lflag);
-    exit();
+  for (i = 1; i < argc; i++) {
+    if (stat(argv[i], NULL) >= 0)
+      ls(argv[i], lflag, iflag);
+  }
+  exit();
 }

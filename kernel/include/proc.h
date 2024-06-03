@@ -3,6 +3,7 @@
 #include "param.h"
 #include "../../include/types.h"
 #include "../drivers/mmu.h"
+#include "../include/file.h"
 
 struct cpu {
   uchar apicid; // Local APIC ID

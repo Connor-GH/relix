@@ -248,8 +248,10 @@ create(char *path, short type, short major, short minor)
   if ((ip = dirlookup(dp, name, 0)) != 0) {
 	iunlockput(dp);
 	ilock(ip);
-	if (type == T_FILE && ip->type == T_FILE)
+	if (type == T_FILE && ip->type == T_FILE) {
+    ip->mode = S_IFREG | S_IREAD;
 	  return ip;
+  }
 	iunlockput(ip);
 	return 0;
   }
@@ -326,6 +328,8 @@ sys_open(void)
   f->off = 0;
   f->readable = !(omode & O_WRONLY);
   f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
+  // deal with all files being executable until chmod(2)
+  f->ip->mode = (f->readable ? S_IREAD : 0) | (f->writable ? S_IWRITE : 0) | (f->ip->type == T_FILE ? S_IEXEC : 0);
   return fd;
 }
 

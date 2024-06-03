@@ -1,3 +1,5 @@
+#pragma once
+#include "../../include/types.h"
 // See MultiProcessor Specification Version 1.[14]
 
 struct mp { // floating pointer

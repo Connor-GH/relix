@@ -1,6 +1,7 @@
 #include "../../include/stat.h"
 #include "../include/user.h"
 #include "../../kernel/include/fs.h"
+#include "../../include/stdbool.h"
 
 char *
 fmtname(char *path)
@@ -22,7 +23,7 @@ fmtname(char *path)
 }
 
 void
-ls(char *path)
+ls(char *path, bool lflag)
 {
   char buf[512], *p;
   int fd;
@@ -42,7 +43,8 @@ ls(char *path)
 
   switch (st.type) {
   case T_FILE:
-	fprintf(1, "%s %d %d %d\n", fmtname(path), st.type, st.ino, st.size);
+	  lflag ? fprintf(1, "%s %d %d %d\n", fmtname(path), st.type, st.ino, st.size)
+	  : fprintf(1, "%s", fmtname(path));
 	break;
 
   case T_DIR:
@@ -62,10 +64,12 @@ ls(char *path)
 		fprintf(1, "ls: cannot stat %s\n", buf);
 		continue;
 	  }
-	  fprintf(1, "%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
+    lflag ? fprintf(1, "%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size)
+	  : fprintf(1, "%s      ", fmtname(buf), st.type);
 	}
 	break;
   }
+  fprintf(1, "%s", lflag ? "" : "\n");
   close(fd);
 }
 
@@ -73,12 +77,34 @@ int
 main(int argc, char *argv[])
 {
   int i;
+  bool lflag = false;
+  // index for filenames or directory names
+  int arg_idx = 1;
 
   if (argc < 2) {
-	ls(".");
-	exit();
+	  ls(".", lflag);
+	  exit();
   }
-  for (i = 1; i < argc; i++)
-	ls(argv[i]);
-  exit();
+  for (int j = 1; j < argc; j++) {
+    if (argv[j][0] == '-' && argv[j][1] != '\0') {
+      switch (argv[j][1]) {
+      case 'l':
+        lflag = true;
+        break;
+      default:
+        break;
+      }
+      arg_idx++;
+    } else {
+      break;
+    }
+  }
+  if (arg_idx == argc) {
+    ls(".", lflag);
+    exit();
+  }
+
+  for (i = arg_idx; i < argc; i++)
+	  ls(argv[i], lflag);
+    exit();
 }

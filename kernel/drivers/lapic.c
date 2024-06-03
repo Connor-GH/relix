@@ -99,7 +99,7 @@ int
 lapicid(void)
 {
   if (!lapic)
-	return 0;
+	  return 0;
   return lapic[ID] >> 24;
 }
 
@@ -152,9 +152,9 @@ lapicstartap(uchar apicid, uint addr)
   // should be ignored, but it is part of the official Intel algorithm.
   // Bochs complains about the second one.  Too bad for Bochs.
   for (i = 0; i < 2; i++) {
-	lapicw(ICRHI, apicid << 24);
-	lapicw(ICRLO, STARTUP | (addr >> 12));
-	microdelay(200);
+	  lapicw(ICRHI, apicid << 24);
+	  lapicw(ICRLO, STARTUP | (addr >> 12));
+	  microdelay(200);
   }
 }
 

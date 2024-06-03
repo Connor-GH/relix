@@ -2,6 +2,7 @@
 
 typedef unsigned int uint;
 #include "../../include/stat.h"
+#include "../../include/date.h"
 #include "../../include/fcntl.h"
 #include "stdarg.h"
 #include <stdint.h> // TODO don't use builtin headers
@@ -49,6 +50,8 @@ int
 sleep(int);
 int
 uptime(void);
+int
+date(struct rtcdate *);
 
 // ulib.c
 int

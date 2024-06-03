@@ -1,6 +1,7 @@
 #include "../include/types.h"
 #include "../include/defs.h"
 #include "../include/date.h"
+#include "include/x86.h"
 #include "drivers/memlayout.h"
 #include "include/proc.h"
 
@@ -85,4 +86,11 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+int sys_date(void) {
+  struct rtcdate *r = (struct rtcdate *)(myproc()->tf->esp+4+4*6);
+  cmostime(r);
+  r->hour -= 5;
+  return 0;
 }

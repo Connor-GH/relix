@@ -1,6 +1,8 @@
 #include "../include/types.h"
 #include "../include/stat.h"
 #include "../include/fcntl.h"
+#include "../include/assert.h"
+#include "../include/stdio.h"
 #include "include/user.h"
 #include "../kernel/include/x86.h"
 
@@ -103,4 +105,9 @@ memmove(void *vdst, const void *vsrc, int n)
   while (n-- > 0)
 	*dst++ = *src++;
   return vdst;
+}
+
+void assert_fail(const char *assertion, const char *file, int lineno, const char *func) {
+  fprintf(stderr, "%s:%d: %s: Assertion `%s' failed.", file, lineno, func, assertion);
+  exit();
 }

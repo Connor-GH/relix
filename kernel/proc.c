@@ -35,7 +35,10 @@ pinit(void)
 int
 cpuid()
 {
-  return mycpu() - cpus;
+  pushcli();
+  int ret = mycpu() - cpus;
+  popcli();
+  return ret;
 }
 
 // Must be called with interrupts disabled to avoid the caller being

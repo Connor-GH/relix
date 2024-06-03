@@ -48,19 +48,20 @@ ARCHNOFLAGS = -mno-sse -mno-red-zone -mno-avx -mno-avx2
 CC = $(TOOLPREFIX)gcc
 AS = $(TOOLPREFIX)gas
 LD = $(TOOLPREFIX)ld
-OBJCOPY = $(TOOLPREFIX)objcopy
-OBJDUMP = $(TOOLPREFIX)objdump
-CFLAGS = -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer \
+OBJCOPY = $(TOOLPREFIX)$(LLVM_PREFIX)objcopy
+OBJDUMP = $(TOOLPREFIX)$(LLVM_PREFIX)objdump
+CFLAGS = -fno-pic -static -fno-builtin -ffreestanding \
+				 -fno-strict-aliasing -nostdlib -Oz -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer \
 				 $(ARCHNOFLAGS) $(WNOFLAGS)
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
-ASFLAGS = -m32 -gdwarf-2 -Wa,-divide
+ASFLAGS = -m32 -gdwarf-2 -Wa,-divide --mx86-used-note=no
 # FreeBSD ld wants ``elf_i386_fbsd''
 ifeq ($(HOST_OS),FreeBSD)
 	LDFLAGS += -m $(shell $(LD) -V | grep elf_i386 2>/dev/null | head -n 1)
 else
 	LDFLAGS += -m elf_i386
 endif
-LDFLAGS += -z noexecstack
+LDFLAGS += -z noexecstack -O1
 
 
 # Disable PIE when possible (for Ubuntu 16.10 toolchain)
@@ -102,7 +103,7 @@ mkfs: $(TOOLSDIR)/mkfs.c
 
 
 fs.img: mkfs README $(UPROGS)
-	./$(BIN)/mkfs fs.img README $(UPROGS)
+	cd $(BIN); ./mkfs fs.img ../README $(UPROGS)
 
 -include *.d
 
@@ -131,7 +132,7 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 ifndef CPUS
 CPUS := 2
 endif
-QEMUOPTS = -drive file=fs.img,index=1,media=disk,format=raw -drive file=$(BIN)/xv6.img,index=0,media=disk,format=raw -smp $(CPUS) -m 256 $(QEMUEXTRA)
+QEMUOPTS = -drive file=$(BIN)/fs.img,index=1,media=disk,format=raw -drive file=$(BIN)/xv6.img,index=0,media=disk,format=raw -smp $(CPUS) -m 2G $(QEMUEXTRA)
 
 qemu: fs.img xv6.img
 	$(QEMU) -serial mon:stdio $(QEMUOPTS)
@@ -142,7 +143,7 @@ qemu-memfs: xv6memfs.img
 qemu-nox: fs.img xv6.img
 	$(QEMU) -nographic $(QEMUOPTS)
 
-.gdbinit: .gdbinit.tmpl
+.gdbinit: debug/.gdbinit.tmpl
 	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@
 
 qemu-gdb: fs.img xv6.img .gdbinit

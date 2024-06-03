@@ -12,3 +12,4 @@ initcode.out
 kernelmemfs
 mkfs
 .gdbinit
+/bin/*

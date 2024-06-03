@@ -341,7 +341,7 @@ parsecmd(char *s)
   peek(&s, es, "");
   if (s != es) {
 	fprintf(2, "leftovers: %s\n", s);
-	panic("syntax");
+	panic("syntax error");
   }
   nulterminate(cmd);
   return cmd;
@@ -438,7 +438,7 @@ parseexec(char **ps, char *es)
 	if ((tok = gettoken(ps, es, &q, &eq)) == 0)
 	  break;
 	if (tok != 'a')
-	  panic("syntax");
+	  panic("syntax error: expected `a'");
 	cmd->argv[argc] = q;
 	cmd->eargv[argc] = eq;
 	argc++;

@@ -1,34 +1,3 @@
-BIN = bin
-#OBJS = \
-#	bio.o\
-#	console.o\
-#	exec.o\
-#file.o\
-#fs.o\
-#ide.o\
-#ioapic.o\
-#kalloc.o\
-#kbd.o\
-#lapic.o\
-#log.o\
-#main.o\
-#mp.o\
-#picirq.o\
-#pipe.o\
-#proc.o\
-#sleeplock.o\
-#spinlock.o\
-#string.o\
-#swtch.o\
-#syscall.o\
-#sysfile.o\
-#sysproc.o\
-#trapasm.o\
-#trap.o\
-#uart.o\
-#vectors.o\
-#vm.o\
-
 # Cross-compiling (e.g., on Mac OS X)
 # TOOLPREFIX = i386-jos-elf
 
@@ -105,15 +74,14 @@ endif
 
 
 IVARS = -I. -Iinclude/
-
-#tags: $(OBJS) entryother.S _init
-#	etags *.S *.c
+# directories
+TOOLSDIR = tools
+BIN = bin
 
 default: fs.img xv6.img
 
 include userspace/Makefile
 include kernel/Makefile
-#ULIB = ulib.o usys.o printf.o umalloc.o
 
 
 
@@ -122,10 +90,9 @@ _forktest: $(BIN)/forktest.o $(ULIB)
 	# in order to be able to max out the proc table.
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _forktest $(BIN)/forktest.o $(BIN)/ulib.o \
 		$(BIN)/usys.o $(BIN)/printf.o
-	#$(OBJDUMP) -S _forktest > forktest.asm
 
-mkfs: mkfs.c
-	$(CC) -Werror -Wall -o mkfs mkfs.c $(KERNEL_INC)
+mkfs: $(TOOLSDIR)/mkfs.c
+	$(CC) -Werror -Wall -o $(BIN)/mkfs $(TOOLSDIR)/mkfs.c $(KERNEL_INC)
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
 # that disk image changes after first build are persistent until clean.  More
@@ -135,7 +102,7 @@ mkfs: mkfs.c
 
 
 fs.img: mkfs README $(UPROGS)
-	./mkfs fs.img README $(UPROGS)
+	./$(BIN)/mkfs fs.img README $(UPROGS)
 
 -include *.d
 
@@ -148,16 +115,6 @@ clean:
 	$(BIN)/fs.img \
 	$(BIN)/kernelmemfs \
 	$(BIN)/xv6memfs.img mkfs $(UPROGS)
-
-# make a printout
-#FILES = $(shell grep -v '^\#' runoff.list)
-#PRINT = runoff.list runoff.spec README toc.hdr toc.ftr $(FILES)
-
-#xv6.pdf: $(PRINT)
-#	./runoff
-#	ls -l xv6.pdf
-
-#print: xv6.pdf
 
 # run in emulators
 
@@ -195,40 +152,6 @@ qemu-gdb: fs.img xv6.img .gdbinit
 qemu-nox-gdb: fs.img xv6.img .gdbinit
 	@echo "*** Now run 'gdb'." 1>&2
 	$(QEMU) -nographic $(QEMUOPTS) -S $(QEMUGDB)
-
-# CUT HERE
-# prepare dist for students
-# after running make dist, probably want to
-# rename it to rev0 or rev1 or so on and then
-# check in that version.
-#
-#EXTRA=\
-#	mkfs.c ulib.c user.h cat.c echo.c forktest.c grep.c helloworld.c kill.c\
-#	ln.c ls.c mkdir.c rm.c stressfs.c usertests.c wc.c zombie.c\
-#	printf.c umalloc.c\
-#	README dot-bochsrc *.pl toc.* runoff runoff1 runoff.list\
-#	.gdbinit.tmpl gdbutil\
-
-dist:
-	rm -rf dist
-	mkdir dist
-	for i in $(FILES); \
-	do \
-		grep -v PAGEBREAK $$i >dist/$$i; \
-	done
-	sed '/CUT HERE/,$$d' Makefile >dist/Makefile
-	echo >dist/runoff.spec
-	cp $(EXTRA) dist
-
-dist-test:
-	rm -rf dist
-	make dist
-	rm -rf dist-test
-	mkdir dist-test
-	cp dist/* dist-test
-	cd dist-test; $(MAKE) print
-	cd dist-test; $(MAKE) bochs || true
-	cd dist-test; $(MAKE) qemu
 
 # update this rule (change rev#) when it is time to
 # make a new revision.

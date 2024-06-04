@@ -26,6 +26,16 @@ struct superblock {
 #define NINDIRECT (BSIZE / sizeof(uint))
 #define MAXFILE (NDIRECT + NINDIRECT)
 
+#include "../../include/stat.h"
+// T_DEV -> IFBLK (block device)
+// T_FILE -> IFREG (regular file)
+// T_DIR -> IFDIR (directory)
+// none? -> 0 (empty inode)
+#define TYPE_TO_MODE(type) \
+  T_DEV ? S_IFBLK \
+  : T_FILE ? S_IFREG \
+  : T_DIR ? S_IFDIR : 0
+
 // On-disk inode structure
 struct dinode {
   short type; // File type

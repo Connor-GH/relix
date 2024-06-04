@@ -204,6 +204,7 @@ ialloc(uint dev, short type)
 	if (dip->type == 0) { // a free inode
 	  memset(dip, 0, sizeof(*dip));
 	  dip->type = type;
+    dip->mode = TYPE_TO_MODE(type);
 	  log_write(bp); // mark it allocated on the disk
 	  brelse(bp);
 	  return iget(dev, inum);
@@ -230,6 +231,7 @@ iupdate(struct inode *ip)
   dip->minor = ip->minor;
   dip->nlink = ip->nlink;
   dip->size = ip->size;
+  dip->mode = ip->mode;
   memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));
   log_write(bp);
   brelse(bp);
@@ -303,6 +305,7 @@ ilock(struct inode *ip)
 	ip->minor = dip->minor;
 	ip->nlink = dip->nlink;
 	ip->size = dip->size;
+  ip->mode = dip->mode;
 	memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
 	brelse(bp);
 	ip->valid = 1;
@@ -340,6 +343,7 @@ iput(struct inode *ip)
 	  // inode has no links and no other references: truncate and free.
 	  itrunc(ip);
 	  ip->type = 0;
+    ip->mode = 0;
 	  iupdate(ip);
 	  ip->valid = 0;
 	}

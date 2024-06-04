@@ -115,7 +115,7 @@ clean:
 	$(BIN)/xv6.img \
 	$(BIN)/fs.img \
 	$(BIN)/kernelmemfs \
-	$(BIN)/xv6memfs.img mkfs $(BIN)/_* # delete all programs
+	$(BIN)/xv6memfs.img mkfs $(BIN)/*
 
 # run in emulators
 

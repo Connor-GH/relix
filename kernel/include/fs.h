@@ -32,9 +32,10 @@ struct superblock {
 // T_DIR -> IFDIR (directory)
 // none? -> 0 (empty inode)
 #define TYPE_TO_MODE(type) \
-  T_DEV ? S_IFBLK \
-  : T_FILE ? S_IFREG \
-  : T_DIR ? S_IFDIR : 0
+  T_DEV ? S_IFBLK | S_IAUSR \
+  : (T_FILE ? S_IFREG | S_IAUSR \
+  : T_DIR ? S_IFDIR | S_IAUSR : 0)
+uint type_to_mode(ushort type);
 
 // On-disk inode structure
 struct dinode {

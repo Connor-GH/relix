@@ -26,6 +26,14 @@ itrunc(struct inode *);
 // only one device
 struct superblock sb;
 
+/*uint type_to_mode(ushort type) {
+  switch (type) {
+  case T_DEV: return S_IFBLK | S_ALLPRIVS;
+  case T_FILE: return S_IFREG | S_ALLPRIVS;
+  case T_DIR: return S_IFDIR | S_ALLPRIVS;
+  default: return S_ALLPRIVS;
+  }
+}*/
 // Read the super block.
 void
 readsb(int dev, struct superblock *sb)

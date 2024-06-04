@@ -68,7 +68,12 @@ struct stat {
   uint st_gid;
 };
 #endif
+// 0700
+#define S_IAUSR (S_IRUSR | S_IWUSR | S_IXUSR)
+// 0070
+#define S_IAGRP (S_IRGRP | S_IWGRP | S_IXGRP)
+// 0007
+#define S_IAOTH (S_IROTH | S_IWOTH | S_IXOTH)
+// 0777
 #define S_ALLPRIVS \
-  (S_IRUSR | S_IWUSR | S_IXUSR \
-    | S_IRGRP | S_IWGRP | S_IXGRP \
-    | S_IROTH | S_IWOTH | S_IXOTH )
+  (S_IAUSR | S_ISGRP | S_IAOTH)

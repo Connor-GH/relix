@@ -126,7 +126,7 @@ cprintf(char *fmt, ...)
 	  printint(*argp++, 16, 0);
 	  break;
 	case 'o':
-	  printint(*argp++, 6, 0);
+	  printint(*argp++, 8, 0);
 	  break;
 	case 's':
 	  if ((s = (char *)*argp++) == 0)

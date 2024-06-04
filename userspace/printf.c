@@ -120,6 +120,11 @@ vfprintf(int fd, const char *fmt, va_list *argp)
         printint(fd, x, 16, false, flags, str_pad);
         break;
       }
+      case 'o': {
+        int x = va_arg(*argp, int);
+        printint(fd, x, 8, false, flags, str_pad);
+        break;
+      }
       case 's': {
         s = va_arg(*argp, char *);
         if (s == 0)

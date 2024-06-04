@@ -249,7 +249,7 @@ create(char *path, short type, short major, short minor)
 	iunlockput(dp);
 	ilock(ip);
 	if (type == T_FILE && ip->type == T_FILE) {
-    ip->mode = S_IFREG | S_IRUSR; // TODO limit permissions
+    ip->mode = TYPE_TO_MODE(type); // TODO limit permissions
 	  return ip;
   }
 	iunlockput(ip);
@@ -263,6 +263,7 @@ create(char *path, short type, short major, short minor)
   ip->major = major;
   ip->minor = minor;
   ip->nlink = 1;
+  ip->mode = TYPE_TO_MODE(type);
   iupdate(ip);
 
   if (type == T_DIR) { // Create . and .. entries.
@@ -323,12 +324,12 @@ sys_open(void)
   iunlock(ip);
   end_op();
 
+  // TODO should mode be set here?
   f->type = FD_INODE;
   f->ip = ip;
   f->off = 0;
   f->readable = !(omode & O_WRONLY);
   f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
-  // deal with all files being executable until chmod(2)
   return fd;
 }
 

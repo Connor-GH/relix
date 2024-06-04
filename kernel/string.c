@@ -1,4 +1,5 @@
 #include "../include/types.h"
+#include "../include/string.h"
 #include "include/x86.h"
 
 void *

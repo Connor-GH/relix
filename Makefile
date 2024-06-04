@@ -89,7 +89,7 @@ include kernel/Makefile
 _forktest: $(BIN)/forktest.o $(ULIB)
 	# forktest has less library code linked in - needs to be small
 	# in order to be able to max out the proc table.
-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _forktest $(BIN)/forktest.o $(BIN)/ulib.o \
+	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $(BIN)/_forktest $(BIN)/forktest.o $(BIN)/ulib.o \
 		$(BIN)/usys.o $(BIN)/printf.o
 
 mkfs: $(TOOLSDIR)/mkfs.c
@@ -115,7 +115,7 @@ clean:
 	$(BIN)/xv6.img \
 	$(BIN)/fs.img \
 	$(BIN)/kernelmemfs \
-	$(BIN)/xv6memfs.img mkfs $(UPROGS)
+	$(BIN)/xv6memfs.img mkfs $(BIN)/_* # delete all programs
 
 # run in emulators
 

@@ -249,7 +249,7 @@ create(char *path, short type, short major, short minor)
 	iunlockput(dp);
 	ilock(ip);
 	if (type == T_FILE && ip->type == T_FILE) {
-    ip->mode = S_IFREG | S_IREAD;
+    ip->mode = S_IFREG | S_IRUSR; // TODO limit permissions
 	  return ip;
   }
 	iunlockput(ip);
@@ -329,7 +329,6 @@ sys_open(void)
   f->readable = !(omode & O_WRONLY);
   f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
   // deal with all files being executable until chmod(2)
-  f->ip->mode = (f->readable ? S_IREAD : 0) | (f->writable ? S_IWRITE : 0) | (f->ip->type == T_FILE ? S_IEXEC : 0);
   return fd;
 }
 

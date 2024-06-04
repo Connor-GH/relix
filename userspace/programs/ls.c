@@ -24,6 +24,23 @@ fmtname(char *path)
   return buf;
 }
 
+
+#if 0
+static char *mode_to_perm(uint mode, char *ret/*[11]*/) {
+  ret[0] = S_ISTYPE(mode, S_IFREG)  ? '-' : S_ISTYPE(mode, S_IFDIR) ? 'd' : '-';
+  ret[1] = mode & S_IRUSR ? 'r' : '-';
+  ret[2] = mode & S_IWUSR ? 'w' : '-';
+  ret[3] = mode & S_IXUSR ? 'x' : '-';
+  ret[4] = mode & S_IRGRP ? 'r' : '-';
+  ret[5] = mode & S_IWGRP ? 'w' : '-';
+  ret[6] = mode & S_IXGRP ? 'x' : '-';
+  ret[7] = mode & S_IROTH ? 'r' : '-';
+  ret[8] = mode & S_IWOTH ? 'w' : '-';
+  ret[9] = mode & S_IXOTH ? 'x' : '-';
+  ret[10] = '\0';
+  return ret;
+}
+#endif
 // this ls(1) tries to follow __minimal__ POSIX stuff.
 void
 ls(char *path, bool lflag, bool iflag)
@@ -47,10 +64,14 @@ ls(char *path, bool lflag, bool iflag)
   switch (st.type) {
   case T_FILE:
 	  if (lflag) {
+        #if 0
+      char ret[11];
+        #endif
+        //fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
       // inodes
       if (iflag)
         fprintf(stdout, "% 9d ", st.st_ino);
-      fprintf(stdout, "%d % 9d %s", st.type, st.st_size, fmtname(path));
+      fprintf(stdout, "% 9d %s", st.st_size, fmtname(path));
       if (st.st_nlink > 1)
         fprintf(stdout, " -> %s", "TODO");
     } else {
@@ -77,10 +98,14 @@ ls(char *path, bool lflag, bool iflag)
 		continue;
 	  }
 	  if (lflag) {
+          #if 0
+      char ret[11];
+          #endif
+      //fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
       // inodes
       if (iflag)
         fprintf(stdout, "% 9d ", st.st_ino);
-      fprintf(stdout, "%d % 9d %s%s", st.type, st.st_size, fmtname(buf), ((st.st_mode & S_IEXEC) == S_IEXEC) ? "*" : "");
+      fprintf(stdout, "% 9d %s", st.st_size, fmtname(buf));
       if (st.st_nlink > 1)
         fprintf(stdout, " -> %s", "TODO");
       fprintf(stdout, "\n");

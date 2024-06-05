@@ -11,7 +11,5 @@ $(BIN)/%.o: $(UPROGS_DIR)/%.c
 	objcopy --remove-section .note.gnu.property $@
 
 _%: $(BIN)/%.o $(ULIB_OBJ) $(ULIB_ASM_OBJ)
-	# $(MAKE) $(ULIB_OBJ)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $(BIN)/$@ $^
-	#$(OBJDUMP) -S $@ > $*.asm
 	$(OBJDUMP) -t $(BIN)/$@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym

@@ -27,7 +27,7 @@ fmtname(char *path)
 static char *
 mode_to_perm(uint mode, char *ret /*[11]*/)
 {
-	ret[0] = (mode & S_IFREG) ? '-' : S_ISDIR(mode) ? 'd' : '-';
+	ret[0] = (mode & S_IFREG) ? '-' : S_ISDIR(mode) ? 'd' : S_ISBLK(mode) ? 'c' : '-';
 	ret[1] = mode & S_IRUSR ? 'r' : '-';
 	ret[2] = mode & S_IWUSR ? 'w' : '-';
 	ret[3] = mode & S_IXUSR ? 'x' : '-';

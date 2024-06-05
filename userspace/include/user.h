@@ -52,6 +52,8 @@ int
 uptime(void);
 int
 date(struct rtcdate *);
+int
+chmod(char *, int mode);
 
 // ulib.c
 int
@@ -81,3 +83,5 @@ void
 free(void *);
 int
 atoi(const char *);
+int
+atoi_base(const char *, uint base);

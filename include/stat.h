@@ -76,4 +76,4 @@ struct stat {
 #define S_IAOTH (S_IROTH | S_IWOTH | S_IXOTH)
 // 0777
 #define S_ALLPRIVS \
-  (S_IAUSR | S_ISGRP | S_IAOTH)
+  (S_IAUSR | S_IAGRP | S_IAOTH)

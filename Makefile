@@ -51,7 +51,7 @@ LD = $(TOOLPREFIX)ld
 OBJCOPY = $(TOOLPREFIX)$(LLVM_PREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)$(LLVM_PREFIX)objdump
 CFLAGS = -fno-pic -static -fno-builtin -ffreestanding \
-				 -fno-strict-aliasing -nostdlib -Os -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer \
+				 -fno-strict-aliasing -nostdlib -Oz -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer \
 				 $(ARCHNOFLAGS) $(WNOFLAGS)
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 ASFLAGS = -m32 -gdwarf-2 -Wa,-divide --mx86-used-note=no

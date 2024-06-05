@@ -9,6 +9,8 @@
 #include "include/param.h"
 #include "../include/stat.h"
 #include "../include/dirent.h"
+#include "../include/date.h"
+#include "../include/time.h"
 #include "include/proc.h"
 #include "include/fs.h"
 #include "include/file.h"
@@ -266,6 +268,11 @@ create(char *path, short type, short major, short minor)
 	ip->minor = minor;
 	ip->nlink = 1;
 	ip->mode = TYPE_TO_MODE(type);
+  ip->gid = DEFAULT_GID;
+  ip->gid = DEFAULT_UID;
+  struct rtcdate rtc;
+  cmostime(&rtc);
+  ip->mtime = ip->atime = ip->ctime = RTC_TO_UNIX(rtc);
 	iupdate(ip);
 	// Create . and .. entries.
 	// because every directory goes as follows:

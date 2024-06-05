@@ -24,7 +24,6 @@ main(void)
   mpinit(); // detect other processors
   lapicinit(); // interrupt controller
   seginit(); // segment descriptors
-  cprintf("cpu%d: starting %d\n", cpuid(), cpuid());
   picinit(); // disable pic
   ioapicinit(); // another interrupt controller
   consoleinit(); // console hardware

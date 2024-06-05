@@ -26,6 +26,11 @@ struct inode {
   short nlink;
   uint size;
   uint mode; // maybe ushort?
+  ushort gid;
+  ushort uid;
+  uint ctime; // change
+  uint atime; // access
+  uint mtime; // modification
   uint addrs[NDIRECT + 1];
 };
 

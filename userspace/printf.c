@@ -109,9 +109,15 @@ vfprintf(int fd, const char *fmt, va_list *argp)
       case '+':
         flags |= FLAG_SIGN;
         goto skip_state_reset;
+      case 'i':
       case 'd': {
         int d = va_arg(*argp, int);
         printint(fd, d, 10, true, flags, str_pad);
+        break;
+      }
+      case 'u': {
+        uint u = va_arg(*argp, uint);
+        printint(fd, u, 10, false, flags, str_pad);
         break;
       }
       case 'x':

@@ -82,12 +82,12 @@ ls(char *path, bool lflag, bool iflag)
 	switch (st.type) {
 	case T_FILE:
 		if (lflag) {
-			char ret[11];
-			fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
 			// inodes
 			if (iflag)
-				fprintf(stdout, "% 9d ", st.st_ino);
-			fprintf(stdout, "% 9d %s", st.st_size, fmtname(path));
+				fprintf(stdout, "% 9u ", st.st_ino);
+			char ret[11];
+			fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
+			fprintf(stdout, "% 4u % 4u % 9u % 9u %s", st.st_uid, st.st_gid, st.st_mtime, st.st_size, fmtname(path));
 			if (st.st_nlink > 1) {
 				fprintf(stdout, " -> %s", disambiguate_symlink(st.st_ino, path));
 			}
@@ -115,12 +115,12 @@ ls(char *path, bool lflag, bool iflag)
 				continue;
 			}
 			if (lflag) {
-				char ret[11];
-				fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
 				// inodes
 				if (iflag)
-					fprintf(stdout, "% 9d ", st.st_ino);
-				fprintf(stdout, "% 9d %s", st.st_size, fmtname(buf));
+					fprintf(stdout, "% 9u ", st.st_ino);
+				char ret[11];
+				fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
+        fprintf(stdout, "% 4u % 4u % 9u % 9u %s", st.st_uid, st.st_gid, st.st_mtime, st.st_size, fmtname(buf));
 				if (st.st_nlink > 1)
 					fprintf(stdout, " -> %s", "TODO");
 				fprintf(stdout, "\n");

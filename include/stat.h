@@ -6,6 +6,8 @@
 #ifndef USE_HOST_STAT
 #include "types.h"
 /* fields do not begin with "st_" if they are nonstandard. */
+#define DEFAULT_GID 1
+#define DEFAULT_UID 99
 struct stat {
   short type; // Type of file
   int st_dev; // File system's disk device
@@ -64,8 +66,11 @@ struct stat {
 #define S_IWOTH 00002
 #define S_IXOTH 00001
   uint st_mode;
-  uint st_uid;
-  uint st_gid;
+  ushort st_uid;
+  ushort st_gid;
+  uint st_ctime; // change
+  uint st_atime; // access
+  uint st_mtime; // modification
 };
 #endif
 // 0700

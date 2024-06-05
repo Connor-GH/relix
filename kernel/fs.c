@@ -14,6 +14,8 @@
 #include "include/param.h"
 #include "../include/stat.h"
 #include "../include/dirent.h"
+#include "../include/date.h"
+#include "../include/time.h"
 #include "include/proc.h"
 #include "include/spinlock.h"
 #include "include/fs.h"
@@ -206,6 +208,13 @@ ialloc(uint dev, short type)
 			memset(dip, 0, sizeof(*dip));
       dip->type = type;
 			dip->mode = TYPE_TO_MODE(type);
+      dip->gid = DEFAULT_GID;
+      dip->uid = DEFAULT_UID;
+      struct rtcdate rtc;
+      cmostime(&rtc);
+      dip->ctime = RTC_TO_UNIX(rtc);
+      dip->atime = RTC_TO_UNIX(rtc);
+      dip->mtime = RTC_TO_UNIX(rtc);
 			log_write(bp); // mark it allocated on the disk
 			brelse(bp);
 			return iget(dev, inum);
@@ -233,6 +242,12 @@ iupdate(struct inode *ip)
 	dip->nlink = ip->nlink;
 	dip->size = ip->size;
 	dip->mode = ip->mode;
+  struct rtcdate rtc;
+  cmostime(&rtc);
+  dip->mtime = RTC_TO_UNIX(rtc);
+  dip->atime = ip->atime;
+  dip->ctime = ip->ctime;
+
 	memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));
 	log_write(bp);
 	brelse(bp);
@@ -308,6 +323,12 @@ ilock(struct inode *ip)
 		ip->nlink = dip->nlink;
 		ip->size = dip->size;
 		ip->mode = dip->mode;
+    ip->uid = dip->uid;
+    ip->gid = dip->gid;
+    ip->atime = dip->atime;
+    ip->ctime = dip->ctime;
+    ip->mtime = dip->mtime;
+
 		memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
 		brelse(bp);
 		ip->valid = 1;
@@ -451,6 +472,11 @@ stati(struct inode *ip, struct stat *st)
 	st->st_nlink = ip->nlink;
 	st->st_size = ip->size;
 	st->st_mode = ip->mode;
+  st->st_uid = ip->uid;
+  st->st_gid = ip->gid;
+  st->st_atime = ip->atime;
+  st->st_ctime = ip->ctime;
+  st->st_mtime = ip->mtime;
 }
 
 //PAGEBREAK!

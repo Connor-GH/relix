@@ -4,6 +4,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <assert.h>
+#include <time.h>
 
 #define stat xv6_stat // avoid clash with host struct stat
 #include "../include/types.h"
@@ -249,6 +250,11 @@ ialloc(ushort type)
 	din.nlink = xshort(1);
 	din.size = xint(0);
 	din.mode = xint(TYPE_TO_MODE(type));
+  din.uid = xshort(99);
+  din.gid = xshort(1);
+  din.atime = xint(time(NULL));
+  din.ctime = xint(time(NULL));
+  din.mtime = xint(time(NULL));
   winode(inum, &din);
 	return inum;
 }

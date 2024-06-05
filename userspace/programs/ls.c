@@ -5,6 +5,22 @@
 #include "../../include/stdlib.h"
 #include "../../include/stdio.h"
 
+static char *
+disambiguate_symlink(uint inode, char *path) {
+	char *p;
+  for (p = path + strlen(path); p >= path && *p != '/'; p--)
+		;
+  // name is now top level
+	p++;
+  struct stat st;
+  (void)path;
+  (void)stat( "/" /*path*/, &st);
+  if (S_ISDIR(st.st_mode)) {
+    // idk;
+  }
+  return "idk!";
+}
+
 char *
 fmtname(char *path)
 {
@@ -27,7 +43,10 @@ fmtname(char *path)
 static char *
 mode_to_perm(uint mode, char *ret /*[11]*/)
 {
-	ret[0] = (mode & S_IFREG) ? '-' : S_ISDIR(mode) ? 'd' : S_ISBLK(mode) ? 'c' : '-';
+	ret[0] = (mode & S_IFREG) ? '-' :
+					 S_ISDIR(mode)		? 'd' :
+					 S_ISBLK(mode)		? 'c' :
+															'-';
 	ret[1] = mode & S_IRUSR ? 'r' : '-';
 	ret[2] = mode & S_IWUSR ? 'w' : '-';
 	ret[3] = mode & S_IXUSR ? 'x' : '-';
@@ -69,8 +88,9 @@ ls(char *path, bool lflag, bool iflag)
 			if (iflag)
 				fprintf(stdout, "% 9d ", st.st_ino);
 			fprintf(stdout, "% 9d %s", st.st_size, fmtname(path));
-			if (st.st_nlink > 1)
-				fprintf(stdout, " -> %s", "TODO");
+			if (st.st_nlink > 1) {
+				fprintf(stdout, " -> %s", disambiguate_symlink(st.st_ino, path));
+			}
 		} else {
 			fprintf(stdout, "%s", fmtname(path));
 		}

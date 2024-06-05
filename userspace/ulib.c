@@ -3,6 +3,7 @@
 #include "../include/fcntl.h"
 #include "../include/assert.h"
 #include "../include/stdio.h"
+#include "../include/stdlib.h"
 #include "include/user.h"
 #include "../kernel/include/x86.h"
 
@@ -69,6 +70,7 @@ gets(char *buf, int max)
 	return buf;
 }
 
+// fill in st from pathname n
 int
 stat(const char *n, struct stat *st)
 {
@@ -81,6 +83,40 @@ stat(const char *n, struct stat *st)
 	r = fstat(fd, st);
 	close(fd);
 	return r;
+}
+
+DIR *
+fopendir(int fd)
+{
+	if (fd == -1)
+		return NULL;
+	DIR *dirp = (DIR *)malloc(sizeof(DIR));
+	dirp->fd = fd;
+	dirp->buffer = NULL;
+	dirp->buffer_size = 0;
+	dirp->nextptr = NULL;
+	return dirp;
+}
+
+DIR *
+opendir(const char *path)
+{
+  int fd = open(path, O_RDONLY /*| O_DIRECTORY*/);
+  if (fd == -1)
+    return NULL;
+  return fopendir(fd);
+}
+int closedir(DIR *dir) {
+  if (dir == NULL || dir->fd == -1) {
+    return -1; // EBADF
+  }
+  if (dir->buffer != NULL)
+    free(dir->buffer);
+  int rc = close(dir->fd);
+  if (rc == 0)
+    dir->fd = -1;
+  free(dir);
+  return rc;
 }
 
 // no way to check for error...sigh....
@@ -97,24 +133,25 @@ atoi(const char *s)
 	return n;
 }
 int
-atoi_base(const char *s, uint base) {
+atoi_base(const char *s, uint base)
+{
 	int n = 0;
 
-  if (base <= 10) {
-	  while ('0' <= *s && *s <= '9')
-		  n = n * base + *s++ - '0';
-	  return n;
-  } else if (base <= 16) {
-    while (('0' <= *s && *s <= '9') || ('a' <= *s && *s <= 'f')) {
-		  if ('0' <= *s && *s <= '9')
-        n = n * base + *s++ - '0';
-      if ('a' <= *s && *s <= 'f')
-        n = n * base + *s++ - 'a';
-    }
-	  return n;
-  } else {
-    return 0;
-  }
+	if (base <= 10) {
+		while ('0' <= *s && *s <= '9')
+			n = n * base + *s++ - '0';
+		return n;
+	} else if (base <= 16) {
+		while (('0' <= *s && *s <= '9') || ('a' <= *s && *s <= 'f')) {
+			if ('0' <= *s && *s <= '9')
+				n = n * base + *s++ - '0';
+			if ('a' <= *s && *s <= 'f')
+				n = n * base + *s++ - 'a';
+		}
+		return n;
+	} else {
+		return 0;
+	}
 }
 
 void *

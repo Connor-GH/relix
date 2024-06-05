@@ -13,6 +13,7 @@
 #include "../include/defs.h"
 #include "include/param.h"
 #include "../include/stat.h"
+#include "../include/dirent.h"
 #include "include/proc.h"
 #include "include/spinlock.h"
 #include "include/fs.h"

@@ -13,7 +13,6 @@ mpmain(void) __attribute__((noreturn));
 extern pde_t *kpgdir;
 extern char end[]; // first address after kernel loaded from ELF file
 
-volatile static int started = 0;
 // Bootstrap processor starts running C code here.
 // Allocate a real stack and switch to it, first
 // doing some setup required for memory allocator to work.
@@ -25,6 +24,7 @@ main(void)
   mpinit(); // detect other processors
   lapicinit(); // interrupt controller
   seginit(); // segment descriptors
+  cprintf("cpu%d: starting %d\n", cpuid(), cpuid());
   picinit(); // disable pic
   ioapicinit(); // another interrupt controller
   consoleinit(); // console hardware
@@ -37,9 +37,7 @@ main(void)
   startothers(); // start other processors
   kinit2(P2V(4 * 1024 * 1024), P2V(PHYSTOP)); // must come after startothers()
   userinit(); // first user process
-  __sync_synchronize();
   mpmain(); // finish this processor's setup
-  __sync_synchronize();
 }
 
 // Other CPUs jump here from entryother.S.
@@ -56,7 +54,6 @@ mpenter(void)
 static void
 mpmain(void)
 {
-  __sync_synchronize();
   cprintf("cpu%d: starting %d\n", cpuid(), cpuid());
   cprintf("\eb1Hello world\eb0\n");
   idtinit(); // load idt register
@@ -112,7 +109,7 @@ startothers(void)
 
 __attribute__((__aligned__(PGSIZE))) pde_t entrypgdir[NPDENTRIES] = {
   // Map VA's [0, 4MB) to PA's [0, 4MB)
-  [0] = (0) | PTE_P | PTE_W | PTE_PS | PTE_U,//PTE_PS,
+  [0] = (0) | PTE_P | PTE_W | PTE_PS, PTE_PS,
   // Map VA's [KERNBASE, KERNBASE+4MB) to PA's [0, 4MB)
   [KERNBASE >> PDXSHIFT] = (0) | PTE_P | PTE_W | PTE_PS,
 };

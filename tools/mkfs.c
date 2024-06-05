@@ -10,6 +10,7 @@
 #define USE_HOST_STAT
 #include "../kernel/include/fs.h"
 #include "../include/stat.h"
+#include "../include/dirent.h"
 #include "../kernel/include/param.h"
 
 #ifndef static_assert
@@ -282,7 +283,7 @@ iappend(uint inum, void *xp, int n)
 
 	rinode(inum, &din);
 	off = xint(din.size);
-	// fprintf("append inum %d at off %d sz %d\n", inum, off, n);
+	//printf("append inum %d at off %d sz %d\n", inum, off, n);
 	while (n > 0) {
 		fbn = off / BSIZE;
 		assert(fbn < MAXFILE);

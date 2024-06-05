@@ -166,7 +166,7 @@ pipewrite(struct pipe *, char *, int);
 int
 cpuid(void);
 void
-exit(void);
+exit(void) __attribute__((noreturn));
 int
 fork(void);
 int

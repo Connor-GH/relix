@@ -8,6 +8,7 @@
 #include "../include/defs.h"
 #include "include/param.h"
 #include "../include/stat.h"
+#include "../include/dirent.h"
 #include "include/proc.h"
 #include "include/fs.h"
 #include "include/file.h"

@@ -2,6 +2,7 @@
 
 typedef unsigned int uint;
 #include "../../include/stat.h"
+#include "../../include/dirent.h"
 #include "../../include/date.h"
 #include "../../include/fcntl.h"
 #include "stdarg.h"
@@ -10,7 +11,7 @@ typedef unsigned int uint;
 // system calls
 int
 fork(void);
-int
+void//int
 exit(void) __attribute__((noreturn));
 int
 wait(void);
@@ -58,6 +59,8 @@ chmod(char *, int mode);
 // ulib.c
 int
 stat(const char *, struct stat *);
+DIR *
+opendir(const char *name);
 char *
 strcpy(char *, const char *);
 void *

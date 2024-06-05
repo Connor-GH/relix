@@ -3,6 +3,7 @@
 #include "../include/user.h"
 #include "../../kernel/include/fs.h"
 #include "../../include/fcntl.h"
+#include "../../include/stdio.h"
 #include "../../kernel/include/syscall.h"
 #include "../../kernel/include/traps.h"
 #include "../../kernel/drivers/memlayout.h"
@@ -10,7 +11,6 @@
 char buf[8192];
 char name[3];
 char *echoargv[] = { "echo", "ALL", "TESTS", "PASSED", 0 };
-int stdout = 1;
 
 // does chdir() call iput(p->cwd) in a transaction?
 void

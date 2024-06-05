@@ -19,7 +19,7 @@ xv6memfs.img: bootblock kernelmemfs
 	dd if=$(BIN)/bootblock of=$(BIN)/xv6memfs.img conv=notrunc
 	dd if=$(BIN)/kernelmemfs of=$(BIN)/xv6memfs.img seek=1 conv=notrunc
 
-kernel: $(KERNEL_OBJS) entry entryother_ initcode $(KERNELDIR)/kernel.ld
+kernel: $(KERNELDIR)/kernel.ld $(KERNEL_OBJS) entry entryother_ initcode
 	$(LD) $(LDFLAGS) -T $(KERNELDIR)/kernel.ld -o $(BIN)/kernel $(BIN)/entry.o $(KERNEL_OBJS) -b binary $(BIN)/initcode $(BIN)/entryother
 	# $(OBJDUMP) -S kernel > kernel.asm
 	$(OBJDUMP) -t $(BIN)/kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernel.sym

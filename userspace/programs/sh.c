@@ -2,6 +2,7 @@
 
 #include "../include/user.h"
 #include "../../include/fcntl.h"
+#include "../../include/stdio.h"
 
 // Parsed command representation
 #define EXEC 1
@@ -135,11 +136,11 @@ runcmd(struct cmd *cmd)
 int
 getcmd(char *buf, int nbuf)
 {
-  fprintf(2, "$ ");
+  fprintf(1, "$ ");
   memset(buf, 0, nbuf);
   gets(buf, nbuf);
   if (buf[0] == 0) // EOF
-	return -1;
+	  return -1;
   return 0;
 }
 

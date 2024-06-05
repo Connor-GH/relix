@@ -79,7 +79,19 @@ IVARS = -I. -Iinclude/
 TOOLSDIR = tools
 BIN = bin
 
-default: fs.img xv6.img
+default:
+	$(MAKE) bootblock
+	$(MAKE) $(KERNEL_OBJS)
+	$(MAKE) entry
+	$(MAKE) entryother_
+	$(MAKE) initcode
+	$(MAKE) entry
+	$(MAKE) $(ULIB_OBJ)
+	$(MAKE) objcopy --remove-section .note.gnu.property $(BIN)/ulib.o
+	$(MAKE) $(ULIB_ASM_OBJ)
+	$(MAKE) $(UPROGS)
+	$(MAKE) fs.img
+	$(MAKE) xv6.img
 
 include userspace/Makefile
 include kernel/Makefile
@@ -102,7 +114,7 @@ mkfs: $(TOOLSDIR)/mkfs.c
 .PRECIOUS: %.o
 
 
-fs.img: mkfs README $(UPROGS)
+fs.img: README mkfs $(UPROGS)
 	cd $(BIN); ./mkfs fs.img ../README $(UPROGS)
 
 -include *.d
@@ -134,7 +146,9 @@ CPUS := 2
 endif
 QEMUOPTS = -drive file=$(BIN)/fs.img,index=1,media=disk,format=raw -drive file=$(BIN)/xv6.img,index=0,media=disk,format=raw -smp $(CPUS) -m 2G $(QEMUEXTRA)
 
-qemu: fs.img xv6.img
+qemu:
+	$(MAKE) fs.img
+	$(MAKE) xv6.img
 	$(QEMU) -serial mon:stdio $(QEMUOPTS)
 
 qemu-memfs: xv6memfs.img

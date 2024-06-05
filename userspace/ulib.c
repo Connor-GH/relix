@@ -52,16 +52,22 @@ strchr(const char *s, char c)
 	return 0;
 }
 
+int
+getc(FILE fd)
+{
+  int c;
+  read(fd, &c, 1);
+  return c;
+}
+
 char *
 gets(char *buf, int max)
 {
-	int i, cc;
+	int i;
 	char c;
 
 	for (i = 0; i + 1 < max;) {
-		cc = read(0, &c, 1);
-		if (cc < 1)
-			break;
+		c = getc(stdin);
 		buf[i++] = c;
 		if (c == '\n' || c == '\r')
 			break;

@@ -2,10 +2,11 @@
 
 typedef unsigned int uint;
 #include "../../include/stat.h"
+#include "../../include/stdio.h"
 #include "../../include/dirent.h"
 #include "../../include/date.h"
 #include "../../include/fcntl.h"
-#include "stdarg.h"
+#include "../../include/stdarg.h"
 #include <stdint.h> // TODO don't use builtin headers
 
 // system calls
@@ -77,6 +78,8 @@ void
 printf(const char *, ...);
 char *
 gets(char *, int max);
+int
+getc(FILE fd);
 uint
 strlen(const char *);
 void *

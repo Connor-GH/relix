@@ -14,5 +14,5 @@ time(time_t *tloc);
 + (rtc.hour * (60 * 60)) \
 + (rtc.day * (60 * 60 * 24)) \
 + (rtc.month * (60 * 60 * 24 * 30)) \
-+ (rtc.year * (60 * 60 * 24 * 365)))
++ ((rtc.year-2000) * (60 * 60 * 24 * 365)))
 // clang-format on

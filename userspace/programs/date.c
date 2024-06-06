@@ -8,6 +8,7 @@ int main(void) {
   if (date(&r) != 0) {
     fprintf(stderr, "date failed\n");
   }
-  fprintf(stdout, "%d-%d-%d %d:%d:%d\n", r.year, r.month, r.day, r.hour, r.minute, r.second);
+  printf("%04d-%02d-%02d %02d:%02d:%02d\n",
+          r.year, r.month, r.day, r.hour, r.minute, r.second);
   exit();
 }

@@ -7,12 +7,14 @@ typedef unsigned int uint;
 #include "../../include/date.h"
 #include "../../include/fcntl.h"
 #include "../../include/stdarg.h"
+#include "../../include/reboot.h"
+
 #include <stdint.h> // TODO don't use builtin headers
 
 // system calls
 int
 fork(void);
-void//int
+void
 exit(void) __attribute__((noreturn));
 int
 wait(void);
@@ -56,6 +58,8 @@ int
 date(struct rtcdate *);
 int
 chmod(char *, int mode);
+void
+reboot(int cmd);
 
 // ulib.c
 int

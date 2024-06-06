@@ -1,5 +1,6 @@
 #pragma once
 // System call numbers
+// cannot be enums because they communicate with assembly.
 #define SYS_fork 1
 #define SYS_exit 2
 #define SYS_wait 3
@@ -23,3 +24,4 @@
 #define SYS_close 21
 #define SYS_date 22
 #define SYS_chmod 23
+#define SYS_reboot 24

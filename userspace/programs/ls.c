@@ -6,22 +6,49 @@
 #include "../../include/stdio.h"
 
 static char *
-disambiguate_symlink(uint inode, char *path) {
+disambiguate_symlink(uint inode, char *path)
+{
 	char *p;
-  for (p = path + strlen(path); p >= path && *p != '/'; p--)
+	for (p = path + strlen(path); p >= path && *p != '/'; p--)
 		;
-  // name is now top level
+	// name is now top level
 	p++;
-  struct stat st;
-  (void)path;
-  (void)stat( "/" /*path*/, &st);
-  if (S_ISDIR(st.st_mode)) {
-    // idk;
-  }
-  return "idk!";
+	struct stat st;
+	(void)path;
+	(void)stat("/" /*path*/, &st);
+	if (S_ISDIR(st.st_mode)) {
+		// idk;
+	}
+	return "idk!";
 }
 
-char *
+struct ls_time {
+  uint sec;
+  uint min;
+  uint hr;
+  uint day;
+  uint mo;
+  uint yr;
+};
+static struct ls_time
+to_human_time(uint time) {
+  struct ls_time lt;
+  lt.sec = time;
+  lt.min = lt.sec / 60;
+  lt.hr = lt.min / 60;
+  lt.day = lt.hr / 23.981777;
+  lt.mo = lt.day / 30.44;
+  lt.yr = lt.day / 365.25;
+  lt.yr += 1970;
+  lt.mo %= 12;
+  lt.day %= 30;
+  lt.hr = (lt.hr % 24);
+  lt.min %= 60;
+  lt.sec %= 60;
+  return lt;
+}
+
+static char *
 fmtname(char *path)
 {
 	static char buf[DIRSIZ + 1];
@@ -87,9 +114,13 @@ ls(char *path, bool lflag, bool iflag)
 				fprintf(stdout, "% 9u ", st.st_ino);
 			char ret[11];
 			fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
-			fprintf(stdout, "% 4u % 4u % 9u % 9u %s", st.st_uid, st.st_gid, st.st_mtime, st.st_size, fmtname(path));
+			fprintf(stdout, "% 4u % 4u ", st.st_uid, st.st_gid);
+      struct ls_time lt = to_human_time(st.st_mtime);
+      fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr,
+              lt.mo, lt.day, lt.hr, lt.min, lt.sec);
+      fprintf(stdout, "% 9u %s ", st.st_size, fmtname(path));
 			if (st.st_nlink > 1) {
-				fprintf(stdout, " -> %s", disambiguate_symlink(st.st_ino, path));
+				fprintf(stdout, "-> %s", disambiguate_symlink(st.st_ino, path));
 			}
 		} else {
 			fprintf(stdout, "%s", fmtname(path));
@@ -120,9 +151,13 @@ ls(char *path, bool lflag, bool iflag)
 					fprintf(stdout, "% 9u ", st.st_ino);
 				char ret[11];
 				fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
-        fprintf(stdout, "% 4u % 4u % 9u % 9u %s", st.st_uid, st.st_gid, st.st_mtime, st.st_size, fmtname(buf));
+				fprintf(stdout, "% 4u % 4u ", st.st_uid, st.st_gid);
+        struct ls_time lt = to_human_time(st.st_mtime);
+        fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr,
+              lt.mo, lt.day, lt.hr, lt.min, lt.sec);
+        fprintf(stdout, "% 9u %s ", st.st_size, fmtname(buf));
 				if (st.st_nlink > 1)
-					fprintf(stdout, " -> %s", "TODO");
+					fprintf(stdout, "-> %s", "TODO");
 				fprintf(stdout, "\n");
 			} else {
 				fprintf(stdout, "%s", fmtname(buf));

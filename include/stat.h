@@ -6,8 +6,6 @@
 #ifndef USE_HOST_STAT
 #include "types.h"
 /* fields do not begin with "st_" if they are nonstandard. */
-#define DEFAULT_GID 1
-#define DEFAULT_UID 99
 struct stat {
   short type; // Type of file
   int st_dev; // File system's disk device
@@ -79,6 +77,9 @@ struct stat {
 #define S_IAGRP (S_IRGRP | S_IWGRP | S_IXGRP)
 // 0007
 #define S_IAOTH (S_IROTH | S_IWOTH | S_IXOTH)
+#define S_HASPERM(mode, mask) (((mode) & (mask)) == (mask))
 // 0777
 #define S_ALLPRIVS \
   (S_IAUSR | S_IAGRP | S_IAOTH)
+#define DEFAULT_GID 0
+#define DEFAULT_UID 0

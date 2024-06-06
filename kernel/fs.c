@@ -19,6 +19,7 @@
 #include "include/proc.h"
 #include "include/spinlock.h"
 #include "include/fs.h"
+#include "include/x86.h"
 #include "../include/buf.h"
 #include "include/file.h"
 
@@ -210,6 +211,7 @@ ialloc(uint dev, short type)
 			dip->mode = TYPE_TO_MODE(type);
       dip->gid = DEFAULT_GID;
       dip->uid = DEFAULT_UID;
+  //    struct rtcdate rtc;
       struct rtcdate rtc;
       cmostime(&rtc);
       dip->ctime = RTC_TO_UNIX(rtc);
@@ -245,7 +247,7 @@ iupdate(struct inode *ip)
   struct rtcdate rtc;
   cmostime(&rtc);
   dip->mtime = RTC_TO_UNIX(rtc);
-  dip->atime = ip->atime;
+  dip->atime = RTC_TO_UNIX(rtc);
   dip->ctime = ip->ctime;
 
 	memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));

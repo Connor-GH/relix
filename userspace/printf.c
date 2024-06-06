@@ -40,12 +40,12 @@ printint(int fd, int xx, int base, bool sgn, int flags, int padding)
   } while ((x /= base) != 0);
   // pad for zeroes (and blanks)
   if (IS_SET(flags, FLAG_PADZERO)) {
-    while (i < padding-1) {
+    while (i < padding) {
       buf[i++] = '0';
     }
   }
   if (IS_SET(flags, FLAG_BLANK)) {
-    while (i < padding-1) {
+    while (i < padding) {
       buf[i++] = ' ';
     }
   }
@@ -86,6 +86,9 @@ vfprintf(int fd, const char *fmt, va_list *argp)
       switch (c) {
       case '0':
         flags |= FLAG_PADZERO;
+        if (fmt[i+1] && (fmt[i+1] - '0' >= 0)) {
+          str_pad = fmt[++i] - '0';
+        }
         goto skip_state_reset;
         break;
       case '#':

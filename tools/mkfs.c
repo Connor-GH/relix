@@ -250,8 +250,8 @@ ialloc(ushort type)
 	din.nlink = xshort(1);
 	din.size = xint(0);
 	din.mode = xint(TYPE_TO_MODE(type));
-  din.uid = xshort(99);
-  din.gid = xshort(1);
+  din.uid = xshort(DEFAULT_UID);
+  din.gid = xshort(DEFAULT_GID);
   din.atime = xint(time(NULL));
   din.ctime = xint(time(NULL));
   din.mtime = xint(time(NULL));

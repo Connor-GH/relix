@@ -269,7 +269,7 @@ create(char *path, short type, short major, short minor)
 	ip->nlink = 1;
 	ip->mode = TYPE_TO_MODE(type);
   ip->gid = DEFAULT_GID;
-  ip->gid = DEFAULT_UID;
+  ip->uid = DEFAULT_UID;
   struct rtcdate rtc;
   cmostime(&rtc);
   ip->mtime = ip->atime = ip->ctime = RTC_TO_UNIX(rtc);
@@ -348,7 +348,7 @@ sys_open(void)
 	f->off = 0;
 	f->readable = !(omode & O_WRONLY);
 	f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
-	return fd;
+  return fd;
 }
 
 int

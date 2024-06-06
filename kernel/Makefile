@@ -21,7 +21,6 @@ xv6memfs.img: bootblock kernelmemfs
 
 kernel: $(KERNELDIR)/kernel.ld $(KERNEL_OBJS) entry entryother_ initcode
 	$(LD) $(LDFLAGS) -T $(KERNELDIR)/kernel.ld -o $(BIN)/kernel $(BIN)/entry.o $(KERNEL_OBJS) -b binary $(BIN)/initcode $(BIN)/entryother
-	$(OBJDUMP) -t $(BIN)/kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernel.sym
 
 $(BIN)/%.o: $(KERNELDIR)/%.c
 	$(CC) $(CFLAGS) $(KERNEL_INC) -c $^ -o $@
@@ -40,4 +39,3 @@ $(BIN)/%.o: $(KERNELDIR)/%.S
 MEMFSOBJS = $(filter-out ide.o,$(KERNEL_OBJS)) $(BIN)/memide.o
 kernelmemfs: $(MEMFSOBJS) entry entryother_ initcode $(KERNELDIR)/kernel.ld fs.img
 	$(LD) $(LDFLAGS) -T $(KERNELDIR)/kernel.ld -o $(BIN)/kernelmemfs $(BIN)/entry.o $(MEMFSOBJS) -b binary $(BIN)/initcode $(BIN)/entryother $(BIN)/fs.img
-	$(OBJDUMP) -t $(BIN)/kernelmemfs | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > kernelmemfs.sym

@@ -12,4 +12,3 @@ $(BIN)/%.o: $(UPROGS_DIR)/%.c
 
 _%: $(BIN)/%.o $(ULIB_OBJ) $(ULIB_ASM_OBJ)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $(BIN)/$@ $^
-	$(OBJDUMP) -t $(BIN)/$@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym

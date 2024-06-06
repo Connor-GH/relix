@@ -13,3 +13,4 @@ $(ULIB_ASM_OBJ): $(BIN)/%.o : $(UDIR)/%.S
 	objcopy --remove-section .note.gnu.property $@
 
 include $(UDIR)/programs/Makefile
+include d/Makefile

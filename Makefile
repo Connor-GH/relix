@@ -90,6 +90,7 @@ default:
 	$(MAKE) objcopy --remove-section .note.gnu.property $(BIN)/ulib.o
 	$(MAKE) $(ULIB_ASM_OBJ)
 	$(MAKE) $(UPROGS)
+	$(MAKE) $(D_PROGS)
 	$(MAKE) fs.img
 	$(MAKE) xv6.img
 
@@ -114,8 +115,8 @@ mkfs: $(TOOLSDIR)/mkfs.c
 .PRECIOUS: %.o
 
 
-fs.img: README mkfs $(UPROGS)
-	cd $(BIN); ./mkfs fs.img ../README $(UPROGS)
+fs.img: README mkfs $(UPROGS) $(D_PROGS)
+	cd $(BIN); ./mkfs fs.img ../README $(UPROGS) $(D_PROGS)
 
 -include *.d
 

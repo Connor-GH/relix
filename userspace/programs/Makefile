@@ -4,8 +4,6 @@ UPROGS = $(UPROGS_SRC:$(UPROGS_DIR)/%.c=_%)
 
 
 
-#ulib
-
 $(BIN)/%.o: $(UPROGS_DIR)/%.c
 	$(CC) $(CFLAGS) -c -o $@ $^
 	objcopy --remove-section .note.gnu.property $@

@@ -42,17 +42,29 @@ QEMU = $(shell if which qemu > /dev/null; \
 endif
 
 # TODO get rid of these
-WNOFLAGS = -Wno-error=array-bounds -Wno-error=infinite-recursion
+WNOFLAGS = -Wno-error=array-bounds -Wno-error=infinite-recursion -Wno-error
 ARCHNOFLAGS = -mno-sse -mno-red-zone -mno-avx -mno-avx2
 
 CC = $(TOOLPREFIX)gcc
 AS = $(TOOLPREFIX)gas
 LD = $(TOOLPREFIX)ld
-OBJCOPY = $(TOOLPREFIX)$(LLVM_PREFIX)objcopy
-OBJDUMP = $(TOOLPREFIX)$(LLVM_PREFIX)objdump
+
+OBJCOPY = $(TOOLPREFIX)objcopy
+OBJDUMP = $(TOOLPREFIX)objdump
+
+# llvm stuff
+ifeq ($(LLVM),1)
+	CC = clang
+	AS = clang -c
+	LD = ld.lld
+	OBJCOPY = llvm-objcopy
+	OBJDUMP = llvm-objdump
+endif
+
+
 CFLAGS = -fno-pic -static -fno-builtin -ffreestanding \
-				 -fno-strict-aliasing -nostdlib -Oz -Wall -ggdb -m32 -Werror -fno-omit-frame-pointer \
-				 $(ARCHNOFLAGS) $(WNOFLAGS)
+				 -fno-strict-aliasing -nostdlib -O2 -Wall -ggdb -m32 -Werror -fno-omit-frame-pointer \
+				 -fno-builtin $(ARCHNOFLAGS) $(WNOFLAGS)
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 ASFLAGS = -m32 -gdwarf-2 -Wa,-divide --mx86-used-note=no
 # FreeBSD ld wants ``elf_i386_fbsd''

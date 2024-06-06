@@ -5,8 +5,8 @@ UPROGS = $(UPROGS_SRC:$(UPROGS_DIR)/%.c=_%)
 
 
 $(BIN)/%.o: $(UPROGS_DIR)/%.c
-	$(CC) $(CFLAGS) -c -o $@ $^
-	objcopy --remove-section .note.gnu.property $@
+	$(CC) $(CFLAGS) $(UCFLAGS) -c -o $@ $^
+	$(OBJCOPY) --remove-section .note.gnu.property --set-section-flags .text=alloc,readonly $@
 
 _%: $(BIN)/%.o $(ULIB_OBJ) $(ULIB_ASM_OBJ)
-	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $(BIN)/$@ $^
+	$(CC) $(CFLAGS) $(UCFLAGS) -Wl,-z,noexecstack -Wl,-O1 -Wl,-N,-e,main -Wl,-Ttext,0 -o $(BIN)/$@ $^

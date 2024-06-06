@@ -114,11 +114,11 @@ ls(char *path, bool lflag, bool iflag)
 				fprintf(stdout, "% 9u ", st.st_ino);
 			char ret[11];
 			fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
-			fprintf(stdout, "% 4u % 4u ", st.st_uid, st.st_gid);
+			fprintf(stdout, "% 4u % 4u % 9u ", st.st_uid, st.st_gid, st.st_size);
       struct ls_time lt = to_human_time(st.st_mtime);
       fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr,
               lt.mo, lt.day, lt.hr, lt.min, lt.sec);
-      fprintf(stdout, "% 9u %s ", st.st_size, fmtname(path));
+      fprintf(stdout, "%s ", fmtname(path));
 			if (st.st_nlink > 1) {
 				fprintf(stdout, "-> %s", disambiguate_symlink(st.st_ino, path));
 			}
@@ -151,11 +151,11 @@ ls(char *path, bool lflag, bool iflag)
 					fprintf(stdout, "% 9u ", st.st_ino);
 				char ret[11];
 				fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
-				fprintf(stdout, "% 4u % 4u ", st.st_uid, st.st_gid);
+				fprintf(stdout, "% 4u % 4u % 9u ", st.st_uid, st.st_gid, st.st_size);
         struct ls_time lt = to_human_time(st.st_mtime);
         fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr,
               lt.mo, lt.day, lt.hr, lt.min, lt.sec);
-        fprintf(stdout, "% 9u %s ", st.st_size, fmtname(buf));
+        fprintf(stdout, "%s ", fmtname(buf));
 				if (st.st_nlink > 1)
 					fprintf(stdout, "-> %s", "TODO");
 				fprintf(stdout, "\n");

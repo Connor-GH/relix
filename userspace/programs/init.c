@@ -3,7 +3,7 @@
 #include "../include/user.h"
 #include "../../include/fcntl.h"
 
-char *argv[] = { "sh", 0 };
+char *argv[] = { "login", 0 };
 
 int
 main(void)
@@ -18,15 +18,15 @@ main(void)
 	dup(0); // stderr
 
 	for (;;) {
-		fprintf(1, "init: starting sh\n");
+		fprintf(1, "init: starting login service\n");
 		pid = fork();
 		if (pid < 0) {
-			fprintf(1, "init: fork failed\n");
+			fprintf(1, "init: fork() failed\n");
 			exit();
 		}
 		if (pid == 0) {
-			exec("sh", argv);
-			fprintf(1, "init: exec sh failed\n");
+			exec("login", argv);
+			fprintf(1, "init: exec() login service failed\n");
 			exit();
 		}
 		while ((wpid = wait()) >= 0 && wpid != pid)

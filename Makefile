@@ -127,8 +127,8 @@ mkfs: $(TOOLSDIR)/mkfs.c
 .PRECIOUS: %.o
 
 
-fs.img: README mkfs $(UPROGS) $(D_PROGS)
-	cd $(BIN); ./mkfs fs.img ../README $(UPROGS) $(D_PROGS)
+fs.img: mkfs $(UPROGS) $(D_PROGS)
+	cd $(BIN); ./mkfs fs.img ../README $(UPROGS) $(D_PROGS) ../passwd_file
 
 -include *.d
 

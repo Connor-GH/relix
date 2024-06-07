@@ -152,6 +152,18 @@ hlt(void)
   asm volatile("hlt");
 }
 
+struct tsc {
+  uint eax;
+  uint edx;
+};
+static inline struct tsc
+rdtsc(void)
+{
+  uint edx, eax;
+  asm volatile("rdtsc" : : "a"(eax), "d"(edx));
+  struct tsc t = {eax, edx};
+  return t;
+}
 //PAGEBREAK: 36
 // Layout of the trap frame built on the stack by the
 // hardware and by trapasm.S, and passed to trap().

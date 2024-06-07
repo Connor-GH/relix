@@ -128,6 +128,10 @@ extern int
 sys_chmod(void);
 extern int
 sys_reboot(void);
+extern int
+sys_echoout(void);
+extern int
+sys_setuid(void);
 
 static int (*syscalls[])(void) = {
   [SYS_fork] = sys_fork,   [SYS_exit] = sys_exit,	  [SYS_wait] = sys_wait,
@@ -138,6 +142,7 @@ static int (*syscalls[])(void) = {
   [SYS_write] = sys_write, [SYS_mknod] = sys_mknod,	  [SYS_unlink] = sys_unlink,
   [SYS_link] = sys_link,   [SYS_mkdir] = sys_mkdir,	  [SYS_close] = sys_close,
   [SYS_date] = sys_date,   [SYS_chmod] = sys_chmod, [SYS_reboot] = sys_reboot,
+  [SYS_echoout] = sys_echoout, [SYS_setuid] = sys_setuid,
 };
 
 void

@@ -12,6 +12,8 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
+
+extern int echo_out;
 // bio.c
 void
 binit(void);

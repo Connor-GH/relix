@@ -30,6 +30,8 @@ int
 kill(int);
 int
 exec(char *, char **);
+// our exec() is technically execv()
+#define execv(x, y) (exec(x, y))
 int
 open(const char *, int);
 int
@@ -60,6 +62,10 @@ int
 chmod(char *, int mode);
 void
 reboot(int cmd);
+void
+echoout(int answer);
+void
+setuid(int);
 
 // ulib.c
 int

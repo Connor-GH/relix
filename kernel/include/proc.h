@@ -5,6 +5,11 @@
 #include "../drivers/mmu.h"
 #include "../include/file.h"
 
+struct cred {
+  uint uid;
+  uint gids[MAXGIDS];
+};
+
 struct cpu {
   uchar apicid; // Local APIC ID
   struct context *scheduler; // swtch() here to enter scheduler
@@ -54,6 +59,7 @@ struct proc {
   int killed; // If non-zero, have been killed
   struct file *ofile[NOFILE]; // Open files
   struct inode *cwd; // Current directory
+  struct cred *cred; // user's credentials for the process.
   char name[16]; // Process name (debugging)
 };
 

@@ -479,3 +479,16 @@ sys_chmod(void)
 	end_op();
 	return 0;
 }
+
+int
+sys_echoout(void)
+{
+  int answer;
+  if (argint(0, &answer) < 0) {
+    end_op();
+    return -1;
+  }
+  echo_out = answer;
+  end_op();
+  return 0;
+}

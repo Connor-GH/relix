@@ -25,3 +25,5 @@
 #define SYS_date 22
 #define SYS_chmod 23
 #define SYS_reboot 24
+#define SYS_echoout 25
+#define SYS_setuid 26

@@ -90,8 +90,11 @@ IVARS = -I. -Iinclude/
 # directories
 TOOLSDIR = tools
 BIN = bin
+SYSROOT = sysroot
 
 default:
+	mkdir -p $(BIN)
+	mkdir -p $(SYSROOT)/{bin,etc}
 	$(MAKE) bootblock
 	$(MAKE) $(KERNEL_OBJS)
 	$(MAKE) entry
@@ -112,14 +115,8 @@ include kernel/Makefile
 
 
 
-#_forktest: $(BIN)/forktest.o $(ULIB)
-#	# forktest has less library code linked in - needs to be small
-#	# in order to be able to max out the proc table.
-#	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o $(BIN)/_forktest $(BIN)/forktest.o $(BIN)/ulib.o \
-#		$(BIN)/usys.o $(BIN)/printf.o
-
 mkfs: $(TOOLSDIR)/mkfs.c
-	$(CC) -Werror -Wall -o $(BIN)/mkfs $(TOOLSDIR)/mkfs.c $(KERNEL_INC)
+	$(CC) -Werror -Wall -o $(SYSROOT)/mkfs $(TOOLSDIR)/mkfs.c $(KERNEL_INC)
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
 # that disk image changes after first build are persistent until clean.  More
@@ -129,13 +126,17 @@ mkfs: $(TOOLSDIR)/mkfs.c
 
 
 fs.img: mkfs $(UPROGS) $(D_PROGS)
-	cd $(BIN); ./mkfs fs.img ../README ../etc/passwd  $(shell for x in $(UPROGS); do printf " ../bin/$$x "; done) \
-		$(shell for x in $(D_PROGS); do printf " ../bin/$$x "; done)
+	cp passwd $(SYSROOT)/etc/passwd
+	cd $(SYSROOT); ./mkfs ../bin/fs.img README etc/passwd  $(shell for x in $(UPROGS); do printf " bin/$$x "; done) \
+		$(shell for x in $(D_PROGS); do printf " bin/$$x "; done)
 
 -include *.d
 
 clean:
 	rm -f $(BIN)/*.o $(BIN)/*.sym $(BIN)/bootblock $(BIN)/entryother \
+	$(SYSROOT)/bin/* \
+	$(SYSROOT)/etc/* \
+	$(SYSROOT)/mkfs \
 	$(BIN)/initcode \
 	$(BIN)/initcode.out \
 	$(BIN)/kernel \

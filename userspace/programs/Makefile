@@ -9,4 +9,4 @@ $(BIN)/%.o: $(UPROGS_DIR)/%.c
 	$(OBJCOPY) --remove-section .note.gnu.property --set-section-flags .text=alloc,readonly $@
 
 _%: $(BIN)/%.o $(ULIB_OBJ) $(ULIB_ASM_OBJ)
-	$(CC) $(CFLAGS) $(UCFLAGS) -Wl,-z,noexecstack -Wl,-O1 -Wl,-N,-e,main -Wl,-Ttext,0 -o $(BIN)/$@ $^
+	$(CC) $(CFLAGS) $(UCFLAGS) -Wl,-z,noexecstack -Wl,-O1 -Wl,-N,-e,main -Wl,-Ttext,0 -o $(SYSROOT)/bin/$@ $^

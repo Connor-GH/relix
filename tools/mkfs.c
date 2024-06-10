@@ -78,14 +78,51 @@ xint(uint x)
 	return y;
 }
 
+uint rootino;
+uint etcino;
+uint binino;
+
+
+static void
+make_file(struct dirent de, uint currentino,
+const char *name, uint parentino)
+{
+	bzero(&de, sizeof(de));
+	de.inum = xshort(currentino);
+	strcpy(de.name, name);
+	iappend(parentino == 0 ? currentino : parentino, &de, sizeof(de));
+}
+
+static uint
+make_dir(uint parentino, const char *name)
+{
+	struct dirent de;
+	uint currentino = ialloc(T_DIR);
+
+  // creates dir
+  make_file(de, currentino, name, parentino);
+  make_file(de, currentino, ".", 0);
+  make_file(de, currentino, "..", 0);
+
+  return currentino;
+}
+
+static void
+makedirs(void)
+{
+	binino = make_dir(rootino, "bin");
+	etcino = make_dir(rootino, "etc");
+}
+
 int
 main(int argc, char *argv[])
 {
 	int i, cc, fd;
-	uint rootino, inum, off;
+	uint ino, inum, off;
 	struct dirent de;
 	char buf[BSIZE];
 	struct dinode din;
+	char *name;
 
 	static_assert(sizeof(int) == 4, "Integers must be 4 bytes!");
 
@@ -129,6 +166,7 @@ main(int argc, char *argv[])
 	memmove(buf, &sb, sizeof(sb));
 	wsect(1, buf);
 
+	// make root dir
 	rootino = ialloc(T_DIR);
 	assert(rootino == ROOTINO);
 
@@ -142,6 +180,8 @@ main(int argc, char *argv[])
 	strcpy(de.name, "..");
 	iappend(rootino, &de, sizeof(de));
 
+	makedirs();
+
 	for (i = 2; i < argc; i++) {
 		//assert(index(argv[i], '/') == 0);
 
@@ -154,19 +194,40 @@ main(int argc, char *argv[])
 		// The binaries are named _rm, _cat, etc. to keep the
 		// build operating system from trying to execute them
 		// in place of system binaries like rm and cat.
-		if (argv[i][0] == '_')
-			++argv[i];
-		// skip over directories like "../README" (but not "../docs/readme")
+    // ../bin/_rm => ../bin/rm
+		int k = 0;
+    char *str = malloc(FILENAME_MAX);
+    for (int j = 0; j < strlen(argv[i]); j++) {
+      if (argv[i][j] != '_') {
+        str[k] = argv[i][j];
+        k++;
+      }
+    }
+    // add NULL terminator
+    str[k] = '\0';
+    if (k > 0)
+      strcpy(argv[i], str);
+    free(str);
+		// "../README" => "README"
+		// "../bin/rm" => bin/rm
 		while (*argv[i] == '.' || *argv[i] == '/') {
 			++argv[i];
 		}
+    if (strncmp("bin/", argv[i], 4) == 0) {
+			name = (argv[i] += 4);
+			ino = binino;
+		} else if (strncmp("etc/", argv[i], 4) == 0) {
+			name = (argv[i] += 4);
+			ino = etcino;
+		} else {
+			name = argv[i];
+		  ino = rootino;
+		}
+    strncpy(de.name, name, DIRSIZ);
 
 		inum = ialloc(T_FILE);
 
-		bzero(&de, sizeof(de));
-		de.inum = xshort(inum);
-		strncpy(de.name, argv[i], DIRSIZ);
-		iappend(rootino, &de, sizeof(de));
+    make_file(de, inum, name, ino);
 
 		while ((cc = read(fd, buf, sizeof(buf))) > 0)
 			iappend(inum, buf, cc);
@@ -250,12 +311,12 @@ ialloc(ushort type)
 	din.nlink = xshort(1);
 	din.size = xint(0);
 	din.mode = xint(TYPE_TO_MODE(type));
-  din.uid = xshort(DEFAULT_UID);
-  din.gid = xshort(DEFAULT_GID);
-  din.atime = xint(time(NULL));
-  din.ctime = xint(time(NULL));
-  din.mtime = xint(time(NULL));
-  winode(inum, &din);
+	din.uid = xshort(DEFAULT_UID);
+	din.gid = xshort(DEFAULT_GID);
+	din.atime = xint(time(NULL));
+	din.ctime = xint(time(NULL));
+	din.mtime = xint(time(NULL));
+	winode(inum, &din);
 	return inum;
 }
 

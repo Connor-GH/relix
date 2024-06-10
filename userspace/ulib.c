@@ -18,6 +18,17 @@ strcpy(char *s, const char *t)
 	return os;
 }
 
+char *
+strcat(char *dst, const char *src)
+{
+  int start = strlen(dst);
+  int j = 0;
+  for (int i = start; i < start + strlen(src) + 1; i++, j++) {
+    dst[i] = src[j];
+  }
+  return dst;
+}
+
 int
 strcmp(const char *p, const char *q)
 {

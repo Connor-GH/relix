@@ -78,6 +78,8 @@ void *
 memmove(void *, const void *, int);
 char *
 strchr(const char *, char c);
+char *
+strcat(char *dst, const char *src);
 int
 strcmp(const char *, const char *);
 void

@@ -5,7 +5,7 @@
 
 int usertouid(char *user) {
   int fd;
-  if ((fd = open("passwd_file", 0)) < 0) {
+  if ((fd = open("/etc/passwd", 0)) < 0) {
     fprintf(stderr, "cannot open passwd_file\n");
     return -1;
   }
@@ -39,7 +39,7 @@ void
 usertopasswd(char *user, char *put_in)
 {
   int fd;
-  if ((fd = open("passwd_file", 0)) < 0) {
+  if ((fd = open("/etc/passwd", 0)) < 0) {
     fprintf(stderr, "cannot open passwd_file\n");
     put_in = NULL;
     return;

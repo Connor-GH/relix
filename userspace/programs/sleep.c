@@ -16,7 +16,6 @@ static unsigned long my_atoi(char *s) {
 }
 
 int main(int argc, char **argv) {
-  fprintf(stderr, "Sleeping for 1 second\n");
   if (argc == 1) {
     fprintf(stderr, "%s: [file]\n", argv[0]);
     exit();

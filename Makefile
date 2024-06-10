@@ -99,10 +99,11 @@ default:
 	$(MAKE) initcode
 	$(MAKE) entry
 	$(MAKE) $(ULIB_OBJ)
-	$(MAKE) objcopy --remove-section .note.gnu.property $(BIN)/ulib.o
+	objcopy --remove-section .note.gnu.property $(BIN)/ulib.o
 	$(MAKE) $(ULIB_ASM_OBJ)
 	$(MAKE) $(UPROGS)
 	$(MAKE) $(D_PROGS)
+	$(MAKE) $(D_BINDINGS_OBJ)
 	$(MAKE) fs.img
 	$(MAKE) xv6.img
 
@@ -128,7 +129,8 @@ mkfs: $(TOOLSDIR)/mkfs.c
 
 
 fs.img: mkfs $(UPROGS) $(D_PROGS)
-	cd $(BIN); ./mkfs fs.img ../README $(UPROGS) $(D_PROGS) ../passwd_file
+	cd $(BIN); ./mkfs fs.img ../README ../etc/passwd  $(shell for x in $(UPROGS); do printf " ../bin/$$x "; done) \
+		$(shell for x in $(D_PROGS); do printf " ../bin/$$x "; done)
 
 -include *.d
 

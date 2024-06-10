@@ -11,3 +11,5 @@ DFLAGS ?= -betterC -O -m32 $(EXTRA_DFLAGS)
 $(BIN)/%.o: $(D_DIR)/%.d
 	$(DC) $(DFLAGS) -c -of$@ $^
 	objcopy --remove-section .note.gnu.property $@
+
+include $(D_DIR)/bindings/Makefile

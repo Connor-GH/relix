@@ -3,7 +3,7 @@
 #include "../include/user.h"
 #include "../../include/fcntl.h"
 
-char *argv[] = { "login", 0 };
+char *argv[] = { "/bin/login", 0 };
 
 int
 main(void)
@@ -25,7 +25,7 @@ main(void)
 			exit();
 		}
 		if (pid == 0) {
-			exec("login", argv);
+			exec("/bin/login", argv);
 			fprintf(1, "init: exec() login service failed\n");
 			exit();
 		}

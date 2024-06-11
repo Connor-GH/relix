@@ -84,9 +84,10 @@ uint binino;
 
 
 static void
-make_file(struct dirent de, uint currentino,
+make_file(uint currentino,
 const char *name, uint parentino)
 {
+	struct dirent de;
 	bzero(&de, sizeof(de));
 	de.inum = xshort(currentino);
 	strcpy(de.name, name);
@@ -96,13 +97,12 @@ const char *name, uint parentino)
 static uint
 make_dir(uint parentino, const char *name)
 {
-	struct dirent de;
 	uint currentino = ialloc(T_DIR);
 
   // creates dir
-  make_file(de, currentino, name, parentino);
-  make_file(de, currentino, ".", 0);
-  make_file(de, currentino, "..", 0);
+  make_file(currentino, name, parentino);
+  make_file(currentino, ".", 0);
+  make_file(currentino, "..", 0);
 
   return currentino;
 }
@@ -227,7 +227,7 @@ main(int argc, char *argv[])
 
 		inum = ialloc(T_FILE);
 
-    make_file(de, inum, name, ino);
+    make_file(inum, name, ino);
 
 		while ((cc = read(fd, buf, sizeof(buf))) > 0)
 			iappend(inum, buf, cc);

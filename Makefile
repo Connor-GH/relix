@@ -126,11 +126,8 @@ mkfs: $(TOOLSDIR)/mkfs.c
 
 
 fs.img: mkfs $(UPROGS) $(D_PROGS)
-	cp passwd $(SYSROOT)/etc/passwd
 	cd $(SYSROOT); ./mkfs ../bin/fs.img README etc/passwd  $(shell for x in $(UPROGS); do printf " bin/$$x "; done) \
 		$(shell for x in $(D_PROGS); do printf " bin/$$x "; done)
-
--include *.d
 
 clean:
 	rm -f $(BIN)/*.o $(BIN)/*.sym $(BIN)/bootblock $(BIN)/entryother \

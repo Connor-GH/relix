@@ -132,7 +132,6 @@ fs.img: mkfs $(UPROGS) $(D_PROGS)
 clean:
 	rm -f $(BIN)/*.o $(BIN)/*.sym $(BIN)/bootblock $(BIN)/entryother \
 	$(SYSROOT)/bin/* \
-	$(SYSROOT)/etc/* \
 	$(SYSROOT)/mkfs \
 	$(BIN)/initcode \
 	$(BIN)/initcode.out \

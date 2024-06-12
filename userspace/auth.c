@@ -2,6 +2,7 @@
 #include "include/auth.h"
 #include "../include/stdio.h"
 #include "../include/stdlib.h"
+#include "../include/assert.h"
 
 int usertouid(char *user) {
   int fd;
@@ -35,23 +36,22 @@ int usertouid(char *user) {
   return -1;
 }
 
-void
-usertopasswd(char *user, char *put_in)
+char *
+userto_allocated_passwd(char *user)
 {
   int fd;
+  char *put_in = malloc(512);
   if ((fd = open("/etc/passwd", 0)) < 0) {
     fprintf(stderr, "cannot open passwd_file\n");
-    put_in = NULL;
-    return;
+    return NULL;
   }
-  char buf[512];
-  char info[512];
+  char buf[512] = {0};
+  char info[512] = {0};
   int n;
   if ((n = read(fd, buf, sizeof buf)) <= 0) {
     fprintf(stderr, "cannot read from passwd_file\n");
-    put_in = NULL;
     close(fd);
-    return;
+    return NULL;
   }
   int i = 0;
   int j = 0;
@@ -68,9 +68,15 @@ usertopasswd(char *user, char *put_in)
   // pass
   while (buf[i] != ':' && buf[i] != '\0' && buf[i] != '\n') {
     info[j] = buf[i];
+    fprintf(stderr, "info: %c\n", info[j]);
     i++;
     j++;
   }
+  info[j] = '\0';
+  fprintf(stderr, "info: %s\n", info);
   close(fd);
+  assert(info[0] != '\0');
   strcpy(put_in, info);
+  assert(strcmp(put_in, info) == 0);
+  return put_in;
 }

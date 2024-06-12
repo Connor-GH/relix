@@ -10,7 +10,7 @@
 
 char buf[8192];
 char name[3];
-char *echoargv[] = { "echo", "ALL", "TESTS", "PASSED", 0 };
+char *echoargv[] = { "/bin/echo", "ALL", "TESTS", "PASSED", 0 };
 
 // does chdir() call iput(p->cwd) in a transaction?
 void
@@ -120,7 +120,7 @@ opentest(void)
   int fd;
 
   fprintf(stdout, "open test\n");
-  fd = open("echo", 0);
+  fd = open("/bin/echo", 0);
   if (fd < 0) {
 	fprintf(stdout, "open echo failed!\n");
 	exit();
@@ -293,7 +293,7 @@ void
 exectest(void)
 {
   fprintf(stdout, "exec test\n");
-  if (exec("echo", echoargv) < 0) {
+  if (exec("/bin/echo", echoargv) < 0) {
 	fprintf(stdout, "exec echo failed\n");
 	exit();
   }
@@ -1730,7 +1730,7 @@ void
 argptest()
 {
   int fd;
-  fd = open("init", O_RDONLY);
+  fd = open("/bin/init", O_RDONLY);
   if (fd < 0) {
 	fprintf(2, "open failed\n");
 	exit();

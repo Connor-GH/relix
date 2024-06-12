@@ -7,7 +7,7 @@
 int
 main(int argc, char **argv)
 {
-  struct cred *cred;
+  struct cred cred;
   char username[MAX_USERNAME];
   char passwd[MAX_PASSWD];
   int uid = -1;
@@ -30,17 +30,19 @@ try_again:
       goto try_again;
     }
   }
-  char *actual_password;
-  usertopasswd(username, actual_password);
+  // usertopasswd allocates memory
+  char *actual_password = userto_allocated_passwd(username);
   if (actual_password == NULL) {
+    fprintf(stderr, "actual_password is NULL\n");
     exit();
   }
   if (strcmp(passwd, actual_password) == 0) {
     fprintf(stderr, "Password is correct!\n");
-    cred->uid = uid;
-    cred->gids[0] = uid;
+    free(actual_password);
+    cred.uid = uid;
+    cred.gids[0] = uid;
     setuid(uid);
-    char *sh_argv[] = {"/bin/sh", NULL};
+    char *sh_argv[] = {"/bin/sh", 0};
     execv("/bin/sh", sh_argv);
     printf("execv sh failed\n");
     exit();

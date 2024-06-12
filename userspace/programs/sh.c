@@ -87,7 +87,9 @@ runcmd(struct cmd *cmd)
 		if (ecmd->argv[0] == 0)
 			exit();
 		exec(ecmd->argv[0], ecmd->argv);
-		for (int i = 0; i < 3; i++) {
+
+		// try PATH if local directory fails
+    for (int i = 0; i < 3; i++) {
       strcpy(str, path[i]);
       strcat(str, ecmd->argv[0]);
       exec(str, ecmd->argv);

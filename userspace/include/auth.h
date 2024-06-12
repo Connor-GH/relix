@@ -2,5 +2,6 @@
 
 int
 usertouid(char *user);
-void
-usertopasswd(char *user, char *put_in);
+// returns allocated pointer that needs to be freed.
+char *
+userto_allocated_passwd(char *user);

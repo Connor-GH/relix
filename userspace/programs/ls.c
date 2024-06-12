@@ -49,7 +49,7 @@ to_human_time(uint time) {
 }
 
 static char *
-fmtname(char *path)
+fmtname(char *path, bool pflag)
 {
 	static char buf[DIRSIZ + 1];
 	char *p;
@@ -63,8 +63,16 @@ fmtname(char *path)
 	if (strlen(p) >= DIRSIZ)
 		return p;
 	memmove(buf, p, strlen(p));
-	memset(buf + strlen(p), ' ', DIRSIZ - strlen(p));
+  if (pflag)
+    memset(buf + strlen(p), '/', 1);
+	memset(buf + strlen(p) + pflag, ' ', DIRSIZ - strlen(p));
 	return buf;
+}
+
+static char *
+fmtname_file(char *path)
+{
+return fmtname(path, false);
 }
 
 static char *
@@ -73,7 +81,7 @@ mode_to_perm(uint mode, char *ret /*[11]*/)
 	ret[0] = (mode & S_IFREG) ? '-' :
 					 S_ISDIR(mode)		? 'd' :
 					 S_ISBLK(mode)		? 'c' :
-															'-';
+															'?';
 	ret[1] = mode & S_IRUSR ? 'r' : '-';
 	ret[2] = mode & S_IWUSR ? 'w' : '-';
 	ret[3] = mode & S_IXUSR ? 'x' : '-';
@@ -88,7 +96,7 @@ mode_to_perm(uint mode, char *ret /*[11]*/)
 }
 // this ls(1) tries to follow __minimal__ POSIX stuff.
 void
-ls(char *path, bool lflag, bool iflag)
+ls(char *path, bool lflag, bool iflag, bool pflag)
 {
 	char buf[512], *p;
 	int fd;
@@ -106,8 +114,8 @@ ls(char *path, bool lflag, bool iflag)
 		return;
 	}
 
-	switch (st.type) {
-	case T_FILE:
+	switch (st.st_mode & S_IFMT) {
+	case S_IFREG:
 		if (lflag) {
 			// inodes
 			if (iflag)
@@ -118,17 +126,17 @@ ls(char *path, bool lflag, bool iflag)
       struct ls_time lt = to_human_time(st.st_mtime);
       fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr,
               lt.mo, lt.day, lt.hr, lt.min, lt.sec);
-      fprintf(stdout, "%s ", fmtname(path));
-			if (st.st_nlink > 1) {
+      fprintf(stdout, "%s ", fmtname_file(path));
+        if (st.st_nlink > 1) {
 				fprintf(stdout, "-> %s", disambiguate_symlink(st.st_ino, path));
 			}
 		} else {
-			fprintf(stdout, "%s", fmtname(path));
+			fprintf(stdout, "%s", fmtname_file(path));
 		}
 		fprintf(stdout, "\n");
 		break;
 
-	case T_DIR:
+	case S_IFDIR: {
 		if (strlen(path) + 1 + DIRSIZ + 1 > sizeof buf) {
 			fprintf(stdout, "ls: path too long\n");
 			break;
@@ -155,14 +163,15 @@ ls(char *path, bool lflag, bool iflag)
         struct ls_time lt = to_human_time(st.st_mtime);
         fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr,
               lt.mo, lt.day, lt.hr, lt.min, lt.sec);
-        fprintf(stdout, "%s ", fmtname(buf));
+				fprintf(stdout, "%s", fmtname(buf, pflag && S_ISDIR(st.st_mode)));
 				if (st.st_nlink > 1)
 					fprintf(stdout, "-> %s", "TODO");
 				fprintf(stdout, "\n");
 			} else {
-				fprintf(stdout, "%s", fmtname(buf));
+				fprintf(stdout, "%s", fmtname(buf, pflag && S_ISDIR(st.st_mode)));
 			}
 		}
+  }
 		break;
 	default:
 		break;
@@ -177,38 +186,43 @@ main(int argc, char *argv[])
 	int i;
 	bool lflag = false;
 	bool iflag = false;
+  bool pflag = false;
 	// index for filenames or directory names
 	int arg_idx = 1;
 
 	if (argc < 2) {
-		ls(".", lflag, iflag);
+		ls(".", lflag, iflag, pflag);
 		exit();
 	}
 	for (int j = 1; j < argc; j++) {
 		if (argv[j][0] == '-' && argv[j][1] != '\0') {
-			switch (argv[j][1]) {
-			case 'l':
-				lflag = true;
-				break;
-			case 'i':
-				iflag = true;
-				break;
-			default:
-				break;
-			}
+			for (int k = 1; k < strlen(argv[j]); k++) {
+        switch (argv[j][k]) {
+        case 'l':
+          lflag = true;
+          break;
+        case 'i':
+          iflag = true;
+          break;
+        case 'p':
+          pflag = true;
+        default:
+          break;
+        }
+      }
 			arg_idx++;
 		} else {
 			break;
 		}
 	}
 	if (arg_idx == argc) {
-		ls(".", lflag, iflag);
+		ls(".", lflag, iflag, pflag);
 		exit();
 	}
 
 	for (i = 1; i < argc; i++) {
 		if (stat(argv[i], NULL) >= 0)
-			ls(argv[i], lflag, iflag);
+			ls(argv[i], lflag, iflag, pflag);
 	}
 	exit();
 }

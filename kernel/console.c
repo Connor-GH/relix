@@ -187,9 +187,10 @@ cgaputc(int c, uint8_t fore, uint8_t back)
 	outb(CRTPORT, 15);
 	pos |= inb(CRTPORT + 1);
 
-	if (c == '\n')
-		pos += 80 - pos % 80;
-	else if (c == BACKSPACE && echo_out == 1) {
+	if (c == '\n') {
+    if (pos % 80 != 0)
+      pos += 80 - pos % 80;
+  } else if (c == BACKSPACE && echo_out == 1) {
 		if (pos > 0)
 			--pos;
 	} else if (echo_out == 1) {

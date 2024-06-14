@@ -1,8 +1,8 @@
-#include "include/user.h"
-#include "include/auth.h"
-#include "../include/stdio.h"
-#include "../include/stdlib.h"
-#include "../include/assert.h"
+#include <user.h>
+#include <auth.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <stdio.h>
 
 int usertouid(char *user) {
   int fd;

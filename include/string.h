@@ -1,5 +1,5 @@
 #pragma once
-#include "types.h"
+#include <types.h>
 void *
 memset(void *dst, int c, uint n);
 int

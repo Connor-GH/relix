@@ -2,10 +2,10 @@
 // File descriptors
 //
 
-#include "../include/defs.h"
-#include "include/param.h"
-#include "include/spinlock.h"
-#include "include/file.h"
+#include <defs.h>
+#include "param.h"
+#include "spinlock.h"
+#include "file.h"
 
 struct devsw devsw[NDEV];
 struct {

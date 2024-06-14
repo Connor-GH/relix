@@ -4,7 +4,7 @@
 #define T_DEV 3 // Device
 
 #ifndef USE_HOST_STAT
-#include "types.h"
+#include <types.h>
 /* fields do not begin with "st_" if they are nonstandard. */
 struct stat {
   short type; // Type of file

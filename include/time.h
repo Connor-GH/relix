@@ -1,6 +1,6 @@
 #pragma once
-#include "types.h"
-#include "date.h"
+#include <types.h>
+#include <date.h>
 typedef uint time_t;
 
 time_t

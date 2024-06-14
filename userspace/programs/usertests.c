@@ -1,12 +1,12 @@
-#include "../../kernel/include/param.h"
-#include "../../include/types.h"
-#include "../include/user.h"
-#include "../../kernel/include/fs.h"
-#include "../../include/fcntl.h"
-#include "../../include/stdio.h"
-#include "../../kernel/include/syscall.h"
-#include "../../kernel/include/traps.h"
-#include "../../kernel/drivers/memlayout.h"
+#include <kernel/include/param.h>
+#include <types.h>
+#include <user.h>
+#include <kernel/include/fs.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <kernel/include/syscall.h>
+#include <kernel/include/traps.h>
+#include <kernel/drivers/memlayout.h>
 
 char buf[8192];
 char name[3];

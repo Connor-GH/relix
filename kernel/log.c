@@ -1,8 +1,8 @@
-#include "../include/defs.h"
-#include "include/param.h"
-#include "include/spinlock.h"
-#include "include/fs.h"
-#include "../include/buf.h"
+#include <defs.h>
+#include "buf.h"
+#include "param.h"
+#include "spinlock.h"
+#include "fs.h"
 
 // Simple logging that allows concurrent FS system calls.
 //

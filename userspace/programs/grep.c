@@ -1,8 +1,8 @@
 // Simple grep.  Only supports ^ . * $ operators.
 
-#include "../../include/types.h"
-#include "../../include/stat.h"
-#include "../include/user.h"
+#include <types.h>
+#include <stat.h>
+#include <user.h>
 
 char buf[1024];
 int

@@ -1,5 +1,5 @@
-#include "../include/user.h"
-#include "../../include/stdio.h"
+#include <user.h>
+#include <stdio.h>
 
 int main(int argc, char **argv) {
   if (argc < 2) {

@@ -1,12 +1,12 @@
-#include "../include/types.h"
-#include "include/param.h"
+#include <types.h>
+#include <stat.h>
+#include <defs.h>
+#include "param.h"
 #include "drivers/memlayout.h"
 #include "drivers/mmu.h"
-#include "include/proc.h"
-#include "../include/defs.h"
-#include "include/x86.h"
+#include "proc.h"
+#include "x86.h"
 #include "boot/elf.h"
-#include "../include/stat.h"
 
 int
 exec(char *path, char **argv)

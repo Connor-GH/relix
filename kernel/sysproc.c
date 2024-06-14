@@ -1,10 +1,10 @@
-#include "../include/types.h"
-#include "../include/defs.h"
-#include "../include/date.h"
-#include "include/x86.h"
+#include <types.h>
+#include <defs.h>
+#include <date.h>
+#include <reboot.h>
 #include "drivers/memlayout.h"
-#include "include/proc.h"
-#include "../include/reboot.h"
+#include "x86.h"
+#include "proc.h"
 
 int
 sys_fork(void)

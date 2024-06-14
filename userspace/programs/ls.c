@@ -1,9 +1,9 @@
-#include "../../include/stat.h"
-#include "../include/user.h"
-#include "../../kernel/include/fs.h"
-#include "../../include/stdbool.h"
-#include "../../include/stdlib.h"
-#include "../../include/stdio.h"
+#include <stat.h>
+#include <user.h>
+#include <kernel/include/fs.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 static char *
 disambiguate_symlink(uint inode, char *path)

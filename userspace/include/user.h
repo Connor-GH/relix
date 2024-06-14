@@ -1,15 +1,13 @@
 #pragma once
 
 typedef unsigned int uint;
-#include "../../include/stat.h"
-#include "../../include/stdio.h"
-#include "../../include/dirent.h"
-#include "../../include/date.h"
-#include "../../include/fcntl.h"
-#include "../../include/stdarg.h"
-#include "../../include/reboot.h"
-
-#include <stdint.h> // TODO don't use builtin headers
+#include <stat.h>
+#include <stdio.h>
+#include <dirent.h>
+#include <date.h>
+#include <fcntl.h>
+#include <stdarg.h>
+#include <reboot.h>
 
 // system calls
 int

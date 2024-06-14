@@ -1,8 +1,8 @@
-#include "../include/types.h"
-#include "../include/defs.h"
-#include "include/proc.h"
-#include "include/spinlock.h"
-#include "include/file.h"
+#include <types.h>
+#include <defs.h>
+#include "proc.h"
+#include "spinlock.h"
+#include "file.h"
 
 #define PIPESIZE 512
 

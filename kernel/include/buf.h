@@ -1,8 +1,7 @@
 #pragma once
-#include "types.h"
-#include "../kernel/include/sleeplock.h"
-#include "../kernel/include/param.h"
-#include "../kernel/include/fs.h"
+#include <types.h>
+#include "sleeplock.h"
+#include "fs.h"
 struct buf {
   int flags;
   uint dev;

@@ -1,11 +1,11 @@
-#include "../include/types.h"
-#include "../include/stat.h"
-#include "../include/fcntl.h"
-#include "../include/assert.h"
-#include "../include/stdio.h"
-#include "../include/stdlib.h"
-#include "include/user.h"
-#include "../kernel/include/x86.h"
+#include <types.h>
+#include <stat.h>
+#include <fcntl.h>
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <user.h>
+#include <kernel/include/x86.h>
 
 char *
 strcpy(char *s, const char *t)

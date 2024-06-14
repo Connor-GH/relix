@@ -64,7 +64,7 @@ endif
 
 CFLAGS = -fno-pic -static -fno-builtin -ffreestanding \
 				 -fno-strict-aliasing -nostdlib -O2 -Wall -ggdb -m32 -Werror -fno-omit-frame-pointer \
-				 -fno-builtin $(ARCHNOFLAGS) $(WNOFLAGS)
+				 -nostdinc -fno-builtin $(ARCHNOFLAGS) $(WNOFLAGS)
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 ASFLAGS = -m32 -gdwarf-2 -Wa,-divide --mx86-used-note=no
 # FreeBSD ld wants ``elf_i386_fbsd''
@@ -86,7 +86,7 @@ endif
 
 
 
-IVARS = -I. -Iinclude/
+IVARS = -Iinclude/ -I.
 # directories
 TOOLSDIR = tools
 BIN = bin
@@ -116,7 +116,8 @@ include kernel/Makefile
 
 
 mkfs: $(TOOLSDIR)/mkfs.c
-	$(CC) -Werror -Wall -o $(SYSROOT)/mkfs $(TOOLSDIR)/mkfs.c $(KERNEL_INC)
+	$(CC) -Werror -Wall -o $(SYSROOT)/mkfs $(TOOLSDIR)/mkfs.c \
+		-I$(KERNELDIR)/include -I$(KERNELDIR)/drivers/include -I$(KERNELDIR)/drivers -I.
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
 # that disk image changes after first build are persistent until clean.  More

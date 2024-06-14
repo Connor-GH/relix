@@ -1,5 +1,5 @@
-#include "../include/user.h"
-#include "../../include/stdio.h"
+#include <user.h>
+#include <stdio.h>
 
 char buf[512];
 

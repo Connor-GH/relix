@@ -1,5 +1,5 @@
-#include "../kernel/include/syscall.h"
-#include "../kernel/include/traps.h"
+#include "kernel/include/syscall.h"
+#include "kernel/include/traps.h"
 
 #define SYSCALL(name) \
   .globl name; \

@@ -1,9 +1,9 @@
 // Sleeping locks
 
-#include "../include/defs.h"
+#include <defs.h>
 #include "drivers/memlayout.h"
-#include "include/proc.h"
-#include "include/sleeplock.h"
+#include "proc.h"
+#include "sleeplock.h"
 
 void
 initsleeplock(struct sleeplock *lk, char *name)

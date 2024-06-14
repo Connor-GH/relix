@@ -2,15 +2,15 @@
 // Input is from the keyboard or serial port.
 // Output is written to the screen and serial port.
 
-#include "../include/types.h"
-#include "../include/defs.h"
-#include "include/traps.h"
-#include "include/spinlock.h"
-#include "include/file.h"
+#include <types.h>
+#include <defs.h>
+#include <stdint.h>
+#include "proc.h"
+#include "x86.h"
+#include "traps.h"
+#include "spinlock.h"
+#include "file.h"
 #include "drivers/memlayout.h"
-#include "include/proc.h"
-#include "include/x86.h"
-#include <stdint.h> // TODO don't use builtin header
 #include "drivers/conscolor.h"
 
 static void

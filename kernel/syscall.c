@@ -1,9 +1,9 @@
-#include "../include/types.h"
-#include "../include/defs.h"
+#include <types.h>
+#include <defs.h>
 #include "drivers/memlayout.h"
-#include "include/proc.h"
-#include "include/x86.h"
-#include "include/syscall.h"
+#include "proc.h"
+#include "x86.h"
+#include "syscall.h"
 
 // User code makes a system call with INT T_SYSCALL.
 // System call number in %eax.

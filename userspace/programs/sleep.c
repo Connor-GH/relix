@@ -1,5 +1,5 @@
-#include "../../include/stdio.h"
-#include "../include/user.h"
+#include <stdio.h>
+#include <user.h>
 
 
 // int to char for numbers

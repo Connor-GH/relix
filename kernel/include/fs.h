@@ -1,5 +1,9 @@
 #pragma once
-#include "../../include/types.h"
+#ifndef USE_HOST_STAT
+#include <types.h>
+#else
+#include <../../include/types.h>
+#endif
 // On-disk file system format.
 // Both the kernel and user programs use this header file.
 

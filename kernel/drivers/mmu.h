@@ -1,6 +1,6 @@
 #pragma once
 #ifndef __ASSEMBLER__
-#include "../../include/types.h"
+#include <types.h>
 #endif
 // This file contains definitions for the
 // x86 memory management unit (MMU).

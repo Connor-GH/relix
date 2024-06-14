@@ -1,10 +1,10 @@
-#include "../include/types.h"
-#include "../include/defs.h"
-#include "include/param.h"
+#include <types.h>
+#include <defs.h>
 #include "drivers/memlayout.h"
 #include "drivers/mmu.h"
-#include "include/proc.h"
-#include "include/x86.h"
+#include "param.h"
+#include "proc.h"
+#include "x86.h"
 
 static void
 startothers(void);

@@ -7,8 +7,8 @@
 //    for (i = 0; i < 40000; i++)
 //      asm volatile("");
 
-#include "../include/user.h"
-#include "../../include/fcntl.h"
+#include <user.h>
+#include <fcntl.h>
 
 int
 main(int argc, char *argv[])

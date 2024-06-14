@@ -1,4 +1,4 @@
-#include "include/umath.h"
+#include <umath.h>
 
 unsigned int ui_pow(unsigned int base, unsigned int power) {
   if (power == 0) {

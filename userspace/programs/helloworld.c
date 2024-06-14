@@ -1,4 +1,4 @@
-#include "../include/user.h" /* printf */
+#include <user.h> /* printf */
 
 int
 main(void)

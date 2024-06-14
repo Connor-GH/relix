@@ -2,13 +2,13 @@
 // Search memory for MP description structures.
 // http://developer.intel.com/design/pentium/datashts/24201606.pdf
 
-#include "../include/types.h"
-#include "../include/defs.h"
-#include "include/param.h"
+#include <types.h>
+#include <defs.h>
 #include "drivers/memlayout.h"
-#include "include/mp.h"
-#include "include/x86.h"
-#include "include/proc.h"
+#include "param.h"
+#include "mp.h"
+#include "x86.h"
+#include "proc.h"
 
 struct cpu cpus[NCPU];
 int ncpu;

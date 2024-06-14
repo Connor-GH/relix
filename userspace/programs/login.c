@@ -1,8 +1,8 @@
-#include "../../kernel/include/proc.h"
-#include "../include/user.h"
-#include "../include/auth.h"
-#include "../../kernel/include/param.h"
-#include "../../include/stdlib.h"
+#include <kernel/include/proc.h>
+#include <user.h>
+#include <auth.h>
+#include <kernel/include/param.h>
+#include <stdlib.h>
 
 int
 main(int argc, char **argv)

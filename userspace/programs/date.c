@@ -1,6 +1,6 @@
-#include "../include/user.h"
-#include "../../include/stdio.h"
-#include "../../include/date.h"
+#include <user.h>
+#include <stdio.h>
+#include <date.h>
 
 int main(void) {
   struct rtcdate r;

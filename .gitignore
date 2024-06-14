@@ -12,3 +12,5 @@ kernelmemfs
 mkfs
 .gdbinit
 /bin/*
+/compile_commands.json
+/.cache/*

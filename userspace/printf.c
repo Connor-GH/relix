@@ -1,8 +1,8 @@
-#include "../include/types.h"
-#include "include/user.h"
-#include "stdarg.h"
-#include "../include/stdio.h"
-#include "../include/stdbool.h"
+#include <types.h>
+#include <user.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdbool.h>
 
 static void
 putc(int fd, char c)

@@ -1,7 +1,7 @@
 #pragma once
 // Per-CPU state
 #include "param.h"
-#include "../../include/types.h"
+#include <types.h>
 #include "../drivers/mmu.h"
 #include "../include/file.h"
 

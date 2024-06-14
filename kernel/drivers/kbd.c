@@ -1,7 +1,7 @@
-#include "../../include/types.h"
-#include "../include/x86.h"
-#include "../../include/defs.h"
+#include <types.h>
+#include <defs.h>
 #include "kbd.h"
+#include "x86.h"
 
 int
 kbdgetc(void)

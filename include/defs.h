@@ -1,5 +1,5 @@
 #pragma once
-#include "types.h"
+#include <types.h>
 struct buf;
 struct context;
 struct file;

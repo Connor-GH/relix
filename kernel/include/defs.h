@@ -168,7 +168,7 @@ pipewrite(struct pipe *, char *, int);
 int
 cpuid(void);
 void
-exit(void) __attribute__((noreturn));
+exit(int) __attribute__((noreturn));
 int
 fork(void);
 int
@@ -194,7 +194,7 @@ sleep(void *, struct spinlock *);
 void
 userinit(void);
 int
-wait(void);
+wait(int *);
 void
 wakeup(void *);
 void

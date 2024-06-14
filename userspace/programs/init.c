@@ -2,6 +2,7 @@
 
 #include <user.h>
 #include <fcntl.h>
+#include <stdlib.h>
 
 char *argv[] = { "/bin/sh", 0 };
 
@@ -22,14 +23,14 @@ main(void)
 		pid = fork();
 		if (pid < 0) {
 			fprintf(1, "init: fork() failed\n");
-			exit();
+			exit(0);
 		}
 		if (pid == 0) {
 			exec("/bin/sh", argv);
 			fprintf(1, "init: exec() sh failed\n");
-			exit();
+			exit(0);
 		}
-		while ((wpid = wait()) >= 0 && wpid != pid)
+		while ((wpid = wait(NULL)) >= 0 && wpid != pid)
 			fprintf(1, "zombie!\n");
 	}
 }

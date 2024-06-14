@@ -3,6 +3,7 @@
 #include <user.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 // Parsed command representation
 #define EXEC 1
@@ -75,7 +76,7 @@ runcmd(struct cmd *cmd)
 	struct redircmd *rcmd;
 
 	if (cmd == 0)
-		exit();
+		exit(0);
 
 	switch (cmd->type) {
 	default:
@@ -85,7 +86,7 @@ runcmd(struct cmd *cmd)
     str = malloc(DIRSIZ);
 		ecmd = (struct execcmd *)cmd;
 		if (ecmd->argv[0] == 0)
-			exit();
+			exit(0);
 		exec(ecmd->argv[0], ecmd->argv);
 
 		// try PATH if local directory fails
@@ -102,7 +103,7 @@ runcmd(struct cmd *cmd)
 		close(rcmd->fd);
 		if (open(rcmd->file, rcmd->mode) < 0) {
 			fprintf(2, "open %s failed\n", rcmd->file);
-			exit();
+			exit(0);
 		}
 		runcmd(rcmd->cmd);
 		break;
@@ -111,7 +112,7 @@ runcmd(struct cmd *cmd)
 		lcmd = (struct listcmd *)cmd;
 		if (fork1() == 0)
 			runcmd(lcmd->left);
-		wait();
+		wait(NULL);
 		runcmd(lcmd->right);
 		break;
 
@@ -135,8 +136,8 @@ runcmd(struct cmd *cmd)
 		}
 		close(p[0]);
 		close(p[1]);
-		wait();
-		wait();
+		wait(NULL);
+		wait(NULL);
 		break;
 
 	case BACK:
@@ -145,7 +146,7 @@ runcmd(struct cmd *cmd)
 			runcmd(bcmd->cmd);
 		break;
 	}
-	exit();
+	exit(0);
 }
 
 int
@@ -182,18 +183,22 @@ main(void)
 				fprintf(2, "cannot cd %s\n", buf + 3);
 			continue;
 		}
-		if (fork1() == 0)
+    int status;
+    int pid = fork1();
+		if (pid == 0)
 			runcmd(parsecmd(buf));
-		wait();
+		pid = wait(&status);
+    if (status != 0)
+      fprintf(stderr, "ERROR: pid %d returned with status %d\n", pid, status);
 	}
-	exit();
+	exit(0);
 }
 
 void
 panic(char *s)
 {
 	fprintf(2, "%s\n", s);
-	exit();
+	exit(0);
 }
 
 int

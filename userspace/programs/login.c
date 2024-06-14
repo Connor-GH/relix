@@ -34,7 +34,7 @@ try_again:
   char *actual_password = userto_allocated_passwd(username);
   if (actual_password == NULL) {
     fprintf(stderr, "actual_password is NULL\n");
-    exit();
+    exit(0);
   }
   if (strcmp(passwd, actual_password) == 0) {
     fprintf(stderr, "Password is correct!\n");
@@ -45,7 +45,7 @@ try_again:
     char *sh_argv[] = {"/bin/sh", 0};
     execv("/bin/sh", sh_argv);
     printf("execv sh failed\n");
-    exit();
+    exit(0);
   } else {
     fprintf(stderr, "Password is incorrect.\n");
     sleep(100);

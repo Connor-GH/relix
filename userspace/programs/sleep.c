@@ -18,11 +18,11 @@ static unsigned long my_atoi(char *s) {
 int main(int argc, char **argv) {
   if (argc == 1) {
     fprintf(stderr, "%s: [file]\n", argv[0]);
-    exit();
+    exit(0);
   }
   int ret = sleep(my_atoi(argv[1]) * 100);
   while (ret != 0) {
     ret = sleep(ret);
   }
-  exit();
+  exit(0);
 }

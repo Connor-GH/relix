@@ -10,5 +10,5 @@ static void nulltest(void) {
 int main(void) {
   nulltest();
   fprintf(stderr, "Tests passed! (This is not a good thing!)\n");
-  exit();
+  exit(0);
 }

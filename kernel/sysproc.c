@@ -15,14 +15,21 @@ sys_fork(void)
 int
 sys_exit(void)
 {
-  exit();
+  int status;
+  if (argint(0, &status) < 0)
+    return -1;
+  exit(status);
   return 0; // not reached
 }
 
 int
 sys_wait(void)
 {
-  return wait();
+  // very strange: is this correct behavior?
+  int *status;
+  if (argptr(0, (char **)&status, 1) < 0)
+    return -1;
+  return wait(status);
 }
 
 int
@@ -107,7 +114,7 @@ poweroff(void)
   // shut down qemu through magic acpi numbers
   outw(0xB004, 0x0 | 0x2000);
   outw(0x604, 0x0 | 0x2000);
-  exit(); // get rid of "noreturn" warning
+  exit(0); // get rid of "noreturn" warning
 }
 int
 sys_reboot(void) {

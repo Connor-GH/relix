@@ -13,9 +13,9 @@ typedef unsigned int uint;
 int
 fork(void);
 void
-exit(void) __attribute__((noreturn));
+exit(int) __attribute__((noreturn));
 int
-wait(void);
+wait(int *status);
 int
 pipe(int *);
 int

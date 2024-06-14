@@ -1,7 +1,8 @@
 #include <types.h>
-#include <defs.h>
+#include <stdlib.h>
 #include "drivers/memlayout.h"
 #include "drivers/mmu.h"
+#include "defs.h"
 #include "param.h"
 #include "x86.h"
 #include "proc.h"
@@ -234,7 +235,7 @@ fork(void)
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.
 void
-exit(void)
+exit(int status)
 {
 	struct proc *curproc = myproc();
 	struct proc *p;
@@ -255,6 +256,7 @@ exit(void)
 	iput(curproc->cwd);
 	end_op();
 	curproc->cwd = 0;
+  curproc->status = status;
 
 	acquire(&ptable.lock);
 
@@ -279,12 +281,13 @@ exit(void)
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
 int
-wait(void)
+wait(int *wstatus)
 {
 	struct proc *p;
 	int havekids, pid;
 	struct proc *curproc = myproc();
-
+  if (wstatus != NULL)
+    *wstatus = 3;
 	acquire(&ptable.lock);
 	for (;;) {
 		// Scan through table looking for exited children.
@@ -295,6 +298,8 @@ wait(void)
 			havekids = 1;
 			if (p->state == ZOMBIE) {
 				// Found one.
+        if (wstatus != NULL)
+          *wstatus = p->status;
 				pid = p->pid;
 				kfree(p->kstack);
 				p->kstack = 0;

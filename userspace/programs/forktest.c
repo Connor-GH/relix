@@ -2,6 +2,7 @@
 // Tiny executable so that the limit can be filling the proc table.
 
 #include <user.h>
+#include <stdlib.h>
 
 #define N 1000
 
@@ -18,24 +19,24 @@ forktest(void)
 	if (pid < 0)
 	  break;
 	if (pid == 0)
-	  exit();
+	  exit(0);
   }
 
   if (n == N) {
 	fprintf(1, "fork claimed to work N times!\n", N);
-	exit();
+	exit(0);
   }
 
   for (; n > 0; n--) {
-	if (wait() < 0) {
+	if (wait(NULL) < 0) {
 	  fprintf(1, "wait stopped early\n");
-	  exit();
+	  exit(0);
 	}
   }
 
-  if (wait() != -1) {
+  if (wait(NULL) != -1) {
 	fprintf(1, "wait got too many\n");
-	exit();
+	exit(0);
   }
 
   fprintf(1, "fork test OK\n");
@@ -45,5 +46,5 @@ int
 main(void)
 {
   forktest();
-  exit();
+  exit(0);
 }

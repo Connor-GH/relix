@@ -14,8 +14,10 @@ int
 fork(void);
 void
 exit(int) __attribute__((noreturn));
+
 int
 wait(int *status);
+#define WEXITSTATUS(status) (((status) & 0xff00) >> 8)
 int
 pipe(int *);
 int

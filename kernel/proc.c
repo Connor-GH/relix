@@ -8,6 +8,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#define W_EXITCODE(ret, signal) ((ret) << 8 | (signal))
+
 struct {
 	struct spinlock lock;
 	struct proc proc[NPROC];
@@ -280,6 +282,8 @@ exit(int status)
 
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
+// standards say that bits 15..8 are for status,
+// 7..0 are for signal.
 int
 wait(int *wstatus)
 {
@@ -287,7 +291,7 @@ wait(int *wstatus)
 	int havekids, pid;
 	struct proc *curproc = myproc();
   if (wstatus != NULL)
-    *wstatus = 3;
+    *wstatus = W_EXITCODE(3, 0);
 	acquire(&ptable.lock);
 	for (;;) {
 		// Scan through table looking for exited children.
@@ -298,8 +302,9 @@ wait(int *wstatus)
 			havekids = 1;
 			if (p->state == ZOMBIE) {
 				// Found one.
+        // signal won't be 0 when we implement it.
         if (wstatus != NULL)
-          *wstatus = p->status;
+          *wstatus = W_EXITCODE(p->status, 0);
 				pid = p->pid;
 				kfree(p->kstack);
 				p->kstack = 0;

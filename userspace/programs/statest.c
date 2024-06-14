@@ -20,7 +20,7 @@ main(void)
       printf("Error with wait()!\n");
       exit(-1);
     }
-    printf("Child returned with %d: end of process: %d\n", status, pid);
+    printf("Child returned with %d: end of process: %d\n", WEXITSTATUS(status), pid);
     exit(0);
   } else {
     printf("Error with fork()\n");

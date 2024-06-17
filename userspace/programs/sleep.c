@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <user.h>
+#include <unistd.h>
 
 
 // int to char for numbers

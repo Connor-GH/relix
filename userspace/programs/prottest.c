@@ -1,7 +1,8 @@
-#include <user.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <unistd.h>
+
 static void nulltest(void) {
   volatile int *ptr = NULL;
   *ptr = 6;

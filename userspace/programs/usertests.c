@@ -1,13 +1,16 @@
+#include <sys/stat.h>
+#include <sys/wait.h>
 #include <kernel/include/param.h>
-#include <types.h>
-#include <user.h>
 #include <kernel/include/fs.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <kernel/include/syscall.h>
 #include <kernel/include/traps.h>
 #include <kernel/drivers/memlayout.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <signal.h>
 
 char buf[8192];
 char name[3];

@@ -7,9 +7,12 @@
 //    for (i = 0; i < 40000; i++)
 //      asm volatile("");
 
-#include <user.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 int
 main(int argc, char *argv[])

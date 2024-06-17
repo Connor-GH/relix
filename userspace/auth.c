@@ -1,8 +1,10 @@
-#include <user.h>
 #include <auth.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
 
 int usertouid(char *user) {
   int fd;

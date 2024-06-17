@@ -1,6 +1,8 @@
-#include <types.h>
 #include <stat.h>
-#include <user.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
 
 char buf[512];
 

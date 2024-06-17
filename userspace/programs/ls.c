@@ -1,9 +1,13 @@
-#include <stat.h>
-#include <user.h>
+#include <sys/stat.h>
 #include <kernel/include/fs.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <dirent.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
 
 static char *
 disambiguate_symlink(uint inode, char *path)
@@ -53,6 +57,8 @@ fmtname(char *path, bool pflag)
 {
 	static char buf[DIRSIZ + 1];
 	char *p;
+	// zero out the buffer.
+  memset(buf, '\0', sizeof(buf));
 
 	// Find first character after last slash.
 	for (p = path + strlen(path); p >= path && *p != '/'; p--)
@@ -65,7 +71,7 @@ fmtname(char *path, bool pflag)
 	memmove(buf, p, strlen(p));
   if (pflag)
     memset(buf + strlen(p), '/', 1);
-	memset(buf + strlen(p) + pflag, ' ', DIRSIZ - strlen(p));
+  memset(buf + strlen(p) + pflag, ' ', 1);
 	return buf;
 }
 
@@ -147,8 +153,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 		while (read(fd, &de, sizeof(de)) == sizeof(de)) {
 			if (de.inum == 0)
 				continue;
-			memmove(p, de.name, DIRSIZ);
-			p[DIRSIZ] = 0;
+      strcpy(p, de.name);
 			if (stat(buf, &st) < 0) {
 				fprintf(stdout, "ls: cannot stat %s\n", buf);
 				continue;

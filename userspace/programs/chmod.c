@@ -1,5 +1,8 @@
-#include <user.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <stdlib.h> // for atoi_base (nonstandard)
+// TODO atoi_base is pretty much strol
 
 int main(int argc, char **argv) {
   if (argc < 2) {

@@ -1,5 +1,4 @@
-#include <user.h>
-#include <stdio.h>
+#include <unistd.h>
 #include <assert.h>
 int main(void) {
 assert((int) close(-1) == -1);

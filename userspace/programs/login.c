@@ -1,8 +1,11 @@
 #include <kernel/include/proc.h>
-#include <user.h>
-#include <auth.h>
 #include <kernel/include/param.h>
+#include <auth.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <ext.h>
+#include <unistd.h>
 
 int
 main(int argc, char **argv)

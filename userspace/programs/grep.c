@@ -1,8 +1,10 @@
 // Simple grep.  Only supports ^ . * $ operators.
 
-#include <types.h>
-#include <stat.h>
-#include <user.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
+#include <stdio.h>
 
 char buf[1024];
 int

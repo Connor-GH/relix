@@ -1,11 +1,12 @@
-#include <types.h>
-#include <stat.h>
+#include <sys/stat.h>
+#include <dirent.h>
 #include <fcntl.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <user.h>
 #include <kernel/include/x86.h>
+#include <string.h>
+#include <unistd.h>
 
 char *
 strcpy(char *s, const char *t)
@@ -182,6 +183,21 @@ memmove(void *vdst, const void *vsrc, uint n)
 	while (n-- > 0)
 		*dst++ = *src++;
 	return vdst;
+}
+
+char *
+strncpy(char *dst, const char *src, int n)
+{
+	char *my_dst;
+	const char *my_src;
+
+	my_dst = dst;
+	my_src = src;
+	while (n-- > 0)
+    *my_dst++ = *my_src++;
+  *my_dst++ = '\0';
+	return dst;
+
 }
 
 void

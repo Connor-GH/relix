@@ -1,4 +1,5 @@
-#include <user.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <stdio.h>
 
 char buf[512];

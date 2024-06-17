@@ -1,4 +1,5 @@
-#include <user.h> /* printf */
+#include <stdio.h>
+#include <unistd.h>
 
 int
 main(void)

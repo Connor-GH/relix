@@ -1,8 +1,8 @@
-#include <types.h>
-#include <user.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <string.h>
 
 static void
 putc(int fd, char c)

@@ -1,8 +1,11 @@
 // init: The initial user-level program
 
-#include <user.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <stdio.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 char *argv[] = { "/bin/sh", 0 };
 

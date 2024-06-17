@@ -15,6 +15,10 @@ typedef int FILE;
 #define stdout ((FILE)__file_stdout)
 #define stderr ((FILE)__file_stderr)
 
+
+#define DIRSIZ 254
+#define FILENAME_MAX DIRSIZ
+
 void
 vfprintf(int, const char *, va_list *argp);
 void

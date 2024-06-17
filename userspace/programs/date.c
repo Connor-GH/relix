@@ -1,6 +1,8 @@
-#include <user.h>
 #include <stdio.h>
 #include <date.h>
+#include <ext.h>
+#include <ext.h>
+#include <unistd.h>
 
 int main(void) {
   struct rtcdate r;

@@ -1,7 +1,7 @@
 #include <types.h>
 #include <defs.h>
 #include <date.h>
-#include <reboot.h>
+#include <sys/reboot.h>
 #include "drivers/memlayout.h"
 #include "x86.h"
 #include "proc.h"

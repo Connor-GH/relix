@@ -172,7 +172,7 @@ atoi_base(const char *s, uint base)
 }
 
 void *
-memmove(void *vdst, const void *vsrc, int n)
+memmove(void *vdst, const void *vsrc, uint n)
 {
 	char *dst;
 	const char *src;

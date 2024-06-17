@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <user.h>
+#include <unistd.h>
 
 int
 main(void)

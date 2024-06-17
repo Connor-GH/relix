@@ -4,11 +4,13 @@ KERNEL_ASM = $(wildcard $(KERNELDIR)/*.S)
 KERNEL_DRIVERS = $(KERNELDIR)/drivers/kbd.c $(KERNELDIR)/drivers/lapic.c
 KERNEL_OBJS = $(KERNEL_SRC:$(KERNELDIR)/%.c=$(BIN)/%.o) $(KERNEL_ASM:$(KERNELDIR)/%.S=$(BIN)/%.o) \
 	$(KERNEL_DRIVERS:$(KERNELDIR)/drivers/%.c=$(BIN)/%.o)
+KERNEL_EXTRAS = -D__KERNEL__
 
 KERNEL_INC = $(IVARS) \
 						 -I$(KERNELDIR)/include \
 						 -I$(KERNELDIR)/drivers/include \
-						 -I$(KERNELDIR)/drivers
+						 -I$(KERNELDIR)/drivers \
+						 $(KERNEL_EXTRAS)
 
 include $(KERNELDIR)/boot/Makefile
 

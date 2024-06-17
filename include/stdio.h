@@ -1,4 +1,5 @@
 #pragma once
+#include <stdarg.h>
 struct _IO_FILE {
   /* TODO */
 };
@@ -13,3 +14,14 @@ typedef int FILE;
 #define stdin ((FILE)__file_stdin)
 #define stdout ((FILE)__file_stdout)
 #define stderr ((FILE)__file_stderr)
+
+void
+vfprintf(int, const char *, va_list *argp);
+void
+fprintf(int, const char *, ...);
+void
+printf(const char *, ...);
+char *
+gets(char *, int max);
+int
+getc(FILE fd);

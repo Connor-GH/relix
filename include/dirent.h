@@ -13,3 +13,6 @@ struct __DIR {
   char *nextptr;
 };
 typedef struct __DIR DIR;
+
+DIR *
+opendir(const char *name);

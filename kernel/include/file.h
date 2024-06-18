@@ -42,5 +42,11 @@ struct devsw {
 };
 
 extern struct devsw devsw[];
+#define EOF (256)
 
-#define CONSOLE 1
+enum {
+  CONSOLE = 1,
+  NULLDRV
+};
+//#define CONSOLE 1
+//#define NULLDRV 2

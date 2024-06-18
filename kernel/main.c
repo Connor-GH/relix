@@ -5,6 +5,7 @@
 #include "param.h"
 #include "proc.h"
 #include "x86.h"
+#include "null.h"
 
 static void
 startothers(void);
@@ -27,6 +28,7 @@ main(void)
   picinit(); // disable pic
   ioapicinit(); // another interrupt controller
   consoleinit(); // console hardware
+	nulldrvinit();
   uartinit(); // serial port
   pinit(); // process table
   tvinit(); // trap vectors

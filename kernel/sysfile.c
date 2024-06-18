@@ -257,6 +257,10 @@ create(char *path, short type, short major, short minor)
 			ip->mode = TYPE_TO_MODE(type); // TODO limit permissions
 			return ip;
 		}
+    if (type == T_FILE && ip->type == T_DEV) {
+      // TODO: T_FILE in type needs to be T_DEV. Doing a hack...
+      return ip;
+    }
 		iunlockput(ip);
 		return 0;
 	}
@@ -343,7 +347,6 @@ sys_open(void)
 	iunlock(ip);
 	end_op();
 
-	// TODO should mode be set here?
 	f->type = FD_INODE;
 	f->ip = ip;
 	f->off = 0;

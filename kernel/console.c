@@ -277,9 +277,12 @@ consoleintr(int (*getc)(void))
 			if (c != 0 && input.e - input.r < INPUT_BUF) {
 				c = (c == '\r') ? '\n' : c;
 				input.buf[input.e++ % INPUT_BUF] = c;
-				consputc(c);
+				if (c != C('D'))
+						consputc(c);
 				if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF) {
-					input.w = input.e;
+						if (c == C('D'))
+							consputc('\n');
+						input.w = input.e;
 					wakeup(&input.r);
 				}
 			}
@@ -333,11 +336,9 @@ consoleread(struct inode *ip, char *dst, int n)
 int
 consolewrite(struct inode *ip, char *buf, int n)
 {
-	int i;
-
 	iunlock(ip);
 	acquire(&cons.lock);
-	for (i = 0; i < n; i++)
+	for (int i = 0; i < n; i++)
 		consputc(buf[i] & 0xff);
 	release(&cons.lock);
 	ilock(ip);

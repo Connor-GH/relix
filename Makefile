@@ -101,10 +101,6 @@ default:
 	$(MAKE) entryother_
 	$(MAKE) initcode
 	$(MAKE) entry
-	$(MAKE) $(ULIB_OBJ)
-	objcopy --remove-section .note.gnu.property $(BIN)/ulib.o
-	$(MAKE) $(ULIB_ASM_OBJ)
-	$(MAKE) $(UPROGS)
 	$(MAKE) $(D_PROGS)
 	$(MAKE) $(D_BINDINGS_OBJ)
 	$(MAKE) fs.img
@@ -157,7 +153,12 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 ifndef CPUS
 CPUS := 2
 endif
-QEMUOPTS = -drive file=$(BIN)/fs.img,index=1,media=disk,format=raw -drive file=$(BIN)/xv6.img,index=0,media=disk,format=raw -smp $(CPUS) -m 2G $(QEMUEXTRA)
+ifndef MEM
+MEM := 2G
+endif
+QEMUOPTS = -drive file=$(BIN)/fs.img,index=1,media=disk,format=raw,if=ide,aio=native,cache.direct=on \
+					 -drive file=$(BIN)/xv6.img,index=0,media=disk,format=raw,if=ide,aio=native,cache.direct=on \
+					 -smp $(CPUS) -m $(MEM) $(QEMUEXTRA)
 
 qemu:
 	$(MAKE) fs.img
@@ -181,12 +182,3 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 	@echo "*** Now run 'gdb'." 1>&2
 	$(QEMU) -nographic $(QEMUOPTS) -S $(QEMUGDB)
 
-# update this rule (change rev#) when it is time to
-# make a new revision.
-tar:
-	rm -rf /tmp/xv6
-	mkdir -p /tmp/xv6
-	cp dist/* dist/.gdbinit.tmpl /tmp/xv6
-	(cd /tmp; tar cf - xv6) | gzip >xv6-rev10.tar.gz  # the next one will be 10 (9/17)
-
-.PHONY: dist-test dist

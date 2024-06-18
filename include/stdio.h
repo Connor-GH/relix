@@ -16,7 +16,7 @@ typedef int FILE;
 #define stderr ((FILE)__file_stderr)
 
 #define EOF (-1)
-#define DIRSIZ 254
+#define DIRSIZ 14
 #define FILENAME_MAX DIRSIZ
 
 void

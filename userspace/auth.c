@@ -72,12 +72,10 @@ userto_allocated_passwd(char *user)
 	// pass
 	while (buf[i] != ':' && buf[i] != '\0' && buf[i] != '\n') {
 		info[j] = buf[i];
-		fprintf(stderr, "info: %c\n", info[j]);
 		i++;
 		j++;
 	}
 	info[j] = '\0';
-	fprintf(stderr, "info: %s\n", info);
 	close(fd);
 	assert(info[0] != '\0');
 	strcpy(put_in, info);

@@ -82,10 +82,8 @@ uint rootino;
 uint etcino;
 uint binino;
 
-
 static void
-make_file(uint currentino,
-const char *name, uint parentino)
+make_file(uint currentino, const char *name, uint parentino)
 {
 	struct dirent de;
 	bzero(&de, sizeof(de));
@@ -99,12 +97,12 @@ make_dir(uint parentino, const char *name)
 {
 	uint currentino = ialloc(T_DIR);
 
-  // creates dir
-  make_file(currentino, name, parentino);
-  make_file(currentino, ".", 0);
-  make_file(currentino, "..", 0);
+	// creates dir
+	make_file(currentino, name, parentino);
+	make_file(currentino, ".", 0);
+	make_file(currentino, "..", 0);
 
-  return currentino;
+	return currentino;
 }
 
 static void
@@ -194,26 +192,26 @@ main(int argc, char *argv[])
 		// The binaries are named _rm, _cat, etc. to keep the
 		// build operating system from trying to execute them
 		// in place of system binaries like rm and cat.
-    // ../bin/_rm => ../bin/rm
+		// ../bin/_rm => ../bin/rm
 		int k = 0;
-    char *str = malloc(FILENAME_MAX);
-    for (int j = 0; j < strlen(argv[i]); j++) {
-      if (argv[i][j] != '_') {
-        str[k] = argv[i][j];
-        k++;
-      }
-    }
-    // add NULL terminator
-    str[k] = '\0';
-    if (k > 0)
-      strcpy(argv[i], str);
-    free(str);
+		char *str = malloc(FILENAME_MAX);
+		for (int j = 0; j < strlen(argv[i]); j++) {
+			if (argv[i][j] != '_') {
+				str[k] = argv[i][j];
+				k++;
+			}
+		}
+		// add NULL terminator
+		str[k] = '\0';
+		if (k > 0)
+			strcpy(argv[i], str);
+		free(str);
 		// "../README" => "README"
 		// "../bin/rm" => bin/rm
 		while (*argv[i] == '.' || *argv[i] == '/') {
 			++argv[i];
 		}
-    if (strncmp("bin/", argv[i], 4) == 0) {
+		if (strncmp("bin/", argv[i], 4) == 0) {
 			name = (argv[i] += 4);
 			ino = binino;
 		} else if (strncmp("etc/", argv[i], 4) == 0) {
@@ -221,13 +219,13 @@ main(int argc, char *argv[])
 			ino = etcino;
 		} else {
 			name = argv[i];
-		  ino = rootino;
+			ino = rootino;
 		}
-    strncpy(de.name, name, DIRSIZ);
+		strncpy(de.name, name, DIRSIZ);
 
 		inum = ialloc(T_FILE);
 
-    make_file(inum, name, ino);
+		make_file(inum, name, ino);
 
 		while ((cc = read(fd, buf, sizeof(buf))) > 0)
 			iappend(inum, buf, cc);

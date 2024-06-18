@@ -8,9 +8,9 @@
 void
 picinit(void)
 {
-  // mask all interrupts
-  outb(IO_PIC1 + 1, 0xFF);
-  outb(IO_PIC2 + 1, 0xFF);
+	// mask all interrupts
+	outb(IO_PIC1 + 1, 0xFF);
+	outb(IO_PIC2 + 1, 0xFF);
 }
 
 //PAGEBREAK!

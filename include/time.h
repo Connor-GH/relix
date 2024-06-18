@@ -6,7 +6,6 @@ typedef uint time_t;
 time_t
 time(time_t *tloc);
 
-
 // clang-format off
 #define RTC_TO_UNIX(rtc)                                               \
 	(time_t)(rtc.second \

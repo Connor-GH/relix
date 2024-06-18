@@ -6,13 +6,13 @@
 int
 main(int argc, char **argv)
 {
-  int i;
+	int i;
 
-  if (argc < 2) {
-	fprintf(2, "usage: kill pid...\n");
+	if (argc < 2) {
+		fprintf(2, "usage: kill pid...\n");
+		exit(0);
+	}
+	for (i = 1; i < argc; i++)
+		kill(atoi(argv[i]));
 	exit(0);
-  }
-  for (i = 1; i < argc; i++)
-	kill(atoi(argv[i]));
-  exit(0);
 }

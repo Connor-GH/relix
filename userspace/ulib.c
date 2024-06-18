@@ -22,12 +22,12 @@ strcpy(char *s, const char *t)
 char *
 strcat(char *dst, const char *src)
 {
-  int start = strlen(dst);
-  int j = 0;
-  for (int i = start; i < start + strlen(src) + 1; i++, j++) {
-    dst[i] = src[j];
-  }
-  return dst;
+	int start = strlen(dst);
+	int j = 0;
+	for (int i = start; i < start + strlen(src) + 1; i++, j++) {
+		dst[i] = src[j];
+	}
+	return dst;
 }
 
 int
@@ -67,9 +67,9 @@ strchr(const char *s, char c)
 int
 getc(FILE fd)
 {
-  int c;
-  read(fd, &c, 1);
-  return c;
+	int c;
+	read(fd, &c, 1);
+	return c;
 }
 
 char *
@@ -119,22 +119,24 @@ fopendir(int fd)
 DIR *
 opendir(const char *path)
 {
-  int fd = open(path, O_RDONLY /*| O_DIRECTORY*/);
-  if (fd == -1)
-    return NULL;
-  return fopendir(fd);
+	int fd = open(path, O_RDONLY /*| O_DIRECTORY*/);
+	if (fd == -1)
+		return NULL;
+	return fopendir(fd);
 }
-int closedir(DIR *dir) {
-  if (dir == NULL || dir->fd == -1) {
-    return -1; // EBADF
-  }
-  if (dir->buffer != NULL)
-    free(dir->buffer);
-  int rc = close(dir->fd);
-  if (rc == 0)
-    dir->fd = -1;
-  free(dir);
-  return rc;
+int
+closedir(DIR *dir)
+{
+	if (dir == NULL || dir->fd == -1) {
+		return -1; // EBADF
+	}
+	if (dir->buffer != NULL)
+		free(dir->buffer);
+	int rc = close(dir->fd);
+	if (rc == 0)
+		dir->fd = -1;
+	free(dir);
+	return rc;
 }
 
 // no way to check for error...sigh....
@@ -194,10 +196,9 @@ strncpy(char *dst, const char *src, int n)
 	my_dst = dst;
 	my_src = src;
 	while (n-- > 0)
-    *my_dst++ = *my_src++;
-  *my_dst++ = '\0';
+		*my_dst++ = *my_src++;
+	*my_dst++ = '\0';
 	return dst;
-
 }
 
 void
@@ -206,6 +207,6 @@ assert_fail(const char *assertion, const char *file, int lineno,
 {
 	fprintf(stderr, "%s:%d: %s: Assertion `%s' failed.\n", file, lineno, func,
 					assertion);
-  fprintf(stderr, "Aborting.\n");
+	fprintf(stderr, "Aborting.\n");
 	exit(-1);
 }

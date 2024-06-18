@@ -26,7 +26,6 @@ trapret(void);
 static void
 wakeup1(void *chan);
 
-
 void
 pinit(void)
 {
@@ -258,7 +257,7 @@ exit(int status)
 	iput(curproc->cwd);
 	end_op();
 	curproc->cwd = 0;
-  curproc->status = status;
+	curproc->status = status;
 
 	acquire(&ptable.lock);
 
@@ -290,8 +289,8 @@ wait(int *wstatus)
 	struct proc *p;
 	int havekids, pid;
 	struct proc *curproc = myproc();
-  if (wstatus != NULL)
-    *wstatus = W_EXITCODE(3, 0);
+	if (wstatus != NULL)
+		*wstatus = W_EXITCODE(3, 0);
 	acquire(&ptable.lock);
 	for (;;) {
 		// Scan through table looking for exited children.
@@ -302,9 +301,9 @@ wait(int *wstatus)
 			havekids = 1;
 			if (p->state == ZOMBIE) {
 				// Found one.
-        // signal won't be 0 when we implement it.
-        if (wstatus != NULL)
-          *wstatus = W_EXITCODE(p->status, 0);
+				// signal won't be 0 when we implement it.
+				if (wstatus != NULL)
+					*wstatus = W_EXITCODE(p->status, 0);
 				pid = p->pid;
 				kfree(p->kstack);
 				p->kstack = 0;

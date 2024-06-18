@@ -27,29 +27,30 @@ disambiguate_symlink(uint inode, char *path)
 }
 
 struct ls_time {
-  uint sec;
-  uint min;
-  uint hr;
-  uint day;
-  uint mo;
-  uint yr;
+	uint sec;
+	uint min;
+	uint hr;
+	uint day;
+	uint mo;
+	uint yr;
 };
 static struct ls_time
-to_human_time(uint time) {
-  struct ls_time lt;
-  lt.sec = time;
-  lt.min = lt.sec / 60;
-  lt.hr = lt.min / 60;
-  lt.day = lt.hr / 23.981777;
-  lt.mo = lt.day / 30.44;
-  lt.yr = lt.day / 365.25;
-  lt.yr += 1970;
-  lt.mo %= 12;
-  lt.day %= 30;
-  lt.hr = (lt.hr % 24);
-  lt.min %= 60;
-  lt.sec %= 60;
-  return lt;
+to_human_time(uint time)
+{
+	struct ls_time lt;
+	lt.sec = time;
+	lt.min = lt.sec / 60;
+	lt.hr = lt.min / 60;
+	lt.day = lt.hr / 23.981777;
+	lt.mo = lt.day / 30.44;
+	lt.yr = lt.day / 365.25;
+	lt.yr += 1970;
+	lt.mo %= 12;
+	lt.day %= 30;
+	lt.hr = (lt.hr % 24);
+	lt.min %= 60;
+	lt.sec %= 60;
+	return lt;
 }
 
 static char *
@@ -58,7 +59,7 @@ fmtname(char *path, bool pflag)
 	static char buf[DIRSIZ + 1];
 	char *p;
 	// zero out the buffer.
-  memset(buf, '\0', sizeof(buf));
+	memset(buf, '\0', sizeof(buf));
 
 	// Find first character after last slash.
 	for (p = path + strlen(path); p >= path && *p != '/'; p--)
@@ -69,16 +70,16 @@ fmtname(char *path, bool pflag)
 	if (strlen(p) >= DIRSIZ)
 		return p;
 	memmove(buf, p, strlen(p));
-  if (pflag)
-    memset(buf + strlen(p), '/', 1);
-  memset(buf + strlen(p) + pflag, ' ', 1);
+	if (pflag)
+		memset(buf + strlen(p), '/', 1);
+	memset(buf + strlen(p) + pflag, ' ', 1);
 	return buf;
 }
 
 static char *
 fmtname_file(char *path)
 {
-return fmtname(path, false);
+	return fmtname(path, false);
 }
 
 static char *
@@ -129,11 +130,11 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 			char ret[11];
 			fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
 			fprintf(stdout, "% 4u % 4u % 9u ", st.st_uid, st.st_gid, st.st_size);
-      struct ls_time lt = to_human_time(st.st_mtime);
-      fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr,
-              lt.mo, lt.day, lt.hr, lt.min, lt.sec);
-      fprintf(stdout, "%s ", fmtname_file(path));
-        if (st.st_nlink > 1) {
+			struct ls_time lt = to_human_time(st.st_mtime);
+			fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
+							lt.hr, lt.min, lt.sec);
+			fprintf(stdout, "%s ", fmtname_file(path));
+			if (st.st_nlink > 1) {
 				fprintf(stdout, "-> %s", disambiguate_symlink(st.st_ino, path));
 			}
 		} else {
@@ -153,7 +154,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 		while (read(fd, &de, sizeof(de)) == sizeof(de)) {
 			if (de.inum == 0)
 				continue;
-      strcpy(p, de.name);
+			strcpy(p, de.name);
 			if (stat(buf, &st) < 0) {
 				fprintf(stdout, "ls: cannot stat %s\n", buf);
 				continue;
@@ -165,9 +166,9 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 				char ret[11];
 				fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
 				fprintf(stdout, "% 4u % 4u % 9u ", st.st_uid, st.st_gid, st.st_size);
-        struct ls_time lt = to_human_time(st.st_mtime);
-        fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr,
-              lt.mo, lt.day, lt.hr, lt.min, lt.sec);
+				struct ls_time lt = to_human_time(st.st_mtime);
+				fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
+								lt.hr, lt.min, lt.sec);
 				fprintf(stdout, "%s", fmtname(buf, pflag && S_ISDIR(st.st_mode)));
 				if (st.st_nlink > 1)
 					fprintf(stdout, "-> %s", "TODO");
@@ -176,8 +177,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 				fprintf(stdout, "%s", fmtname(buf, pflag && S_ISDIR(st.st_mode)));
 			}
 		}
-  }
-		break;
+	} break;
 	default:
 		break;
 	}
@@ -191,7 +191,7 @@ main(int argc, char *argv[])
 	int i;
 	bool lflag = false;
 	bool iflag = false;
-  bool pflag = false;
+	bool pflag = false;
 	// index for filenames or directory names
 	int arg_idx = 1;
 
@@ -202,19 +202,19 @@ main(int argc, char *argv[])
 	for (int j = 1; j < argc; j++) {
 		if (argv[j][0] == '-' && argv[j][1] != '\0') {
 			for (int k = 1; k < strlen(argv[j]); k++) {
-        switch (argv[j][k]) {
-        case 'l':
-          lflag = true;
-          break;
-        case 'i':
-          iflag = true;
-          break;
-        case 'p':
-          pflag = true;
-        default:
-          break;
-        }
-      }
+				switch (argv[j][k]) {
+				case 'l':
+					lflag = true;
+					break;
+				case 'i':
+					iflag = true;
+					break;
+				case 'p':
+					pflag = true;
+				default:
+					break;
+				}
+			}
 			arg_idx++;
 		} else {
 			break;

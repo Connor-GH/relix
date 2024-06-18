@@ -29,29 +29,29 @@ exec(char *path, char **argv)
 	ilock(ip);
 	pgdir = 0;
 
-  // hold back on GID/UID protection right now
-  /*if (ip->gid != curproc->cred->gid && ip->uid != curproc->cred->uid) {
+	// hold back on GID/UID protection right now
+	/*if (ip->gid != curproc->cred->gid && ip->uid != curproc->cred->uid) {
     cprintf("exec: user does not have matching uid/gid for this file\n");
     iunlockput(ip);
     return -1;
   }*/
-  // TODO change "1" to check for user permissions
+	// TODO change "1" to check for user permissions
 	// add back when proper file permissions are added.
-  if (!S_HASPERM(ip->mode, S_IXUSR)) {
-    // if we're in the right group, we're fine.
-    // if we have group privs but not in the
-    // right group, this fails.
-    if (S_HASPERM(ip->mode, S_IXGRP)) {
-      if (ip->gid & 1) {
-        goto ok;
-      }
-      cprintf("exec: user is not in group %d\n", ip->gid);
-    }
-    end_op();
-    cprintf("exec: file is not executable\n");
+	if (!S_HASPERM(ip->mode, S_IXUSR)) {
+		// if we're in the right group, we're fine.
+		// if we have group privs but not in the
+		// right group, this fails.
+		if (S_HASPERM(ip->mode, S_IXGRP)) {
+			if (ip->gid & 1) {
+				goto ok;
+			}
+			cprintf("exec: user is not in group %d\n", ip->gid);
+		}
+		end_op();
+		cprintf("exec: file is not executable\n");
 		iunlockput(ip);
-    return -1;
-  }
+		return -1;
+	}
 
 ok:
 	// Check ELF header

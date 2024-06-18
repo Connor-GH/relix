@@ -59,17 +59,12 @@ panic(char *);
 struct cmd *
 parsecmd(char *);
 
-char *
-path[3] = {
-    "/bin/",
-    "/usr/bin/",
-    "/"
-  };
+char *path[3] = { "/bin/", "/usr/bin/", "/" };
 // Execute cmd.  Never returns.
 void
 runcmd(struct cmd *cmd)
 {
-  char *str;
+	char *str;
 	int p[2];
 	struct backcmd *bcmd;
 	struct execcmd *ecmd;
@@ -85,19 +80,19 @@ runcmd(struct cmd *cmd)
 		panic("runcmd");
 
 	case EXEC:
-    str = malloc(DIRSIZ);
+		str = malloc(DIRSIZ);
 		ecmd = (struct execcmd *)cmd;
 		if (ecmd->argv[0] == 0)
 			exit(0);
 		exec(ecmd->argv[0], ecmd->argv);
 
 		// try PATH if local directory fails
-    for (int i = 0; i < 3; i++) {
-      strcpy(str, path[i]);
-      strcat(str, ecmd->argv[0]);
-      exec(str, ecmd->argv);
-    }
-    fprintf(2, "exec %s failed\n", ecmd->argv[0]);
+		for (int i = 0; i < 3; i++) {
+			strcpy(str, path[i]);
+			strcat(str, ecmd->argv[0]);
+			exec(str, ecmd->argv);
+		}
+		fprintf(2, "exec %s failed\n", ecmd->argv[0]);
 		break;
 
 	case REDIR:
@@ -185,13 +180,13 @@ main(void)
 				fprintf(2, "cannot cd %s\n", buf + 3);
 			continue;
 		}
-    int status;
-    int pid = fork1();
+		int status;
+		int pid = fork1();
 		if (pid == 0)
 			runcmd(parsecmd(buf));
 		pid = wait(&status);
-    if (status != 0)
-      fprintf(stderr, "ERROR: pid %d returned with status %d\n", pid, status);
+		if (status != 0)
+			fprintf(stderr, "ERROR: pid %d returned with status %d\n", pid, status);
 	}
 	exit(0);
 }

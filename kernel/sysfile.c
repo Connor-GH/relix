@@ -73,7 +73,7 @@ sys_read(void)
 	int n;
 	char *p;
 
-  // do not rearrange, because then 'n' will be undefined.
+	// do not rearrange, because then 'n' will be undefined.
 	if (argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
 		return -1;
 	return fileread(f, p, n);
@@ -257,10 +257,10 @@ create(char *path, short type, short major, short minor)
 			ip->mode = TYPE_TO_MODE(type); // TODO limit permissions
 			return ip;
 		}
-    if (type == T_FILE && ip->type == T_DEV) {
-      // TODO: T_FILE in type needs to be T_DEV. Doing a hack...
-      return ip;
-    }
+		if (type == T_FILE && ip->type == T_DEV) {
+			// TODO: T_FILE in type needs to be T_DEV. Doing a hack...
+			return ip;
+		}
 		iunlockput(ip);
 		return 0;
 	}
@@ -273,11 +273,11 @@ create(char *path, short type, short major, short minor)
 	ip->minor = minor;
 	ip->nlink = 1;
 	ip->mode = TYPE_TO_MODE(type);
-  ip->gid = DEFAULT_GID;
-  ip->uid = DEFAULT_UID;
-  struct rtcdate rtc;
-  cmostime(&rtc);
-  ip->mtime = ip->atime = ip->ctime = RTC_TO_UNIX(rtc);
+	ip->gid = DEFAULT_GID;
+	ip->uid = DEFAULT_UID;
+	struct rtcdate rtc;
+	cmostime(&rtc);
+	ip->mtime = ip->atime = ip->ctime = RTC_TO_UNIX(rtc);
 	iupdate(ip);
 	// Create . and .. entries.
 	// because every directory goes as follows:
@@ -352,7 +352,7 @@ sys_open(void)
 	f->off = 0;
 	f->readable = !(omode & O_WRONLY);
 	f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
-  return fd;
+	return fd;
 }
 
 int
@@ -487,12 +487,12 @@ sys_chmod(void)
 int
 sys_echoout(void)
 {
-  int answer;
-  if (argint(0, &answer) < 0) {
-    end_op();
-    return -1;
-  }
-  echo_out = answer;
-  end_op();
-  return 0;
+	int answer;
+	if (argint(0, &answer) < 0) {
+		end_op();
+		return -1;
+	}
+	echo_out = answer;
+	end_op();
+	return 0;
 }

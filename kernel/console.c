@@ -188,9 +188,9 @@ cgaputc(int c, uint8_t fore, uint8_t back)
 	pos |= inb(CRTPORT + 1);
 
 	if (c == '\n') {
-    if (pos % 80 != 0)
-      pos += 80 - pos % 80;
-  } else if (c == BACKSPACE && echo_out == 1) {
+		if (pos % 80 != 0)
+			pos += 80 - pos % 80;
+	} else if (c == BACKSPACE && echo_out == 1) {
 		if (pos > 0)
 			--pos;
 	} else if (echo_out == 1) {
@@ -278,11 +278,11 @@ consoleintr(int (*getc)(void))
 				c = (c == '\r') ? '\n' : c;
 				input.buf[input.e++ % INPUT_BUF] = c;
 				if (c != C('D'))
-						consputc(c);
+					consputc(c);
 				if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF) {
-						if (c == C('D'))
-							consputc('\n');
-						input.w = input.e;
+					if (c == C('D'))
+						consputc('\n');
+					input.w = input.e;
 					wakeup(&input.r);
 				}
 			}

@@ -1,7 +1,7 @@
 #pragma once
 #include <stdarg.h>
 struct _IO_FILE {
-  /* TODO */
+	/* TODO */
 };
 
 typedef int FILE;
@@ -14,7 +14,6 @@ typedef int FILE;
 #define stdin ((FILE)__file_stdin)
 #define stdout ((FILE)__file_stdout)
 #define stderr ((FILE)__file_stderr)
-
 
 #define EOF (-1)
 #define DIRSIZ 254

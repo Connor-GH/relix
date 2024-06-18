@@ -206,16 +206,16 @@ ialloc(uint dev, short type)
 		dip = (struct dinode *)bp->data + inum % IPB;
 		if (dip->type == 0) { // a free inode
 			memset(dip, 0, sizeof(*dip));
-      dip->type = type;
+			dip->type = type;
 			dip->mode = TYPE_TO_MODE(type);
-      dip->gid = DEFAULT_GID;
-      dip->uid = DEFAULT_UID;
-  //    struct rtcdate rtc;
-      struct rtcdate rtc;
-      cmostime(&rtc);
-      dip->ctime = RTC_TO_UNIX(rtc);
-      dip->atime = RTC_TO_UNIX(rtc);
-      dip->mtime = RTC_TO_UNIX(rtc);
+			dip->gid = DEFAULT_GID;
+			dip->uid = DEFAULT_UID;
+			//    struct rtcdate rtc;
+			struct rtcdate rtc;
+			cmostime(&rtc);
+			dip->ctime = RTC_TO_UNIX(rtc);
+			dip->atime = RTC_TO_UNIX(rtc);
+			dip->mtime = RTC_TO_UNIX(rtc);
 			log_write(bp); // mark it allocated on the disk
 			brelse(bp);
 			return iget(dev, inum);
@@ -243,11 +243,11 @@ iupdate(struct inode *ip)
 	dip->nlink = ip->nlink;
 	dip->size = ip->size;
 	dip->mode = ip->mode;
-  struct rtcdate rtc;
-  cmostime(&rtc);
-  dip->mtime = RTC_TO_UNIX(rtc);
-  dip->atime = RTC_TO_UNIX(rtc);
-  dip->ctime = ip->ctime;
+	struct rtcdate rtc;
+	cmostime(&rtc);
+	dip->mtime = RTC_TO_UNIX(rtc);
+	dip->atime = RTC_TO_UNIX(rtc);
+	dip->ctime = ip->ctime;
 
 	memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));
 	log_write(bp);
@@ -324,11 +324,11 @@ ilock(struct inode *ip)
 		ip->nlink = dip->nlink;
 		ip->size = dip->size;
 		ip->mode = dip->mode;
-    ip->uid = dip->uid;
-    ip->gid = dip->gid;
-    ip->atime = dip->atime;
-    ip->ctime = dip->ctime;
-    ip->mtime = dip->mtime;
+		ip->uid = dip->uid;
+		ip->gid = dip->gid;
+		ip->atime = dip->atime;
+		ip->ctime = dip->ctime;
+		ip->mtime = dip->mtime;
 
 		memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
 		brelse(bp);
@@ -473,11 +473,11 @@ stati(struct inode *ip, struct stat *st)
 	st->st_nlink = ip->nlink;
 	st->st_size = ip->size;
 	st->st_mode = ip->mode;
-  st->st_uid = ip->uid;
-  st->st_gid = ip->gid;
-  st->st_atime = ip->atime;
-  st->st_ctime = ip->ctime;
-  st->st_mtime = ip->mtime;
+	st->st_uid = ip->uid;
+	st->st_gid = ip->gid;
+	st->st_atime = ip->atime;
+	st->st_ctime = ip->ctime;
+	st->st_mtime = ip->mtime;
 }
 
 //PAGEBREAK!

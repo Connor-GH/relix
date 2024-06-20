@@ -1,4 +1,5 @@
 #pragma once
+#ifndef __ASSEMBLER__
 #if defined(__X86_64__) || defined(__i386__)
 typedef char int8_t;
 typedef short int16_t;
@@ -34,3 +35,4 @@ typedef int intptr_t;
 #endif
 typedef unsigned int uintptr_t;
 #endif
+#endif /* !__ASSEMBLER__ */

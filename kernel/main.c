@@ -1,7 +1,7 @@
 #include <types.h>
 #include <defs.h>
 #include "drivers/memlayout.h"
-#include "drivers/mmu.h"
+#include "drivers/acpi.h"
 #include "param.h"
 #include "proc.h"
 #include "x86.h"
@@ -22,7 +22,8 @@ main(void)
 {
 	kinit1(end, P2V(4 * 1024 * 1024)); // phys page allocator
 	kvmalloc(); // kernel page table
-	mpinit(); // detect other processors
+	if (acpiinit())
+		mpinit(); // detect other processors
 	lapicinit(); // interrupt controller
 	seginit(); // segment descriptors
 	picinit(); // disable pic

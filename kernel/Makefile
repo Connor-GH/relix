@@ -1,7 +1,9 @@
 KERNELDIR = kernel
 KERNEL_SRC = $(wildcard $(KERNELDIR)/*.c)
 KERNEL_ASM = $(wildcard $(KERNELDIR)/*.S)
-KERNEL_DRIVERS = $(KERNELDIR)/drivers/kbd.c $(KERNELDIR)/drivers/lapic.c
+KERNEL_DRIVERS = $(KERNELDIR)/drivers/kbd.c \
+								 $(KERNELDIR)/drivers/lapic.c \
+								 $(KERNELDIR)/drivers/acpi.c
 KERNEL_OBJS = $(KERNEL_SRC:$(KERNELDIR)/%.c=$(BIN)/%.o) $(KERNEL_ASM:$(KERNELDIR)/%.S=$(BIN)/%.o) \
 	$(KERNEL_DRIVERS:$(KERNELDIR)/drivers/%.c=$(BIN)/%.o)
 KERNEL_EXTRAS = -D__KERNEL__

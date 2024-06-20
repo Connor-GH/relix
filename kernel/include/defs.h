@@ -13,6 +13,7 @@ struct stat;
 struct superblock;
 
 extern int echo_out;
+extern int ismp; // SMP
 // bio.c
 void
 binit(void);

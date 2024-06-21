@@ -166,7 +166,7 @@ pipewrite(struct pipe *, char *, int);
 //PAGEBREAK: 16
 // proc.c
 int
-cpuid(void);
+my_cpu_id(void);
 void
 exit(int) __attribute__((noreturn));
 int
@@ -312,3 +312,14 @@ clearpteu(pde_t *pgdir, char *uva);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))
+
+static inline void
+kernel_assert_fail(const char *assertion, const char *file,
+		int lineno, const char *func)
+{
+	cprintf("%s:%d: %s: Assertion `%s' failed.\n", file, lineno, func,
+			assertion);
+	cprintf("Aborting.\n");
+	panic("Assertion failed.");
+}
+#define kernel_assert(expr) (expr ? 0 : kernel_assert_fail(#expr, __FILE__, __LINE__, __func__))

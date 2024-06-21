@@ -47,7 +47,7 @@ trap(struct trapframe *tf)
 
 	switch (tf->trapno) {
 	case T_IRQ0 + IRQ_TIMER:
-		if (cpuid() == 0) {
+		if (my_cpu_id() == 0) {
 			acquire(&tickslock);
 			ticks++;
 			wakeup(&ticks);
@@ -72,7 +72,7 @@ trap(struct trapframe *tf)
 		break;
 	case T_IRQ0 + 7:
 	case T_IRQ0 + IRQ_SPURIOUS:
-		cprintf("cpu%d: spurious interrupt at %x:%x\n", cpuid(), tf->cs, tf->eip);
+		cprintf("cpu%d: spurious interrupt at %x:%x\n", my_cpu_id(), tf->cs, tf->eip);
 		lapiceoi();
 		break;
 
@@ -81,13 +81,13 @@ trap(struct trapframe *tf)
 		if (myproc() == 0 || (tf->cs & 3) == 0) {
 			// In kernel, it must be our mistake.
 			cprintf("unexpected trap %d from cpu %d eip %x (cr2=0x%x)\n", tf->trapno,
-							cpuid(), tf->eip, rcr2());
+							my_cpu_id(), tf->eip, rcr2());
 			panic("trap");
 		}
 		// In user space, assume process misbehaved.
 		cprintf("pid %d %s: trap %d err %d on cpu %d "
 						"eip 0x%x addr 0x%x--kill proc\n",
-						myproc()->pid, myproc()->name, tf->trapno, tf->err, cpuid(),
+						myproc()->pid, myproc()->name, tf->trapno, tf->err, my_cpu_id(),
 						tf->eip, rcr2());
 		myproc()->killed = 1;
 	}

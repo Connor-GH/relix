@@ -1,5 +1,6 @@
 #pragma once
 #include <types.h>
+#include <stdint.h>
 // Routines to let C code use special x86 instructions.
 
 static inline uchar
@@ -152,6 +153,15 @@ hlt(void)
 	asm volatile("hlt");
 }
 
+static inline void
+cpuid(uint32_t id, uint32_t count,
+		uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d)
+{
+	asm volatile("movl %0, %%eax\t\n"
+			"cpuid"
+			: "=a" (*a), "=b" (*b), "=c" (*c), "=d" (*d)
+			: "0" (id), "2" (count));
+}
 //PAGEBREAK: 36
 // Layout of the trap frame built on the stack by the
 // hardware and by trapasm.S, and passed to trap().

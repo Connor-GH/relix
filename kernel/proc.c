@@ -1,6 +1,5 @@
 #include <types.h>
 #include <stdlib.h>
-#include "drivers/memlayout.h"
 #include "drivers/mmu.h"
 #include "defs.h"
 #include "param.h"
@@ -34,7 +33,7 @@ pinit(void)
 
 // Must be called with interrupts disabled
 int
-cpuid()
+my_cpu_id()
 {
 	pushcli();
 	int ret = mycpu() - cpus;
@@ -526,8 +525,12 @@ void
 procdump(void)
 {
 	static char *states[] = {
-		[UNUSED] "unused",	 [EMBRYO] "embryo",	 [SLEEPING] "sleep ",
-		[RUNNABLE] "runble", [RUNNING] "run   ", [ZOMBIE] "zombie"
+		[UNUSED] = "unused",
+		[EMBRYO] = "embryo",
+		[SLEEPING] = "sleep ",
+		[RUNNABLE] = "runble",
+		[RUNNING] = "run   ",
+		[ZOMBIE] = "zombie"
 	};
 	int i;
 	struct proc *p;

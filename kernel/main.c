@@ -56,7 +56,7 @@ mpenter(void)
 static void
 mpmain(void)
 {
-	cprintf("cpu%d: starting %d\n", cpuid(), cpuid());
+	cprintf("cpu%d: starting %d\n", my_cpu_id(), my_cpu_id());
 	cprintf("\eb1Hello world\eb0\n");
 	idtinit(); // load idt register
 	xchg(&(mycpu()->started), 1); // tell startothers() we're up

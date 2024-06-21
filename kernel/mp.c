@@ -34,6 +34,8 @@ mpsearch1(uint a, int len)
 	addr = P2V(a);
 	e = addr + len;
 	for (p = addr; p < e; p += sizeof(struct mp))
+		// see if we found the _MP_ signature that we need.
+		// https://web.archive.org/web/20121002210153/http://download.intel.com/design/archives/processors/pro/docs/24201606.pdf
 		if (memcmp(p, "_MP_", 4) == 0 && sum(p, sizeof(struct mp)) == 0)
 			return (struct mp *)p;
 	return 0;
@@ -96,6 +98,12 @@ mpinit(void)
 	struct mpconf *conf;
 	struct mpproc *proc;
 	struct mpioapic *ioapic;
+	struct mpbus *bus;
+	_Static_assert(sizeof(struct mpconf) == 44, "MP Configuration Struct malformed.");
+	_Static_assert(sizeof(struct mpproc) == 20, "MP Processor Entry Struct malformed.");
+	_Static_assert(sizeof(struct mp) == 16, "MP Floating Pointer Struct malformed.");
+	_Static_assert(sizeof(struct mpioapic) == 8, "MP I/O APIC Struct malformed.");
+	_Static_assert(sizeof(struct mpbus) == 8, "MP Bus Struct malformed.");
 
 	if ((conf = mpconfig(&mp)) == 0)
 		panic("Expect to run on an SMP");
@@ -105,6 +113,15 @@ mpinit(void)
 		switch (*p) {
 		case MPPROC:
 			proc = (struct mpproc *)p;
+			uint32_t a, b, c, d;
+			cpuid(1, 0, &a, &b, &c, &d);
+			proc->signature[0] = a; // stepping
+			proc->signature[1] = b; // model
+			proc->signature[2] = c; // family
+			proc->signature[3] = d; // extended family
+			kernel_assert(a != 0);
+			cprintf("CPU Model=%x, Family=%x Extended Family=%x Stepping=%x\n",
+				b, c, d, a);
 			if (ncpu < NCPU) {
 				cpus[ncpu].apicid = proc->apicid; // apicid may differ from ncpu
 				ncpu++;
@@ -117,6 +134,13 @@ mpinit(void)
 			p += sizeof(struct mpioapic);
 			continue;
 		case MPBUS:
+			bus = (struct mpbus *)p;
+			char bus_str[7];
+			safestrcpy(bus_str, (char *)bus->bus_string, 6);
+			cprintf("Bus entry: %x\n", bus->busid);
+			cprintf("Bus type string: %s\n", bus_str);
+			p += sizeof(struct mpbus);
+			continue;
 		case MPIOINTR:
 		case MPLINTR:
 			p += 8;

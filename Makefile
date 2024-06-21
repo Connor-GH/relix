@@ -158,7 +158,7 @@ MEM := 2G
 endif
 QEMUOPTS = -drive file=$(BIN)/fs.img,index=1,media=disk,format=raw,if=ide,aio=native,cache.direct=on \
 					 -drive file=$(BIN)/xv6.img,index=0,media=disk,format=raw,if=ide,aio=native,cache.direct=on \
-					 -smp $(CPUS) -m $(MEM) $(QEMUEXTRA)
+					 -smp cpus=$(CPUS),cores=1,threads=1,sockets=$(CPUS) -m $(MEM) $(QEMUEXTRA)
 
 qemu:
 	$(MAKE) fs.img

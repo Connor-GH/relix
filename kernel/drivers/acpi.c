@@ -31,8 +31,7 @@
 #include "acpi.h"
 
 extern struct cpu cpus[NCPU];
-//extern int ismp;
-int ismp;
+extern int ismp;
 extern int ncpu;
 extern uint8_t ioapicid;
 

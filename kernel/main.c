@@ -119,8 +119,8 @@ __attribute__((__aligned__(PGSIZE))) pde_t entrypgdir[NPDENTRIES] = {
 };
 
 
-// Blank page.
 
-// Blank page.
 
-// Blank page.
+
+
+

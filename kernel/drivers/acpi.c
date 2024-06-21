@@ -29,34 +29,54 @@
 #include "memlayout.h"
 #include "proc.h"
 #include "acpi.h"
+#include <x86.h>
+#include <stdlib.h>
 
 extern struct cpu cpus[NCPU];
-//extern int ismp;
-int ismp;
 extern int ncpu;
 extern uint8_t ioapicid;
 
+static int
+do_checksum(struct acpi_desc_header *dsc)
+{
+	uint sum = 0;
+	for (int i = 0; i < dsc->length; i++) {
+		sum += ((char *)dsc)[i];
+	}
+	return (sum & 0xff) == 0;
+}
+
 static struct acpi_rdsp *scan_rdsp(uint base, uint len) {
   uint8_t *p;
+	_Static_assert(sizeof(struct acpi_rdsp) == 20, "ACPI RDSP struct malformed.");
   for (p = p2v(base); len >= sizeof(struct acpi_rdsp); len -= 4, p += 4) {
     if (memcmp(p, SIG_RDSP, 8) == 0) {
-      uint sum, n;
-      for (sum = 0, n = 0; n < 20; n++)
+			uint sum = 0;
+      for (int n = 0; n < sizeof(struct acpi_rdsp); n++)
         sum += p[n];
-      if ((sum & 0xff) == 0)
-        return (struct acpi_rdsp *) p;
+			// make sure the lowest byte is zero as part of checksum.
+      if ((sum & 0xff) == 0) {
+				return (struct acpi_rdsp *) p;
+
+			}
     }
   }
   return (struct acpi_rdsp *) 0;
 }
 
+// the RDSP can either be in the EBDA area
+// (found from a pointer in P0x40E and a length at P0x413)
+// or it can be found in a memory region from 0xE0000-0xFFFFF.
 static struct acpi_rdsp *find_rdsp(void) {
   struct acpi_rdsp *rdsp;
   uintptr_t pa;
-  pa = *((ushort*) P2V(0x40E)) << 4; // EBDA
-  if (pa && (rdsp = scan_rdsp(pa, 1024)))
+	uintptr_t bda_size = *(short *)p2v(0x413);
+  pa = *((ushort*) p2v(0x40E)) << 4; // EBDA
+	// likely does not lie here.
+	rdsp = scan_rdsp(pa, bda_size);
+	if (pa && (rdsp != NULL))
     return rdsp;
-  return scan_rdsp(0xE0000, 0x20000);
+  return scan_rdsp(0xE0000, 0x1FFFF);
 }
 
 static int acpi_config_smp(struct acpi_madt *madt) {
@@ -89,9 +109,6 @@ static int acpi_config_smp(struct acpi_madt *madt) {
       if (!(lapic->flags & APIC_LAPIC_ENABLED))
         break;
       cprintf("acpi: cpu#%d apicid %d\n", ncpu, lapic->apic_id);
-#if x86_64_BIT_FULLY_READY
-				cpus[ncpu].id = ncpu;
-#endif
       cpus[ncpu].apicid = lapic->apic_id;
       ncpu++;
       break;
@@ -115,7 +132,6 @@ static int acpi_config_smp(struct acpi_madt *madt) {
   }
 
   if (ncpu) {
-    ismp = 1;
     lapic = IO2V(((uintptr_t)lapic_addr));
     return 0;
   }
@@ -136,14 +152,18 @@ int acpiinit(void) {
   struct acpi_madt *madt = 0;
 
   rdsp = find_rdsp();
-  if (rdsp->rsdt_addr_phys > PHYSLIMIT)
-    goto notmapped;
-  rsdt = p2v(rdsp->rsdt_addr_phys);
-  count = (rsdt->header.length - sizeof(*rsdt)) / 4;
+	if (rdsp == NULL)
+		panic("NULL RDSP");
+	if (rdsp->rsdt_addr_phys > PHYSLIMIT)
+  	goto notmapped;
+	rsdt = p2v(rdsp->rsdt_addr_phys);
+	kernel_assert(do_checksum(&rsdt->header) == 1);
+	kernel_assert(memcmp(rsdt->header.signature, "RSDT", 4) == 0);
+  count = (rsdt->header.length - sizeof(struct acpi_desc_header)) / 4;
   for (n = 0; n < count; n++) {
     struct acpi_desc_header *hdr = p2v(rsdt->entry[n]);
     if (rsdt->entry[n] > PHYSLIMIT)
-      goto notmapped;
+			goto notmapped;
 #if DEBUG
     uint8_t sig[5], id[7], tableid[9], creator[5];
     memmove(sig, hdr->signature, 4); sig[4] = 0;
@@ -154,7 +174,7 @@ int acpiinit(void) {
       sig, id, tableid, hdr->oem_revision,
       creator, hdr->creator_revision);
 #endif
-    if (!memcmp(hdr->signature, SIG_MADT, 4))
+    if (memcmp(hdr->signature, SIG_MADT, 4) == 0)
       madt = (void*) hdr;
   }
 

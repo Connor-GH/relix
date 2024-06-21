@@ -160,10 +160,13 @@ QEMUOPTS = -drive file=$(BIN)/fs.img,index=1,media=disk,format=raw,if=ide,aio=na
 					 -drive file=$(BIN)/xv6.img,index=0,media=disk,format=raw,if=ide,aio=native,cache.direct=on \
 					 -smp cpus=$(CPUS),cores=1,threads=1,sockets=$(CPUS) -m $(MEM) $(QEMUEXTRA)
 
+ifdef CONSOLE_LOG
+	QEMUOPTS += -serial mon:stdio
+endif
 qemu:
 	$(MAKE) fs.img
 	$(MAKE) xv6.img
-	$(QEMU) -serial mon:stdio $(QEMUOPTS)
+	$(QEMU) $(QEMUOPTS)
 
 qemu-memfs: xv6memfs.img
 	$(QEMU) -drive file=$(BIN)/xv6memfs.img,index=0,media=disk,format=raw -smp $(CPUS) -m 256
@@ -176,7 +179,7 @@ qemu-nox: fs.img xv6.img
 
 qemu-gdb: fs.img xv6.img .gdbinit
 	@echo "*** Now run 'gdb'." 1>&2
-	$(QEMU) -serial mon:stdio $(QEMUOPTS) -S $(QEMUGDB)
+	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 
 qemu-nox-gdb: fs.img xv6.img .gdbinit
 	@echo "*** Now run 'gdb'." 1>&2

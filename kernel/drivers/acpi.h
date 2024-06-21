@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #define x86_64_BIT_FULLY_READY 0 /* change when ready */
+#define ACPI_VERSION_2_0 0
 // References: ACPI 5.0 Errata A
 // http://acpi.info/spec.htm
 
@@ -12,17 +13,19 @@ struct acpi_rdsp {
   uint8_t oem_id[6];
   uint8_t revision;
   uint32_t rsdt_addr_phys;
+#if ACPI_VERSION_2_0
   uint32_t length;
 #if x86_64_BIT_FULLY_READY
 	uint64_t xsdt_addr_phys;
 #endif
   uint8_t xchecksum;
   uint8_t reserved[3];
+#endif
 } __attribute__((__packed__));
 
 // 5.2.6
 struct acpi_desc_header {
-  uint8_t signature[4];
+  uint8_t signature[4]; // "APIC"
   uint32_t length;
   uint8_t revision;
   uint8_t checksum;
@@ -45,12 +48,12 @@ struct acpi_rsdt {
 #define TYPE_NMI_INT_SRC 3
 #define TYPE_LAPIC_NMI 4
 
-// 5.2.12 Multiple APIC Description Table
+// 5.2.12 Multiple APIC Description Table (MADT)
 #define SIG_MADT "APIC"
 struct acpi_madt {
   struct acpi_desc_header header;
   uint32_t lapic_addr_phys;
-  uint32_t flags;
+  uint32_t flags; // 1 = legacy pics installed.
   uint8_t table[0];
 } __attribute__((__packed__));
 

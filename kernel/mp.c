@@ -114,14 +114,18 @@ mpinit(void)
 		case MPPROC:
 			proc = (struct mpproc *)p;
 			uint32_t a, b, c, d;
+			uint32_t family, model;
 			cpuid(1, 0, &a, &b, &c, &d);
-			proc->signature[0] = a; // stepping
-			proc->signature[1] = b; // model
-			proc->signature[2] = c; // family
-			proc->signature[3] = d; // extended family
+			proc->signature[0] = a & 0xF; // stepping
+			proc->signature[1] = (a >> 4) & 0xF; // model
+			proc->signature[2] = (a >> 8) & 0xF; // family
+			proc->signature[3] = (a >> 20) & 0xFF; // extended family
 			kernel_assert(a != 0);
-			cprintf("CPU Model=%x, Family=%x Extended Family=%x Stepping=%x\n",
-				b, c, d, a);
+			family = proc->signature[2] + proc->signature[3];
+			model = proc->signature[1];
+			model += ((a >> 16) & 0xF) << 4;
+			cprintf("CPU Model=%#x, Family=%#x Stepping=%#x\n",
+				model, family, (char)proc->signature[0]/*stepping*/);
 			if (ncpu < NCPU) {
 				cpus[ncpu].apicid = proc->apicid; // apicid may differ from ncpu
 				ncpu++;
@@ -137,8 +141,7 @@ mpinit(void)
 			bus = (struct mpbus *)p;
 			char bus_str[7];
 			safestrcpy(bus_str, (char *)bus->bus_string, 6);
-			cprintf("Bus entry: %x\n", bus->busid);
-			cprintf("Bus type string: %s\n", bus_str);
+			cprintf("Bus discovered: %s\n", bus_str);
 			p += sizeof(struct mpbus);
 			continue;
 		case MPIOINTR:

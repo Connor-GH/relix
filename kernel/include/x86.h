@@ -158,7 +158,7 @@ cpuid(uint32_t id, uint32_t count,
 		uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d)
 {
 	asm volatile("movl %0, %%eax\t\n"
-			"cpuid"
+			"cpuid\t\n"
 			: "=a" (*a), "=b" (*b), "=c" (*c), "=d" (*d)
 			: "0" (id), "2" (count));
 }

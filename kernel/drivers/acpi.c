@@ -31,6 +31,13 @@
 #include "acpi.h"
 #include <x86.h>
 #include <stdlib.h>
+#include <stdint.h>
+
+#if X64
+#define PHYSLIMIT 0x80000000
+#else
+#define PHYSLIMIT 0x0E000000
+#endif
 
 extern struct cpu cpus[NCPU];
 extern int ncpu;
@@ -45,20 +52,23 @@ do_checksum(struct acpi_desc_header *dsc)
 	}
 	return (sum & 0xff) == 0;
 }
+static int
+do_checksum_rdsp(struct acpi_rdsp *r, uint32_t len)
+{
+	uint sum = 0;
+	for (int i = 0; i < len; i++) {
+		sum += ((char *)r)[i];
+	}
+	return (sum & 0xff) == 0;
+}
 
 static struct acpi_rdsp *scan_rdsp(uint base, uint len) {
   uint8_t *p;
 	_Static_assert(sizeof(struct acpi_rdsp) == 20, "ACPI RDSP struct malformed.");
-  for (p = p2v(base); len >= sizeof(struct acpi_rdsp); len -= 4, p += 4) {
-    if (memcmp(p, SIG_RDSP, 8) == 0) {
-			uint sum = 0;
-      for (int n = 0; n < sizeof(struct acpi_rdsp); n++)
-        sum += p[n];
-			// make sure the lowest byte is zero as part of checksum.
-      if ((sum & 0xff) == 0) {
-				return (struct acpi_rdsp *) p;
 
-			}
+	for (p = p2v(base); len >= sizeof(struct acpi_rdsp); len -= 4, p += 4) {
+    if (memcmp(p, SIG_RDSP, 8) == 0 && do_checksum_rdsp((struct acpi_rdsp *)p, 20)) {
+				return (struct acpi_rdsp *) p;
     }
   }
   return (struct acpi_rdsp *) 0;
@@ -67,6 +77,7 @@ static struct acpi_rdsp *scan_rdsp(uint base, uint len) {
 // the RDSP can either be in the EBDA area
 // (found from a pointer in P0x40E and a length at P0x413)
 // or it can be found in a memory region from 0xE0000-0xFFFFF.
+// returns the PHYSICAL address.
 static struct acpi_rdsp *find_rdsp(void) {
   struct acpi_rdsp *rdsp;
   uintptr_t pa;
@@ -76,7 +87,7 @@ static struct acpi_rdsp *find_rdsp(void) {
 	rdsp = scan_rdsp(pa, bda_size);
 	if (pa && (rdsp != NULL))
     return rdsp;
-  return scan_rdsp(0xE0000, 0x1FFFF);
+	return scan_rdsp(0xE0000, 0x20000);
 }
 
 static int acpi_config_smp(struct acpi_madt *madt) {
@@ -139,12 +150,6 @@ static int acpi_config_smp(struct acpi_madt *madt) {
   return -1;
 }
 
-#if X64
-#define PHYSLIMIT 0x80000000
-#else
-#define PHYSLIMIT 0x0E000000
-#endif
-
 int acpiinit(void) {
   unsigned n, count;
   struct acpi_rdsp *rdsp;
@@ -181,6 +186,6 @@ int acpiinit(void) {
   return acpi_config_smp(madt);
 
 notmapped:
-  cprintf("acpi: tables above 0x%x not mapped.\n", PHYSLIMIT);
+  cprintf("acpi: tables above %#x not mapped.\n", PHYSLIMIT);
   return -1;
 }

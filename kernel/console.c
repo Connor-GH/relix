@@ -20,6 +20,7 @@ static int panicked = 0;
 int echo_out = 1;
 static uint8_t static_foreg = WHITE;
 static uint8_t static_backg = BLACK;
+static int alt_form = 0;
 
 static struct {
 	struct spinlock lock;
@@ -55,6 +56,11 @@ printint(int xx, int base, int sign)
 	if (sign)
 		buf[i++] = '-';
 
+	if (alt_form && base == 16) {
+		consputc('0');
+		consputc('x');
+		alt_form = 0;
+	}
 	while (--i >= 0)
 		consputc(buf[i]);
 }
@@ -115,6 +121,7 @@ cprintf(char *fmt, ...)
 			consputc(c);
 			continue;
 		}
+do_again:
 		c = fmt[++i] & 0xff;
 		if (c == 0)
 			break;
@@ -122,6 +129,9 @@ cprintf(char *fmt, ...)
 		case 'd':
 			printint(*argp++, 10, 1);
 			break;
+		case '#':
+			alt_form = 1;
+			goto do_again;
 		case 'x':
 		case 'p':
 			printint(*argp++, 16, 0);

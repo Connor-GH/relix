@@ -163,7 +163,7 @@ piperead(struct pipe *, char *, int);
 int
 pipewrite(struct pipe *, char *, int);
 
-//PAGEBREAK: 16
+
 // proc.c
 int
 my_cpu_id(void);

@@ -58,7 +58,7 @@ printint(int xx, int base, int sign)
 	while (--i >= 0)
 		consputc(buf[i]);
 }
-//PAGEBREAK: 50
+
 
 // Print to the console. only understands %d, %x, %p, %s.
 void
@@ -171,7 +171,7 @@ panic(char *s)
 		;
 }
 
-//PAGEBREAK: 50
+
 #define BACKSPACE 0x100
 #define CRTPORT 0x3d4
 static ushort *crt = (ushort *)P2V(0xb8000); // CGA memory

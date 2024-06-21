@@ -118,9 +118,9 @@ __attribute__((__aligned__(PGSIZE))) pde_t entrypgdir[NPDENTRIES] = {
 	[KERNBASE >> PDXSHIFT] = (0) | PTE_P | PTE_W | PTE_PS,
 };
 
-//PAGEBREAK!
+
 // Blank page.
-//PAGEBREAK!
+
 // Blank page.
-//PAGEBREAK!
+
 // Blank page.

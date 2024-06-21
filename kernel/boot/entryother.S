@@ -43,7 +43,7 @@ start:
   # translation, so that the mapping is still the identity mapping.
   ljmpl    $(SEG_KCODE<<3), $(start32)
 
-//PAGEBREAK!
+
 .code32  # Tell assembler to generate 32-bit code now.
 start32:
   # Set up the protected-mode data segment registers

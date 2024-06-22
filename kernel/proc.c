@@ -33,7 +33,7 @@ pinit(void)
 
 // Must be called with interrupts disabled
 int
-my_cpu_id()
+my_cpu_id(void)
 {
 	pushcli();
 	int ret = mycpu() - cpus;

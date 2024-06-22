@@ -226,8 +226,10 @@ main(int argc, char *argv[])
 	}
 
 	for (i = 1; i < argc; i++) {
-		if (stat(argv[i], NULL) >= 0)
+		struct stat unused;
+		if (stat(argv[i], &unused) >= 0) {
 			ls(argv[i], lflag, iflag, pflag);
+		}
 	}
 	exit(0);
 }

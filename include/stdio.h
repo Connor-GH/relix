@@ -1,8 +1,10 @@
 #pragma once
 #include <stdarg.h>
+#if defined(FILE_STRUCT_DONE) && FILE_STRUCT_DONE
 struct _IO_FILE {
 	/* TODO */
 };
+#endif
 
 typedef int FILE;
 

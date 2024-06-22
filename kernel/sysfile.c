@@ -7,6 +7,7 @@
 #include <types.h>
 #include <defs.h>
 #include <stat.h>
+#include <stdlib.h>
 #include <dirent.h>
 #include <date.h>
 #include <time.h>
@@ -111,6 +112,8 @@ sys_fstat(void)
 	struct stat *st;
 
 	if (argfd(0, 0, &f) < 0 || argptr(1, (void *)&st, sizeof(*st)) < 0)
+		return -1;
+	if (st == NULL)
 		return -1;
 	return filestat(f, st);
 }

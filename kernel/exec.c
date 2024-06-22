@@ -2,7 +2,6 @@
 #include <stat.h>
 #include <defs.h>
 #include "param.h"
-#include "drivers/memlayout.h"
 #include "drivers/mmu.h"
 #include "proc.h"
 #include "x86.h"

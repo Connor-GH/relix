@@ -8,14 +8,14 @@ inb(ushort port)
 {
 	uchar data;
 
-	asm volatile("in %1,%0" : "=a"(data) : "d"(port));
+	__asm__ __volatile__("in %1,%0" : "=a"(data) : "d"(port));
 	return data;
 }
 
 static inline void
 insl(int port, void *addr, int cnt)
 {
-	asm volatile("cld; rep insl"
+	__asm__ __volatile__("cld; rep insl"
 							 : "=D"(addr), "=c"(cnt)
 							 : "d"(port), "0"(addr), "1"(cnt)
 							 : "memory", "cc");
@@ -24,19 +24,19 @@ insl(int port, void *addr, int cnt)
 static inline void
 outb(ushort port, uchar data)
 {
-	asm volatile("out %0,%1" : : "a"(data), "d"(port));
+	__asm__ __volatile__("out %0,%1" : : "a"(data), "d"(port));
 }
 
 static inline void
 outw(ushort port, ushort data)
 {
-	asm volatile("out %0,%1" : : "a"(data), "d"(port));
+	__asm__ __volatile__("out %0,%1" : : "a"(data), "d"(port));
 }
 
 static inline void
 outsl(int port, const void *addr, int cnt)
 {
-	asm volatile("cld; rep outsl"
+	__asm__ __volatile__("cld; rep outsl"
 							 : "=S"(addr), "=c"(cnt)
 							 : "d"(port), "0"(addr), "1"(cnt)
 							 : "cc");
@@ -45,7 +45,7 @@ outsl(int port, const void *addr, int cnt)
 static inline void
 stosb(void *addr, int data, int cnt)
 {
-	asm volatile("cld; rep stosb"
+	__asm__ __volatile__("cld; rep stosb"
 							 : "=D"(addr), "=c"(cnt)
 							 : "0"(addr), "1"(cnt), "a"(data)
 							 : "memory", "cc");
@@ -54,7 +54,7 @@ stosb(void *addr, int data, int cnt)
 static inline void
 stosl(void *addr, int data, int cnt)
 {
-	asm volatile("cld; rep stosl"
+	__asm__ __volatile__("cld; rep stosl"
 							 : "=D"(addr), "=c"(cnt)
 							 : "0"(addr), "1"(cnt), "a"(data)
 							 : "memory", "cc");
@@ -71,7 +71,7 @@ lgdt(struct segdesc *p, int size)
 	pd[1] = (uint)p;
 	pd[2] = (uint)p >> 16;
 
-	asm volatile("lgdt (%0)" : : "r"(pd));
+	__asm__ __volatile__("lgdt (%0)" : : "r"(pd));
 }
 
 struct gatedesc;
@@ -85,39 +85,39 @@ lidt(struct gatedesc *p, int size)
 	pd[1] = (uint)p;
 	pd[2] = (uint)p >> 16;
 
-	asm volatile("lidt (%0)" : : "r"(pd));
+	__asm__ __volatile__("lidt (%0)" : : "r"(pd));
 }
 
 static inline void
 ltr(ushort sel)
 {
-	asm volatile("ltr %0" : : "r"(sel));
+	__asm__ __volatile__("ltr %0" : : "r"(sel));
 }
 
 static inline uint
 readeflags(void)
 {
 	uint eflags;
-	asm volatile("pushfl; popl %0" : "=r"(eflags));
+	__asm__ __volatile__("pushfl; popl %0" : "=r"(eflags));
 	return eflags;
 }
 
 static inline void
 loadgs(ushort v)
 {
-	asm volatile("movw %0, %%gs" : : "r"(v));
+	__asm__ __volatile__("movw %0, %%gs" : : "r"(v));
 }
 
 static inline void
 cli(void)
 {
-	asm volatile("cli");
+	__asm__ __volatile__("cli");
 }
 
 static inline void
 sti(void)
 {
-	asm volatile("sti");
+	__asm__ __volatile__("sti");
 }
 
 static inline uint
@@ -126,7 +126,7 @@ xchg(volatile uint *addr, uint newval)
 	uint result;
 
 	// The + in "+m" denotes a read-modify-write operand.
-	asm volatile("lock; xchgl %0, %1"
+	__asm__ __volatile__("lock; xchgl %0, %1"
 							 : "+m"(*addr), "=a"(result)
 							 : "1"(newval)
 							 : "cc");
@@ -137,27 +137,27 @@ static inline uint
 rcr2(void)
 {
 	uint val;
-	asm volatile("movl %%cr2,%0" : "=r"(val));
+	__asm__ __volatile__("movl %%cr2,%0" : "=r"(val));
 	return val;
 }
 
 static inline void
 lcr3(uint val)
 {
-	asm volatile("movl %0,%%cr3" : : "r"(val));
+	__asm__ __volatile__("movl %0,%%cr3" : : "r"(val));
 }
 
 static inline void
 hlt(void)
 {
-	asm volatile("hlt");
+	__asm__ __volatile__("hlt");
 }
 
 static inline void
 cpuid(uint32_t id, uint32_t count,
 		uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d)
 {
-	asm volatile("movl %0, %%eax\t\n"
+	__asm__ __volatile__("movl %0, %%eax\t\n"
 			"cpuid\t\n"
 			: "=a" (*a), "=b" (*b), "=c" (*c), "=d" (*d)
 			: "0" (id), "2" (count));

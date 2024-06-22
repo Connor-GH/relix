@@ -41,8 +41,8 @@ QEMU = $(shell if which qemu > /dev/null; \
 	echo "***" 1>&2; exit 1)
 endif
 
-# TODO get rid of these
-WNOFLAGS = -Wno-error=array-bounds -Wno-error=infinite-recursion -Wno-error
+# TODO get rid of this
+WNOFLAGS = -Wno-error=infinite-recursion
 ARCHNOFLAGS = -mno-sse -mno-red-zone -mno-avx -mno-avx2
 
 CC = $(TOOLPREFIX)gcc
@@ -61,10 +61,11 @@ ifeq ($(LLVM),1)
 	OBJDUMP = llvm-objdump
 endif
 
+WFLAGS = -Wnonnull
 
 CFLAGS = -fno-pic -static -fno-builtin -ffreestanding \
 				 -fno-strict-aliasing -nostdlib -O2 -Wall -ggdb -m32 -Werror -fno-omit-frame-pointer \
-				 -nostdinc -fno-builtin $(ARCHNOFLAGS) $(WNOFLAGS)
+				 -nostdinc -fno-builtin $(ARCHNOFLAGS) $(WNOFLAGS) $(WFLAGS)
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 ASFLAGS = -m32 -gdwarf-2 -Wa,-divide --mx86-used-note=no
 # FreeBSD ld wants ``elf_i386_fbsd''
@@ -112,7 +113,7 @@ include kernel/Makefile
 
 
 mkfs: $(TOOLSDIR)/mkfs.c
-	$(CC) -Werror -Wall -o $(SYSROOT)/mkfs $(TOOLSDIR)/mkfs.c \
+	$(CC) -Wall -o $(SYSROOT)/mkfs $(TOOLSDIR)/mkfs.c \
 		-I$(KERNELDIR)/include -I$(KERNELDIR)/drivers/include -I$(KERNELDIR)/drivers -I.
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so

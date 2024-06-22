@@ -89,6 +89,7 @@ gets(char *buf, int max)
 }
 
 // fill in st from pathname n
+__attribute__((nonnull(2)))
 int
 stat(const char *n, struct stat *st)
 {

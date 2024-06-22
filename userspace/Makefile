@@ -4,7 +4,7 @@ ULIB_OBJ = $(ULIB:$(UDIR)/%.c=$(BIN)/%.o)
 ULIB_ASM = $(wildcard $(UDIR)/*.S)
 ULIB_ASM_OBJ = $(ULIB_ASM:$(UDIR)/%.S=$(BIN)/%.o)
 
-UCFLAGS = -flto -Wl,-O1 -I$(UDIR)/include -I. $(IVARS) -DKERNEL_PREFIX="\"../kernel/include\""
+UCFLAGS = -I$(UDIR)/include -I. $(IVARS) -DKERNEL_PREFIX="\"../kernel/include\""
 
 $(ULIB_OBJ): $(BIN)/%.o : $(UDIR)/%.c
 	$(CC) $(CFLAGS) $(UCFLAGS) -c -o $@ $^

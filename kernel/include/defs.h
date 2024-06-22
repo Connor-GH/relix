@@ -139,9 +139,9 @@ initlog(int dev);
 void
 log_write(struct buf *);
 void
-begin_op();
+begin_op(void);
 void
-end_op();
+end_op(void);
 
 // mp.c
 extern int ismp;
@@ -179,7 +179,7 @@ kill(int);
 struct cpu *
 mycpu(void);
 struct proc *
-myproc();
+myproc(void);
 void
 pinit(void);
 void
@@ -323,4 +323,9 @@ kernel_assert_fail(const char *assertion, const char *file,
 	cprintf("Aborting.\n");
 	panic("Assertion failed.");
 }
-#define kernel_assert(expr) (expr ? 0 : kernel_assert_fail(#expr, __FILE__, __LINE__, __func__))
+// the no-op here makes clang happy.
+static inline void
+no_op(void)
+{
+}
+#define kernel_assert(expr) (expr ? no_op() : kernel_assert_fail(#expr, __FILE__, __LINE__, __func__))

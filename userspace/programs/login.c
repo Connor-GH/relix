@@ -11,6 +11,7 @@ int
 main(int argc, char **argv)
 {
 	struct cred cred;
+	(void)cred;
 	char username[MAX_USERNAME];
 	char passwd[MAX_PASSWD];
 	int uid = -1;

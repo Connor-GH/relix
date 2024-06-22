@@ -1,6 +1,5 @@
 #include <types.h>
 #include <defs.h>
-#include "drivers/memlayout.h"
 #include "drivers/mmu.h"
 #include "proc.h"
 #include "x86.h"
@@ -76,7 +75,7 @@ trap(struct trapframe *tf)
 		lapiceoi();
 		break;
 
-	
+
 	default:
 		if (myproc() == 0 || (tf->cs & 3) == 0) {
 			// In kernel, it must be our mistake.

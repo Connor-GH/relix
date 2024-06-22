@@ -28,35 +28,35 @@
 // Disk layout:
 // [ boot block | sb block | log | inode blocks | free bit map | data blocks ]
 
-int nbitmap = FSSIZE / (BSIZE * 8) + 1;
-int ninodeblocks = NINODES / IPB + 1;
-int nlog = LOGSIZE;
-int nmeta; // Number of meta blocks (boot, sb, nlog, inode, bitmap)
-int nblocks; // Number of data blocks
+static int nbitmap = FSSIZE / (BSIZE * 8) + 1;
+static int ninodeblocks = NINODES / IPB + 1;
+static int nlog = LOGSIZE;
+static int nmeta; // Number of meta blocks (boot, sb, nlog, inode, bitmap)
+static int nblocks; // Number of data blocks
 
-int fsfd;
-struct superblock sb;
-char zeroes[BSIZE];
-uint freeinode = 1;
-uint freeblock;
+static int fsfd;
+static struct superblock sb;
+static char zeroes[BSIZE];
+static uint freeinode = 1;
+static uint freeblock;
 
-void
+static void
 balloc(int);
-void
+static void
 wsect(uint, void *);
-void
+static void
 winode(uint, struct dinode *);
-void
+static void
 rinode(uint inum, struct dinode *ip);
-void
+static void
 rsect(uint sec, void *buf);
-uint
+static uint
 ialloc(ushort type);
-void
+static void
 iappend(uint inum, void *p, int n);
 
 // convert to intel byte order
-ushort
+static ushort
 xshort(ushort x)
 {
 	ushort y;
@@ -66,7 +66,7 @@ xshort(ushort x)
 	return y;
 }
 
-uint
+static uint
 xint(uint x)
 {
 	uint y;
@@ -78,9 +78,9 @@ xint(uint x)
 	return y;
 }
 
-uint rootino;
-uint etcino;
-uint binino;
+static uint rootino;
+static uint etcino;
+static uint binino;
 
 static void
 make_file(uint currentino, const char *name, uint parentino)
@@ -258,7 +258,7 @@ wsect(uint sec, void *buf)
 	}
 }
 
-void
+static void
 winode(uint inum, struct dinode *ip)
 {
 	char buf[BSIZE];
@@ -272,7 +272,7 @@ winode(uint inum, struct dinode *ip)
 	wsect(bn, buf);
 }
 
-void
+static void
 rinode(uint inum, struct dinode *ip)
 {
 	char buf[BSIZE];
@@ -285,7 +285,7 @@ rinode(uint inum, struct dinode *ip)
 	*ip = *dip;
 }
 
-void
+static void
 rsect(uint sec, void *buf)
 {
 	if (lseek(fsfd, sec * BSIZE, 0) != sec * BSIZE) {
@@ -298,7 +298,7 @@ rsect(uint sec, void *buf)
 	}
 }
 
-uint
+static uint
 ialloc(ushort type)
 {
 	uint inum = freeinode++;
@@ -318,7 +318,7 @@ ialloc(ushort type)
 	return inum;
 }
 
-void
+static void
 balloc(int used)
 {
 	uchar buf[BSIZE];
@@ -336,7 +336,7 @@ balloc(int used)
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
-void
+static void
 iappend(uint inum, void *xp, int n)
 {
 	char *p = (char *)xp;

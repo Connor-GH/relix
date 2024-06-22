@@ -1,6 +1,5 @@
 #include <types.h>
 #include <defs.h>
-#include "drivers/memlayout.h"
 #include "proc.h"
 #include "x86.h"
 #include "syscall.h"

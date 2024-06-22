@@ -113,7 +113,7 @@ include kernel/Makefile
 
 
 mkfs: $(TOOLSDIR)/mkfs.c
-	$(CC) -Wall -o $(SYSROOT)/mkfs $(TOOLSDIR)/mkfs.c \
+	$(CC) -Werror -Wall -o $(SYSROOT)/mkfs $(TOOLSDIR)/mkfs.c \
 		-I$(KERNELDIR)/include -I$(KERNELDIR)/drivers/include -I$(KERNELDIR)/drivers -I.
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so

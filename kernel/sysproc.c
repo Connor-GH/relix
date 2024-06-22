@@ -148,14 +148,14 @@ int
 sys_setuid(void)
 {
 	// cannot setuid if not root
-	if (myproc()->cred->uid != 0)
+	if (myproc()->cred.uid != 0)
 		return -1;
 	int uid;
 	if (argint(0, &uid) < 0)
 		return -1;
-	struct cred *cred;
-	cred->uid = uid;
-	cred->gids[0] = uid;
+	struct cred cred;
+	cred.uid = uid;
+	cred.gids[0] = uid;
 	myproc()->cred = cred;
 	return 0;
 }

@@ -1,3 +1,5 @@
+#pragma once
+#include <types.h>
 // PC keyboard interface constants
 
 #define KBSTATP 0x64 // kbd controller status port(I)
@@ -31,12 +33,11 @@
 // C('A') == Control-A
 #define C(x) (x - '@')
 
-static uchar shiftcode[256] = {
-	[0x1D] CTL, [0x2A] SHIFT, [0x36] SHIFT, [0x38] ALT, [0x9D] CTL, [0xB8] ALT
-};
+static uchar shiftcode[256] = { [0x1D] = CTL, [0x2A] = SHIFT, [0x36] = SHIFT,
+																[0x38] = ALT, [0x9D] = CTL,		[0xB8] = ALT };
 
 static uchar
-	togglecode[256] = { [0x3A] CAPSLOCK, [0x45] NUMLOCK, [0x46] SCROLLLOCK };
+	togglecode[256] = { [0x3A] = CAPSLOCK, [0x45] = NUMLOCK, [0x46] = SCROLLLOCK };
 
 static uchar normalmap[256] = { NO,
 																0x1B,
@@ -126,18 +127,18 @@ static uchar normalmap[256] = { NO,
 																NO,
 																NO,
 																NO, // 0x50
-																[0x9C] '\n', // KP_Enter
-																[0xB5] '/', // KP_Div
-																[0xC8] KEY_UP,
-																[0xD0] KEY_DN,
-																[0xC9] KEY_PGUP,
-																[0xD1] KEY_PGDN,
-																[0xCB] KEY_LF,
-																[0xCD] KEY_RT,
-																[0x97] KEY_HOME,
-																[0xCF] KEY_END,
-																[0xD2] KEY_INS,
-																[0xD3] KEY_DEL };
+																[0x9C] = '\n', // KP_Enter
+																[0xB5] = '/', // KP_Div
+																[0xC8] = KEY_UP,
+																[0xD0] = KEY_DN,
+																[0xC9] = KEY_PGUP,
+																[0xD1] = KEY_PGDN,
+																[0xCB] = KEY_LF,
+																[0xCD] = KEY_RT,
+																[0x97] = KEY_HOME,
+																[0xCF] = KEY_END,
+																[0xD2] = KEY_INS,
+																[0xD3] = KEY_DEL };
 
 static uchar shiftmap[256] = { NO,
 															 033,
@@ -227,18 +228,18 @@ static uchar shiftmap[256] = { NO,
 															 NO,
 															 NO,
 															 NO, // 0x50
-															 [0x9C] '\n', // KP_Enter
-															 [0xB5] '/', // KP_Div
-															 [0xC8] KEY_UP,
-															 [0xD0] KEY_DN,
-															 [0xC9] KEY_PGUP,
-															 [0xD1] KEY_PGDN,
-															 [0xCB] KEY_LF,
-															 [0xCD] KEY_RT,
-															 [0x97] KEY_HOME,
-															 [0xCF] KEY_END,
-															 [0xD2] KEY_INS,
-															 [0xD3] KEY_DEL };
+															 [0x9C] = '\n', // KP_Enter
+															 [0xB5] = '/', // KP_Div
+															 [0xC8] = KEY_UP,
+															 [0xD0] = KEY_DN,
+															 [0xC9] = KEY_PGUP,
+															 [0xD1] = KEY_PGDN,
+															 [0xCB] = KEY_LF,
+															 [0xCD] = KEY_RT,
+															 [0x97] = KEY_HOME,
+															 [0xCF] = KEY_END,
+															 [0xD2] = KEY_INS,
+															 [0xD3] = KEY_DEL };
 
 static uchar ctlmap[256] = { NO,
 														 NO,
@@ -296,15 +297,15 @@ static uchar ctlmap[256] = { NO,
 														 C('/'),
 														 NO,
 														 NO,
-														 [0x9C] '\r', // KP_Enter
-														 [0xB5] C('/'), // KP_Div
-														 [0xC8] KEY_UP,
-														 [0xD0] KEY_DN,
-														 [0xC9] KEY_PGUP,
-														 [0xD1] KEY_PGDN,
-														 [0xCB] KEY_LF,
-														 [0xCD] KEY_RT,
-														 [0x97] KEY_HOME,
-														 [0xCF] KEY_END,
-														 [0xD2] KEY_INS,
-														 [0xD3] KEY_DEL };
+														 [0x9C] = '\r', // KP_Enter
+														 [0xB5] = C('/'), // KP_Div
+														 [0xC8] = KEY_UP,
+														 [0xD0] = KEY_DN,
+														 [0xC9] = KEY_PGUP,
+														 [0xD1] = KEY_PGDN,
+														 [0xCB] = KEY_LF,
+														 [0xCD] = KEY_RT,
+														 [0x97] = KEY_HOME,
+														 [0xCF] = KEY_END,
+														 [0xD2] = KEY_INS,
+														 [0xD3] = KEY_DEL };

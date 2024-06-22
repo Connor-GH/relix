@@ -488,6 +488,7 @@ int
 sys_echoout(void)
 {
 	int answer;
+	begin_op();
 	if (argint(0, &answer) < 0) {
 		end_op();
 		return -1;

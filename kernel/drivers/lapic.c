@@ -226,5 +226,4 @@ cmostime(struct rtcdate *r)
 	// but this is what i have to do to get it working
 	*r = t1;
 	r->year += 2000;
-	r->day -= 1;
 }

@@ -5,7 +5,7 @@
 #include <assert.h> // assert
 #include <string.h> // memset, memcpy
 
-#define BUF_SIZE 512
+#define BUF_SIZE 1024
 int
 main(int argc, char **argv)
 {

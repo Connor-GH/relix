@@ -203,7 +203,7 @@ writetest1(void)
 	for (i = 0; i < MAXFILE; i++) {
 		((int *)buf)[0] = i;
 		if (write(fd, buf, 512) != 512) {
-			fprintf(stdout, "error: write big file failed\n", i);
+			fprintf(stdout, "error: write big file failed %d\n", i);
 			exit(0);
 		}
 	}
@@ -1431,7 +1431,7 @@ sbrktest(void)
 	for (i = 0; i < 5000; i++) {
 		b = sbrk(1);
 		if (b != a) {
-			fprintf(stdout, "sbrk test failed %d %x %x\n", i, a, b);
+			fprintf(stdout, "sbrk test failed %d %p %p\n", i, a, b);
 			exit(0);
 		}
 		*b = 1;
@@ -1474,7 +1474,7 @@ sbrktest(void)
 	}
 	c = sbrk(0);
 	if (c != a - 4096) {
-		fprintf(stdout, "sbrk deallocation produced wrong address, a %x c %x\n", a,
+		fprintf(stdout, "sbrk deallocation produced wrong address, a %p c %p\n", a,
 						c);
 		exit(0);
 	}
@@ -1483,7 +1483,7 @@ sbrktest(void)
 	a = sbrk(0);
 	c = sbrk(4096);
 	if (c != a || sbrk(0) != a + 4096) {
-		fprintf(stdout, "sbrk re-allocation failed, a %x c %x\n", a, c);
+		fprintf(stdout, "sbrk re-allocation failed, a %p c %p\n", a, c);
 		exit(0);
 	}
 	if (*lastaddr == 99) {
@@ -1495,7 +1495,7 @@ sbrktest(void)
 	a = sbrk(0);
 	c = sbrk(-(sbrk(0) - oldbrk));
 	if (c != a) {
-		fprintf(stdout, "sbrk downsize failed, a %x c %x\n", a, c);
+		fprintf(stdout, "sbrk downsize failed, a %p c %p\n", a, c);
 		exit(0);
 	}
 
@@ -1508,7 +1508,7 @@ sbrktest(void)
 			exit(0);
 		}
 		if (pid == 0) {
-			fprintf(stdout, "oops could read %x = %x\n", a, *a);
+			fprintf(stdout, "oops could read %p = %d\n", a, *a);
 			kill(ppid);
 			exit(0);
 		}

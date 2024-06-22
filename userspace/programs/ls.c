@@ -126,10 +126,10 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 		if (lflag) {
 			// inodes
 			if (iflag)
-				fprintf(stdout, "% 9u ", st.st_ino);
+				fprintf(stdout, "% 9d ", st.st_ino);
 			char ret[11];
 			fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
-			fprintf(stdout, "% 4u % 4u % 9u ", st.st_uid, st.st_gid, st.st_size);
+			fprintf(stdout, "% 4d % 4d % 9d ", st.st_uid, st.st_gid, st.st_size);
 			struct ls_time lt = to_human_time(st.st_mtime);
 			fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
 							lt.hr, lt.min, lt.sec);
@@ -162,10 +162,10 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 			if (lflag) {
 				// inodes
 				if (iflag)
-					fprintf(stdout, "% 9u ", st.st_ino);
+					fprintf(stdout, "% 9d ", st.st_ino);
 				char ret[11];
 				fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
-				fprintf(stdout, "% 4u % 4u % 9u ", st.st_uid, st.st_gid, st.st_size);
+				fprintf(stdout, "% 4d % 4d % 9d ", st.st_uid, st.st_gid, st.st_size);
 				struct ls_time lt = to_human_time(st.st_mtime);
 				fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
 								lt.hr, lt.min, lt.sec);

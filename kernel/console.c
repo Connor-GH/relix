@@ -67,6 +67,7 @@ printint(int xx, int base, int sign)
 
 
 // Print to the console. only understands %d, %x, %p, %s.
+__attribute__((format(printf, 1, 2)))
 void
 cprintf(char *fmt, ...)
 {
@@ -171,11 +172,11 @@ panic(char *s)
 	cons.locking = 0;
 	// use lapiccpunum so that we can call panic from mycpu()
 	cprintf("lapicid %d: panic: ", lapicid());
-	cprintf(s);
+	cprintf("%s", s);
 	cprintf("\n");
 	getcallerpcs(&s, pcs);
 	for (i = 0; i < 10; i++)
-		cprintf(" %p", pcs[i]);
+		cprintf(" %x", pcs[i]);
 	panicked = 1; // freeze other CPU
 	for (;;)
 		;

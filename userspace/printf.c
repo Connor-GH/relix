@@ -168,6 +168,7 @@ skip_state_reset:; // state = '%' if set
 	}
 }
 
+__attribute__((format(printf, 2, 3)))
 void
 fprintf(int fd, const char *fmt, ...)
 {
@@ -177,6 +178,7 @@ fprintf(int fd, const char *fmt, ...)
 	va_end(listp);
 }
 
+__attribute__((format(printf, 1, 2)))
 void
 printf(const char *fmt, ...)
 {

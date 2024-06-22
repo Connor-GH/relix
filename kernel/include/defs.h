@@ -26,6 +26,7 @@ bwrite(struct buf *);
 // console.c
 void
 consoleinit(void);
+__attribute__((format(printf, 1, 2)))
 void
 cprintf(char *, ...);
 void

@@ -2,7 +2,9 @@
 #include <types.h>
 #define NULL ((void *)0)
 
-void *malloc(uint);
+__attribute__((malloc))
+void *
+malloc(uint);
 void
 free(void *);
 int

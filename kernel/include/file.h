@@ -25,7 +25,7 @@ struct inode {
 	short minor;
 	short nlink;
 	uint size;
-	uint mode; // maybe ushort?
+	uint mode;
 	ushort gid;
 	ushort uid;
 	uint ctime; // change
@@ -42,8 +42,5 @@ struct devsw {
 };
 
 extern struct devsw devsw[];
-#define EOF (256)
 
 enum { CONSOLE = 1, NULLDRV };
-//#define CONSOLE 1
-//#define NULLDRV 2

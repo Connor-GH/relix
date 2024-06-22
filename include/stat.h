@@ -6,12 +6,6 @@
 #ifndef USE_HOST_STAT
 #include <types.h>
 /* fields do not begin with "st_" if they are nonstandard. */
-struct stat {
-	short type; // Type of file
-	int st_dev; // File system's disk device
-	uint st_ino; // Inode number
-	short st_nlink; // Number of links to file
-	uint st_size; // Size of file in bytes
 //
 // +--------->+-------+
 // |+-------->| owner |
@@ -63,12 +57,18 @@ struct stat {
 #define S_IROTH 00004
 #define S_IWOTH 00002
 #define S_IXOTH 00001
-	uint st_mode;
-	ushort st_uid;
-	ushort st_gid;
-	uint st_ctime; // change
-	uint st_atime; // access
-	uint st_mtime; // modification
+struct stat {
+	short type; // Type of file -- TODO get rid of this struct member
+	int st_dev; /* u32 or u64 */ // File system's disk device
+	uint st_ino; /* u32 or u64 */ // Inode number
+	short st_nlink; /* u32 or u64 */ // Number of links to file
+	uint st_size; /* u32 or u64 */ // Size of file in bytes
+	uint st_mode; /* u32 */
+	ushort st_uid; /* u32 */
+	ushort st_gid; /* u32 */
+	uint st_ctime; /* u32 or u64 */ // change
+	uint st_atime; /* u32 or u64 */ // access
+	uint st_mtime; /* u32 or u64 */ // modification
 };
 #endif
 // 0700

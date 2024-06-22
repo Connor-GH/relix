@@ -66,9 +66,9 @@ static struct acpi_rdsp *scan_rdsp(uint base, uint len) {
   uint8_t *p;
 	_Static_assert(sizeof(struct acpi_rdsp) == 20, "ACPI RDSP struct malformed.");
 
-	for (p = p2v(base); len >= sizeof(struct acpi_rdsp); len -= 4, p += 4) {
+	for (p = p2v(base); len >= sizeof(struct acpi_rdsp); len -= sizeof(len), p += sizeof(p)) {
     if (memcmp(p, SIG_RDSP, 8) == 0 && do_checksum_rdsp((struct acpi_rdsp *)p, 20)) {
-				return (struct acpi_rdsp *) p;
+			return (struct acpi_rdsp *) p;
     }
   }
   return (struct acpi_rdsp *) 0;
@@ -159,6 +159,8 @@ int acpiinit(void) {
   rdsp = find_rdsp();
 	if (rdsp == NULL)
 		panic("NULL RDSP");
+	cprintf("info: rdsp at %#x\n", v2p(rdsp));
+	cprintf("info: rsdt at %#x\n", V2P_WO(rdsp->rsdt_addr_phys));
 	if (rdsp->rsdt_addr_phys > PHYSLIMIT)
   	goto notmapped;
 	rsdt = p2v(rdsp->rsdt_addr_phys);

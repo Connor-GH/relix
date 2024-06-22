@@ -30,6 +30,9 @@
 #define TIMER (0x0320 / 4) // Local Vector Table 0 (TIMER)
 #define X1 0x0000000B // divide counts by 1
 #define PERIODIC 0x00020000 // Periodic
+// may want to use the deadline timer later for realtime applications
+#define TSC_DEADLINE 0x40000
+#define LVT_THERMAL (0x330 / 4) // thermal sensor register
 #define PCINT (0x0340 / 4) // Performance Counter LVT
 #define LINT0 (0x0350 / 4) // Local Vector Table 1 (LINT0)
 #define LINT1 (0x0360 / 4) // Local Vector Table 2 (LINT1)
@@ -62,6 +65,14 @@ lapicinit(void)
 	// from lapic[TICR] and then issues an interrupt.
 	// If xv6 cared more about precise timekeeping,
 	// TICR would be calibrated using an external time source.
+	uint32_t eax, ebx, ecx, edx;
+	cpuid(6, 0, &eax, &ebx, &ecx, &edx);
+	// considered the "ARAT" bit
+	if (eax & 0b100) {
+		// APIC runs at constant rate regardless of P-states
+	} else {
+		// APIC may stop during C-states or due to intel SpeedStep
+	}
 	lapicw(TDCR, X1);
 	lapicw(TIMER, PERIODIC | (T_IRQ0 + IRQ_TIMER));
 	lapicw(TICR, 10000000);
@@ -116,6 +127,10 @@ lapiceoi(void)
 void
 microdelay(int us)
 {
+	volatile int d = 0;
+	d;
+	d;
+	d;
 }
 
 #define CMOS_PORT 0x70
@@ -162,12 +177,16 @@ lapicstartap(uchar apicid, uint addr)
 #define CMOS_STATB 0x0b
 #define CMOS_UIP (1 << 7) // RTC update in progress
 
+// these are "registers"
 #define SECS 0x00
 #define MINS 0x02
-#define HOURS 0x04
-#define DAY 0x07
-#define MONTH 0x08
-#define YEAR 0x09
+#define HOURS 0x04 // 24hr or 12; highest bit set if pm
+#define DAY_OF_WEEK 0x06 // 1 = sunday
+#define DAY 0x07 // 1-31
+#define MONTH 0x08 // 1-12
+#define YEAR 0x09 // 0-99
+// untrustworthy; the real century register is in ACPI FADT offset 108
+#define CENTURY 0x32
 
 static uint
 cmos_read(uint reg)
@@ -187,6 +206,12 @@ fill_rtcdate(struct rtcdate *r)
 	r->day = cmos_read(DAY);
 	r->month = cmos_read(MONTH);
 	r->year = cmos_read(YEAR);
+	if (cmos_read(CENTURY) != 0) {
+		r->year += cmos_read(CENTURY) * 100;
+	}
+	if (((cmos_read(CMOS_STATB) & (1 << 1)) == 0) && (r->hour & 0x80)) {
+		r->hour = ((r->hour & 0x7F) + 12) % 24;
+	}
 }
 
 // qemu seems to use 24-hour GWT and the values are BCD encoded
@@ -198,6 +223,7 @@ cmostime(struct rtcdate *r)
 
 	sb = cmos_read(CMOS_STATB);
 
+	// find out if the cmos is bcd-encoded
 	bcd = (sb & (1 << 2)) == 0;
 
 	// make sure CMOS doesn't modify time while we read it
@@ -215,15 +241,14 @@ cmostime(struct rtcdate *r)
 #define CONV(x) (t1.x = ((t1.x >> 4) * 10) + (t1.x & 0xf))
 		CONV(second);
 		CONV(minute);
-		CONV(hour);
+		t1.hour = ((t1.hour & 0x0f) + (((t1.hour & 0x70) / 16) * 10) ) | (t1.hour & 0x80);
 		CONV(day);
+		t1.day -= cmos_read(DAY_OF_WEEK);
 		CONV(month);
 		CONV(year);
 #undef CONV
 	}
 
-	// these constants make no sense
-	// but this is what i have to do to get it working
+
 	*r = t1;
-	r->year += 2000;
 }

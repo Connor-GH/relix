@@ -178,9 +178,11 @@ qemu-nox: fs.img xv6.img
 .gdbinit: debug/.gdbinit.tmpl
 	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@
 
-qemu-gdb: fs.img xv6.img .gdbinit
-	@echo "*** Now run 'gdb'." 1>&2
+qemu-gdb:
+	$(MAKE) fs.img
+	$(MAKE) xv6.img
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
+	@echo "*** Now run 'gdb'." 1>&2
 
 qemu-nox-gdb: fs.img xv6.img .gdbinit
 	@echo "*** Now run 'gdb'." 1>&2

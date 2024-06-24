@@ -58,8 +58,7 @@ morecore(uint nu)
 	return freep;
 }
 
-__attribute__((malloc))
-void *
+__attribute__((malloc)) void *
 malloc(uint nbytes)
 {
 	Header *p, *prevp;

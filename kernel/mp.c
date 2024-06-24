@@ -102,9 +102,12 @@ mpinit(void)
 	struct mpproc *proc;
 	struct mpioapic *ioapic;
 	struct mpbus *bus;
-	_Static_assert(sizeof(struct mpconf) == 44, "MP Configuration Struct malformed.");
-	_Static_assert(sizeof(struct mpproc) == 20, "MP Processor Entry Struct malformed.");
-	_Static_assert(sizeof(struct mp) == 16, "MP Floating Pointer Struct malformed.");
+	_Static_assert(sizeof(struct mpconf) == 44,
+								 "MP Configuration Struct malformed.");
+	_Static_assert(sizeof(struct mpproc) == 20,
+								 "MP Processor Entry Struct malformed.");
+	_Static_assert(sizeof(struct mp) == 16,
+								 "MP Floating Pointer Struct malformed.");
 	_Static_assert(sizeof(struct mpioapic) == 8, "MP I/O APIC Struct malformed.");
 	_Static_assert(sizeof(struct mpbus) == 8, "MP Bus Struct malformed.");
 
@@ -127,8 +130,8 @@ mpinit(void)
 			family = proc->signature[2] + proc->signature[3];
 			model = proc->signature[1];
 			model += ((a >> 16) & 0xF) << 4;
-			cprintf("CPU Model=%#x, Family=%#x Stepping=%#x\n",
-				model, family, (char)proc->signature[0]/*stepping*/);
+			cprintf("CPU Model=%#x, Family=%#x Stepping=%#x\n", model, family,
+							(char)proc->signature[0] /*stepping*/);
 			if (ncpu < NCPU) {
 				cpus[ncpu].apicid = proc->apicid; // apicid may differ from ncpu
 				ncpu++;

@@ -111,7 +111,6 @@ fileread(struct file *f, char *addr, int n)
 	panic("fileread");
 }
 
-
 // Write to file f.
 int
 filewrite(struct file *f, char *addr, int n)

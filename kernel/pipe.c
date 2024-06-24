@@ -42,7 +42,6 @@ pipealloc(struct file **f0, struct file **f1)
 	(*f1)->pipe = p;
 	return 0;
 
-
 bad:
 	if (p)
 		kfree((char *)p);
@@ -70,7 +69,6 @@ pipeclose(struct pipe *p, int writable)
 	} else
 		release(&p->lock);
 }
-
 
 int
 pipewrite(struct pipe *p, char *addr, int n)

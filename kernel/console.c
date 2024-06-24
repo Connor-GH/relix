@@ -69,10 +69,8 @@ printint(int xx, int base, int sign)
 		consputc(buf[i]);
 }
 
-
 // Print to the console. only understands %d, %x, %p, %s.
-__attribute__((format(printf, 1, 2)))
-void
+__attribute__((format(printf, 1, 2))) void
 cprintf(char *fmt, ...)
 {
 	int i, c, locking;
@@ -185,7 +183,6 @@ panic(char *s)
 	for (;;)
 		;
 }
-
 
 #define BACKSPACE 0x100
 #define CRTPORT 0x3d4

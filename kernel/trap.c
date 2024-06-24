@@ -35,7 +35,6 @@ idtinit(void)
 	lidt(idt, sizeof(idt));
 }
 
-
 void
 trap(struct trapframe *tf)
 {
@@ -76,10 +75,10 @@ trap(struct trapframe *tf)
 		break;
 	case T_IRQ0 + 7:
 	case T_IRQ0 + IRQ_SPURIOUS:
-		cprintf("cpu%d: spurious interrupt at %x:%x\n", my_cpu_id(), tf->cs, tf->eip);
+		cprintf("cpu%d: spurious interrupt at %x:%x\n", my_cpu_id(), tf->cs,
+						tf->eip);
 		lapiceoi();
 		break;
-
 
 	default:
 		if (myproc() == 0 || (tf->cs & 3) == 0) {

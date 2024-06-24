@@ -191,7 +191,6 @@ isdirempty(struct inode *dp)
 	return 1;
 }
 
-
 int
 sys_unlink(void)
 {

@@ -128,10 +128,3 @@ __attribute__((__aligned__(PGSIZE))) pde_t entrypgdir[NPDENTRIES] = {
 	// Map VA's [KERNBASE, KERNBASE+4MB) to PA's [0, 4MB)
 	[KERNBASE >> PDXSHIFT] = (0) | PTE_P | PTE_W | PTE_PS,
 };
-
-
-
-
-
-
-

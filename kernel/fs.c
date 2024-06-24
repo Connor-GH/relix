@@ -194,7 +194,6 @@ iinit(int dev)
 static struct inode *
 iget(uint dev, uint inum);
 
-
 // Allocate an inode on device dev.
 // Mark it as allocated by  giving it type type.
 // Returns an unlocked but allocated and referenced inode.
@@ -391,7 +390,6 @@ iunlockput(struct inode *ip)
 	iput(ip);
 }
 
-
 // Inode content
 //
 // The content (data) associated with each inode is stored
@@ -484,7 +482,6 @@ stati(struct inode *ip, struct stat *st)
 	st->st_mtime = ip->mtime;
 }
 
-
 // Read data from inode.
 // Caller must hold ip->lock.
 int
@@ -546,7 +543,6 @@ writei(struct inode *ip, char *src, uint off, uint n)
 	}
 	return n;
 }
-
 
 // Directories
 
@@ -613,7 +609,6 @@ dirlink(struct inode *dp, char *name, uint inum)
 
 	return 0;
 }
-
 
 // Paths
 

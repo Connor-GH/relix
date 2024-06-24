@@ -44,7 +44,6 @@
 
 volatile uint *lapic; // Initialized in mp.c
 
-
 static void
 lapicw(int index, int value)
 {
@@ -241,14 +240,14 @@ cmostime(struct rtcdate *r)
 #define CONV(x) (t1.x = ((t1.x >> 4) * 10) + (t1.x & 0xf))
 		CONV(second);
 		CONV(minute);
-		t1.hour = ((t1.hour & 0x0f) + (((t1.hour & 0x70) / 16) * 10) ) | (t1.hour & 0x80);
+		t1.hour = ((t1.hour & 0x0f) + (((t1.hour & 0x70) / 16) * 10)) |
+							(t1.hour & 0x80);
 		CONV(day);
 		t1.day -= cmos_read(DAY_OF_WEEK);
 		CONV(month);
 		CONV(year);
 #undef CONV
 	}
-
 
 	*r = t1;
 }

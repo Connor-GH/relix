@@ -209,7 +209,6 @@ fork1(void)
 	return pid;
 }
 
-
 // Constructors
 
 struct cmd *

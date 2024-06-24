@@ -16,7 +16,7 @@ KERNEL_INC = $(IVARS) \
 
 include $(KERNELDIR)/boot/Makefile
 
-xv6.img: bootblock kernel
+xv6.img: $(BIN)/kernel
 	dd if=/dev/zero of=$(BIN)/xv6.img count=10000
 	dd if=$(BIN)/bootblock of=$(BIN)/xv6.img conv=notrunc
 	dd if=$(BIN)/kernel of=$(BIN)/xv6.img seek=1 conv=notrunc
@@ -26,8 +26,8 @@ xv6memfs.img: bootblock kernelmemfs
 	dd if=$(BIN)/bootblock of=$(BIN)/xv6memfs.img conv=notrunc
 	dd if=$(BIN)/kernelmemfs of=$(BIN)/xv6memfs.img seek=1 conv=notrunc
 
-kernel: $(KERNELDIR)/kernel.ld $(KERNEL_OBJS) entry entryother_ initcode
-	$(LD) $(LDFLAGS) -T $(KERNELDIR)/kernel.ld -o $(BIN)/kernel $(BIN)/entry.o $(KERNEL_OBJS) -b binary $(BIN)/initcode $(BIN)/entryother
+$(BIN)/kernel: $(KERNELDIR)/kernel.ld $(KERNEL_OBJS) $(BIN)/entry.o $(BIN)/entryother.o $(BIN)/initcode.o $(BIN)/bootblock $(BIN)/sign
+	$(LD) $(LDFLAGS) -T $(KERNELDIR)/kernel.ld -o $@ $(BIN)/entry.o $(KERNEL_OBJS) -b binary $(BIN)/initcode $(BIN)/entryother
 
 $(BIN)/%.o: $(KERNELDIR)/%.c
 	$(CC) $(CFLAGS) $(KERNEL_INC) -c $^ -o $@

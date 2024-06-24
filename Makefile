@@ -55,7 +55,7 @@ OBJDUMP = $(TOOLPREFIX)objdump
 # llvm stuff
 ifeq ($(LLVM),1)
 	CC = clang
-	AS = clang -c
+	AS = $(CC) -c
 	LD = ld.lld
 	OBJCOPY = llvm-objcopy
 	OBJDUMP = llvm-objdump
@@ -64,7 +64,7 @@ endif
 WFLAGS = -Wnonnull
 
 CFLAGS = -fno-pic -static -fno-builtin -ffreestanding \
-				 -fno-strict-aliasing -nostdlib -O2 -Wall -ggdb -m32 -Werror -fno-omit-frame-pointer \
+				 -fno-strict-aliasing -nostdlib -O2 -Wall -ggdb -m32 -Wno-error -fno-omit-frame-pointer \
 				 -nostdinc -fno-builtin $(ARCHNOFLAGS) $(WNOFLAGS) $(WFLAGS)
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 ASFLAGS = -m32 -gdwarf-2 -Wa,-divide --mx86-used-note=no

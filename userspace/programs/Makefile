@@ -1,6 +1,7 @@
 UPROGS_DIR = $(UDIR)/programs
 UPROGS_SRC = $(wildcard $(UPROGS_DIR)/*.c)
-UPROGS = $(UPROGS_SRC:$(UPROGS_DIR)/%.c=_%)
+UPROGS = $(UPROGS_SRC:$(UPROGS_DIR)/%.c=$(SYSROOT)/$(BIN)/_%)
+UPROGS_OBJ = $(UPROGS_SRC:$(UPROGS_DIR)/%.c=$(BIN)/%.o)
 
 
 
@@ -8,6 +9,6 @@ $(BIN)/%.o: $(UPROGS_DIR)/%.c
 	$(CC) $(CFLAGS) $(UCFLAGS) -c -o $@ $^
 
 # link together, then remove the .note.gnu.property that GCC generates.
-_%: $(BIN)/%.o $(ULIB_OBJ) $(ULIB_ASM_OBJ)
-	$(CC) $(CFLAGS) $(UCFLAGS) -Wl,-z,noexecstack -Wl,-O1 -Wl,-N,-e,main -Wl,-Ttext,0 -o $(SYSROOT)/bin/$@ $^
-	$(OBJCOPY) --remove-section .note.gnu.property --set-section-flags .text=alloc,readonly $(SYSROOT)/$(BIN)/$@
+$(SYSROOT)/$(BIN)/_%: $(BIN)/%.o $(ULIB_OBJ) $(ULIB_ASM_OBJ)
+	$(CC) $(CFLAGS) $(UCFLAGS) -Wl,-z,noexecstack -Wl,-O1 -Wl,-N,-e,main -Wl,-Ttext,0 -o $@ $^
+	$(OBJCOPY) --remove-section .note.gnu.property $@

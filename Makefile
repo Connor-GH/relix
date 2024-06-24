@@ -96,14 +96,6 @@ SYSROOT = sysroot
 default:
 	mkdir -p $(BIN)
 	mkdir -p $(SYSROOT)/{bin,etc}
-	$(MAKE) bootblock
-	$(MAKE) $(KERNEL_OBJS)
-	$(MAKE) entry
-	$(MAKE) entryother_
-	$(MAKE) initcode
-	$(MAKE) entry
-	$(MAKE) $(D_PROGS)
-	$(MAKE) $(D_BINDINGS_OBJ)
 	$(MAKE) fs.img
 	$(MAKE) xv6.img
 
@@ -113,7 +105,7 @@ include kernel/Makefile
 
 
 mkfs: $(TOOLSDIR)/mkfs.c
-	$(CC) -Werror -Wall -o $(SYSROOT)/mkfs $(TOOLSDIR)/mkfs.c \
+	$(CC) -Werror -Wall -o $(BIN)/mkfs $(TOOLSDIR)/mkfs.c \
 		-I$(KERNELDIR)/include -I$(KERNELDIR)/drivers/include -I$(KERNELDIR)/drivers -I.
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
@@ -124,8 +116,7 @@ mkfs: $(TOOLSDIR)/mkfs.c
 
 
 fs.img: mkfs $(UPROGS) $(D_PROGS)
-	cd $(SYSROOT); ./mkfs ../bin/fs.img README etc/passwd  $(shell for x in $(UPROGS); do printf " bin/$$x "; done) \
-		$(shell for x in $(D_PROGS); do printf " bin/$$x "; done)
+	./$(BIN)/mkfs bin/fs.img README.md sysroot/etc/passwd $(UPROGS) $(D_PROGS)
 
 clean:
 	rm -f $(BIN)/*.o $(BIN)/*.sym $(BIN)/bootblock $(BIN)/entryother \

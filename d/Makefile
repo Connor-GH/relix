@@ -1,6 +1,7 @@
 D_DIR = d
 D_SRC = $(wildcard $(D_DIR)/*.d)
-D_PROGS = $(D_SRC:$(D_DIR)/%.d=_%)
+D_PROGS = $(D_SRC:$(D_DIR)/%.d=$(SYSROOT)/$(BIN)/_%)
+D_PROGS_OBJ = $(D_SRC:$(D_DIR)/%.d=$(BIN)/%.o)
 
 # we will support dmd-style D compilers only.
 # that is, dmd and ldmd2. ldc2 support is not official but may work,

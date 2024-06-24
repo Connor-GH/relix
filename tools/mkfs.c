@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <time.h>
+#define SYSROOT "sysroot/"
 
 #define stat xv6_stat // avoid clash with host struct stat
 #include "../include/types.h"
@@ -211,6 +212,9 @@ main(int argc, char *argv[])
 		while (*argv[i] == '.' || *argv[i] == '/') {
 			++argv[i];
 		}
+		if (strncmp(SYSROOT, argv[i], strlen(SYSROOT)) == 0)
+			argv[i] += strlen(SYSROOT);
+
 		if (strncmp("bin/", argv[i], 4) == 0) {
 			name = (argv[i] += 4);
 			ino = binino;

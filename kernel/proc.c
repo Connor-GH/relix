@@ -13,6 +13,7 @@
 #include "vm.h"
 #include "log.h"
 #include "swtch.h"
+#include "syscall.h"
 
 #define W_EXITCODE(ret, signal) ((ret) << 8 | (signal))
 
@@ -128,6 +129,8 @@ found:
 	memset(p->context, 0, sizeof *p->context);
 	p->context->eip = (uint)forkret;
 
+	memset(p->strace_mask_ptr, 0, SYSCALL_AMT);
+
 	return p;
 }
 
@@ -225,6 +228,8 @@ fork(void)
 
 	safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
+	// when fork()ing, copy the parent's mask
+	memmove(np->strace_mask_ptr, curproc->strace_mask_ptr, SYSCALL_AMT);
 	pid = np->pid;
 
 	acquire(&ptable.lock);
@@ -293,8 +298,6 @@ wait(int *wstatus)
 	struct proc *p;
 	int havekids, pid;
 	struct proc *curproc = myproc();
-	if (wstatus != NULL)
-		*wstatus = W_EXITCODE(3, 0);
 	acquire(&ptable.lock);
 	for (;;) {
 		// Scan through table looking for exited children.

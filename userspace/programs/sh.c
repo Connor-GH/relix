@@ -185,8 +185,8 @@ main(void)
 		if (pid == 0)
 			runcmd(parsecmd(buf));
 		pid = wait(&status);
-		if (status != 0)
-			fprintf(stderr, "ERROR: pid %d returned with status %d\n", pid, status);
+		if (WEXITSTATUS(status) != 0)
+			fprintf(stderr, "ERROR: pid %d returned with status %d\n", pid, WEXITSTATUS(status));
 	}
 	exit(0);
 }

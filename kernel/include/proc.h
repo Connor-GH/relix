@@ -1,6 +1,7 @@
 #pragma once
 // Per-CPU state
 #include "param.h"
+#include "syscall.h"
 #include <types.h>
 #include "../drivers/mmu.h"
 #include "../include/file.h"
@@ -62,6 +63,7 @@ struct proc {
 	struct inode *cwd; // Current directory
 	struct cred cred; // user's credentials for the process.
 	char name[16]; // Process name (debugging)
+	char strace_mask_ptr[SYSCALL_AMT]; // mask for tracing syscalls
 };
 
 // Process memory is laid out contiguously, low addresses first:

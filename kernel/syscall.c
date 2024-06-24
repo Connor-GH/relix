@@ -132,6 +132,8 @@ extern int
 sys_echoout(void);
 extern int
 sys_setuid(void);
+extern int
+sys_strace(void);
 
 static int (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,			 [SYS_exit] = sys_exit,
@@ -147,7 +149,10 @@ static int (*syscalls[])(void) = {
 	[SYS_close] = sys_close,		 [SYS_date] = sys_date,
 	[SYS_chmod] = sys_chmod,		 [SYS_reboot] = sys_reboot,
 	[SYS_echoout] = sys_echoout, [SYS_setuid] = sys_setuid,
+	[SYS_strace] = sys_strace,
 };
+
+
 
 void
 syscall(void)
@@ -158,6 +163,10 @@ syscall(void)
 	num = curproc->tf->eax;
 	if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
 		curproc->tf->eax = syscalls[num]();
+		if (curproc->strace_mask_ptr[num] == 1) {
+			cprintf("pid %d: syscall %s returned %d\n", curproc->pid,
+							syscall_names[num], curproc->tf->eax);
+		}
 	} else {
 		cprintf("%d %s: unknown sys call %d\n", curproc->pid, curproc->name, num);
 		curproc->tf->eax = -1;

@@ -5,6 +5,7 @@
 #include "proc.h"
 #include "syscall.h"
 #include "trap.h"
+#include "kernel_string.h"
 #include "drivers/lapic.h"
 #include "console.h"
 
@@ -159,5 +160,15 @@ sys_setuid(void)
 	cred.uid = uid;
 	cred.gids[0] = uid;
 	myproc()->cred = cred;
+	return 0;
+}
+
+int
+sys_strace(void)
+{
+	char *trace_ptr;
+	if (argptr(0, &trace_ptr, SYSCALL_AMT) < 0)
+		return -1;
+	memmove(myproc()->strace_mask_ptr, trace_ptr, SYSCALL_AMT);
 	return 0;
 }

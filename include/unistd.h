@@ -9,7 +9,11 @@ pipe(int *);
 int
 exec(char *, char **);
 // our exec() is technically execv()
-#define execv(x, y) (exec(x, y))
+static inline int
+execv(char *prog, char **argv)
+{
+	return exec(prog, argv);
+}
 int
 write(int, const void *, int);
 int

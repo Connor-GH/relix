@@ -27,7 +27,23 @@
 #define SYS_reboot 24
 #define SYS_echoout 25
 #define SYS_setuid 26
+#define SYS_strace 27
+#define SYSCALL_AMT 27
+#ifndef __ASSEMBLER__
+static const char *syscall_names[SYSCALL_AMT + 1] = {
+	[SYS_fork] = "fork",			 [SYS_exit] = "exit",			[SYS_wait] = "wait",
+	[SYS_pipe] = "pipe",			 [SYS_read] = "read",			[SYS_kill] = "kill",
+	[SYS_exec] = "exec",			 [SYS_fstat] = "fstat",		[SYS_chdir] = "chdir",
+	[SYS_dup] = "dup",				 [SYS_getpid] = "getpid", [SYS_sbrk] = "sbrk",
+	[SYS_sleep] = "sleep",		 [SYS_uptime] = "uptime", [SYS_open] = "open",
+	[SYS_write] = "write",		 [SYS_mknod] = "mknod",		[SYS_unlink] = "unlink",
+	[SYS_link] = "link",			 [SYS_mkdir] = "mkdir",		[SYS_close] = "close",
+	[SYS_date] = "date",			 [SYS_chmod] = "chmod",		[SYS_reboot] = "reboot",
+	[SYS_echoout] = "echoout", [SYS_setuid] = "setuid", [SYS_strace] = "strace",
+};
+#endif
 #if defined(__KERNEL__) && !defined(__ASSEMBLER__)
+#include <types.h>
 int
 argint(int, int *);
 int

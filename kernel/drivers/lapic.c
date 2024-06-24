@@ -2,11 +2,11 @@
 // See Chapter 8 & Appendix C of Intel processor manual volume 3.
 
 #include <types.h>
-#include <defs.h>
 #include <date.h>
 #include "traps.h"
 #include "x86.h"
 #include "memlayout.h"
+#include "kernel_string.h"
 
 // Local APIC registers, divided by 4 for use as uint[] indices.
 #define ID (0x0020 / 4) // ID

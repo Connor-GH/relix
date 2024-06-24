@@ -69,3 +69,40 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+int
+my_cpu_id(void);
+void
+exit(int) __attribute__((noreturn));
+int
+fork(void);
+int
+growproc(int);
+int
+kill(int);
+struct cpu *
+mycpu(void);
+struct proc *
+myproc(void);
+void
+pinit(void);
+void
+procdump(void);
+void
+scheduler(void) __attribute__((noreturn));
+void
+sched(void);
+void
+setproc(struct proc *);
+#ifdef __KERNEL__
+void
+sleep(void *, struct spinlock *);
+#endif
+void
+userinit(void);
+int
+wait(int *);
+void
+wakeup(void *);
+void
+yield(void);

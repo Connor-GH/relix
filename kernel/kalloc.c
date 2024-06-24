@@ -3,10 +3,12 @@
 // and pipe buffers. Allocates 4096-byte pages.
 
 #include <types.h>
-#include <defs.h>
 #include "drivers/memlayout.h"
 #include "drivers/mmu.h"
 #include "spinlock.h"
+#include "kalloc.h"
+#include "kernel_string.h"
+#include "console.h"
 
 void
 freerange(void *vstart, void *vend);

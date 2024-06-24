@@ -10,7 +10,6 @@
 // are in sysfile.c.
 
 #include <types.h>
-#include <defs.h>
 #include <stat.h>
 #include <dirent.h>
 #include <date.h>
@@ -21,6 +20,11 @@
 #include "spinlock.h"
 #include "buf.h"
 #include "file.h"
+#include "kernel_string.h"
+#include "bio.h"
+#include "log.h"
+#include "console.h"
+#include "drivers/lapic.h"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 static void

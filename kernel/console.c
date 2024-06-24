@@ -3,15 +3,19 @@
 // Output is written to the screen and serial port.
 
 #include <types.h>
-#include <defs.h>
 #include <stdint.h>
 #include "proc.h"
 #include "x86.h"
 #include "traps.h"
 #include "spinlock.h"
+#include "console.h"
 #include "file.h"
+#include "kernel_string.h"
+#include "uart.h"
+#include "ioapic.h"
 #include "drivers/memlayout.h"
 #include "drivers/conscolor.h"
+#include "drivers/lapic.h"
 
 static void
 consputc(int);

@@ -2,9 +2,10 @@
 // Useful for running kernel without scratch disk.
 
 #include <types.h>
-#include <defs.h>
 #include <buf.h>
 #include "fs.h"
+#include "console.h"
+#include "kernel_string.h"
 
 extern uchar _binary_fs_img_start[], _binary_fs_img_size[];
 

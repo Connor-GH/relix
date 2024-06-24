@@ -1,5 +1,5 @@
 #pragma once
-#include "file.h"
+#include "fs.h"
 
 void
 nulldrvinit(void);

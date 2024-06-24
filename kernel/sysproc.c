@@ -1,9 +1,12 @@
 #include <types.h>
-#include <defs.h>
 #include <date.h>
 #include <sys/reboot.h>
 #include "x86.h"
 #include "proc.h"
+#include "syscall.h"
+#include "trap.h"
+#include "drivers/lapic.h"
+#include "console.h"
 
 int
 sys_fork(void)

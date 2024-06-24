@@ -9,7 +9,7 @@
 
 #define stat xv6_stat // avoid clash with host struct stat
 #include "../include/types.h"
-#define USE_HOST_STAT
+#define USE_HOST_TOOLS
 #include "../kernel/include/fs.h"
 #include "../include/stat.h"
 #include "../include/dirent.h"

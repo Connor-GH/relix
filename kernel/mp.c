@@ -3,12 +3,15 @@
 // http://developer.intel.com/design/pentium/datashts/24201606.pdf
 
 #include <types.h>
-#include <defs.h>
 #include "drivers/memlayout.h"
+#include "drivers/lapic.h"
 #include "param.h"
 #include "mp.h"
 #include "x86.h"
 #include "proc.h"
+#include "kernel_string.h"
+#include "console.h"
+#include "kernel_assert.h"
 
 struct cpu cpus[NCPU];
 int ncpu;

@@ -19,7 +19,8 @@
 //     and needs to be written to disk.
 
 #include <types.h>
-#include <defs.h>
+#include "console.h"
+#include "ide.h"
 #include "buf.h"
 #include "param.h"
 #include "spinlock.h"
@@ -40,7 +41,7 @@ binit(void)
 
 	initlock(&bcache.lock, "bcache");
 
-	
+
 	// Create linked list of buffers
 	bcache.head.prev = &bcache.head;
 	bcache.head.next = &bcache.head;

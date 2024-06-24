@@ -1,11 +1,23 @@
 #include <types.h>
-#include <defs.h>
 #include "drivers/memlayout.h"
 #include "drivers/acpi.h"
+#include "drivers/lapic.h"
 #include "param.h"
 #include "proc.h"
 #include "x86.h"
 #include "null.h"
+#include "console.h"
+#include "kalloc.h"
+#include "mp.h"
+#include "ioapic.h"
+#include "uart.h"
+#include "bio.h"
+#include "file.h"
+#include "ide.h"
+#include "vm.h"
+#include "picirq.h"
+#include "trap.h"
+#include "kernel_string.h"
 
 static void
 startothers(void);

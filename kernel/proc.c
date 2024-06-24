@@ -1,11 +1,18 @@
 #include <types.h>
 #include <stdlib.h>
 #include "drivers/mmu.h"
+#include "drivers/lapic.h"
 #include "defs.h"
 #include "param.h"
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "kalloc.h"
+#include "kernel_string.h"
+#include "console.h"
+#include "vm.h"
+#include "log.h"
+#include "swtch.h"
 
 #define W_EXITCODE(ret, signal) ((ret) << 8 | (signal))
 

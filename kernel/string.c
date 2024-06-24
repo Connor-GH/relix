@@ -1,5 +1,5 @@
 #include <types.h>
-#include <string.h>
+#include "kernel_string.h"
 #include "x86.h"
 
 void *

@@ -27,3 +27,17 @@
 #define SYS_reboot 24
 #define SYS_echoout 25
 #define SYS_setuid 26
+#if defined(__KERNEL__) && !defined(__ASSEMBLER__)
+int
+argint(int, int *);
+int
+argptr(int, char **, int);
+int
+argstr(int, char **);
+int
+fetchint(uint, int *);
+int
+fetchstr(uint, char **);
+void
+syscall(void);
+#endif

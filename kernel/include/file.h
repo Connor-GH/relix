@@ -1,5 +1,6 @@
 #pragma once
 #include <types.h>
+#include <stat.h>
 #include "sleeplock.h"
 #include "fs.h"
 struct file {
@@ -12,27 +13,6 @@ struct file {
 	uint off;
 };
 
-// in-memory copy of an inode
-struct inode {
-	uint dev; // Device number
-	uint inum; // Inode number
-	int ref; // Reference count
-	struct sleeplock lock; // protects everything below here
-	int valid; // inode has been read from disk?
-
-	short type; // copy of disk inode
-	short major;
-	short minor;
-	short nlink;
-	uint size;
-	uint mode;
-	ushort gid;
-	ushort uid;
-	uint ctime; // change
-	uint atime; // access
-	uint mtime; // modification
-	uint addrs[NDIRECT + 1];
-};
 
 // table mapping major device number to
 // device functions
@@ -44,3 +24,18 @@ struct devsw {
 extern struct devsw devsw[];
 
 enum { CONSOLE = 1, NULLDRV };
+
+struct file *
+filealloc(void);
+void
+fileclose(struct file *);
+struct file *
+filedup(struct file *);
+void
+fileinit(void);
+int
+fileread(struct file *, char *, int n);
+int
+filestat(struct file *, struct stat *);
+int
+filewrite(struct file *, char *, int n);

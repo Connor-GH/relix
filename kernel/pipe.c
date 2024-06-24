@@ -1,8 +1,9 @@
 #include <types.h>
-#include <defs.h>
 #include "proc.h"
 #include "spinlock.h"
 #include "file.h"
+#include "pipe.h"
+#include "kalloc.h"
 
 #define PIPESIZE 512
 
@@ -41,7 +42,7 @@ pipealloc(struct file **f0, struct file **f1)
 	(*f1)->pipe = p;
 	return 0;
 
-	
+
 bad:
 	if (p)
 		kfree((char *)p);

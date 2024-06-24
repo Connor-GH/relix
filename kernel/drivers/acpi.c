@@ -23,16 +23,17 @@
  *
  */
 
+#include <stdlib.h>
+#include <stdint.h>
 #include "types.h"
-#include "defs.h"
 #include "param.h"
 #include "memlayout.h"
 #include "proc.h"
 #include "acpi.h"
-#include <x86.h>
-#include <stdlib.h>
-#include <stdint.h>
-
+#include "kernel_string.h"
+#include "kernel_assert.h"
+#include "console.h"
+#include "lapic.h"
 #if X64
 #define PHYSLIMIT 0x80000000
 #else

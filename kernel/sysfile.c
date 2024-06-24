@@ -4,8 +4,8 @@
 // user code, and calls into file.c and fs.c.
 //
 
-#include <types.h>
 #include <defs.h>
+#include <types.h>
 #include <stat.h>
 #include <stdlib.h>
 #include <dirent.h>
@@ -16,6 +16,13 @@
 #include "proc.h"
 #include "fs.h"
 #include "file.h"
+#include "kernel_string.h"
+#include "console.h"
+#include "log.h"
+#include "syscall.h"
+#include "pipe.h"
+#include "exec.h"
+#include "drivers/lapic.h"
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.

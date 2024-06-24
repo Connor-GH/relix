@@ -1,7 +1,5 @@
 // Sleeping locks
 
-#include <defs.h>
-#include "drivers/memlayout.h"
 #include "proc.h"
 #include "sleeplock.h"
 

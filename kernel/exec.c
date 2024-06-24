@@ -2,10 +2,15 @@
 #include <stat.h>
 #include <defs.h>
 #include "param.h"
-#include "drivers/mmu.h"
 #include "proc.h"
 #include "x86.h"
+#include "log.h"
+#include "fs.h"
+#include "console.h"
+#include "kernel_string.h"
+#include "vm.h"
 #include "boot/elf.h"
+#include "drivers/mmu.h"
 
 int
 exec(char *path, char **argv)

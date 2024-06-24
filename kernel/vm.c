@@ -5,6 +5,10 @@
 #include "x86.h"
 #include "param.h"
 #include "proc.h"
+#include "kalloc.h"
+#include "console.h"
+#include "kernel_string.h"
+#include "vm.h"
 
 extern char data[]; // defined by kernel.ld
 pde_t *kpgdir; // for use in scheduler()

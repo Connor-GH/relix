@@ -1,6 +1,8 @@
 #pragma once
 #include "spinlock.h"
+#ifndef USE_HOST_TOOLS
 #include <types.h>
+#endif
 // Long-term locks for processes
 struct sleeplock {
 	uint locked; // Is the lock held?
@@ -10,3 +12,11 @@ struct sleeplock {
 	char *name; // Name of lock.
 	int pid; // Process holding lock
 };
+void
+acquiresleep(struct sleeplock *);
+void
+releasesleep(struct sleeplock *);
+int
+holdingsleep(struct sleeplock *);
+void
+initsleeplock(struct sleeplock *, char *);

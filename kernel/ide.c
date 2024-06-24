@@ -1,7 +1,5 @@
 // Simple PIO-based (non-DMA) IDE driver code.
 
-#include <defs.h>
-#include "drivers/memlayout.h"
 #include "param.h"
 #include "proc.h"
 #include "x86.h"
@@ -9,6 +7,8 @@
 #include "spinlock.h"
 #include "fs.h"
 #include "buf.h"
+#include "ioapic.h"
+#include "console.h"
 
 #define SECTOR_SIZE 512
 #define IDE_BSY 0x80

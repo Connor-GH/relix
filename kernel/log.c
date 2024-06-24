@@ -1,8 +1,12 @@
-#include <defs.h>
 #include "buf.h"
 #include "param.h"
 #include "spinlock.h"
 #include "fs.h"
+#include "log.h"
+#include "console.h"
+#include "kernel_string.h"
+#include "bio.h"
+#include "proc.h"
 
 // Simple logging that allows concurrent FS system calls.
 //

@@ -14,6 +14,7 @@
 #include "log.h"
 #include "swtch.h"
 #include "syscall.h"
+#include "compiler_attributes.h"
 
 #define W_EXITCODE(ret, signal) ((ret) << 8 | (signal))
 
@@ -244,6 +245,7 @@ fork(void)
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.
+__noreturn
 void
 exit(int status)
 {

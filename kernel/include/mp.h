@@ -1,5 +1,6 @@
 #pragma once
 #include <types.h>
+#include "compiler_attributes.h"
 // See MultiProcessor Specification Version 1.[14]
 
 extern int ismp; // SMP
@@ -21,7 +22,7 @@ struct mpconf { // configuration table header
 	uchar version; // [14]; actually just the revision
 	uchar checksum; // all bytes must add up to 0
 	uchar product[20]; // product id; first 4 is opem string; last 16 is product string
-	uint *oemtable; // OEM table pointer
+	uint *oemtable __counted_by(oemlength); // OEM table pointer
 	ushort oemlength; // OEM table length
 	ushort entry; // entry count
 	uint *lapicaddr; // address of local APIC

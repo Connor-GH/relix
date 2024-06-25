@@ -1,13 +1,15 @@
 #pragma once
+#include "compiler_attributes.h"
 
 extern int echo_out;
 
 void
 consoleinit(void);
 __attribute__((format(printf, 1, 2)))
+__nonnull(1)
 void
-cprintf(char *, ...);
+cprintf(const char *, ...);
 void
 consoleintr(int (*)(void));
-void
-panic(char *) __attribute__((noreturn));
+__noreturn void
+panic(const char *);

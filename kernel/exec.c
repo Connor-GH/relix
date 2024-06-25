@@ -11,9 +11,11 @@
 #include "vm.h"
 #include "boot/elf.h"
 #include "drivers/mmu.h"
+#include "compiler_attributes.h"
 
+__nonnull(1, 2)
 int
-exec(char *path, char **argv)
+exec(const char *path, const char **argv)
 {
 	char *s, *last;
 	int i, off;

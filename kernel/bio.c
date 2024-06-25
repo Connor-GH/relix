@@ -24,6 +24,7 @@
 #include "buf.h"
 #include "param.h"
 #include "spinlock.h"
+#include "compiler_attributes.h"
 
 struct {
 	struct spinlock lock;
@@ -107,7 +108,7 @@ bread(uint dev, uint blockno)
 void
 bwrite(struct buf *b)
 {
-	if (!holdingsleep(&b->lock))
+	if (unlikely(!holdingsleep(&b->lock)))
 		panic("bwrite");
 	b->flags |= B_DIRTY;
 	iderw(b);
@@ -118,7 +119,7 @@ bwrite(struct buf *b)
 void
 brelse(struct buf *b)
 {
-	if (!holdingsleep(&b->lock))
+	if (unlikely(!holdingsleep(&b->lock)))
 		panic("brelse");
 
 	releasesleep(&b->lock);

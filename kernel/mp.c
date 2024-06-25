@@ -12,6 +12,7 @@
 #include "kernel_string.h"
 #include "console.h"
 #include "kernel_assert.h"
+#include "compiler_attributes.h"
 
 struct cpu cpus[NCPU];
 int ncpu;
@@ -73,6 +74,7 @@ mpsearch(void)
 // Check for correct signature, calculate the checksum and,
 // if correct, check the version.
 // To do: check extended table checksum.
+__nonnull(1)
 static struct mpconf *
 mpconfig(struct mp **pmp)
 {

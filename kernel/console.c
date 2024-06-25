@@ -16,6 +16,7 @@
 #include "drivers/memlayout.h"
 #include "drivers/conscolor.h"
 #include "drivers/lapic.h"
+#include "compiler_attributes.h"
 
 static void
 consputc(int);
@@ -70,8 +71,9 @@ printint(int xx, int base, int sign)
 }
 
 // Print to the console. only understands %d, %x, %p, %s.
-__attribute__((format(printf, 1, 2))) void
-cprintf(char *fmt, ...)
+__attribute__((format(printf, 1, 2)))
+__nonnull(1) void
+cprintf(const char *fmt, ...)
 {
 	int i, c, locking;
 	uint *argp;
@@ -80,9 +82,6 @@ cprintf(char *fmt, ...)
 	locking = cons.locking;
 	if (locking)
 		acquire(&cons.lock);
-
-	if (fmt == 0)
-		panic("null fmt");
 
 	argp = (uint *)(void *)(&fmt + 1);
 	for (i = 0; (c = fmt[i] & 0xff) != 0; i++) {
@@ -164,8 +163,8 @@ skip_printing:;
 		release(&cons.lock);
 }
 
-void
-panic(char *s)
+__noreturn __cold void
+panic(const char *s)
 {
 	int i;
 	uint pcs[10];
@@ -306,8 +305,8 @@ consoleintr(int (*getc)(void))
 		procdump(); // now call procdump() wo. cons.lock held
 	}
 }
-
-int
+__nonnull(1, 2)
+static int
 consoleread(struct inode *ip, char *dst, int n)
 {
 	uint target;
@@ -345,7 +344,8 @@ consoleread(struct inode *ip, char *dst, int n)
 	return target - n;
 }
 
-int
+__nonnull(1, 2)
+static int
 consolewrite(struct inode *ip, char *buf, int n)
 {
 	iunlock(ip);

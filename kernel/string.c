@@ -1,7 +1,9 @@
 #include <types.h>
 #include "kernel_string.h"
 #include "x86.h"
+#include "compiler_attributes.h"
 
+__nonnull(1)
 void *
 memset(void *dst, int c, uint n)
 {
@@ -13,6 +15,7 @@ memset(void *dst, int c, uint n)
 	return dst;
 }
 
+__nonnull(1, 2)
 int
 memcmp(const void *v1, const void *v2, uint n)
 {
@@ -29,6 +32,7 @@ memcmp(const void *v1, const void *v2, uint n)
 	return 0;
 }
 
+__nonnull(1, 2)
 void *
 memmove(void *dst, const void *src, uint n)
 {
@@ -50,12 +54,14 @@ memmove(void *dst, const void *src, uint n)
 }
 
 // memcpy exists to placate GCC.  Use memmove.
+__nonnull(1, 2)
 void *
 memcpy(void *dst, const void *src, uint n)
 {
 	return memmove(dst, src, n);
 }
 
+__nonnull(1, 2)
 int
 strncmp(const char *p, const char *q, uint n)
 {
@@ -66,6 +72,7 @@ strncmp(const char *p, const char *q, uint n)
 	return (uchar)*p - (uchar)*q;
 }
 
+__nonnull(1, 2)
 char *
 strncpy(char *s, const char *t, int n)
 {
@@ -80,6 +87,7 @@ strncpy(char *s, const char *t, int n)
 }
 
 // Like strncpy but guaranteed to NUL-terminate.
+__nonnull(1, 2)
 char *
 safestrcpy(char *s, const char *t, int n)
 {
@@ -94,6 +102,7 @@ safestrcpy(char *s, const char *t, int n)
 	return os;
 }
 
+__nonnull(1)
 uint
 strlen(const char *s)
 {

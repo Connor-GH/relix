@@ -9,6 +9,7 @@
 #include "buf.h"
 #include "ioapic.h"
 #include "console.h"
+#include "compiler_attributes.h"
 
 #define SECTOR_SIZE 512
 #define IDE_BSY 0x80
@@ -45,7 +46,7 @@ idewait(int checkerr)
 	return 0;
 }
 
-void
+__cold void
 ideinit(void)
 {
 	int i;
@@ -71,7 +72,7 @@ ideinit(void)
 static void
 idestart(struct buf *b)
 {
-	if (b == 0)
+	if (unlikely(b == 0))
 		panic("idestart");
 	if (b->blockno >= FSSIZE)
 		panic("incorrect blockno");

@@ -1,9 +1,10 @@
 #pragma once
 #include <types.h>
 #include <stdint.h>
+#include "compiler_attributes.h"
 // Routines to let C code use special x86 instructions.
 
-static inline uchar
+static __always_inline uchar
 inb(ushort port)
 {
 	uchar data;
@@ -12,7 +13,7 @@ inb(ushort port)
 	return data;
 }
 
-static inline void
+static __always_inline void
 insl(int port, void *addr, int cnt)
 {
 	__asm__ __volatile__("cld; rep insl"
@@ -21,19 +22,19 @@ insl(int port, void *addr, int cnt)
 							 : "memory", "cc");
 }
 
-static inline void
+static __always_inline void
 outb(ushort port, uchar data)
 {
 	__asm__ __volatile__("out %0,%1" : : "a"(data), "d"(port));
 }
 
-static inline void
+static __always_inline void
 outw(ushort port, ushort data)
 {
 	__asm__ __volatile__("out %0,%1" : : "a"(data), "d"(port));
 }
 
-static inline void
+static __always_inline void
 outsl(int port, const void *addr, int cnt)
 {
 	__asm__ __volatile__("cld; rep outsl"
@@ -42,7 +43,7 @@ outsl(int port, const void *addr, int cnt)
 							 : "cc");
 }
 
-static inline void
+static __always_inline void
 stosb(void *addr, int data, int cnt)
 {
 	__asm__ __volatile__("cld; rep stosb"
@@ -51,7 +52,7 @@ stosb(void *addr, int data, int cnt)
 							 : "memory", "cc");
 }
 
-static inline void
+static __always_inline void
 stosl(void *addr, int data, int cnt)
 {
 	__asm__ __volatile__("cld; rep stosl"
@@ -62,7 +63,7 @@ stosl(void *addr, int data, int cnt)
 
 struct segdesc;
 
-static inline void
+static __always_inline void
 lgdt(struct segdesc *p, int size)
 {
 	volatile ushort pd[3];
@@ -76,7 +77,7 @@ lgdt(struct segdesc *p, int size)
 
 struct gatedesc;
 
-static inline void
+static __always_inline void
 lidt(struct gatedesc *p, int size)
 {
 	volatile ushort pd[3];
@@ -88,13 +89,13 @@ lidt(struct gatedesc *p, int size)
 	__asm__ __volatile__("lidt (%0)" : : "r"(pd));
 }
 
-static inline void
+static __always_inline void
 ltr(ushort sel)
 {
 	__asm__ __volatile__("ltr %0" : : "r"(sel));
 }
 
-static inline uint
+static __always_inline uint
 readeflags(void)
 {
 	uint eflags;
@@ -102,25 +103,25 @@ readeflags(void)
 	return eflags;
 }
 
-static inline void
+static __always_inline void
 loadgs(ushort v)
 {
 	__asm__ __volatile__("movw %0, %%gs" : : "r"(v));
 }
 
-static inline void
+static __always_inline void
 cli(void)
 {
 	__asm__ __volatile__("cli");
 }
 
-static inline void
+static __always_inline void
 sti(void)
 {
 	__asm__ __volatile__("sti");
 }
 
-static inline uint
+static __always_inline uint
 xchg(volatile uint *addr, uint newval)
 {
 	uint result;
@@ -133,7 +134,7 @@ xchg(volatile uint *addr, uint newval)
 	return result;
 }
 
-static inline uint
+static __always_inline uint
 rcr2(void)
 {
 	uint val;
@@ -141,19 +142,19 @@ rcr2(void)
 	return val;
 }
 
-static inline void
+static __always_inline void
 lcr3(uint val)
 {
 	__asm__ __volatile__("movl %0,%%cr3" : : "r"(val));
 }
 
-static inline void
+static __always_inline void
 hlt(void)
 {
 	__asm__ __volatile__("hlt");
 }
 
-static inline void
+static __always_inline void
 cpuid(uint32_t id, uint32_t count,
 		uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d)
 {

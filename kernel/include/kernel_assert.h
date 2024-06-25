@@ -1,8 +1,9 @@
 #pragma once
+#include "compiler_attributes.h"
 #include <types.h>
 #include <console.h>
 
-static inline void
+static __always_inline void
 kernel_assert_fail(const char *assertion, const char *file,
 		int lineno, const char *func)
 {

@@ -85,9 +85,9 @@ struct dinode {
 void
 readsb(int dev, struct superblock *sb);
 int
-dirlink(struct inode *, char *, uint);
+dirlink(struct inode *, const char *, uint);
 struct inode *
-dirlookup(struct inode *, char *, uint *);
+dirlookup(struct inode *, const char *, uint *);
 struct inode *
 ialloc(uint, int);
 struct inode *

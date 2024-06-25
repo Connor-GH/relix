@@ -38,10 +38,10 @@ try_again:
 	char *actual_password = userto_allocated_passwd(username);
 	if (actual_password == NULL) {
 		fprintf(stderr, "actual_password is NULL\n");
-		exit(0);
+		exit(-1);
 	}
 	if (strcmp(passwd, actual_password) == 0) {
-		fprintf(stderr, "Password is correct!\n");
+		fprintf(stdout, "Password is correct!\n");
 		free(actual_password);
 		cred.uid = uid;
 		cred.gids[0] = uid;

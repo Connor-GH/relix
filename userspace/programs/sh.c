@@ -92,14 +92,14 @@ runcmd(struct cmd *cmd)
 			strcat(str, ecmd->argv[0]);
 			exec(str, ecmd->argv);
 		}
-		fprintf(2, "exec %s failed\n", ecmd->argv[0]);
+		fprintf(stderr, "exec %s failed\n", ecmd->argv[0]);
 		break;
 
 	case REDIR:
 		rcmd = (struct redircmd *)cmd;
 		close(rcmd->fd);
 		if (open(rcmd->file, rcmd->mode) < 0) {
-			fprintf(2, "open %s failed\n", rcmd->file);
+			fprintf(stderr, "open %s failed\n", rcmd->file);
 			exit(0);
 		}
 		runcmd(rcmd->cmd);
@@ -149,7 +149,7 @@ runcmd(struct cmd *cmd)
 int
 getcmd(char *buf, int nbuf)
 {
-	fprintf(1, "$ ");
+	fprintf(stdout, "$ ");
 	memset(buf, 0, nbuf);
 	gets(buf, nbuf);
 	if (buf[0] == 0) // EOF
@@ -177,7 +177,7 @@ main(void)
 			// Chdir must be called by the parent, not the child.
 			buf[strlen(buf) - 1] = 0; // chop \n
 			if (chdir(buf + 3) < 0)
-				fprintf(2, "cannot cd %s\n", buf + 3);
+				fprintf(stderr, "cannot cd %s\n", buf + 3);
 			continue;
 		}
 		int status;
@@ -194,7 +194,7 @@ main(void)
 void
 panic(char *s)
 {
-	fprintf(2, "%s\n", s);
+	fprintf(stderr, "%s\n", s);
 	exit(0);
 }
 
@@ -357,7 +357,7 @@ parsecmd(char *s)
 	cmd = parseline(&s, es);
 	peek(&s, es, "");
 	if (s != es) {
-		fprintf(2, "leftovers: %s\n", s);
+		fprintf(stderr, "leftovers: %s\n", s);
 		panic("syntax error");
 	}
 	nulterminate(cmd);

@@ -3,11 +3,6 @@
 #include <assert.h>
 #include <unistd.h>
 
-#ifdef __clang__
-#define OPTNONE __attribute__((optnone))
-#else
-#define OPTNONE __attribute__((optimize("O0")))
-#endif
 static void
 nulltest(void)
 {

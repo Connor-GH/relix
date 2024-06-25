@@ -21,14 +21,14 @@ main(int argc, char *argv[])
 	char path[] = "stressfs0";
 	char data[512];
 
-	fprintf(1, "stressfs starting\n");
+	fprintf(stdout, "stressfs starting\n");
 	memset(data, 'a', sizeof(data));
 
 	for (i = 0; i < 4; i++)
 		if (fork() > 0)
 			break;
 
-	fprintf(1, "write %d\n", i);
+	fprintf(stdout, "write %d\n", i);
 
 	path[8] += i;
 	fd = open(path, O_CREATE | O_RDWR);
@@ -37,7 +37,7 @@ main(int argc, char *argv[])
 		write(fd, data, sizeof(data));
 	close(fd);
 
-	fprintf(1, "read\n");
+	fprintf(stdout, "read\n");
 
 	fd = open(path, O_RDONLY);
 	for (i = 0; i < 20; i++)

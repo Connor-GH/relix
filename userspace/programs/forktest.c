@@ -13,7 +13,7 @@ forktest(void)
 {
 	int n, pid;
 
-	fprintf(1, "fork test\n");
+	fprintf(stdout, "fork test\n");
 
 	for (n = 0; n < N; n++) {
 		pid = fork();
@@ -24,23 +24,23 @@ forktest(void)
 	}
 
 	if (n == N) {
-		fprintf(1, "fork claimed to work %d times!\n", N);
+		fprintf(stdout, "fork claimed to work %d times!\n", N);
 		exit(0);
 	}
 
 	for (; n > 0; n--) {
 		if (wait(NULL) < 0) {
-			fprintf(1, "wait stopped early\n");
+			fprintf(stderr, "wait stopped early\n");
 			exit(0);
 		}
 	}
 
 	if (wait(NULL) != -1) {
-		fprintf(1, "wait got too many\n");
+		fprintf(stderr, "wait got too many\n");
 		exit(0);
 	}
 
-	fprintf(1, "fork test OK\n");
+	fprintf(stdout, "fork test OK\n");
 }
 
 int

@@ -25,7 +25,7 @@ main(void)
 					 pid);
 		exit(0);
 	} else {
-		printf("Error with fork()\n");
+		fprintf(stderr, "Error with fork()\n");
 		exit(-1);
 	}
 }

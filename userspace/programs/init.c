@@ -21,24 +21,24 @@ main(void)
 	}
 	dup(0); // stdout
 	dup(0); // stderr
-	fprintf(stderr, "/dev/console created\n");
+	fprintf(stdout, "/dev/console created\n");
 	if (open("/dev/null", O_RDWR) < 0) {
 		mknod("/dev/null", 2, 2);
 	}
-	fprintf(stderr, "/dev/null created\n");
+	fprintf(stdout, "/dev/null created\n");
 	for (;;) {
-		fprintf(1, "init: starting sh service\n");
+		fprintf(stdout, "init: starting sh service\n");
 		pid = fork();
 		if (pid < 0) {
-			fprintf(1, "init: fork() failed\n");
+			fprintf(stderr, "init: fork() failed\n");
 			exit(0);
 		}
 		if (pid == 0) {
 			exec("/bin/sh", argv);
-			fprintf(1, "init: exec() sh failed\n");
+			fprintf(stderr, "init: exec() sh failed\n");
 			exit(0);
 		}
 		while ((wpid = wait(NULL)) >= 0 && wpid != pid)
-			fprintf(1, "zombie!\n");
+			fprintf(stderr, "zombie!\n");
 	}
 }

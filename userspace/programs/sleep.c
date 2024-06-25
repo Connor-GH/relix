@@ -23,7 +23,7 @@ main(int argc, char **argv)
 {
 	if (argc == 1) {
 		fprintf(stderr, "%s: [file]\n", argv[0]);
-		exit(0);
+		exit(-1);
 	}
 	int ret = sleep(my_atoi(argv[1]) * 100);
 	while (ret != 0) {

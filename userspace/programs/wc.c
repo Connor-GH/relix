@@ -28,10 +28,10 @@ wc(int fd, char *name)
 		}
 	}
 	if (n < 0) {
-		fprintf(1, "wc: read error\n");
+		fprintf(stderr, "wc: read error\n");
 		exit(0);
 	}
-	fprintf(1, "%d %d %d %s\n", l, w, c, name);
+	fprintf(stdout, "%d %d %d %s\n", l, w, c, name);
 }
 
 int
@@ -46,7 +46,7 @@ main(int argc, char *argv[])
 
 	for (i = 1; i < argc; i++) {
 		if ((fd = open(argv[i], 0)) < 0) {
-			fprintf(1, "wc: cannot open %s\n", argv[i]);
+			fprintf(stdout, "wc: cannot open %s\n", argv[i]);
 			exit(0);
 		}
 		wc(fd, argv[i]);

@@ -145,7 +145,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 
 	case S_IFDIR: {
 		if (strlen(path) + 1 + DIRSIZ + 1 > sizeof buf) {
-			fprintf(stdout, "ls: path too long\n");
+			fprintf(stderr, "ls: path too long\n");
 			break;
 		}
 		strcpy(buf, path);
@@ -156,7 +156,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 				continue;
 			strcpy(p, de.name);
 			if (stat(buf, &st) < 0) {
-				fprintf(stdout, "ls: cannot stat %s\n", buf);
+				fprintf(stderr, "ls: cannot stat %s\n", buf);
 				continue;
 			}
 			if (lflag) {

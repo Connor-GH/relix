@@ -1736,7 +1736,7 @@ argptest()
 	int fd;
 	fd = open("/bin/init", O_RDONLY);
 	if (fd < 0) {
-		fprintf(2, "open failed\n");
+		fprintf(stderr, "open failed\n");
 		exit(0);
 	}
 	read(fd, sbrk(0) - 1, -1);

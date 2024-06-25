@@ -79,6 +79,28 @@ trap(struct trapframe *tf)
 						tf->eip);
 		lapiceoi();
 		break;
+	case T_ILLOP:
+		cprintf("Illegal instruction\n");
+		myproc()->killed = 1;
+		break;
+	case T_GPFLT:
+		cprintf("General protection fault\n");
+		myproc()->killed = 1;
+		break;
+	// TODO handle pagefaults in a way that allows copy-on-write
+	case T_PGFLT:
+		cprintf("Page fault\n");
+		myproc()->killed = 1;
+		break;
+	case T_FPERR:
+	case T_SIMDERR:
+		cprintf("Floating point error\n");
+		myproc()->killed = 1;
+		break;
+	case T_DIVIDE:
+		cprintf("Division by zero.\n");
+		myproc()->killed = 1;
+		break;
 
 	default:
 		if (myproc() == 0 || (tf->cs & 3) == 0) {

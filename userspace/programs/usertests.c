@@ -857,7 +857,7 @@ concreate(void)
 // another concurrent link/unlink/create test,
 // to look for deadlocks.
 void
-linkunlink()
+linkunlink(void)
 {
 	int pid, i;
 
@@ -1653,7 +1653,7 @@ bigargtest(void)
 // what happens when the file system runs out of blocks?
 // answer: balloc panics, so this test is not useful.
 void
-fsfull()
+fsfull(void)
 {
 	int nfiles;
 
@@ -1702,7 +1702,7 @@ fsfull()
 }
 
 void
-uio()
+uio(void)
 {
 #define RTC_ADDR 0x70
 #define RTC_DATA 0x71
@@ -1731,7 +1731,7 @@ uio()
 }
 
 void
-argptest()
+argptest(void)
 {
 	int fd;
 	fd = open("/bin/init", O_RDONLY);
@@ -1746,7 +1746,7 @@ argptest()
 
 unsigned long randstate = 1;
 unsigned int
-rand()
+rand(void)
 {
 	randstate = randstate * 1664525 + 1013904223;
 	return randstate;

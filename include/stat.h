@@ -1,7 +1,4 @@
 #pragma once
-#define T_DIR 1 // Directory
-#define T_FILE 2 // File
-#define T_DEV 3 // Device
 
 #ifndef USE_HOST_TOOLS
 #include <types.h>
@@ -58,7 +55,6 @@
 #define S_IWOTH 00002
 #define S_IXOTH 00001
 struct stat {
-	short type; // Type of file -- TODO get rid of this struct member
 	int st_dev; /* u32 or u64 */ // File system's disk device
 	uint st_ino; /* u32 or u64 */ // Inode number
 	short st_nlink; /* u32 or u64 */ // Number of links to file

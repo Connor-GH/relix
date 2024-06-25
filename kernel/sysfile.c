@@ -142,7 +142,7 @@ sys_link(void)
 	}
 
 	ilock(ip);
-	if (ip->type == T_DIR) {
+	if (S_ISDIR(ip->mode)) {
 		iunlockput(ip);
 		end_op();
 		return -1;
@@ -220,7 +220,7 @@ sys_unlink(void)
 
 	if (ip->nlink < 1)
 		panic("unlink: nlink < 1");
-	if (ip->type == T_DIR && !isdirempty(ip)) {
+	if (S_ISDIR(ip->mode) && !isdirempty(ip)) {
 		iunlockput(ip);
 		goto bad;
 	}
@@ -228,7 +228,7 @@ sys_unlink(void)
 	memset(&de, 0, sizeof(de));
 	if (writei(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
 		panic("unlink: writei");
-	if (ip->type == T_DIR) {
+	if (S_ISDIR(ip->mode)) {
 		dp->nlink--;
 		iupdate(dp);
 	}
@@ -249,7 +249,7 @@ bad:
 }
 
 static struct inode *
-create(char *path, short type, short major, short minor)
+create(char *path, int mode, short major, short minor)
 {
 	struct inode *ip, *dp;
 	char name[DIRSIZ];
@@ -262,26 +262,22 @@ create(char *path, short type, short major, short minor)
 	if ((ip = dirlookup(dp, name, 0)) != 0) {
 		iunlockput(dp);
 		ilock(ip);
-		if (type == T_FILE && ip->type == T_FILE) {
-			ip->mode = TYPE_TO_MODE(type); // TODO limit permissions
-			return ip;
-		}
-		if (type == T_FILE && ip->type == T_DEV) {
-			// TODO: T_FILE in type needs to be T_DEV. Doing a hack...
+		if (S_ISREG(ip->mode) && S_ISREG(mode)) {
+			ip->mode = mode; // TODO limit permissions
 			return ip;
 		}
 		iunlockput(ip);
 		return 0;
 	}
 
-	if ((ip = ialloc(dp->dev, type)) == 0)
+	if ((ip = ialloc(dp->dev, mode)) == 0)
 		panic("create: ialloc");
 
 	ilock(ip);
 	ip->major = major;
 	ip->minor = minor;
 	ip->nlink = 1;
-	ip->mode = TYPE_TO_MODE(type);
+	ip->mode = mode;
 	ip->gid = DEFAULT_GID;
 	ip->uid = DEFAULT_UID;
 	struct rtcdate rtc;
@@ -298,7 +294,7 @@ create(char *path, short type, short major, short minor)
 	// $ ls -l
 	// .
 	// ..
-	if (type == T_DIR) {
+	if (S_ISDIR(mode)) {
 		dp->nlink++; // for ".."
 		iupdate(dp);
 		// No ip->nlink++ for ".": avoid cyclic ref count.
@@ -328,7 +324,18 @@ sys_open(void)
 	begin_op();
 
 	if (omode & O_CREATE) {
-		ip = create(path, T_FILE, 0, 0);
+		// try to create a file and it exists.
+		if ((ip = namei(path)) != 0) {
+			// if it's a block device, possibly do something special.
+			ilock(ip);
+			if (S_ISBLK(ip->mode))
+				goto get_fd;
+			// if it's not a block device, just exit.
+			iunlockput(ip);
+			end_op();
+			return -1;
+		}
+		ip = create(path, S_IFREG | S_IAUSR, 0, 0);
 		if (ip == 0) {
 			end_op();
 			return -1;
@@ -339,12 +346,13 @@ sys_open(void)
 			return -1;
 		}
 		ilock(ip);
-		if (ip->type == T_DIR && omode != O_RDONLY) {
+		if (S_ISDIR(ip->mode) && omode != O_RDONLY) {
 			iunlockput(ip);
 			end_op();
 			return -1;
 		}
 	}
+get_fd:
 
 	if ((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0) {
 		if (f)
@@ -371,7 +379,7 @@ sys_mkdir(void)
 	struct inode *ip;
 
 	begin_op();
-	if (argstr(0, &path) < 0 || (ip = create(path, T_DIR, 0, 0)) == 0) {
+	if (argstr(0, &path) < 0 || (ip = create(path, S_IFDIR | S_IAUSR, 0, 0)) == 0) {
 		end_op();
 		return -1;
 	}
@@ -389,7 +397,7 @@ sys_mknod(void)
 
 	begin_op();
 	if ((argstr(0, &path)) < 0 || argint(1, &major) < 0 ||
-			argint(2, &minor) < 0 || (ip = create(path, T_DEV, major, minor)) == 0) {
+			argint(2, &minor) < 0 || (ip = create(path, S_IFBLK | S_IAUSR, major, minor)) == 0) {
 		end_op();
 		return -1;
 	}
@@ -411,7 +419,7 @@ sys_chdir(void)
 		return -1;
 	}
 	ilock(ip);
-	if (ip->type != T_DIR) {
+	if (!S_ISDIR(ip->mode)) {
 		iunlockput(ip);
 		end_op();
 		return -1;

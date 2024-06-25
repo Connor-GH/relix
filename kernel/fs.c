@@ -198,7 +198,7 @@ iget(uint dev, uint inum);
 // Mark it as allocated by  giving it type type.
 // Returns an unlocked but allocated and referenced inode.
 struct inode *
-ialloc(uint dev, short type)
+ialloc(uint dev, int mode)
 {
 	int inum;
 	struct buf *bp;
@@ -207,13 +207,11 @@ ialloc(uint dev, short type)
 	for (inum = 1; inum < sb.ninodes; inum++) {
 		bp = bread(dev, IBLOCK(inum, sb));
 		dip = (struct dinode *)bp->data + inum % IPB;
-		if (dip->type == 0) { // a free inode
+		if (!S_ISANY(dip->mode)) { // a free inode
 			memset(dip, 0, sizeof(*dip));
-			dip->type = type;
-			dip->mode = TYPE_TO_MODE(type);
+			dip->mode = mode;
 			dip->gid = DEFAULT_GID;
 			dip->uid = DEFAULT_UID;
-			//    struct rtcdate rtc;
 			struct rtcdate rtc;
 			cmostime(&rtc);
 			dip->ctime = RTC_TO_UNIX(rtc);
@@ -240,7 +238,6 @@ iupdate(struct inode *ip)
 
 	bp = bread(ip->dev, IBLOCK(ip->inum, sb));
 	dip = (struct dinode *)bp->data + ip->inum % IPB;
-	dip->type = ip->type;
 	dip->major = ip->major;
 	dip->minor = ip->minor;
 	dip->nlink = ip->nlink;
@@ -288,7 +285,6 @@ iget(uint dev, uint inum)
 	ip->inum = inum;
 	ip->ref = 1;
 	ip->valid = 0;
-	//ip->mode = 0;
 	release(&icache.lock);
 
 	return ip;
@@ -321,7 +317,6 @@ ilock(struct inode *ip)
 	if (ip->valid == 0) {
 		bp = bread(ip->dev, IBLOCK(ip->inum, sb));
 		dip = (struct dinode *)bp->data + ip->inum % IPB;
-		ip->type = dip->type;
 		ip->major = dip->major;
 		ip->minor = dip->minor;
 		ip->nlink = dip->nlink;
@@ -336,8 +331,8 @@ ilock(struct inode *ip)
 		memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
 		brelse(bp);
 		ip->valid = 1;
-		if (ip->type == 0)
-			panic("ilock: no type");
+		if (ip->mode == 0)
+			panic("ilock: no mode");
 	}
 }
 
@@ -369,7 +364,6 @@ iput(struct inode *ip)
 		if (r == 1) {
 			// inode has no links and no other references: truncate and free.
 			itrunc(ip);
-			ip->type = 0;
 			ip->mode = 0;
 			iupdate(ip);
 			ip->valid = 0;
@@ -471,7 +465,6 @@ stati(struct inode *ip, struct stat *st)
 {
 	st->st_dev = ip->dev;
 	st->st_ino = ip->inum;
-	st->type = ip->type;
 	st->st_nlink = ip->nlink;
 	st->st_size = ip->size;
 	st->st_mode = ip->mode;
@@ -490,7 +483,7 @@ readi(struct inode *ip, char *dst, uint off, uint n)
 	uint tot, m;
 	struct buf *bp;
 
-	if (ip->type == T_DEV && S_ISBLK(ip->mode)) {
+	if (S_ISBLK(ip->mode)) {
 		if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].read)
 			return -1;
 		return devsw[ip->major].read(ip, dst, n);
@@ -518,7 +511,7 @@ writei(struct inode *ip, char *src, uint off, uint n)
 	uint tot, m;
 	struct buf *bp;
 
-	if (ip->type == T_DEV && S_ISBLK(ip->mode)) {
+	if (S_ISBLK(ip->mode)) {
 		if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].write)
 			return -1;
 		return devsw[ip->major].write(ip, src, n);
@@ -560,7 +553,7 @@ dirlookup(struct inode *dp, char *name, uint *poff)
 	uint off, inum;
 	struct dirent de;
 
-	if (dp->type != T_DIR)
+	if (!S_ISDIR(dp->mode))
 		panic("dirlookup not DIR");
 
 	for (off = 0; off < dp->size; off += sizeof(de)) {
@@ -666,7 +659,7 @@ namex(char *path, int nameiparent, char *name)
 
 	while ((path = skipelem(path, name)) != 0) {
 		ilock(ip);
-		if (ip->type != T_DIR) {
+		if (!S_ISDIR(ip->mode)) {
 			iunlockput(ip);
 			return 0;
 		}

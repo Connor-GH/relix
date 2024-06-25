@@ -52,7 +52,7 @@ rinode(uint inum, struct dinode *ip);
 static void
 rsect(uint sec, void *buf);
 static uint
-ialloc(ushort type);
+ialloc(uint type);
 static void
 iappend(uint inum, void *p, int n);
 
@@ -96,7 +96,7 @@ make_file(uint currentino, const char *name, uint parentino)
 static uint
 make_dir(uint parentino, const char *name)
 {
-	uint currentino = ialloc(T_DIR);
+	uint currentino = ialloc(S_IFDIR | S_IAUSR);
 
 	// creates dir
 	make_file(currentino, name, parentino);
@@ -166,7 +166,7 @@ main(int argc, char *argv[])
 	wsect(1, buf);
 
 	// make root dir
-	rootino = ialloc(T_DIR);
+	rootino = ialloc(S_IFDIR | S_IAUSR);
 	assert(rootino == ROOTINO);
 
 	bzero(&de, sizeof(de));
@@ -227,7 +227,7 @@ main(int argc, char *argv[])
 		}
 		strncpy(de.name, name, DIRSIZ);
 
-		inum = ialloc(T_FILE);
+		inum = ialloc(S_IFREG | S_IAUSR);
 
 		make_file(inum, name, ino);
 
@@ -303,16 +303,15 @@ rsect(uint sec, void *buf)
 }
 
 static uint
-ialloc(ushort type)
+ialloc(uint mode)
 {
 	uint inum = freeinode++;
 	struct dinode din;
 
 	bzero(&din, sizeof(din));
-	din.type = xshort(type);
 	din.nlink = xshort(1);
 	din.size = xint(0);
-	din.mode = xint(TYPE_TO_MODE(type));
+	din.mode = xint(mode);
 	din.uid = xshort(DEFAULT_UID);
 	din.gid = xshort(DEFAULT_GID);
 	din.atime = xint(time(NULL));

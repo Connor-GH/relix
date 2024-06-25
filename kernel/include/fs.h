@@ -28,16 +28,6 @@ struct superblock {
 #define NINDIRECT (BSIZE / sizeof(uint))
 #define MAXFILE (NDIRECT + NINDIRECT)
 
-// T_DEV -> IFBLK (block device)
-// T_FILE -> IFREG (regular file)
-// T_DIR -> IFDIR (directory)
-// none? -> 0 (empty inode)
-#define TYPE_TO_MODE(type)                                \
-	type == T_DEV ? (S_IFBLK | S_IAUSR) :                   \
-									(type == T_FILE ? (S_IFREG | S_IAUSR) : \
-									 type == T_DIR	? (S_IFDIR | S_IAUSR) : \
-																		0)
-
 // in-memory copy of an inode
 struct inode {
 	uint dev; // Device number
@@ -46,12 +36,11 @@ struct inode {
 	struct sleeplock lock; // protects everything below here
 	int valid; // inode has been read from disk?
 
-	short type; // copy of disk inode
 	short major;
 	short minor;
 	short nlink;
 	uint size;
-	uint mode;
+	uint mode; // copy of disk inode
 	ushort gid;
 	ushort uid;
 	uint ctime; // change
@@ -61,12 +50,11 @@ struct inode {
 };
 // On-disk inode structure
 struct dinode {
-	short type; // File type
 	short major; // Major device number (T_DEV only)
 	short minor; // Minor device number (T_DEV only)
 	short nlink; // Number of links to inode in file system
 	uint size; // Size of file (bytes)
-	uint mode;
+	uint mode; // File type and permissions
 	ushort gid;
 	ushort uid;
 	uint ctime; // change
@@ -101,7 +89,7 @@ dirlink(struct inode *, char *, uint);
 struct inode *
 dirlookup(struct inode *, char *, uint *);
 struct inode *
-ialloc(uint, short);
+ialloc(uint, int);
 struct inode *
 idup(struct inode *);
 void

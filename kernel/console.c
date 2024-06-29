@@ -128,6 +128,9 @@ do_again:
 		if (c == 0)
 			break;
 		switch (c) {
+		case 'u':
+			printint(*argp++, 10, 0);
+			break;
 		case 'd':
 			printint(*argp++, 10, 1);
 			break;

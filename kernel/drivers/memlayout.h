@@ -1,9 +1,12 @@
 #pragma once
 #include <stdint.h>
 // Memory layout
+#define kiB (1024UL)
+#define MiB (1024 * kiB)
+#define GiB (1024 * MiB)
 
 #define EXTMEM 0x100000 // Start of extended memory
-#define PHYSTOP 0xE000000 // Top physical memory
+#define PHYSTOP (256 * MiB - (32 * MiB)) //0xE000000 // Top physical memory
 #define DEVSPACE 0xFE000000 // Other devices are at high addresses
 
 // Key addresses for address space layout (see kmap in vm.c for layout)

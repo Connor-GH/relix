@@ -23,6 +23,9 @@
  *
  */
 
+#include "mmu.h"
+#include "vm.h"
+#include "kalloc.h"
 #include <stdlib.h>
 #include <stdint.h>
 #include "types.h"
@@ -54,7 +57,7 @@ do_checksum(struct acpi_desc_header *dsc)
 	return (sum & 0xff) == 0;
 }
 static int
-do_checksum_rdsp(struct acpi_rdsp *r, uint32_t len)
+do_checksum_rsdp(struct acpi_rsdp *r, uint32_t len)
 {
 	uint sum = 0;
 	for (int i = 0; i < len; i++) {
@@ -63,38 +66,53 @@ do_checksum_rdsp(struct acpi_rdsp *r, uint32_t len)
 	return (sum & 0xff) == 0;
 }
 
-static struct acpi_rdsp *
-scan_rdsp(uint base, uint len)
+static struct acpi_rsdp *
+scan_rsdp(uint base, uint len)
 {
 	uint8_t *p;
-	_Static_assert(sizeof(struct acpi_rdsp) == 20, "ACPI RDSP struct malformed.");
+	_Static_assert(sizeof(struct acpi_rsdp) == 20, "ACPI rsdp struct malformed.");
 
-	for (p = p2v(base); len >= sizeof(struct acpi_rdsp);
+	for (p = p2v(base); len >= sizeof(struct acpi_rsdp);
 			 len -= sizeof(len), p += sizeof(p)) {
-		if (memcmp(p, SIG_RDSP, 8) == 0 &&
-				do_checksum_rdsp((struct acpi_rdsp *)p, 20)) {
-			return (struct acpi_rdsp *)p;
+		if (memcmp(p, SIG_RSDP, 8) == 0 &&
+				do_checksum_rsdp((struct acpi_rsdp *)p, 20)) {
+			return (struct acpi_rsdp *)p;
 		}
 	}
-	return (struct acpi_rdsp *)0;
+	return (struct acpi_rsdp *)0;
+}
+#define acpi_cprintf(...) cprintf("acpi: " __VA_ARGS__)
+static void
+dump_rsdp(struct acpi_rsdp *rsdp)
+{
+	char rsdp_sig[9];
+	char rsdp_oem_id[7];
+	strlcpy_nostrlen(rsdp_sig, (char *)rsdp->signature, sizeof(rsdp_sig), sizeof(rsdp->signature));
+	strlcpy_nostrlen(rsdp_oem_id, (char *)rsdp->oem_id, sizeof(rsdp_oem_id), sizeof(rsdp->oem_id));
+
+	acpi_cprintf("signature: %s\n", rsdp_sig);
+	acpi_cprintf("checksum: %d\n", rsdp->checksum);
+	acpi_cprintf("oem id: %s\n", rsdp_oem_id);
+	acpi_cprintf("revision: %d\n", rsdp->revision+1);
+	acpi_cprintf("rsdt physical address: P%#x\n", rsdp->rsdt_addr_phys);
 }
 
-// the RDSP can either be in the EBDA area
+// the rsdp can either be in the EBDA area
 // (found from a pointer in P0x40E and a length at P0x413)
 // or it can be found in a memory region from 0xE0000-0xFFFFF.
 // returns the PHYSICAL address.
-static struct acpi_rdsp *
-find_rdsp(void)
+static struct acpi_rsdp *
+find_rsdp(void)
 {
-	struct acpi_rdsp *rdsp;
+	struct acpi_rsdp *rsdp;
 	uintptr_t pa;
 	uintptr_t bda_size = *(short *)p2v(0x413);
 	pa = *((ushort *)p2v(0x40E)) << 4; // EBDA
 	// likely does not lie here.
-	rdsp = scan_rdsp(pa, bda_size);
-	if (pa && (rdsp != NULL))
-		return rdsp;
-	return scan_rdsp(0xE0000, 0x20000);
+	rsdp = scan_rsdp(pa, bda_size);
+	if (pa && (rsdp != NULL))
+		return rsdp;
+	return scan_rsdp(0xE0000, 0x20000);
 }
 
 static int
@@ -128,7 +146,7 @@ acpi_config_smp(struct acpi_madt *madt)
 				break;
 			if (!(lapic->flags & APIC_LAPIC_ENABLED))
 				break;
-			cprintf("acpi: cpu#%d apicid %d\n", ncpu, lapic->apic_id);
+			acpi_cprintf("cpu#%d apicid %d\n", ncpu, lapic->apic_id);
 			cpus[ncpu].apicid = lapic->apic_id;
 			ncpu++;
 			break;
@@ -137,10 +155,10 @@ acpi_config_smp(struct acpi_madt *madt)
 			struct madt_ioapic *ioapic = (void *)p;
 			if (len < sizeof(*ioapic))
 				break;
-			cprintf("acpi: ioapic#%d @%x id=%d base=%d\n", nioapic, ioapic->addr,
+			acpi_cprintf("ioapic#%d @%x id=%d base=%d\n", nioapic, ioapic->addr,
 							ioapic->id, ioapic->interrupt_base);
 			if (nioapic) {
-				cprintf("warning: multiple ioapics are not supported");
+				acpi_cprintf("warning: multiple ioapics are not supported");
 			} else {
 				ioapicid = ioapic->id;
 			}
@@ -163,18 +181,18 @@ int
 acpiinit(void)
 {
 	unsigned n, count;
-	struct acpi_rdsp *rdsp;
+	struct acpi_rsdp *rsdp;
 	struct acpi_rsdt *rsdt;
 	struct acpi_madt *madt = 0;
 
-	rdsp = find_rdsp();
-	if (rdsp == NULL)
-		panic("NULL RDSP");
-	cprintf("info: rdsp at %#x\n", v2p(rdsp));
-	cprintf("info: rsdt at %#x\n", V2P_WO(rdsp->rsdt_addr_phys));
-	if (rdsp->rsdt_addr_phys > PHYSLIMIT)
+	rsdp = find_rsdp();
+	if (rsdp == NULL)
+		panic("NULL rsdp");
+	dump_rsdp(rsdp);
+	acpi_cprintf("rsdt at %#x\n", V2P_WO(rsdp->rsdt_addr_phys));
+	if (rsdp->rsdt_addr_phys > PHYSLIMIT)
 		goto notmapped;
-	rsdt = p2v(rdsp->rsdt_addr_phys);
+	rsdt = p2v(rsdp->rsdt_addr_phys);
 	kernel_assert(do_checksum(&rsdt->header) == 1);
 	kernel_assert(memcmp(rsdt->header.signature, "RSDT", 4) == 0);
 	count = (rsdt->header.length - sizeof(struct acpi_desc_header)) / 4;
@@ -202,6 +220,6 @@ acpiinit(void)
 	return acpi_config_smp(madt);
 
 notmapped:
-	cprintf("acpi: tables above %#x not mapped.\n", PHYSLIMIT);
+	acpi_cprintf("tables above %#x not mapped.\n", PHYSLIMIT);
 	return -1;
 }

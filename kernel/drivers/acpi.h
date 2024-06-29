@@ -6,8 +6,8 @@
 // http://acpi.info/spec.htm
 
 // 5.2.5.3
-#define SIG_RDSP "RSD PTR "
-struct acpi_rdsp {
+#define SIG_RSDP "RSD PTR "
+struct acpi_rsdp {
   uint8_t signature[8];
   uint8_t checksum;
   uint8_t oem_id[6];

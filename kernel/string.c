@@ -101,6 +101,19 @@ safestrcpy(char *s, const char *t, int n)
 	*s = 0;
 	return os;
 }
+static inline int
+min(int a, int b)
+{
+	return a > b ? b : a;
+}
+__nonnull(1, 2)
+char *
+strlcpy_nostrlen(char *dst, const char *src, int dst_len, int src_len)
+{
+	// this is guaranteed to NUL-terminate even on strings without strlen.
+	// only issue is lack of verification of string length.
+	return safestrcpy(dst, src, min(dst_len, src_len));
+}
 
 __nonnull(1)
 uint

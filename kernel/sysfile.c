@@ -12,6 +12,7 @@
 #include <date.h>
 #include <time.h>
 #include <fcntl.h>
+#include <errno.h>
 #include "param.h"
 #include "proc.h"
 #include "fs.h"
@@ -33,9 +34,9 @@ argfd(int n, int *pfd, struct file **pf)
 	struct file *f;
 
 	if (argint(n, &fd) < 0)
-		return -1;
+		return -EINVAL;
 	if (fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == 0)
-		return -1;
+		return -EBADF;
 	if (pfd)
 		*pfd = fd;
 	if (pf)
@@ -69,7 +70,7 @@ sys_dup(void)
 	if (argfd(0, 0, &f) < 0)
 		return -1;
 	if ((fd = fdalloc(f)) < 0)
-		return -1;
+		return -EBADF;
 	filedup(f);
 	return fd;
 }
@@ -83,7 +84,7 @@ sys_read(void)
 
 	// do not rearrange, because then 'n' will be undefined.
 	if (argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
-		return -1;
+		return -EINVAL;
 	return fileread(f, p, n);
 }
 
@@ -95,7 +96,7 @@ sys_write(void)
 	char *p;
 
 	if (argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
-		return -1;
+		return -EINVAL;
 	return filewrite(f, p, n);
 }
 
@@ -106,7 +107,7 @@ sys_close(void)
 	struct file *f;
 
 	if (argfd(0, &fd, &f) < 0)
-		return -1;
+		return -EINVAL;
 	myproc()->ofile[fd] = 0;
 	fileclose(f);
 	return 0;
@@ -119,9 +120,9 @@ sys_fstat(void)
 	struct stat *st;
 
 	if (argfd(0, 0, &f) < 0 || argptr(1, (void *)&st, sizeof(*st)) < 0)
-		return -1;
+		return -EINVAL;
 	if (st == NULL)
-		return -1;
+		return -EINVAL;
 	return filestat(f, st);
 }
 
@@ -130,33 +131,37 @@ int
 sys_link(void)
 {
 	char name[DIRSIZ], *new, *old;
+	int retflag = EINVAL;
 	struct inode *dp, *ip;
 
 	if (argstr(0, &old) < 0 || argstr(1, &new) < 0)
-		return -1;
+		return -EINVAL;
 
 	begin_op();
 	if ((ip = namei(old)) == 0) {
 		end_op();
-		return -1;
+		return -ENOENT;
 	}
 
 	ilock(ip);
 	if (S_ISDIR(ip->mode)) {
 		iunlockput(ip);
 		end_op();
-		return -1;
+		return -EISDIR;
 	}
 
 	ip->nlink++;
 	iupdate(ip);
 	iunlock(ip);
 
-	if ((dp = nameiparent(new, name)) == 0)
+	if ((dp = nameiparent(new, name)) == 0) {
+		retflag = ENOENT;
 		goto bad;
+	}
 	ilock(dp);
 	if (dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0) {
 		iunlockput(dp);
+		retflag = EXDEV; // probably incorrect
 		goto bad;
 	}
 	iunlockput(dp);
@@ -172,7 +177,7 @@ bad:
 	iupdate(ip);
 	iunlockput(ip);
 	end_op();
-	return -1;
+	return -retflag;
 }
 
 // Is the directory dp empty except for "." and ".." ?
@@ -200,12 +205,12 @@ sys_unlink(void)
 	uint off;
 
 	if (argstr(0, &path) < 0)
-		return -1;
+		return -EINVAL;
 
 	begin_op();
 	if ((dp = nameiparent(path, name)) == 0) {
 		end_op();
-		return -1;
+		return -EEXIST;
 	}
 
 	ilock(dp);
@@ -245,7 +250,7 @@ sys_unlink(void)
 bad:
 	iunlockput(dp);
 	end_op();
-	return -1;
+	return -EINVAL;
 }
 
 static struct inode *
@@ -319,7 +324,7 @@ sys_open(void)
 	struct inode *ip;
 
 	if (argstr(0, &path) < 0 || argint(1, &omode) < 0)
-		return -1;
+		return -EINVAL;
 
 	begin_op();
 
@@ -333,23 +338,23 @@ sys_open(void)
 			// if it's not a block device, just exit.
 			iunlockput(ip);
 			end_op();
-			return -1;
+			return -ENOTBLK;
 		}
 		ip = create(path, S_IFREG | S_IAUSR, 0, 0);
 		if (ip == 0) {
 			end_op();
-			return -1;
+			return -EIO;
 		}
 	} else {
 		if ((ip = namei(path)) == 0) {
 			end_op();
-			return -1;
+			return -ENOENT;
 		}
 		ilock(ip);
 		if (S_ISDIR(ip->mode) && omode != O_RDONLY) {
 			iunlockput(ip);
 			end_op();
-			return -1;
+			return -EISDIR;
 		}
 	}
 get_fd:
@@ -359,7 +364,7 @@ get_fd:
 			fileclose(f);
 		iunlockput(ip);
 		end_op();
-		return -1;
+		return -EBADF;
 	}
 	iunlock(ip);
 	end_op();
@@ -381,7 +386,7 @@ sys_mkdir(void)
 	begin_op();
 	if (argstr(0, &path) < 0 || (ip = create(path, S_IFDIR | S_IAUSR, 0, 0)) == 0) {
 		end_op();
-		return -1;
+		return -EINVAL;
 	}
 	iunlockput(ip);
 	end_op();
@@ -399,7 +404,7 @@ sys_mknod(void)
 	if ((argstr(0, &path)) < 0 || argint(1, &major) < 0 ||
 			argint(2, &minor) < 0 || (ip = create(path, S_IFBLK | S_IAUSR, major, minor)) == 0) {
 		end_op();
-		return -1;
+		return -EINVAL;
 	}
 	iunlockput(ip);
 	end_op();
@@ -416,13 +421,13 @@ sys_chdir(void)
 	begin_op();
 	if (argstr(0, &path) < 0 || (ip = namei(path)) == 0) {
 		end_op();
-		return -1;
+		return -EINVAL;
 	}
 	ilock(ip);
 	if (!S_ISDIR(ip->mode)) {
 		iunlockput(ip);
 		end_op();
-		return -1;
+		return -ENOTDIR;
 	}
 	iunlock(ip);
 	iput(curproc->cwd);
@@ -439,20 +444,20 @@ sys_exec(void)
 	uint uargv, uarg;
 
 	if (argstr(0, &path) < 0 || argint(1, (int *)&uargv) < 0) {
-		return -1;
+		return -EINVAL;
 	}
 	memset(argv, 0, sizeof(argv));
 	for (i = 0;; i++) {
 		if (i >= NELEM(argv))
-			return -1;
+			return -ENOEXEC;
 		if (fetchint(uargv + 4 * i, (int *)&uarg) < 0)
-			return -1;
+			return -ENOEXEC;
 		if (uarg == 0) {
 			argv[i] = 0;
 			break;
 		}
 		if (fetchstr(uarg, &argv[i]) < 0)
-			return -1;
+			return -EINVAL;
 	}
 	return exec(path, argv);
 }
@@ -465,16 +470,16 @@ sys_pipe(void)
 	int fd0, fd1;
 
 	if (argptr(0, (void *)&fd, 2 * sizeof(fd[0])) < 0)
-		return -1;
+		return -EINVAL;
 	if (pipealloc(&rf, &wf) < 0)
-		return -1;
+		return -EINVAL;
 	fd0 = -1;
 	if ((fd0 = fdalloc(rf)) < 0 || (fd1 = fdalloc(wf)) < 0) {
 		if (fd0 >= 0)
 			myproc()->ofile[fd0] = 0;
 		fileclose(rf);
 		fileclose(wf);
-		return -1;
+		return -EBADF;
 	}
 	fd[0] = fd0;
 	fd[1] = fd1;
@@ -491,7 +496,7 @@ sys_chmod(void)
 	if (argstr(0, &path) < 0 || argint(1, (int *)&mode) < 0 ||
 			(ip = namei(path)) == 0) {
 		end_op();
-		return -1; // EINVAL?
+		return -EINVAL;
 	}
 	ilock(ip);
 	// capture the file type and change the permissions
@@ -508,7 +513,7 @@ sys_echoout(void)
 	begin_op();
 	if (argint(0, &answer) < 0) {
 		end_op();
-		return -1;
+		return -EINVAL;
 	}
 	echo_out = answer;
 	end_op();

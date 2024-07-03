@@ -2,6 +2,7 @@
 // File descriptors
 //
 
+#include <errno.h>
 #include "param.h"
 #include "spinlock.h"
 #include "file.h"
@@ -88,7 +89,7 @@ filestat(struct file *f, struct stat *st)
 		iunlock(f->ip);
 		return 0;
 	}
-	return -1;
+	return -ENOENT;
 }
 
 // Read from file f.
@@ -98,7 +99,7 @@ fileread(struct file *f, char *addr, int n)
 	int r;
 
 	if (f->readable == 0)
-		return -1;
+		return -EINVAL;
 	if (f->type == FD_PIPE)
 		return piperead(f->pipe, addr, n);
 	if (f->type == FD_INODE) {
@@ -118,7 +119,7 @@ filewrite(struct file *f, char *addr, int n)
 	int r;
 
 	if (f->writable == 0)
-		return -1;
+		return -EROFS;
 	if (f->type == FD_PIPE)
 		return pipewrite(f->pipe, addr, n);
 	if (f->type == FD_INODE) {
@@ -148,7 +149,7 @@ filewrite(struct file *f, char *addr, int n)
 				panic("short filewrite");
 			i += r;
 		}
-		return i == n ? n : -1;
+		return i == n ? n : -EDOM;
 	}
 	panic("filewrite");
 }

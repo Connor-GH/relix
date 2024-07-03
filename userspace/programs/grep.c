@@ -57,7 +57,7 @@ main(int argc, char *argv[])
 
 	for (i = 2; i < argc; i++) {
 		if ((fd = open(argv[i], 0)) < 0) {
-			fprintf(stderr, "grep: cannot open %s\n", argv[i]);
+			perror("grep: cannot open file");
 			exit(0);
 		}
 		grep(pattern, fd);

@@ -11,8 +11,8 @@
 		jge ok_ ## name; \
 		cmpl $-MAX_ERRNO, %eax; /* do we exceed the max errno? */ \
 		jl ok_ ## name; \
-		movl $0, errno; \
-		subl %eax, errno; \
+		neg %eax; \
+		movl %eax, errno; \
 		movl $-1, %eax; \
 	ok_ ## name: \
 		ret

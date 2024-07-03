@@ -14,6 +14,7 @@
 #include <dirent.h>
 #include <date.h>
 #include <time.h>
+#include <errno.h>
 #include "fs.h"
 #include "param.h"
 #include "proc.h"
@@ -485,12 +486,12 @@ readi(struct inode *ip, char *dst, uint off, uint n)
 
 	if (S_ISBLK(ip->mode)) {
 		if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].read)
-			return -1;
+			return -ENODEV;
 		return devsw[ip->major].read(ip, dst, n);
 	}
 
 	if (off > ip->size || off + n < off)
-		return -1;
+		return -EDOM;
 	if (off + n > ip->size)
 		n = ip->size - off;
 
@@ -513,14 +514,14 @@ writei(struct inode *ip, char *src, uint off, uint n)
 
 	if (S_ISBLK(ip->mode)) {
 		if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].write)
-			return -1;
+			return -ENODEV;
 		return devsw[ip->major].write(ip, src, n);
 	}
 
 	if (off > ip->size || off + n < off)
-		return -1;
+		return -EDOM;
 	if (off + n > MAXFILE * BSIZE)
-		return -1;
+		return -EDOM;
 
 	for (tot = 0; tot < n; tot += m, off += m, src += m) {
 		bp = bread(ip->dev, bmap(ip, off / BSIZE));

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 
 static void
 putc(int fd, char c)
@@ -184,4 +185,10 @@ printf(const char *fmt, ...)
 	va_start(listp, fmt);
 	vfprintf(stdout, fmt, &listp);
 	va_end(listp);
+}
+
+void
+perror(const char *s)
+{
+	printf("%s: %s\n", s, errno_codes[errno]);
 }

@@ -1,5 +1,6 @@
 #include <types.h>
 #include <stdlib.h>
+#include <errno.h>
 #include "drivers/mmu.h"
 #include "drivers/lapic.h"
 #include "defs.h"
@@ -183,10 +184,10 @@ growproc(int n)
 	sz = curproc->sz;
 	if (n > 0) {
 		if ((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
-			return -1;
+			return -ENOMEM;
 	} else if (n < 0) {
 		if ((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
-			return -1;
+			return -EFAULT;
 	}
 	curproc->sz = sz;
 	switchuvm(curproc);
@@ -205,7 +206,7 @@ fork(void)
 
 	// Allocate process.
 	if ((np = allocproc()) == 0) {
-		return -1;
+		return -ENOMEM;
 	}
 
 	// Copy process state from proc.
@@ -213,7 +214,7 @@ fork(void)
 		kfree(np->kstack);
 		np->kstack = 0;
 		np->state = UNUSED;
-		return -1;
+		return -EIO;
 	}
 	np->sz = curproc->sz;
 	np->parent = curproc;
@@ -330,7 +331,7 @@ wait(int *wstatus)
 		// No point waiting if we don't have any children.
 		if (!havekids || curproc->killed) {
 			release(&ptable.lock);
-			return -1;
+			return -ECHILD;
 		}
 
 		// Wait for children to exit.  (See wakeup1 call in proc_exit.)

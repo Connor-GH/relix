@@ -18,7 +18,7 @@ main(void)
 		printf("I am the parent, and the child is pid %d\n", pid);
 		pid = wait(&status);
 		if (pid == -1) {
-			printf("Error with wait()!\n");
+			perror("wait");
 			exit(-1);
 		}
 		printf("Child returned with %d: end of process: %d\n", WEXITSTATUS(status),

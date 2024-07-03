@@ -1,5 +1,6 @@
 #include <types.h>
 #include <date.h>
+#include <errno.h>
 #include <sys/reboot.h>
 #include "x86.h"
 #include "proc.h"
@@ -20,7 +21,7 @@ sys_exit(void)
 {
 	int status;
 	if (argint(0, &status) < 0)
-		return -1;
+		return -EINVAL;
 	exit(status);
 	return 0; // not reached
 }
@@ -31,7 +32,7 @@ sys_wait(void)
 	// very strange: is this correct behavior?
 	int *status;
 	if (argptr(0, (char **)&status, 1) < 0)
-		return -1;
+		return -EINVAL;
 	return wait(status);
 }
 
@@ -41,7 +42,7 @@ sys_kill(void)
 	int pid;
 
 	if (argint(0, &pid) < 0)
-		return -1;
+		return -EINVAL;
 	return kill(pid);
 }
 
@@ -58,10 +59,10 @@ sys_sbrk(void)
 	int n;
 
 	if (argint(0, &n) < 0)
-		return -1;
+		return -EINVAL;
 	addr = myproc()->sz;
 	if (growproc(n) < 0)
-		return -1;
+		return -1; // TODO
 	return addr;
 }
 
@@ -72,13 +73,13 @@ sys_sleep(void)
 	uint ticks0;
 
 	if (argint(0, &n) < 0)
-		return -1;
+		return -EINVAL;
 	acquire(&tickslock);
 	ticks0 = ticks;
 	while (ticks - ticks0 < n) {
 		if (myproc()->killed) {
 			release(&tickslock);
-			return -1;
+			return -ESRCH;
 		}
 		sleep(&ticks, &tickslock);
 	}
@@ -123,7 +124,7 @@ sys_reboot(void)
 {
 	int cmd;
 	if (argint(0, &cmd) < 0) {
-		return -1;
+		return -EINVAL;
 	}
 
 	switch (cmd) {
@@ -143,7 +144,7 @@ sys_reboot(void)
 		return 0;
 		break;
 	default:
-		return -1;
+		return -EINVAL;
 	}
 }
 
@@ -152,10 +153,10 @@ sys_setuid(void)
 {
 	// cannot setuid if not root
 	if (myproc()->cred.uid != 0)
-		return -1;
+		return -EPERM;
 	int uid;
 	if (argint(0, &uid) < 0)
-		return -1;
+		return -EINVAL;
 	struct cred cred;
 	cred.uid = uid;
 	cred.gids[0] = uid;
@@ -168,7 +169,7 @@ sys_strace(void)
 {
 	char *trace_ptr;
 	if (argptr(0, &trace_ptr, SYSCALL_AMT) < 0)
-		return -1;
+		return -EINVAL;
 	memmove(myproc()->strace_mask_ptr, trace_ptr, SYSCALL_AMT);
 	return 0;
 }

@@ -112,11 +112,13 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 
 	if ((fd = open(path, 0)) < 0) {
 		fprintf(stderr, "ls: cannot open %s\n", path);
+		perror("open");
 		return;
 	}
 
 	if (fstat(fd, &st) < 0) {
 		fprintf(stderr, "ls: cannot stat %s\n", path);
+		perror("stat");
 		close(fd);
 		return;
 	}
@@ -157,6 +159,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 			strcpy(p, de.name);
 			if (stat(buf, &st) < 0) {
 				fprintf(stderr, "ls: cannot stat %s\n", buf);
+				perror("stat");
 				continue;
 			}
 			if (lflag) {

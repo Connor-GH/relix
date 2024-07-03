@@ -33,3 +33,5 @@ char *
 gets(char *, int max);
 int
 getc(FILE fd);
+void
+perror(const char *s);

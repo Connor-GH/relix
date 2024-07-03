@@ -1,12 +1,21 @@
-#include "kernel/include/syscall.h"
+#include <sys/syscall.h>
 #include "kernel/include/traps.h"
+#include <errno.h>
 
 #define SYSCALL(name) \
   .globl name; \
   name: \
     movl $SYS_ ## name, %eax; \
     int $T_SYSCALL; \
-    ret
+    cmpl $0, %eax; /* did we return successfully? */ \
+		jge ok_ ## name; \
+		cmpl $-MAX_ERRNO, %eax; /* do we exceed the max errno? */ \
+		jl ok_ ## name; \
+		movl $0, errno; \
+		subl %eax, errno; \
+		movl $-1, %eax; \
+	ok_ ## name: \
+		ret
 
 SYSCALL(fork)
 SYSCALL(exit)

@@ -1,7 +1,7 @@
 #pragma once
 
 int
-fork(void);
+fork(void) __attribute__((returns_twice));
 void
 exit(int) __attribute__((noreturn));
 int
@@ -30,12 +30,12 @@ int
 dup(int);
 int
 getpid(void);
-char *
+void *
 sbrk(int);
 int
 sleep(int);
 // needs sys/reboot
-void
+int
 reboot(int cmd);
-void
+int
 setuid(int);

@@ -4,4 +4,4 @@
 
 __nonnull(1, 2)
 int
-exec(const char *, char **);
+exec(char *, char **);

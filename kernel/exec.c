@@ -15,7 +15,7 @@
 
 __nonnull(1, 2)
 int
-exec(const char *path, const char **argv)
+exec(char *path, char **argv)
 {
 	char *s, *last;
 	int i, off;

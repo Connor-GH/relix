@@ -3,6 +3,7 @@
 #include "drivers/lapic.h"
 #include "proc.h"
 #include "x86.h"
+#include "trap.h"
 #include "traps.h"
 #include "spinlock.h"
 #include "ide.h"

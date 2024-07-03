@@ -5,7 +5,7 @@
 
 int
 uptime(void);
-void
+int
 echoout(int answer);
 
 // time? more like a nonstandard time(time_t *)

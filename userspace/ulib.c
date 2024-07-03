@@ -8,6 +8,8 @@
 #include <string.h>
 #include <unistd.h>
 
+int errno;
+
 char *
 strcpy(char *s, const char *t)
 {

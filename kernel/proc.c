@@ -131,6 +131,9 @@ found:
 	memset(p->context, 0, sizeof *p->context);
 	p->context->eip = (uint)forkret;
 
+	p->cred.uid = 0;
+	p->cred.gid = 0;
+
 	memset(p->strace_mask_ptr, 0, SYSCALL_AMT);
 
 	return p;

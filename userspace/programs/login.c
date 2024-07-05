@@ -44,7 +44,7 @@ try_again:
 		fprintf(stdout, "Password is correct!\n");
 		free(actual_password);
 		cred.uid = uid;
-		cred.gids[0] = uid;
+		cred.gid = uid;
 		setuid(uid);
 		char *sh_argv[] = { "/bin/sh", 0 };
 		execv("/bin/sh", sh_argv);

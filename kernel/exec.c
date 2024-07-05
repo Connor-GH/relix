@@ -36,11 +36,13 @@ exec(char *path, char **argv)
 	pgdir = 0;
 
 	// hold back on GID/UID protection right now
-	/*if (ip->gid != curproc->cred->gid && ip->uid != curproc->cred->uid) {
-    cprintf("exec: user does not have matching uid/gid for this file\n");
-    iunlockput(ip);
-    return -1;
-  }*/
+	/*if (ip->gid != curproc->cred.gid && ip->uid != curproc->cred.uid) {
+		cprintf("exec: user does not have matching uid/gid for this file\n");
+		cprintf("Requested gid: %d user gid: %d\n", ip->gid, curproc->cred.gid);
+		cprintf("Requested uid: %d user uid: %d\n", ip->uid, curproc->cred.uid);
+		iunlockput(ip);
+		return -1;
+	}*/
 	// TODO change "1" to check for user permissions
 	// add back when proper file permissions are added.
 	if (!S_HASPERM(ip->mode, S_IXUSR)) {
@@ -130,6 +132,7 @@ ok:
 	curproc->sz = sz;
 	curproc->tf->eip = elf.entry; // main
 	curproc->tf->esp = sp;
+	curproc->cred = curproc->parent->cred;
 	switchuvm(curproc);
 	freevm(oldpgdir);
 	return 0;

@@ -159,7 +159,6 @@ sys_setuid(void)
 		return -EINVAL;
 	struct cred cred;
 	cred.uid = uid;
-	cred.gids[0] = uid;
 	myproc()->cred = cred;
 	return 0;
 }

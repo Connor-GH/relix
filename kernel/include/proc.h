@@ -6,9 +6,17 @@
 #include "../drivers/mmu.h"
 #include "../include/file.h"
 
+struct groups {
+	char *gr_name;
+	char *gr_passwd;
+	uint gr_gid;
+	char **gr_mem;
+};
+
 struct cred {
 	uint uid;
-	uint gids[MAXGIDS];
+	uint gid;
+	struct groups groups[MAXGROUPS];
 };
 
 struct cpu {

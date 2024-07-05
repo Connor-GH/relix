@@ -24,7 +24,7 @@ push_user_stack(uint *count, char **vec, uint *ustack, pde_t *pgdir, uint *sp, u
 		// move the stack down to account for an argument
 		*sp -= strlen(vec[*count]) + 1;
 		// (seemingly) align the stack to 4 bytes.
-		*sp &= ~3;
+		*sp &= ~(sizeof(uintptr_t)-1);
 		// copy this vector index onto the stack pointer finally.
 		if (copyout(pgdir, *sp, vec[*count], strlen(vec[*count]) + 1) < 0)
 			return -1;
@@ -130,6 +130,17 @@ ok:
 	if (push_user_stack(&argc, argv, ustack, pgdir, &sp, 3) < 0)
 		goto bad;
 
+	/*
+	* 0 = fake address
+	* ^ this is what gets popped off the stack when we try to return.
+	* 1 = argc
+	* & this is where main starts popping arguments off the stack
+	* 2 = argv
+	* 3 = envp
+	* 4 = argv_data ...
+	* ^ we need argv to point to this segment of memory
+	* 5 = envp_data ...
+	*/
 	const uint argv_size = argc + 1;
 
 	ustack[0] = 0xffffffff; // fake return PC

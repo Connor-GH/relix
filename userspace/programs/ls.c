@@ -234,5 +234,5 @@ main(int argc, char *argv[])
 			ls(argv[i], lflag, iflag, pflag);
 		}
 	}
-	exit(0);
+	return 0;
 }

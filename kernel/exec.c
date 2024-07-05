@@ -13,13 +13,38 @@
 #include "drivers/mmu.h"
 #include "compiler_attributes.h"
 
+// count is argc/envc
+// vec is argv/envp
+static int
+push_user_stack(uint *count, char **vec, uint *ustack, pde_t *pgdir, uint *sp, uint idx)
+{
+	for (*count = 0; vec[*count]; (*count)++) {
+		if (*count >= MAXARG)
+			return -1;
+		// move the stack down to account for an argument
+		*sp -= strlen(vec[*count]) + 1;
+		// (seemingly) align the stack to 4 bytes.
+		*sp &= ~3;
+		// copy this vector index onto the stack pointer finally.
+		if (copyout(pgdir, *sp, vec[*count], strlen(vec[*count]) + 1) < 0)
+			return -1;
+		ustack[idx + *count] = *sp;
+	}
+	// 0 is fake return address
+	// 1 is argc
+	// 2 is argv pointer (that points to the items on the stack)
+	// argv copy will be idx = 3, envp will be idx = 4
+	ustack[idx + *count] = *sp;
+	return 0;
+}
+
 __nonnull(1, 2)
 int
 exec(char *path, char **argv)
 {
 	char *s, *last;
 	int i, off;
-	uint argc, sz, sp, ustack[3 + MAXARG + 1];
+	uint argc = 0, sz, sp, ustack[3 + MAXARG + 1];
 	struct elfhdr elf;
 	struct inode *ip;
 	struct proghdr ph;
@@ -102,22 +127,18 @@ ok:
 	sp = sz;
 
 	// Push argument strings, prepare rest of stack in ustack.
-	for (argc = 0; argv[argc]; argc++) {
-		if (argc >= MAXARG)
-			goto bad;
-		sp = (sp - (strlen(argv[argc]) + 1)) & ~3;
-		if (copyout(pgdir, sp, argv[argc], strlen(argv[argc]) + 1) < 0)
-			goto bad;
-		ustack[3 + argc] = sp;
-	}
-	ustack[3 + argc] = 0;
+	if (push_user_stack(&argc, argv, ustack, pgdir, &sp, 3) < 0)
+		goto bad;
+
+	uint argv_size = argc + 1;
 
 	ustack[0] = 0xffffffff; // fake return PC
 	ustack[1] = argc;
-	ustack[2] = sp - (argc + 1) * 4; // argv pointer
+	ustack[2] = sp - (argv_size) * 4; // argv pointer
 
-	sp -= (3 + argc + 1) * 4;
-	if (copyout(pgdir, sp, ustack, (3 + argc + 1) * 4) < 0)
+	uint total_mainargs_size = (3 + argv_size) * sizeof(uintptr_t);
+	sp -= total_mainargs_size;
+	if (copyout(pgdir, sp, ustack, total_mainargs_size) < 0)
 		goto bad;
 
 	// Save program name for debugging.

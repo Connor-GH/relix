@@ -9,23 +9,6 @@
 #include <fcntl.h>
 #include <string.h>
 
-static char *
-disambiguate_symlink(uint inode, char *path)
-{
-	char *p;
-	for (p = path + strlen(path); p >= path && *p != '/'; p--)
-		;
-	// name is now top level
-	p++;
-	struct stat st;
-	(void)path;
-	(void)stat("/" /*path*/, &st);
-	if (S_ISDIR(st.st_mode)) {
-		// idk;
-	}
-	return "idk!";
-}
-
 struct ls_time {
 	uint sec;
 	uint min;
@@ -33,6 +16,15 @@ struct ls_time {
 	uint day;
 	uint mo;
 	uint yr;
+};
+
+enum {
+	FMT_FILE = 0,
+	FMT_DIR = 2, // /
+	FMT_LINK = 4, // @
+	FMT_FIFO = 8, // |
+	FMT_SOCK = 16, // =
+	FMT_EXE = 32, // *
 };
 static struct ls_time
 to_human_time(uint time)
@@ -54,10 +46,11 @@ to_human_time(uint time)
 }
 
 static char *
-fmtname(char *path, bool pflag)
+fmtname(char *path, int fmt_flag)
 {
 	static char buf[DIRSIZ + 1];
 	char *p;
+	char indicator;
 	// zero out the buffer.
 	memset(buf, '\0', sizeof(buf));
 
@@ -70,16 +63,30 @@ fmtname(char *path, bool pflag)
 	if (strlen(p) >= DIRSIZ)
 		return p;
 	memmove(buf, p, strlen(p));
-	if (pflag)
-		memset(buf + strlen(p), '/', 1);
-	memset(buf + strlen(p) + pflag, ' ', 1);
-	return buf;
-}
+	switch (fmt_flag) {
+	default:
+	case FMT_FILE:
+		indicator = ' ';
+		break;
+	case FMT_DIR:
+		indicator = '/';
+		break;
+	case FMT_LINK:
+		indicator = '@';
+		break;
+	case FMT_SOCK:
+		indicator = '=';
+		break;
+	case FMT_FIFO:
+		indicator = '|';
+		break;
+	case FMT_EXE:
+		indicator = '*';
+		break;
+	}
+	memset(buf + strlen(p), indicator, 1);
 
-static char *
-fmtname_file(char *path)
-{
-	return fmtname(path, false);
+	return buf;
 }
 
 static char *
@@ -135,12 +142,13 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 			struct ls_time lt = to_human_time(st.st_mtime);
 			fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
 							lt.hr, lt.min, lt.sec);
-			fprintf(stdout, "%s ", fmtname_file(path));
-			if (st.st_nlink > 1) {
-				fprintf(stdout, "-> %s", disambiguate_symlink(st.st_ino, path));
-			}
+			fprintf(stdout, "%s ",
+							fmtname(path,
+											pflag ? (st.st_nlink > 1 ? FMT_LINK : FMT_FILE) : 0));
 		} else {
-			fprintf(stdout, "%s", fmtname_file(path));
+			fprintf(stdout, "%s ",
+							fmtname(path,
+											pflag ? (st.st_nlink > 1 ? FMT_LINK : FMT_FILE) : 0));
 		}
 		fprintf(stdout, "\n");
 		break;
@@ -172,12 +180,12 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 				struct ls_time lt = to_human_time(st.st_mtime);
 				fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
 								lt.hr, lt.min, lt.sec);
-				fprintf(stdout, "%s", fmtname(buf, pflag && S_ISDIR(st.st_mode)));
-				if (st.st_nlink > 1)
-					fprintf(stdout, "-> %s", "TODO");
+				fprintf(stdout, "%s ",
+								fmtname(buf, pflag ? (S_ISDIR(st.st_mode) ? FMT_DIR : 0) : 0));
 				fprintf(stdout, "\n");
 			} else {
-				fprintf(stdout, "%s", fmtname(buf, pflag && S_ISDIR(st.st_mode)));
+				fprintf(stdout, "%s ",
+								fmtname(buf, pflag ? (S_ISDIR(st.st_mode) ? FMT_DIR : 0) : 0));
 			}
 		}
 	} break;

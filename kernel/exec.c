@@ -33,8 +33,8 @@ push_user_stack(uint *count, char **vec, uint *ustack, pde_t *pgdir, uint *sp, u
 	// 0 is fake return address
 	// 1 is argc
 	// 2 is argv pointer (that points to the items on the stack)
-	// argv copy will be idx = 3, envp will be idx = 4
-	ustack[idx + *count] = *sp;
+	// argv copy will be idx = 3, envp will be idx = 3 + argv_size + 1
+	ustack[idx + *count] = 0;
 	return 0;
 }
 
@@ -44,7 +44,7 @@ exec(char *path, char **argv)
 {
 	char *s, *last;
 	int i, off;
-	uint argc = 0, sz, sp, ustack[3 + MAXARG + 1];
+	uint argc = 0, sz, sp, ustack[3 + MAXARG + MAXENV + 1] = {};
 	struct elfhdr elf;
 	struct inode *ip;
 	struct proghdr ph;
@@ -130,12 +130,12 @@ ok:
 	if (push_user_stack(&argc, argv, ustack, pgdir, &sp, 3) < 0)
 		goto bad;
 
-	uint argv_size = argc + 1;
+	const uint argv_size = argc + 1;
 
 	ustack[0] = 0xffffffff; // fake return PC
 	ustack[1] = argc;
 	ustack[2] = sp - (argv_size) * 4; // argv pointer
-
+	// ustack[3 .. 3 + argv_size] is argv arguments
 	uint total_mainargs_size = (3 + argv_size) * sizeof(uintptr_t);
 	sp -= total_mainargs_size;
 	if (copyout(pgdir, sp, ustack, total_mainargs_size) < 0)

@@ -15,3 +15,4 @@
 #define MAXGROUPS 32 // maximum groups there can be
 #define MAX_USERNAME 256
 #define MAX_PASSWD 128
+#define MAXENV 32

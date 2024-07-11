@@ -49,7 +49,7 @@ try_again:
 		char *sh_argv[] = { "/bin/sh", 0 };
 		execv("/bin/sh", sh_argv);
 		printf("execv sh failed\n");
-		exit(0);
+		return 1;
 	} else {
 		fprintf(stderr, "Password is incorrect.\n");
 		sleep(100);

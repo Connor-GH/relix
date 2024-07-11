@@ -13,5 +13,5 @@ main(void)
 	assert((int)close(1200) == -1);
 	assert((int)close(2147483647) == -1);
 	assert((int)close(-2147483647) == -1);
-	exit(0);
+	return 0;
 }

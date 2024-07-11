@@ -23,7 +23,7 @@ main(void)
 		}
 		printf("Child returned with %d: end of process: %d\n", WEXITSTATUS(status),
 					 pid);
-		exit(0);
+		return 0;
 	} else {
 		fprintf(stderr, "Error with fork()\n");
 		exit(-1);

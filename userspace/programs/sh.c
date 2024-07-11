@@ -73,8 +73,7 @@ runcmd(struct cmd *cmd)
 	struct redircmd *rcmd;
 
 	if (cmd == 0)
-		exit(0);
-
+		exit(1);
 	switch (cmd->type) {
 	default:
 		panic("runcmd");
@@ -83,7 +82,7 @@ runcmd(struct cmd *cmd)
 		str = malloc(DIRSIZ);
 		ecmd = (struct execcmd *)cmd;
 		if (ecmd->argv[0] == 0)
-			exit(0);
+			exit(1);
 		exec(ecmd->argv[0], ecmd->argv);
 
 		// try PATH if local directory fails
@@ -100,7 +99,7 @@ runcmd(struct cmd *cmd)
 		close(rcmd->fd);
 		if (open(rcmd->file, rcmd->mode) < 0) {
 			fprintf(stderr, "open %s failed\n", rcmd->file);
-			exit(0);
+			exit(1);
 		}
 		runcmd(rcmd->cmd);
 		break;
@@ -143,7 +142,7 @@ runcmd(struct cmd *cmd)
 			runcmd(bcmd->cmd);
 		break;
 	}
-	exit(0);
+	exit(1);
 }
 
 int
@@ -188,14 +187,14 @@ main(void)
 		if (WEXITSTATUS(status) != 0)
 			fprintf(stderr, "ERROR: pid %d returned with status %d\n", pid, WEXITSTATUS(status));
 	}
-	exit(0);
+	return 0;
 }
 
 void
 panic(char *s)
 {
 	fprintf(stderr, "%s\n", s);
-	exit(0);
+	exit(1);
 }
 
 int

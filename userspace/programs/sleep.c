@@ -29,5 +29,5 @@ main(int argc, char **argv)
 	while (ret != 0) {
 		ret = sleep(ret);
 	}
-	exit(0);
+	return 0;
 }

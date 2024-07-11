@@ -14,5 +14,5 @@ main(void)
 	}
 	printf("%04d-%02d-%02d %02d:%02d:%02d\n", r.year, r.month, r.day, r.hour,
 				 r.minute, r.second);
-	exit(0);
+	return 0;
 }

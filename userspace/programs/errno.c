@@ -23,7 +23,7 @@ main(int argc, char **argv)
 				for (int j = 0; j < sizeof(errno_codes) / sizeof(errno_codes[0]); j++) {
 					printf("%s\n", errno_codes[j]);
 				}
-				exit(0);
+				return 0;
 			default:
 				usage(argv);
 				break;
@@ -37,5 +37,5 @@ main(int argc, char **argv)
 		usage(argv);
 	printf("%s\n", errno_codes[err]);
 
-	exit(0);
+	return 0;
 }

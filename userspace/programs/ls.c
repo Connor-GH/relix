@@ -208,7 +208,7 @@ main(int argc, char *argv[])
 
 	if (argc < 2) {
 		ls(".", lflag, iflag, pflag);
-		exit(0);
+		return 0;
 	}
 	for (int j = 1; j < argc; j++) {
 		if (argv[j][0] == '-' && argv[j][1] != '\0') {
@@ -233,7 +233,7 @@ main(int argc, char *argv[])
 	}
 	if (arg_idx == argc) {
 		ls(".", lflag, iflag, pflag);
-		exit(0);
+		return 0;
 	}
 
 	for (i = 1; i < argc; i++) {
@@ -242,5 +242,5 @@ main(int argc, char *argv[])
 			ls(argv[i], lflag, iflag, pflag);
 		}
 	}
-	exit(0);
+	return 0;
 }

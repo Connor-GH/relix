@@ -30,7 +30,7 @@ main(int argc, char **argv)
 	if (argc < 4) {
 		fprintf(stderr, "Not enough arguments supplied.\n"
 					"Usage: strace [syscall] [/path/to/prog] [prog] [arguments]\n");
-		exit(1);
+		return 1;
 	}
 	for (int i = 1; i < argc; i++) {
 		if (from_name_to_digit(argv[i]) != -1) {
@@ -45,8 +45,8 @@ main(int argc, char **argv)
 
 	if (strace(strace_flags) < 0) {
 		fprintf(stderr, "strace(2) failed!\n");
-		exit(1);
+		return 1;
 	}
 	execv(argv[argv_count_start], argv+argv_count_start+1);
-	exit(0);
+	return 0;
 }

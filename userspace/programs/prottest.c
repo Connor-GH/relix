@@ -15,5 +15,5 @@ main(void)
 {
 	nulltest();
 	fprintf(stderr, "Tests passed! (This is not a good thing!)\n");
-	exit(0);
+	return 1;
 }

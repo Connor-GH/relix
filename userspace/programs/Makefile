@@ -10,5 +10,5 @@ $(BIN)/%.o: $(UPROGS_DIR)/%.c
 
 # link together, then remove the .note.gnu.property that GCC generates.
 $(SYSROOT)/$(BIN)/_%: $(BIN)/%.o $(ULIB_OBJ) $(ULIB_ASM_OBJ)
-	$(CC) $(CFLAGS) $(UCFLAGS) -Wl,-z,noexecstack -Wl,-O1 -Wl,-N,-e,main -Wl,--section-start=.text=0 -o $@ $^
+	$(CC) $(CFLAGS) $(UCFLAGS) -Wl,-z,noexecstack -Wl,-O1 -Wl,-N,-e,_start -Wl,--section-start=.text=0 -o $@ $^
 	$(OBJCOPY) --remove-section .note.gnu.property $@

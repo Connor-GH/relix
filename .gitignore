@@ -1,5 +1,5 @@
 *~
-_*
+/sysroot/bin/*
 *.o
 *.asm
 *.sym

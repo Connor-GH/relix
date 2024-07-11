@@ -3,7 +3,7 @@
 #ifndef __ASSEMBLER__
 extern int errno;
 #endif
-#define MAX_ERRNO 34
+#define MAX_ERRNO 39
 #define EPERM 1 /* Operation not permitted */
 #define ENOENT 2 /* No such file or directory */
 #define ESRCH 3 /* No such process */
@@ -38,6 +38,11 @@ extern int errno;
 #define EPIPE 32 /* Broken pipe */
 #define EDOM 33 /* Math argument out of domain of func */
 #define ERANGE 34 /* Math result not representable */
+#define EDEADLK 35 /* Resource deadlock */
+#define ENAMETOOLONG 36 /* Name too long */
+#define ENOLCK 37 /* No record locks available */
+#define ENOSYS 38 /* Invalid syscall number */
+#define ENOTEMPTY 39 /* Directory not empty */
 #if !defined(__KERNEL__) && !defined(__ASSEMBLER__)
 static const char *const errno_codes[] = {
 	[EPERM] = "Operation not permitted",
@@ -74,5 +79,10 @@ static const char *const errno_codes[] = {
 	[EPIPE] = "Broken pipe",
 	[EDOM] = "Math argument out of domain of func",
 	[ERANGE] = "Math result not representable",
+	[EDEADLK] = "Resource deadlock",
+	[ENAMETOOLONG] = "Name too long",
+	[ENOLCK] = "No record locks available",
+	[ENOSYS] = "Invalid syscall number",
+	[ENOTEMPTY] = "Directory not empty",
 };
 #endif

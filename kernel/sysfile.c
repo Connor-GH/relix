@@ -203,6 +203,7 @@ sys_unlink(void)
 	struct dirent de;
 	char name[DIRSIZ], *path;
 	uint off;
+	int error = EINVAL;
 
 	if (argstr(0, &path) < 0)
 		return -EINVAL;
@@ -219,14 +220,18 @@ sys_unlink(void)
 	if (namecmp(name, ".") == 0 || namecmp(name, "..") == 0)
 		goto bad;
 
-	if ((ip = dirlookup(dp, name, &off)) == 0)
+	if ((ip = dirlookup(dp, name, &off)) == 0) {
+		error = EEXIST;
 		goto bad;
+	}
+
 	ilock(ip);
 
 	if (ip->nlink < 1)
 		panic("unlink: nlink < 1");
 	if (S_ISDIR(ip->mode) && !isdirempty(ip)) {
 		iunlockput(ip);
+		error = ENOTEMPTY;
 		goto bad;
 	}
 
@@ -250,7 +255,7 @@ sys_unlink(void)
 bad:
 	iunlockput(dp);
 	end_op();
-	return -EINVAL;
+	return -error;
 }
 
 static struct inode *

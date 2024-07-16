@@ -39,7 +39,7 @@ struct acpi_desc_header {
 // 5.2.7
 struct acpi_rsdt {
   struct acpi_desc_header header;
-  uint32_t entry[0];
+  uint32_t entry[];
 } __attribute__((__packed__));
 
 #define TYPE_LAPIC 0
@@ -54,7 +54,7 @@ struct acpi_madt {
   struct acpi_desc_header header;
   uint32_t lapic_addr_phys;
   uint32_t flags; // 1 = legacy pics installed.
-  uint8_t table[0];
+  uint8_t table[];
 } __attribute__((__packed__));
 
 // 5.2.12.2

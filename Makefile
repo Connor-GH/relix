@@ -48,6 +48,8 @@ ARCHNOFLAGS = -mno-sse -mno-red-zone -mno-avx -mno-avx2
 CC = $(TOOLPREFIX)gcc
 AS = $(TOOLPREFIX)gas
 LD = $(TOOLPREFIX)ld
+AR = $(TOOLPREFIX)ar
+RANLIB = $(TOOLPREFIX)ranlib
 
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
@@ -59,6 +61,8 @@ ifeq ($(LLVM),1)
 	LD = ld.lld
 	OBJCOPY = llvm-objcopy
 	OBJDUMP = llvm-objdump
+	AR = llvm-ar
+	RANLIB = llvm-ranlib
 endif
 
 WFLAGS = -Wnonnull

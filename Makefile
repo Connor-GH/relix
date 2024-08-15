@@ -120,7 +120,7 @@ mkfs: $(TOOLSDIR)/mkfs.c
 
 
 fs.img: mkfs $(UPROGS) $(D_PROGS)
-	./$(BIN)/mkfs bin/fs.img README.md sysroot/etc/passwd $(UPROGS) $(D_PROGS)
+	./$(BIN)/mkfs bin/fs.img sysroot/file.sh README.md sysroot/etc/passwd $(UPROGS) $(D_PROGS)
 
 clean:
 	rm -f $(BIN)/*.o $(BIN)/*.sym $(BIN)/bootblock $(BIN)/entryother \
@@ -150,7 +150,7 @@ ifndef CPUS
 CPUS := 2
 endif
 ifndef MEM
-MEM := 2G
+MEM := 224M
 endif
 QEMUOPTS = -drive file=$(BIN)/fs.img,index=1,media=disk,format=raw,if=ide,aio=native,cache.direct=on \
 					 -drive file=$(BIN)/xv6.img,index=0,media=disk,format=raw,if=ide,aio=native,cache.direct=on \
@@ -165,7 +165,7 @@ qemu:
 	$(QEMU) $(QEMUOPTS)
 
 qemu-memfs: xv6memfs.img
-	$(QEMU) -drive file=$(BIN)/xv6memfs.img,index=0,media=disk,format=raw -smp $(CPUS) -m 256
+	$(QEMU) -drive file=$(BIN)/xv6memfs.img,index=0,media=disk,format=raw -smp $(CPUS) -m $(MEM)
 
 qemu-nox: fs.img xv6.img
 	$(QEMU) -nographic $(QEMUOPTS)

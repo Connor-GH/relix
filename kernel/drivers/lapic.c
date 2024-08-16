@@ -127,9 +127,7 @@ void
 microdelay(int us)
 {
 	volatile int d = 0;
-	d;
-	d;
-	d;
+	d = 1;
 }
 
 #define CMOS_PORT 0x70

@@ -23,7 +23,7 @@ usertouid(char *user)
 	}
 	int i = 0;
 	int j = 0;
-	char info[512];
+	char info[512] = { 0 };
 	while (buf[i] != ':' && buf[i] != '\0') {
 		info[j++] = buf[i++];
 	}
@@ -45,8 +45,13 @@ userto_allocated_passwd(char *user)
 {
 	int fd;
 	char *put_in = malloc(512);
+	if (put_in == NULL) {
+		perror("malloc");
+		return NULL;
+	}
 	if ((fd = open("/etc/passwd", 0)) < 0) {
 		fprintf(stderr, "cannot open passwd_file\n");
+		free(put_in);
 		return NULL;
 	}
 	char buf[512] = { 0 };
@@ -55,6 +60,7 @@ userto_allocated_passwd(char *user)
 	if ((n = read(fd, buf, sizeof buf)) <= 0) {
 		fprintf(stderr, "cannot read from passwd_file\n");
 		close(fd);
+		free(put_in);
 		return NULL;
 	}
 	int i = 0;
@@ -80,5 +86,6 @@ userto_allocated_passwd(char *user)
 	assert(info[0] != '\0');
 	strcpy(put_in, info);
 	assert(strcmp(put_in, info) == 0);
+	/* caller must free this memory */
 	return put_in;
 }

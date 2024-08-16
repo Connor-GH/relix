@@ -52,6 +52,9 @@ struct backcmd {
 	struct cmd *cmd;
 };
 
+struct cmd *
+execcmd(void);
+
 int
 fork1(void); // Fork but panics on failure.
 void
@@ -156,8 +159,10 @@ getcmd(char *buf, int nbuf)
 	return 0;
 }
 
+#define MIN(a, b) (((a) > (b)) ? (b) : (a))
+
 int
-main(void)
+main(int argc, char **argv)
 {
 	static char buf[100];
 	int fd;
@@ -168,6 +173,14 @@ main(void)
 			close(fd);
 			break;
 		}
+	}
+	if (argc > 1 && strncpy(argv[1], "-c", 2) == 0) {
+		printf("HERE\n");
+		struct execcmd *ecmd = (struct execcmd *)execcmd(); // allocated memory
+		memcpy(ecmd->argv, argv+2, MIN(argc-2, MAXARGS));
+		runcmd((struct cmd *)ecmd);
+		free(ecmd);
+		exit(0);
 	}
 
 	// Read and run input commands.

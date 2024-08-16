@@ -53,6 +53,7 @@ try_again:
 	} else {
 		fprintf(stderr, "Password is incorrect.\n");
 		sleep(100);
+		free(actual_password);
 		goto try_again;
 	}
 }

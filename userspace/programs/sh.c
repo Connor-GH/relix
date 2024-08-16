@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <assert.h>
 
 // Parsed command representation
 #define EXEC 1
@@ -100,11 +101,13 @@ runcmd(struct cmd *cmd)
 	case REDIR:
 		rcmd = (struct redircmd *)cmd;
 		close(rcmd->fd);
-		if (open(rcmd->file, rcmd->mode) < 0) {
+		int rcmd_fd;
+		if ((rcmd_fd = open(rcmd->file, rcmd->mode)) < 0) {
 			fprintf(stderr, "open %s failed\n", rcmd->file);
 			exit(1);
 		}
 		runcmd(rcmd->cmd);
+		close(rcmd_fd);
 		break;
 
 	case LIST:
@@ -121,14 +124,14 @@ runcmd(struct cmd *cmd)
 			panic("pipe");
 		if (fork1() == 0) {
 			close(1);
-			dup(p[1]);
+			assert(dup(p[1] != -1));
 			close(p[0]);
 			close(p[1]);
 			runcmd(pcmd->left);
 		}
 		if (fork1() == 0) {
 			close(0);
-			dup(p[0]);
+			assert(dup(p[0] != -1));
 			close(p[0]);
 			close(p[1]);
 			runcmd(pcmd->right);

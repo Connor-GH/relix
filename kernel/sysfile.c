@@ -330,6 +330,8 @@ sys_open(void)
 
 	if (argstr(0, &path) < 0 || argint(1, &omode) < 0)
 		return -EINVAL;
+	if (path == NULL)
+		return -EFAULT;
 
 	begin_op();
 

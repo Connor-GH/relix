@@ -7,7 +7,7 @@
 #include <string.h>
 
 int
-usertouid(char *user)
+usertouid(const char *user)
 {
 	int fd;
 	if ((fd = open("/etc/passwd", 0)) < 0) {
@@ -24,7 +24,7 @@ usertouid(char *user)
 	int i = 0;
 	int j = 0;
 	char info[512] = { 0 };
-	while (buf[i] != ':' && buf[i] != '\0') {
+	while (i < n && buf[i] != ':' && buf[i] != '\0') {
 		info[j++] = buf[i++];
 	}
 	if (strcmp(user, info) == 0) {
@@ -41,7 +41,7 @@ usertouid(char *user)
 }
 
 char *
-userto_allocated_passwd(char *user)
+userto_allocated_passwd(const char *user)
 {
 	int fd;
 	char *put_in = malloc(512);

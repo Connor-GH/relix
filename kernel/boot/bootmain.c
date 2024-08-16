@@ -19,9 +19,9 @@ void
 bootmain(void)
 {
 	struct elfhdr *elf;
-	struct proghdr *ph, *eph;
+	struct proghdr *ph;
+	const struct proghdr *eph;
 	void (*entry)(void);
-	uchar *pa;
 
 	elf = (struct elfhdr *)0x10000; // scratch space
 
@@ -35,7 +35,7 @@ bootmain(void)
 	// Load each program segment (ignores ph flags).
 	ph = (struct proghdr *)((uchar *)elf + elf->phoff);
 	eph = ph + elf->phnum;
-	for (; ph < eph; ph++) {
+	for (uchar *pa; ph < eph; ph++) {
 		pa = (uchar *)ph->paddr;
 		readseg(pa, ph->filesz, ph->off);
 		if (ph->memsz > ph->filesz)
@@ -79,10 +79,6 @@ readsect(void *dst, uint offset)
 void
 readseg(uchar *pa, uint count, uint offset)
 {
-	uchar *epa;
-
-	epa = pa + count;
-
 	// Round down to sector boundary.
 	pa -= offset % SECTSIZE;
 
@@ -92,6 +88,6 @@ readseg(uchar *pa, uint count, uint offset)
 	// If this is too slow, we could read lots of sectors at a time.
 	// We'd write more to memory than asked, but it doesn't matter --
 	// we load in increasing order.
-	for (; pa < epa; pa += SECTSIZE, offset++)
+	for (uchar *epa = pa + count; pa < epa; pa += SECTSIZE, offset++)
 		readsect(pa, offset);
 }

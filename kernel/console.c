@@ -48,7 +48,9 @@ printint(int xx, int base, int sign)
 	int i;
 	uint x;
 
-	if (sign && (sign = xx < 0))
+	// the second check prevents misusage of the function.
+	// we expect sign && xx < 0, but plan for the worst.
+	if (sign && (sign = (xx < 0)))
 		x = -xx;
 	else
 		x = xx;

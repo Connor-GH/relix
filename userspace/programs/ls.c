@@ -112,7 +112,7 @@ mode_to_perm(uint mode, char *ret /*[11]*/)
 void
 ls(char *path, bool lflag, bool iflag, bool pflag)
 {
-	char buf[512], *p;
+	char buf[512];
 	int fd;
 	struct dirent de;
 	struct stat st;
@@ -159,7 +159,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 			break;
 		}
 		strcpy(buf, path);
-		p = buf + strlen(buf);
+		char *p = buf + strlen(buf);
 		*p++ = '/';
 		while (read(fd, &de, sizeof(de)) == sizeof(de)) {
 			if (de.inum == 0)

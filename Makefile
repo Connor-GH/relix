@@ -120,7 +120,7 @@ mkfs: $(TOOLSDIR)/mkfs.c
 
 
 fs.img: mkfs $(UPROGS) $(D_PROGS)
-	./$(BIN)/mkfs bin/fs.img sysroot/file.sh README.md sysroot/etc/passwd $(UPROGS) $(D_PROGS)
+	./$(BIN)/mkfs bin/fs.img README.md sysroot/etc/passwd $(UPROGS) $(D_PROGS)
 
 clean:
 	rm -f $(BIN)/*.o $(BIN)/*.sym $(BIN)/bootblock $(BIN)/entryother \

@@ -12,15 +12,15 @@ char *argv[] = { "/bin/sh", 0 };
 int
 main(void)
 {
-	int pid, wpid;
 
 	mkdir("/dev");
 	if (open("/dev/console", O_RDWR) < 0) {
 		mknod("/dev/console", 1, 1);
 		open("/dev/console", O_RDWR);
 	}
-	dup(0); // stdout
-	dup(0); // stderr
+	// TODO: find a way of throwing an error if we cannot dup(0) ?
+	(void)dup(0); // stdout
+	(void)dup(0); // stderr
 	fprintf(stdout, "/dev/console created\n");
 	if (open("/dev/null", O_RDWR) < 0) {
 		mknod("/dev/null", 2, 2);
@@ -28,7 +28,7 @@ main(void)
 	fprintf(stdout, "/dev/null created\n");
 	for (;;) {
 		fprintf(stdout, "init: starting sh service\n");
-		pid = fork();
+		int pid = fork();
 		if (pid < 0) {
 			fprintf(stderr, "init: fork() failed\n");
 			return 1;
@@ -38,6 +38,7 @@ main(void)
 			fprintf(stderr, "init: exec() sh failed\n");
 			return 1;
 		}
+		int wpid;
 		while ((wpid = wait(NULL)) >= 0 && wpid != pid)
 			fprintf(stderr, "zombie!\n");
 	}

@@ -2,11 +2,9 @@
 #include <unistd.h>
 
 int
-main(int argc, char *argv[])
+main(int argc, const char *argv[])
 {
-	int i;
-
-	for (i = 1; i < argc; i++)
+	for (int i = 1; i < argc; i++)
 		fprintf(stdout, "%s%s", argv[i], i + 1 < argc ? " " : "\n");
 	return 0;
 }

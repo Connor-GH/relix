@@ -21,16 +21,14 @@ cat(int fd)
 }
 
 int
-main(int argc, char *argv[])
+main(int argc, const char *argv[])
 {
-	int fd, i;
-
 	if (argc <= 1) {
 		cat(stdin);
 		return 0;
 	}
 
-	for (i = 1; i < argc; i++) {
+	for (int fd, i = 1; i < argc; i++) {
 		if ((fd = open(argv[i], 0)) < 0) {
 			perror("cat: cannot open file");
 			return 0;

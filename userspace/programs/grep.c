@@ -41,7 +41,6 @@ grep(char *pattern, int fd)
 int
 main(int argc, char *argv[])
 {
-	int fd, i;
 	char *pattern;
 
 	if (argc <= 1) {
@@ -55,7 +54,7 @@ main(int argc, char *argv[])
 		return 0;
 	}
 
-	for (i = 2; i < argc; i++) {
+	for (int fd, i = 2; i < argc; i++) {
 		if ((fd = open(argv[i], 0)) < 0) {
 			perror("grep: cannot open file");
 			return 2;

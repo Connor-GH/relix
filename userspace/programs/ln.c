@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 int
-main(int argc, char *argv[])
+main(int argc, const char *argv[])
 {
 	if (argc != 3) {
 		fprintf(stderr, "Usage: ln old new\n");

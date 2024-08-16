@@ -23,7 +23,7 @@ enum {
 static void
 printint(int fd, int xx, int base, bool sgn, int flags, int padding)
 {
-	static char digits[] = "0123456789ABCDEF";
+	static const char digits[] = "0123456789ABCDEF";
 	char buf[250];
 	int i = 0;
 	int neg = 0;
@@ -140,7 +140,7 @@ vfprintf(int fd, const char *fmt, va_list *argp)
 				if (s == 0)
 					s = "(null)";
 				if (IS_SET(flags, FLAG_RJUST) && strlen(s) < str_pad) {
-					for (int i = 0; i < str_pad - strlen(s); i++)
+					for (int _ = 0; _ < str_pad - strlen(s); _++)
 						putc(fd, ' ');
 				}
 				while (*s != 0) {
@@ -150,8 +150,8 @@ vfprintf(int fd, const char *fmt, va_list *argp)
 				break;
 			}
 			case 'c': {
-				int c = va_arg(*argp, int);
-				putc(fd, c);
+				int c_ = va_arg(*argp, int);
+				putc(fd, c_);
 				break;
 			}
 			case '%':

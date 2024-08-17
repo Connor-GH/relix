@@ -30,7 +30,7 @@
 #define SYS_strace 27
 #define SYSCALL_AMT 27
 #ifndef __ASSEMBLER__
-static const char *syscall_names[SYSCALL_AMT + 1] = {
+__attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_fork] = "fork",			 [SYS_exit] = "exit",			[SYS_wait] = "wait",
 	[SYS_pipe] = "pipe",			 [SYS_read] = "read",			[SYS_kill] = "kill",
 	[SYS_exec] = "exec",			 [SYS_fstat] = "fstat",		[SYS_chdir] = "chdir",

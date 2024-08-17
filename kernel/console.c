@@ -219,8 +219,9 @@ cgaputc(int c, uint8_t fore, uint8_t back)
 		crt[pos++] = (c & 0xff) | together;
 	}
 
+	// silently ignore possible out of bounds for pos
 	if (pos < 0 || pos > 25 * 80)
-		panic("pos under/overflow");
+		pos = 0;
 
 	if ((pos / 80) >= 24) { // Scroll up.
 		memmove(crt, crt + 80, sizeof(crt[0]) * 23 * 80);

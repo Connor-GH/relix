@@ -78,6 +78,7 @@ struct madt_ioapic {
 } __attribute__((__packed__));
 
 // signature: "FACP"
+#define SIG_FADT "FACP"
 struct acpi_fadt {
 	struct acpi_desc_header header;
 	uint32_t firmware_ctrl_phys_addr;
@@ -103,7 +104,7 @@ struct acpi_fadt {
 	uint8_t pm1_evt_len;
 	uint8_t pm1_cnt_len;
 	uint8_t pm2_cnt_len;
-	uint8_t mp_tmr_len;
+	uint8_t pm_tmr_len;
 	uint8_t gpe0_blk_len;
 	uint8_t gpe1_blk_len;
 	uint8_t gpe1_base;
@@ -114,7 +115,7 @@ struct acpi_fadt {
 	uint16_t flush_stride;
 	uint8_t duty_offset;
 	uint8_t duty_width;
-	uint8_t day_alrm;
+	uint8_t day_alarm;
 	uint8_t month_alarm;
 	uint8_t century; // century register in CMOS if not zero
 	uint16_t iapc_boot_arch_flags;
@@ -136,7 +137,7 @@ struct acpi_fadt {
 	uint8_t X_gpe1_blk[12];
 	uint8_t sleep_ctrl_reg[12];
 	uint8_t sleep_status_reg[12];
-	uint8_t hypervisor_vender_id[8];
+	uint8_t hypervisor_vendor_id[8];
 } __attribute__((__packed__));
 _Static_assert(sizeof(struct acpi_fadt) == 276, "ACPI FADT Struct malformed");
 

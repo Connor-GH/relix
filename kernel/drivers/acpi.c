@@ -23,9 +23,6 @@
  *
  */
 
-#include "mmu.h"
-#include "vm.h"
-#include "kalloc.h"
 #include <stdlib.h>
 #include <stdint.h>
 #include "types.h"
@@ -85,13 +82,9 @@ scan_rsdp(uint base, uint len)
 static void
 dump_rsdp(struct acpi_rsdp *rsdp)
 {
-	char rsdp_sig[9];
 	char rsdp_oem_id[7];
-	strlcpy_nostrlen(rsdp_sig, (char *)rsdp->signature, sizeof(rsdp_sig), sizeof(rsdp->signature));
 	strlcpy_nostrlen(rsdp_oem_id, (char *)rsdp->oem_id, sizeof(rsdp_oem_id), sizeof(rsdp->oem_id));
 
-	acpi_cprintf("signature: %s\n", rsdp_sig);
-	acpi_cprintf("checksum: %d\n", rsdp->checksum);
 	acpi_cprintf("oem id: %s\n", rsdp_oem_id);
 	acpi_cprintf("revision: %d\n", rsdp->revision+1);
 	acpi_cprintf("rsdt physical address: P%#x\n", rsdp->rsdt_addr_phys);
@@ -106,12 +99,12 @@ find_rsdp(void)
 {
 	struct acpi_rsdp *rsdp;
 	uintptr_t pa;
-	uintptr_t bda_size = *(short *)p2v(0x413);
-	pa = *((ushort *)p2v(0x40E)) << 4; // EBDA
-	// likely does not lie here.
-	rsdp = scan_rsdp(pa, bda_size);
+	// PA is mapped in kmap; vm.c. TODO: mappages needs to be dynamic
+	pa = *((ushort *)p2v(0x40E)) << 4; // EBDA pointer
+	rsdp = scan_rsdp(pa, 1 * kiB);
 	if (pa && (rsdp != NULL))
 		return rsdp;
+	acpi_cprintf("rsdp not in EDBA; trying BIOS memory.\n");
 	return scan_rsdp(0xE0000, 0x20000);
 }
 
@@ -177,19 +170,25 @@ acpi_config_smp(struct acpi_madt *madt)
 	return -1;
 }
 
+static void setup_fadt(struct acpi_fadt *fadt) {
+	if (!fadt)
+		return;
+	acpi_cprintf("Century: %d\n", fadt->century);
+}
+
 int
 acpiinit(void)
 {
 	unsigned n, count;
 	struct acpi_rsdp *rsdp;
 	struct acpi_rsdt *rsdt;
-	struct acpi_madt *madt = 0;
+	struct acpi_madt *madt;
+	struct acpi_fadt *fadt;
 
 	rsdp = find_rsdp();
 	if (rsdp == NULL)
 		panic("NULL rsdp");
 	dump_rsdp(rsdp);
-	acpi_cprintf("rsdt at %#x\n", V2P_WO(rsdp->rsdt_addr_phys));
 	if (rsdp->rsdt_addr_phys > PHYSLIMIT)
 		goto notmapped;
 	rsdt = p2v(rsdp->rsdt_addr_phys);
@@ -200,21 +199,24 @@ acpiinit(void)
 		struct acpi_desc_header *hdr = p2v(rsdt->entry[n]);
 		if (rsdt->entry[n] > PHYSLIMIT)
 			goto notmapped;
-#if DEBUG
 		uint8_t sig[5], id[7], tableid[9], creator[5];
 		memmove(sig, hdr->signature, 4);
-		sig[4] = 0;
+		sig[4] = '\0';
 		memmove(id, hdr->oem_id, 6);
-		id[6] = 0;
+		id[6] = '\0';
 		memmove(tableid, hdr->oem_tableid, 8);
-		tableid[8] = 0;
+		tableid[8] = '\0';
 		memmove(creator, hdr->creator_id, 4);
-		creator[4] = 0;
-		cprintf("acpi: %s %s %s %x %s %x\n", sig, id, tableid, hdr->oem_revision,
+		creator[4] = '\0';
+		acpi_cprintf("%s %s %s %x %s %x\n", sig, id, tableid, hdr->oem_revision,
 						creator, hdr->creator_revision);
-#endif
+
 		if (memcmp(hdr->signature, SIG_MADT, 4) == 0)
 			madt = (void *)hdr;
+		else if (memcmp(hdr->signature, SIG_FADT, 4) == 0) {
+			fadt = (void *)hdr;
+			setup_fadt(fadt);
+		}
 	}
 
 	return acpi_config_smp(madt);

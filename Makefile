@@ -100,27 +100,27 @@ SYSROOT = sysroot
 default:
 	mkdir -p $(BIN)
 	mkdir -p $(SYSROOT)/{bin,etc}
-	$(MAKE) fs.img
-	$(MAKE) xv6.img
+	$(MAKE) $(BIN)/fs.img
+	$(MAKE) $(BIN)/xv6.img
 
 include userspace/Makefile
 include kernel/Makefile
 
 
 
-mkfs: $(TOOLSDIR)/mkfs.c
-	$(CC) -Werror -Wall -o $(BIN)/mkfs $(TOOLSDIR)/mkfs.c \
+$(BIN)/mkfs: $(TOOLSDIR)/mkfs.c
+	$(CC) -Werror -Wall -o $@ $^ \
 		-I$(KERNELDIR)/include -I$(KERNELDIR)/drivers/include -I$(KERNELDIR)/drivers -I.
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so
 # that disk image changes after first build are persistent until clean.  More
 # details:
 # http://www.gnu.org/software/make/manual/html_node/Chained-Rules.html
-.PRECIOUS: %.o
+.PRECIOUS: $(BIN)/%.o
 
 
-fs.img: mkfs $(UPROGS) $(D_PROGS)
-	./$(BIN)/mkfs bin/fs.img README.md sysroot/etc/passwd $(UPROGS) $(D_PROGS)
+$(BIN)/fs.img: $(BIN)/mkfs $(UPROGS) $(D_PROGS)
+	./$(BIN)/mkfs $@ README.md sysroot/etc/passwd $(UPROGS) $(D_PROGS)
 
 clean:
 	rm -f $(BIN)/*.o $(BIN)/*.sym $(BIN)/bootblock $(BIN)/entryother \
@@ -159,23 +159,19 @@ QEMUOPTS = -drive file=$(BIN)/fs.img,index=1,media=disk,format=raw,if=ide,aio=na
 ifdef CONSOLE_LOG
 	QEMUOPTS += -serial mon:stdio
 endif
-qemu:
-	$(MAKE) fs.img
-	$(MAKE) xv6.img
+qemu: default
 	$(QEMU) $(QEMUOPTS)
 
 qemu-memfs: xv6memfs.img
 	$(QEMU) -drive file=$(BIN)/xv6memfs.img,index=0,media=disk,format=raw -smp $(CPUS) -m $(MEM)
 
-qemu-nox: fs.img xv6.img
+qemu-nox: default
 	$(QEMU) -nographic $(QEMUOPTS)
 
 .gdbinit: debug/.gdbinit.tmpl
 	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@
 
-qemu-gdb:
-	$(MAKE) fs.img
-	$(MAKE) xv6.img
+qemu-gdb: default
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 	@echo "*** Now run 'gdb'." 1>&2
 

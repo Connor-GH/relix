@@ -63,6 +63,7 @@ ifeq ($(LLVM),1)
 	OBJDUMP = llvm-objdump
 	AR = llvm-ar
 	RANLIB = llvm-ranlib
+	LINKER_FLAGS = -fuse-ld=lld
 endif
 
 WFLAGS = -Wnonnull
@@ -90,6 +91,7 @@ CFLAGS += -fno-pie -nopie
 endif
 
 
+CLEAN := $(filter clean, $(MAKECMDGOALS))
 
 IVARS = -Iinclude/ -I.
 # directories
@@ -97,7 +99,7 @@ TOOLSDIR = tools
 BIN = bin
 SYSROOT = sysroot
 
-default:
+default: $(CLEAN)
 	mkdir -p $(BIN)
 	mkdir -p $(SYSROOT)/{bin,etc}
 	$(MAKE) $(BIN)/fs.img
@@ -109,7 +111,7 @@ include kernel/Makefile
 
 
 $(BIN)/mkfs: $(TOOLSDIR)/mkfs.c
-	$(CC) -Werror -Wall -o $@ $^ \
+	$(CC) $(LINKER_FLAGS) -Werror -Wall -o $@ $^ \
 		-I$(KERNELDIR)/include -I$(KERNELDIR)/drivers/include -I$(KERNELDIR)/drivers -I.
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so

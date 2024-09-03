@@ -177,14 +177,6 @@ main(int argc, char **argv)
 			break;
 		}
 	}
-	if (argc > 1 && strncpy(argv[1], "-c", 2) == 0) {
-		printf("HERE\n");
-		struct execcmd *ecmd = (struct execcmd *)execcmd(); // allocated memory
-		memcpy(ecmd->argv, argv+2, MIN(argc-2, MAXARGS));
-		runcmd((struct cmd *)ecmd);
-		free(ecmd);
-		exit(0);
-	}
 
 	// Read and run input commands.
 	while (getcmd(buf, sizeof(buf)) >= 0) {

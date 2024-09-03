@@ -1,12 +1,12 @@
-// File system implementation.  Five layers:
-//   + Blocks: allocator for raw disk blocks.
-//   + Log: crash recovery for multi-step updates.
-//   + Files: inode allocator, reading, writing, metadata.
-//   + Directories: inode with special contents (list of other inodes!)
-//   + Names: paths like /usr/rtm/xv6/fs.c for convenient naming.
+// File system implementation.	Five layers:
+//	 + Blocks: allocator for raw disk blocks.
+//	 + Log: crash recovery for multi-step updates.
+//	 + Files: inode allocator, reading, writing, metadata.
+//	 + Directories: inode with special contents (list of other inodes!)
+//	 + Names: paths like /usr/rtm/xv6/fs.c for convenient naming.
 //
 // This file contains the low-level file system manipulation
-// routines.  The (higher-level) system call implementations
+// routines.	The (higher-level) system call implementations
 // are in sysfile.c.
 
 #include <types.h>
@@ -123,32 +123,32 @@ bfree(int dev, uint b)
 // rest of the file system code.
 //
 // * Allocation: an inode is allocated if its type (on disk)
-//   is non-zero. ialloc() allocates, and iput() frees if
-//   the reference and link counts have fallen to zero.
+//	 is non-zero. ialloc() allocates, and iput() frees if
+//	 the reference and link counts have fallen to zero.
 //
 // * Referencing in cache: an entry in the inode cache
-//   is free if ip->ref is zero. Otherwise ip->ref tracks
-//   the number of in-memory pointers to the entry (open
-//   files and current directories). iget() finds or
-//   creates a cache entry and increments its ref; iput()
-//   decrements ref.
+//	 is free if ip->ref is zero. Otherwise ip->ref tracks
+//	 the number of in-memory pointers to the entry (open
+//	 files and current directories). iget() finds or
+//	 creates a cache entry and increments its ref; iput()
+//	 decrements ref.
 //
 // * Valid: the information (type, size, &c) in an inode
-//   cache entry is only correct when ip->valid is 1.
-//   ilock() reads the inode from
-//   the disk and sets ip->valid, while iput() clears
-//   ip->valid if ip->ref has fallen to zero.
+//	 cache entry is only correct when ip->valid is 1.
+//	 ilock() reads the inode from
+//	 the disk and sets ip->valid, while iput() clears
+//	 ip->valid if ip->ref has fallen to zero.
 //
 // * Locked: file system code may only examine and modify
-//   the information in an inode and its content if it
-//   has first locked the inode.
+//	 the information in an inode and its content if it
+//	 has first locked the inode.
 //
 // Thus a typical sequence is:
-//   ip = iget(dev, inum)
-//   ilock(ip)
-//   ... examine and modify ip->xxx ...
-//   iunlock(ip)
-//   iput(ip)
+//	 ip = iget(dev, inum)
+//	 ilock(ip)
+//	 ... examine and modify ip->xxx ...
+//	 iunlock(ip)
+//	 iput(ip)
 //
 // ilock() is separate from iget() so that system calls can
 // get a long-term reference to an inode (as for an open file)
@@ -196,7 +196,7 @@ static struct inode *
 iget(uint dev, uint inum);
 
 // Allocate an inode on device dev.
-// Mark it as allocated by  giving it type type.
+// Mark it as allocated by giving it type type.
 // Returns an unlocked but allocated and referenced inode.
 struct inode *
 ialloc(uint dev, int mode)
@@ -420,6 +420,36 @@ bmap(struct inode *ip, uint bn)
 		brelse(bp);
 		return addr;
 	}
+	bn -= NINDIRECT;
+
+	//if (bn >= NINDIRECT * NINDIRECT)
+	//	bn -= NINDIRECT * NINDIRECT;
+	if (bn < NINDIRECT * NINDIRECT) {
+		// Load indirect block, allocating if necessary.
+		if ((addr = ip->addrs[NDIRECT + 1]) == 0)
+			ip->addrs[NDIRECT + 1] = addr = balloc(ip->dev);
+		bp = bread(ip->dev, addr);
+		a = (uint *)bp->data;
+		uint double_index = bn / NINDIRECT;
+
+		if ((addr = a[double_index]) == 0) {
+			a[double_index] = addr = balloc(ip->dev);
+			log_write(bp);
+		}
+		brelse(bp);
+
+		bp = bread(ip->dev, addr);
+		a = (uint *)bp->data;
+		uint pos = bn % NINDIRECT;
+
+		// load doubly indirect block
+		if ((addr = a[pos]) == 0) {
+			a[pos] = addr = balloc(ip->dev);
+			log_write(bp);
+		}
+		brelse(bp);
+		return addr;
+	}
 
 	panic("bmap: out of range");
 }
@@ -432,11 +462,10 @@ bmap(struct inode *ip, uint bn)
 static void
 itrunc(struct inode *ip)
 {
-	int i, j;
 	struct buf *bp;
 	uint *a;
 
-	for (i = 0; i < NDIRECT; i++) {
+	for (int i = 0; i < NDIRECT; i++) {
 		if (ip->addrs[i]) {
 			bfree(ip->dev, ip->addrs[i]);
 			ip->addrs[i] = 0;
@@ -446,13 +475,44 @@ itrunc(struct inode *ip)
 	if (ip->addrs[NDIRECT]) {
 		bp = bread(ip->dev, ip->addrs[NDIRECT]);
 		a = (uint *)bp->data;
-		for (j = 0; j < NINDIRECT; j++) {
-			if (a[j])
+		for (int j = 0; j < NINDIRECT; j++) {
+			if (a[j]) {
 				bfree(ip->dev, a[j]);
+			} else {
+				// TODO: Is this a performance optimization?
+				// Or does it limit file deletion functionality?
+				break;
+			}
 		}
 		brelse(bp);
 		bfree(ip->dev, ip->addrs[NDIRECT]);
 		ip->addrs[NDIRECT] = 0;
+	}
+	if (ip->addrs[NDIRECT + 1]) {
+		// get doubly indirect block
+		bp = bread(ip->dev, ip->addrs[NDIRECT + 1]);
+		a = (uint *)bp->data;
+		for (int i = 0; i < NINDIRECT; i++) {
+			// get indirect block
+			if (a[i]) {
+				struct buf *bp2 = bread(ip->dev, a[i]);
+				uint *a2 = (uint *)bp2->data;
+				for (int j = 0; j < NINDIRECT; j++) {
+					// free block
+					if (a2[j]) {
+						bfree(ip->dev, a2[j]);
+					} else {
+						break;
+					}
+				}
+				// free indirect block
+				brelse(bp2);
+				bfree(ip->dev, a[i]);
+			}
+		}
+		brelse(bp);
+		bfree(ip->dev, ip->addrs[NDIRECT + 1]);
+		ip->addrs[NDIRECT + 1] = 0;
 	}
 
 	ip->size = 0;
@@ -613,10 +673,10 @@ dirlink(struct inode *dp, const char *name, uint inum)
 // If no name to remove, return 0.
 //
 // Examples:
-//   skipelem("a/bb/c", name) = "bb/c", setting name = "a"
-//   skipelem("///a//bb", name) = "bb", setting name = "a"
-//   skipelem("a", name) = "", setting name = "a"
-//   skipelem("", name) = skipelem("////", name) = 0
+//	 skipelem("a/bb/c", name) = "bb/c", setting name = "a"
+//	 skipelem("///a//bb", name) = "bb", setting name = "a"
+//	 skipelem("a", name) = "", setting name = "a"
+//	 skipelem("", name) = skipelem("////", name) = 0
 //
 static char *
 skipelem(char *path, char *name)

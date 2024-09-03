@@ -24,10 +24,11 @@ struct superblock {
 	uint inodestart; // Block number of first inode block
 	uint bmapstart; // Block number of first free map block
 };
-#define NDIRECT 7
+#define NDIRECT 6U
 #define NINDIRECT (BSIZE / sizeof(uint))
-#define MAXFILE (NDIRECT + NINDIRECT)
-
+#define MAXFILE (NDIRECT + NINDIRECT + (NINDIRECT * NINDIRECT))
+#define NDINDIRECT_PER_ENTRY NDIRECT
+#define NDINDIRECT_ENTRY NDIRECT
 // in-memory copy of an inode
 struct inode {
 	uint dev; // Device number
@@ -46,7 +47,7 @@ struct inode {
 	uint ctime; // change
 	uint atime; // access
 	uint mtime; // modification
-	uint addrs[NDIRECT + 1];
+	uint addrs[NDIRECT + 1 + 1];
 };
 // On-disk inode structure
 struct dinode {
@@ -60,7 +61,7 @@ struct dinode {
 	uint ctime; // change
 	uint atime; // access
 	uint mtime; // modification
-	uint addrs[NDIRECT + 1]; // Data block addresses
+	uint addrs[NDIRECT + 1 + 1]; // Data block addresses
 };
 
 // Inodes per block.
@@ -76,9 +77,9 @@ struct dinode {
 #define BBLOCK(b, sb) (b / BPB + sb.bmapstart)
 
 // Directory is a file containing a sequence of dirent structures.
-#define DIRSIZ 14
-#define ROOTINO 1 // root i-number
-#define BSIZE 4096 // block size
+#define DIRSIZ 14U
+#define ROOTINO 1U // root i-number
+#define BSIZE 2048U // block size
 
 #ifndef USE_HOST_TOOLS
 #include "stat.h"

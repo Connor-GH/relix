@@ -347,6 +347,7 @@ iappend(uint inum, void *xp, int n)
 	struct dinode din;
 	char buf[BSIZE];
 	uint indirect[NINDIRECT];
+	uint double_indirect[NINDIRECT];
 	uint x;
 
 	rinode(inum, &din);
@@ -365,7 +366,22 @@ iappend(uint inum, void *xp, int n)
 				din.addrs[NDIRECT] = xint(freeblock++);
 			}
 			rsect(xint(din.addrs[NDIRECT]), (char *)indirect);
-			if (indirect[fbn - NDIRECT] == 0) {
+
+			if (indirect[(fbn - NDIRECT) / NINDIRECT] == 0) {
+				indirect[(fbn - NDIRECT) / NINDIRECT] = xint(freeblock++);
+				wsect(xint(din.addrs[NDIRECT]), (char *)indirect);
+			}
+			//2nd indirect
+			rsect(xint(indirect[(fbn - NDIRECT) / NINDIRECT]), (char *)double_indirect);
+			if (double_indirect[(fbn - NDIRECT) % NINDIRECT] == 0) {
+				double_indirect[(fbn - NDIRECT) % NINDIRECT] = xint(freeblock++);
+				wsect(xint(indirect[(fbn - NDIRECT) / NINDIRECT]), (char *)double_indirect);
+			}
+			//x is the address of the block to be written
+			// so it should correspond to the doubly indirect addr
+			x = xint(double_indirect[(fbn - NDIRECT) % NINDIRECT]);
+		//}
+		if (indirect[fbn - NDIRECT] == 0) {
 				indirect[fbn - NDIRECT] = xint(freeblock++);
 				wsect(xint(din.addrs[NDIRECT]), (char *)indirect);
 			}

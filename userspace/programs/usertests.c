@@ -191,6 +191,7 @@ void
 writetest1(void)
 {
 	int i, fd, n;
+	const int  writetest_max = NDIRECT + NINDIRECT + 1;
 
 	fprintf(stdout, "big files test\n");
 
@@ -200,9 +201,9 @@ writetest1(void)
 		exit(0);
 	}
 
-	for (i = 0; i < MAXFILE; i++) {
+	for (i = 0; i < writetest_max; i++) {
 		((int *)buf)[0] = i;
-		if (write(fd, buf, 512) != 512) {
+		if (write(fd, buf, BSIZE) != BSIZE) {
 			fprintf(stdout, "error: write big file failed %d\n", i);
 			exit(0);
 		}
@@ -218,14 +219,14 @@ writetest1(void)
 
 	n = 0;
 	for (;;) {
-		i = read(fd, buf, 512);
+		i = read(fd, buf, BSIZE);
 		if (i == 0) {
-			if (n == MAXFILE - 1) {
+			if (n == writetest_max - 1) {
 				fprintf(stdout, "read only %d blocks from big", n);
 				exit(0);
 			}
 			break;
-		} else if (i != 512) {
+		} else if (i != BSIZE) {
 			fprintf(stdout, "read failed %d\n", i);
 			exit(0);
 		}
@@ -1805,6 +1806,5 @@ main(int argc, char *argv[])
 	uio();
 
 	exectest();
-
 	exit(0);
 }

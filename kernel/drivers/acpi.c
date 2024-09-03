@@ -182,7 +182,7 @@ acpiinit(void)
 	unsigned n, count;
 	struct acpi_rsdp *rsdp;
 	struct acpi_rsdt *rsdt;
-	struct acpi_madt *madt;
+	struct acpi_madt *madt = NULL;
 	struct acpi_fadt *fadt;
 
 	rsdp = find_rsdp();

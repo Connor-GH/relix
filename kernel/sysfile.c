@@ -211,7 +211,7 @@ sys_unlink(void)
 	begin_op();
 	if ((dp = nameiparent(path, name)) == 0) {
 		end_op();
-		return -EEXIST;
+		return -ENOENT;
 	}
 
 	ilock(dp);
@@ -221,7 +221,7 @@ sys_unlink(void)
 		goto bad;
 
 	if ((ip = dirlookup(dp, name, &off)) == 0) {
-		error = EEXIST;
+		error = ENOENT;
 		goto bad;
 	}
 

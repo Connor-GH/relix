@@ -1,7 +1,6 @@
 #include <sys/stat.h>
 #include <kernel/include/fs.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
@@ -26,22 +25,105 @@ enum {
 	FMT_SOCK = 16, // =
 	FMT_EXE = 32, // *
 };
+
 static struct ls_time
-to_human_time(uint time)
+unix_time_to_human_readable(int unix_seconds)
 {
+	// Save the time in Human
+	// readable format
 	struct ls_time lt;
-	lt.sec = time;
-	lt.min = lt.sec / 60;
-	lt.hr = lt.min / 60;
-	lt.day = lt.hr / 23.981777;
-	lt.mo = lt.day / 30.44;
-	lt.yr = lt.day / 365.25;
-	lt.yr += 1970;
-	lt.mo %= 12;
-	lt.day %= 30;
-	lt.hr = (lt.hr % 24);
-	lt.min %= 60;
-	lt.sec %= 60;
+
+	// Number of days in month
+	// in normal year
+	const int days_of_month[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+	int curr_year, days_till_now, extra_time, extra_days, index, date, month,
+		hours, minutes, seconds, flag = 0;
+
+	// Calculate total days unix time T
+	days_till_now = unix_seconds / (24 * 60 * 60);
+	extra_time = unix_seconds % (24 * 60 * 60);
+	curr_year = 1970;
+
+	// Calculating current year
+	while (true) {
+		if (curr_year % 400 == 0 || (curr_year % 4 == 0 && curr_year % 100 != 0)) {
+			if (days_till_now < 366) {
+				break;
+			}
+			days_till_now -= 366;
+		} else {
+			if (days_till_now < 365) {
+				break;
+			}
+			days_till_now -= 365;
+		}
+		curr_year += 1;
+	}
+
+	// Updating extradays because it
+	// will give days till previous day
+	// and we have include current day
+	extra_days = days_till_now + 1;
+
+	if (curr_year % 400 == 0 || (curr_year % 4 == 0 && curr_year % 100 != 0))
+		flag = 1;
+
+	// Calculating MONTH and DATE
+	month = 0;
+	index = 0;
+	if (flag == 1) {
+		while (true) {
+			if (index == 1) {
+				if (extra_days - 29 < 0)
+					break;
+
+				month += 1;
+				extra_days -= 29;
+			} else {
+				if (extra_days - days_of_month[index] < 0) {
+					break;
+				}
+				month += 1;
+				extra_days -= days_of_month[index];
+			}
+			index += 1;
+		}
+	} else {
+		while (true) {
+			if (extra_days - days_of_month[index] < 0) {
+				break;
+			}
+			month += 1;
+			extra_days -= days_of_month[index];
+			index += 1;
+		}
+	}
+
+	// Current Month
+	if (extra_days > 0) {
+		month += 1;
+		date = extra_days;
+	} else {
+		if (month == 2 && flag == 1)
+			date = 29;
+		else {
+			date = days_of_month[month - (month >= 1 ? 1 : 0)];
+		}
+	}
+
+	hours = extra_time / 3600;
+	minutes = (extra_time % 3600) / 60;
+	seconds = (extra_time % 3600) % 60;
+
+	lt.day = date;
+	lt.mo = month;
+	lt.yr = curr_year;
+	lt.hr = hours;
+	lt.min = minutes;
+	lt.sec = seconds;
+
+	// Return the time
 	return lt;
 }
 
@@ -90,7 +172,7 @@ fmtname(char *path, int fmt_flag)
 }
 
 static char *
-mode_to_perm(uint mode, char *ret /*[11]*/)
+mode_to_perm(uint mode, char ret[static 11])
 {
 	ret[0] = (mode & S_IFREG) ? '-' :
 					 S_ISDIR(mode)		? 'd' :
@@ -139,7 +221,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 			char ret[11];
 			fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
 			fprintf(stdout, "% 4d % 4d % 9d ", st.st_uid, st.st_gid, st.st_size);
-			struct ls_time lt = to_human_time(st.st_mtime);
+			struct ls_time lt = unix_time_to_human_readable(st.st_mtime);
 			fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
 							lt.hr, lt.min, lt.sec);
 			fprintf(stdout, "%s ",
@@ -177,7 +259,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 				char ret[11];
 				fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
 				fprintf(stdout, "% 4d % 4d % 9d ", st.st_uid, st.st_gid, st.st_size);
-				struct ls_time lt = to_human_time(st.st_mtime);
+				struct ls_time lt = unix_time_to_human_readable(st.st_mtime);
 				fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
 								lt.hr, lt.min, lt.sec);
 				fprintf(stdout, "%s ",

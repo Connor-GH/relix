@@ -14,12 +14,14 @@ SECTIONS
 	.text : AT(0x100000) {
 		*(.text .stub .text.* .gnu.linkonce.t.*)
 	}
+	. = ALIGN(0x1000);
 
 	PROVIDE(etext = .);	/* Define the 'etext' symbol to this value */
 
 	.rodata : {
 		*(.rodata .rodata.* .gnu.linkonce.r.*)
 	}
+	. = ALIGN(0x1000);
 
 	/* Include debugging information in kernel memory */
 	.stab : {
@@ -27,6 +29,7 @@ SECTIONS
 		*(.stab);
 		PROVIDE(__STAB_END__ = .);
 	}
+	. = ALIGN(0x1000);
 
 	.stabstr : {
 		PROVIDE(__STABSTR_BEGIN__ = .);
@@ -49,12 +52,14 @@ SECTIONS
 	.data : {
 		*(.data)
 	}
+	. = ALIGN(0x1000);
 
 	PROVIDE(edata = .);
 
 	.bss : {
 		*(.bss)
 	}
+	. = ALIGN(0x1000);
 
 	PROVIDE(end = .);
 

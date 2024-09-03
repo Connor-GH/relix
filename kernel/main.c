@@ -18,6 +18,7 @@
 #include "picirq.h"
 #include "trap.h"
 #include "kernel_string.h"
+#include "compiler_information.h"
 
 static void
 startothers(void);
@@ -32,6 +33,7 @@ extern char end[]; // first address after kernel loaded from ELF file
 int
 main(void)
 {
+	cprintf("xv6 (built with %s and linker %s)\n", XV6_COMPILER, XV6_LINKER);
 	kinit1(end, P2V(4 * 1024 * 1024)); // phys page allocator
 	kvmalloc(); // kernel page table
 	if (acpiinit())
@@ -40,6 +42,7 @@ main(void)
 	seginit(); // segment descriptors
 	picinit(); // disable pic
 	ioapicinit(); // another interrupt controller
+	// /dev/console, not to be confused with VGA memory
 	consoleinit(); // console hardware
 	nulldrvinit();
 	uartinit(); // serial port

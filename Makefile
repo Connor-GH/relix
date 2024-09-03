@@ -102,12 +102,23 @@ SYSROOT = sysroot
 default: $(CLEAN)
 	mkdir -p $(BIN)
 	mkdir -p $(SYSROOT)/{bin,etc}
+	$(MAKE) autogenerate
 	$(MAKE) $(BIN)/fs.img
 	$(MAKE) $(BIN)/xv6.img
 
 include userspace/Makefile
 include kernel/Makefile
 
+
+
+autogenerate:
+	printf \
+	"#pragma once\n \
+	#define XV6_COMPILER \"$(CC)\"\n \
+	#define XV6_COMPILER \"$(shell $(CC) --version | sed -n 1p)\"\n \
+	#define XV6_LINKER \"$(LD)\"\n \
+	#define XV6_LINKER \"$(shell $(LD) --version | sed -n 1p)\"\n" \
+		> $(KERNELDIR)/include/compiler_information.h
 
 
 $(BIN)/mkfs: $(TOOLSDIR)/mkfs.c

@@ -124,14 +124,14 @@ runcmd(struct cmd *cmd)
 			panic("pipe");
 		if (fork1() == 0) {
 			close(1);
-			assert(dup(p[1] != -1));
+			assert(dup(p[1]) != -1);
 			close(p[0]);
 			close(p[1]);
 			runcmd(pcmd->left);
 		}
 		if (fork1() == 0) {
 			close(0);
-			assert(dup(p[0] != -1));
+			assert(dup(p[0]) != -1);
 			close(p[0]);
 			close(p[1]);
 			runcmd(pcmd->right);

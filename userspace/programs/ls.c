@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
+#include <errno.h>
 
 #define KiB (1024UL)
 #define MiB (1024 * KiB)
@@ -53,7 +54,7 @@ to_human_bytes(uint number, char human_name[static 7]) {
 }
 
 static struct ls_time
-unix_time_to_human_readable(int unix_seconds)
+unix_time_to_human_readable(uint unix_seconds)
 {
 	// Save the time in Human
 	// readable format
@@ -339,6 +340,7 @@ main(int argc, char *argv[])
 					break;
 				case 'p':
 					pflag = true;
+					break;
 				case 'h':
 					hflag = true;
 					break;
@@ -356,10 +358,15 @@ main(int argc, char *argv[])
 		return 0;
 	}
 
-	for (i = 1; i < argc; i++) {
+	for (i = arg_idx; i < argc; i++) {
 		struct stat unused;
 		if (stat(argv[i], &unused) >= 0) {
 			ls(argv[i], lflag, iflag, pflag, hflag);
+		} else {
+			int err_no = errno;
+			printf("ls: can't open `%s'", argv[i]);
+			errno = err_no;
+			perror("");
 		}
 	}
 	return 0;

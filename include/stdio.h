@@ -29,6 +29,10 @@ fprintf(int, const char *, ...);
 __attribute__((format(printf, 1, 2)))
 void
 printf(const char *, ...);
+void
+vsprintf(char *restrict str, const char *restrict fmt, va_list *argp);
+void
+sprintf(char *restrict str, const char *restrict fmt, ...);
 char *
 gets(char *, int max);
 int

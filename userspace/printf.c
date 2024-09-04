@@ -4,11 +4,19 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <stdlib.h>
+
+static uint global_idx = 0;
 
 static void
-putc(int fd, char c)
+putc(int fd, char c, char *buf)
 {
 	write(fd, &c, 1);
+}
+static void
+string_putc(int fd, char c, char *buf) {
+	buf[global_idx] = c;
+	global_idx++;
 }
 
 enum {
@@ -21,7 +29,7 @@ enum {
 #define IS_SET(x, flag) (bool)((x & flag) == flag)
 
 static void
-printint(int fd, int xx, int base, bool sgn, int flags, int padding)
+printint(void (*put_function)(int, char, char *), char *put_func_buf, int fd, int xx, int base, bool sgn, int flags, int padding)
 {
 	static const char digits[] = "0123456789ABCDEF";
 	char buf[250];
@@ -61,13 +69,14 @@ printint(int fd, int xx, int base, bool sgn, int flags, int padding)
 		buf[i++] = '+';
 
 	while (--i >= 0)
-		putc(fd, buf[i]);
+		put_function(fd, buf[i], put_func_buf);
 }
 
 // Print to the given fd. Only understands %d, %x, %p, %s.
-void
-vfprintf(int fd, const char *fmt, va_list *argp)
+static void
+vprintf_internal(void (*put_function)(int fd, char c, char *buf), int fd, char *restrict buf, const char *fmt, va_list *argp)
 {
+	global_idx = 0;
 	char *s;
 	int c, i, state;
 	int flags = 0;
@@ -81,7 +90,7 @@ vfprintf(int fd, const char *fmt, va_list *argp)
 			if (c == '%') {
 				state = '%';
 			} else {
-				putc(fd, c);
+				put_function(fd, c, buf);
 			}
 		} else if (state == '%') {
 			switch (c) {
@@ -116,23 +125,23 @@ vfprintf(int fd, const char *fmt, va_list *argp)
 			case 'i':
 			case 'd': {
 				int d = va_arg(*argp, int);
-				printint(fd, d, 10, true, flags, str_pad);
+				printint(put_function, buf, fd, d, 10, true, flags, str_pad);
 				break;
 			}
 			case 'u': {
 				uint u = va_arg(*argp, uint);
-				printint(fd, u, 10, false, flags, str_pad);
+				printint(put_function, buf, fd, u, 10, false, flags, str_pad);
 				break;
 			}
 			case 'x':
 			case 'p': {
 				int x = va_arg(*argp, int);
-				printint(fd, x, 16, false, flags, str_pad);
+				printint(put_function, buf, fd, x, 16, false, flags, str_pad);
 				break;
 			}
 			case 'o': {
 				int x = va_arg(*argp, int);
-				printint(fd, x, 8, false, flags, str_pad);
+				printint(put_function, buf, fd, x, 8, false, flags, str_pad);
 				break;
 			}
 			case 's': {
@@ -141,32 +150,51 @@ vfprintf(int fd, const char *fmt, va_list *argp)
 					s = "(null)";
 				if (IS_SET(flags, FLAG_RJUST) && strlen(s) < str_pad) {
 					for (int _ = 0; _ < str_pad - strlen(s); _++)
-						putc(fd, ' ');
+						put_function(fd, ' ', buf);
 				}
 				while (*s != 0) {
-					putc(fd, *s);
+					put_function(fd, *s, buf);
 					s++;
 				}
 				break;
 			}
 			case 'c': {
 				int c_ = va_arg(*argp, int);
-				putc(fd, c_);
+				put_function(fd, c_, buf);
 				break;
 			}
 			case '%':
-				putc(fd, c);
+				put_function(fd, c, buf);
 				break;
 			// Unknown % sequence.  Print it to draw attention.
 			default:
-				putc(fd, '%');
-				putc(fd, c);
+				put_function(fd, '%', buf);
+				put_function(fd, c, buf);
 				break;
 			}
 			state = 0;
 skip_state_reset:; // state = '%' if set
 		}
 	}
+}
+
+void
+vfprintf(int fd, const char *fmt, va_list *argp) {
+	vprintf_internal(putc, fd, NULL, fmt, argp);
+}
+
+void
+vsprintf(char *restrict str, const char *restrict fmt, va_list *argp)
+{
+	vprintf_internal(string_putc, 0, str, fmt, argp);
+}
+void
+sprintf(char *restrict str, const char *restrict fmt, ...)
+{
+	va_list listp;
+	va_start(listp, fmt);
+	vprintf_internal(string_putc, 0, str, fmt, &listp);
+	va_end(listp);
 }
 
 __attribute__((format(printf, 2, 3))) void

@@ -8,6 +8,10 @@
 #include <fcntl.h>
 #include <string.h>
 
+#define KiB (1024UL)
+#define MiB (1024 * KiB)
+#define GiB (1024 * MiB)
+#define TiB (1024 * GiB)
 struct ls_time {
 	uint sec;
 	uint min;
@@ -25,6 +29,28 @@ enum {
 	FMT_SOCK = 16, // =
 	FMT_EXE = 32, // *
 };
+
+static char *
+to_human_bytes(uint number, char human_name[static 7]) {
+
+	char letter;
+	if (number > 1 * GiB) {
+		letter = 'G';
+		number /= 1 * GiB;
+	} else if (number > 1 * MiB) {
+		letter = 'M';
+		number /= 1 * MiB;
+	} else if (number > 1 * KiB) {
+		letter = 'K';
+		number /= 1 * KiB;
+	} else {
+		letter = 'B';
+	}
+	sprintf(human_name, "% 5u", number);
+	human_name[5] = letter;
+	human_name[6] = '\0';
+	return human_name;
+}
 
 static struct ls_time
 unix_time_to_human_readable(int unix_seconds)
@@ -192,7 +218,7 @@ mode_to_perm(uint mode, char ret[static 11])
 }
 // this ls(1) tries to follow __minimal__ POSIX stuff.
 void
-ls(char *path, bool lflag, bool iflag, bool pflag)
+ls(char *path, bool lflag, bool iflag, bool pflag, bool hflag)
 {
 	char buf[512];
 	int fd;
@@ -214,13 +240,17 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 
 	switch (st.st_mode & S_IFMT) {
 	case S_IFREG:
+			char human_bytes_buf[12];
 		if (lflag) {
 			// inodes
 			if (iflag)
 				fprintf(stdout, "% 9d ", st.st_ino);
 			char ret[11];
 			fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
-			fprintf(stdout, "% 4d % 4d % 9d ", st.st_uid, st.st_gid, st.st_size);
+			if (hflag)
+				fprintf(stdout, "% 4d % 4d %s ", st.st_uid, st.st_gid, to_human_bytes(st.st_size, human_bytes_buf));
+			else
+				fprintf(stdout, "% 4d % 4d % 6d ", st.st_uid, st.st_gid, st.st_size);
 			struct ls_time lt = unix_time_to_human_readable(st.st_mtime);
 			fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
 							lt.hr, lt.min, lt.sec);
@@ -236,6 +266,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 		break;
 
 	case S_IFDIR: {
+		char human_bytes_buf[12];
 		if (strlen(path) + 1 + DIRSIZ + 1 > sizeof buf) {
 			fprintf(stderr, "ls: path too long\n");
 			break;
@@ -258,7 +289,10 @@ ls(char *path, bool lflag, bool iflag, bool pflag)
 					fprintf(stdout, "% 9d ", st.st_ino);
 				char ret[11];
 				fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
-				fprintf(stdout, "% 4d % 4d % 9d ", st.st_uid, st.st_gid, st.st_size);
+				if (hflag)
+					fprintf(stdout, "% 4d % 4d %s ", st.st_uid, st.st_gid, to_human_bytes(st.st_size, human_bytes_buf));
+				else
+					fprintf(stdout, "% 4d % 4d % 6d ", st.st_uid, st.st_gid, st.st_size);
 				struct ls_time lt = unix_time_to_human_readable(st.st_mtime);
 				fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
 								lt.hr, lt.min, lt.sec);
@@ -285,11 +319,12 @@ main(int argc, char *argv[])
 	bool lflag = false;
 	bool iflag = false;
 	bool pflag = false;
+	bool hflag = false;
 	// index for filenames or directory names
 	int arg_idx = 1;
 
 	if (argc < 2) {
-		ls(".", lflag, iflag, pflag);
+		ls(".", lflag, iflag, pflag, hflag);
 		return 0;
 	}
 	for (int j = 1; j < argc; j++) {
@@ -304,6 +339,9 @@ main(int argc, char *argv[])
 					break;
 				case 'p':
 					pflag = true;
+				case 'h':
+					hflag = true;
+					break;
 				default:
 					break;
 				}
@@ -314,14 +352,14 @@ main(int argc, char *argv[])
 		}
 	}
 	if (arg_idx == argc) {
-		ls(".", lflag, iflag, pflag);
+		ls(".", lflag, iflag, pflag, hflag);
 		return 0;
 	}
 
 	for (i = 1; i < argc; i++) {
 		struct stat unused;
 		if (stat(argv[i], &unused) >= 0) {
-			ls(argv[i], lflag, iflag, pflag);
+			ls(argv[i], lflag, iflag, pflag, hflag);
 		}
 	}
 	return 0;

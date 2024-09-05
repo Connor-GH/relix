@@ -8,12 +8,14 @@ but is implemented for a modern x86-based multiprocessor using ANSI C.
 - fixed broken SMP due to a QEMU regression
 - added users, groups, and permissions
 - organized files into /etc, /bin, and /dev
-- ACPI support (in the works); falls back to MPS if it fails.
+- ACPI support; falls back to MPS if it fails.
 - reboot(1), which can either halt (-h) or poweroff (-p)
 - organized file structure support; kernel and userland has a clear separation.
 - syscall fuzzing (in the works)
 - D language support (look in d/)
 - fixed general system ABIs and behaviors to make them align with POSIX.
+- doubly indirect block pointer inodes (max filesize 1MiB -> 512MiB)
+- ls(1) now has -h, -l, -i, and -p
 
 # BUILDING AND RUNNING XV6
 

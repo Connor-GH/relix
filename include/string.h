@@ -19,6 +19,10 @@ safestrcpy(char *s, const char *t, int n);
 #endif
 uint
 strlen(const char *s);
+char *
+strchr(const char *str, char c);
+char *
+strrchr(const char *str, char c);
 
 void *
 memset(void *dst, int c, uint n);

@@ -1,4 +1,5 @@
 #include <sys/stat.h>
+#include <ctype.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <assert.h>
@@ -63,6 +64,14 @@ strchr(const char *s, char c)
 	for (; *s; s++)
 		if (*s == c)
 			return (char *)s;
+	return 0;
+}
+char *
+strrchr(const char *s, char c)
+{
+	for (int i = strlen(s)-1; i >= 0; i--)
+		if (s[i] == c)
+			return (char *)s+i;
 	return 0;
 }
 
@@ -211,4 +220,9 @@ assert_fail(const char *assertion, const char *file, int lineno,
 					assertion);
 	fprintf(stderr, "Aborting.\n");
 	exit(-1);
+}
+int
+isdigit(int c)
+{
+	return '0' <= c && c <= '9';
 }

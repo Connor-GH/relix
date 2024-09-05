@@ -5,8 +5,9 @@ D_PROGS_OBJ = $(D_SRC:$(D_DIR)/%.d=$(BIN)/%.o)
 
 # we will support dmd-style D compilers only.
 # that is, dmd and ldmd2. ldc2 support is not official but may work,
+D_INCLUDES = -I$(D_DIR)/
 DC ?= dmd
-DFLAGS ?= -betterC -O -m32 $(EXTRA_DFLAGS)
+DFLAGS ?= -betterC -O -m32 $(D_INCLUDES) $(EXTRA_DFLAGS)
 
 
 $(BIN)/%.o: $(D_DIR)/%.d

@@ -1204,12 +1204,12 @@ bigfile(void)
 }
 
 void
-fourteen(void)
+dirsiz(void)
 {
 	int fd;
 
 	// DIRSIZ is 14.
-	fprintf(stdout, "fourteen test\n");
+	fprintf(stdout, "dirsiz test\n");
 
 	if (mkdir("12345678901234") != 0) {
 		fprintf(stdout, "mkdir 12345678901234 failed\n");
@@ -1219,6 +1219,14 @@ fourteen(void)
 		fprintf(stdout, "mkdir 12345678901234/123456789012345 failed\n");
 		exit(0);
 	}
+	if (mkdir("123456789012345") != 0) {
+		fprintf(stdout, "mkdir 123456789012345 failed\n");
+		exit(0);
+	}
+	if (mkdir("123456789012345/123456789012345") != 0) {
+		fprintf(stdout, "mkdir 123456789012345/123456789012345 failed\n");
+		exit(0);
+	}
 	fd = open("123456789012345/123456789012345/123456789012345", O_CREATE);
 	if (fd < 0) {
 		fprintf(stdout,
@@ -1226,7 +1234,11 @@ fourteen(void)
 		exit(0);
 	}
 	close(fd);
-	fd = open("12345678901234/12345678901234/12345678901234", 0);
+	if (mkdir("12345678901234/12345678901234") != 0) {
+		fprintf(stdout, "mkdir 12345678901234/12345678901234 failed\n");
+		exit(0);
+	}
+	fd = open("12345678901234/12345678901234/12345678901234", O_CREATE);
 	if (fd < 0) {
 		fprintf(stdout,
 						"open 12345678901234/12345678901234/12345678901234 failed\n");
@@ -1234,16 +1246,12 @@ fourteen(void)
 	}
 	close(fd);
 
-	if (mkdir("12345678901234/12345678901234") == 0) {
-		fprintf(stdout, "mkdir 12345678901234/12345678901234 succeeded!\n");
-		exit(0);
-	}
-	if (mkdir("123456789012345/12345678901234") == 0) {
-		fprintf(stdout, "mkdir 12345678901234/123456789012345 succeeded!\n");
+	if (mkdir("123456789012345/12345678901234") != 0) {
+		fprintf(stdout, "mkdir 12345678901234/123456789012345 failed\n");
 		exit(0);
 	}
 
-	fprintf(stdout, "fourteen ok\n");
+	fprintf(stdout, "dirsiz ok\n");
 }
 
 void
@@ -1793,7 +1801,7 @@ main(int argc, char *argv[])
 	exitwait();
 
 	rmdot();
-	fourteen();
+	dirsiz();
 	bigfile();
 	subdir();
 	linktest();

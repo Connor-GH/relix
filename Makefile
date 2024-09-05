@@ -132,7 +132,7 @@ $(BIN)/mkfs: $(TOOLSDIR)/mkfs.c
 
 
 $(BIN)/fs.img: $(BIN)/mkfs $(UPROGS) $(D_PROGS)
-	./$(BIN)/mkfs $@ README.md sysroot/etc/passwd $(UPROGS) $(D_PROGS)
+	./$(BIN)/mkfs $@ README.md sysroot/test.sh sysroot/etc/passwd $(UPROGS) $(D_PROGS)
 
 clean:
 	rm -f $(BIN)/*.o $(BIN)/*.sym $(BIN)/bootblock $(BIN)/entryother \

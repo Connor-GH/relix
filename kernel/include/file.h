@@ -12,7 +12,6 @@ struct file {
 	uint off;
 };
 
-
 // table mapping major device number to
 // device functions
 struct devsw {

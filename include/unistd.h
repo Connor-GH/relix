@@ -1,5 +1,6 @@
 #pragma once
 
+#include "stdint.h"
 int
 fork(void) __attribute__((returns_twice));
 void
@@ -24,6 +25,10 @@ int
 unlink(const char *);
 int
 link(const char *, const char *);
+int
+symlink(const char *target, const char *linkpath);
+int
+readlink(const char *restrict pathname, char *restrict linkpath, size_t buf);
 int
 chdir(const char *);
 int

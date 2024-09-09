@@ -67,20 +67,20 @@ int	optind = 1;		/* index into parent argv vector */
 int	optopt;		/* character checked for validity */
 char	*optarg;		/* argument associated with option */
 #endif
-#define	BADCH	(int)'?'
+#define BADCH (int)'?'
 
 int optind;
 int optopt;
 int opterr;
 char *optarg;
-static char	emsg[] = "";
+static char emsg[] = "";
 
 int
 getopt(int nargc, char *const *nargv, const char *ostr)
 {
-	static char *place = emsg;	/* option letter processing */
-	char *oli;			/* option letter list index */
-	static int delim;		/* which option delimiter */
+	static char *place = emsg; /* option letter processing */
+	char *oli; /* option letter list index */
+	static int delim; /* which option delimiter */
 	char *p;
 	static char savec = '\0';
 
@@ -94,7 +94,7 @@ getopt(int nargc, char *const *nargv, const char *ostr)
 		 * update scanning pointer
 		 */
 		if ((optind >= nargc) ||
-		    ((*(place = nargv[optind]) != '-') && (*place != '+'))) {
+				((*(place = nargv[optind]) != '-') && (*place != '+'))) {
 			place = emsg;
 			return (-1);
 		}
@@ -114,16 +114,16 @@ getopt(int nargc, char *const *nargv, const char *ostr)
 	 * check option letter
 	 */
 	if ((optopt = (int)*place++) == (int)':' || (optopt == (int)'?') ||
-	    !(oli = strchr(ostr, optopt))) {
+			!(oli = strchr(ostr, optopt))) {
 		/*
 		 * if the user didn't specify '-' as an option,
 		 * assume it means -1 when by itself.
 		 */
 		if ((optopt == (int)'-') && !*place)
 			return (-1);
-		if (strchr(ostr, '#') && (isdigit(optopt) ||
-		    (((optopt == (int)'-') || (optopt == (int)'+')) &&
-		      isdigit(*place)))) {
+		if (strchr(ostr, '#') &&
+				(isdigit(optopt) ||
+				 (((optopt == (int)'-') || (optopt == (int)'+')) && isdigit(*place)))) {
 			/*
 			 * # option: +/- with a number is ok
 			 */
@@ -131,7 +131,7 @@ getopt(int nargc, char *const *nargv, const char *ostr)
 				if (!isdigit(*p))
 					break;
 			}
-			optarg = place-1;
+			optarg = place - 1;
 
 			if (*p == '\0') {
 				place = emsg;
@@ -151,8 +151,7 @@ getopt(int nargc, char *const *nargv, const char *ostr)
 				p = *nargv;
 			else
 				++p;
-			(void)fprintf(stderr, "%s: illegal option -- %c\n",
-			    p, optopt);
+			(void)fprintf(stderr, "%s: illegal option -- %c\n", p, optopt);
 		}
 		return (BADCH);
 	}
@@ -167,9 +166,8 @@ getopt(int nargc, char *const *nargv, const char *ostr)
 				p = *nargv;
 			else
 				++p;
-			(void)fprintf(stderr,
-				"%s: illegal '+' delimiter with option -- %c\n",
-				p, optopt);
+			(void)fprintf(stderr, "%s: illegal '+' delimiter with option -- %c\n", p,
+										optopt);
 		}
 		return (BADCH);
 	}
@@ -204,9 +202,8 @@ getopt(int nargc, char *const *nargv, const char *ostr)
 				p = *nargv;
 			else
 				++p;
-			(void)fprintf(stderr,
-			    "%s: option requires an argument -- %c\n", p,
-			    optopt);
+			(void)fprintf(stderr, "%s: option requires an argument -- %c\n", p,
+										optopt);
 		}
 		return (BADCH);
 	} else {

@@ -1,16 +1,40 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <stdbool.h>
+
 int
-main(int argc, const char *argv[])
+main(int argc, char *const argv[])
 {
-	if (argc != 3) {
-		fprintf(stderr, "Usage: ln old new\n");
+	char c;
+	bool sflag = false;
+	while ((c = getopt(argc, argv, "s")) != -1) {
+		switch (c) {
+		case 's':
+			sflag = true;
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv += optind;
+
+	if (argc != 2) {
+		fprintf(stderr, "Usage: ln [-s] old new %d\n", argc);
 		return 1;
 	}
-	if (link(argv[1], argv[2]) < 0) {
-		fprintf(stderr, "link %s %s: failed\n", argv[1], argv[2]);
-		perror("link");
+	if (sflag) {
+		if (symlink(argv[0], argv[1]) < 0) {
+			fprintf(stderr, "ln -s %s %s: failed\n", argv[0], argv[1]);
+			perror("symlink");
+		}
+
+	} else {
+		if (link(argv[0], argv[1]) < 0) {
+			fprintf(stderr, "ln %s %s: failed\n", argv[0], argv[1]);
+			perror("link");
+		}
 	}
 	return 0;
 }

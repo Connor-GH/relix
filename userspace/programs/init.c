@@ -12,7 +12,6 @@ char *argv[] = { "/bin/sh", 0 };
 int
 main(void)
 {
-
 	mkdir("/dev");
 	if (open("/dev/console", O_RDWR) < 0) {
 		mknod("/dev/console", 1, 1);

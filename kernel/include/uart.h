@@ -6,4 +6,3 @@ void
 uartintr(void);
 void
 uartputc(int);
-

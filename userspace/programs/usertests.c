@@ -191,7 +191,7 @@ void
 writetest1(void)
 {
 	int i, fd, n;
-	const int  writetest_max = NDIRECT + NINDIRECT + 1;
+	const int writetest_max = NDIRECT + NINDIRECT + 1;
 
 	fprintf(stdout, "big files test\n");
 

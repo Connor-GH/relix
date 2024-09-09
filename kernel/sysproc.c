@@ -108,7 +108,8 @@ sys_date(void)
 	return 0;
 }
 
-static void __attribute__((noreturn)) poweroff(void)
+static void __attribute__((noreturn))
+poweroff(void)
 {
 	// get rid of init
 	// sh is technically pid 0

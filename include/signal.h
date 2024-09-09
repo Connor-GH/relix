@@ -29,5 +29,4 @@ typedef struct {
 	union sigval si_value;
 } siginfo_t;
 
-typedef void (*sighandler_t)(int/*, siginfo_t*/);
-
+typedef void (*sighandler_t)(int /*, siginfo_t*/);

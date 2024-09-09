@@ -83,10 +83,11 @@ static void
 dump_rsdp(struct acpi_rsdp *rsdp)
 {
 	char rsdp_oem_id[7];
-	strlcpy_nostrlen(rsdp_oem_id, (char *)rsdp->oem_id, sizeof(rsdp_oem_id), sizeof(rsdp->oem_id));
+	strlcpy_nostrlen(rsdp_oem_id, (char *)rsdp->oem_id, sizeof(rsdp_oem_id),
+									 sizeof(rsdp->oem_id));
 
 	acpi_cprintf("oem id: %s\n", rsdp_oem_id);
-	acpi_cprintf("revision: %d\n", rsdp->revision+1);
+	acpi_cprintf("revision: %d\n", rsdp->revision + 1);
 	acpi_cprintf("rsdt physical address: P%#x\n", rsdp->rsdt_addr_phys);
 }
 
@@ -149,7 +150,7 @@ acpi_config_smp(struct acpi_madt *madt)
 			if (len < sizeof(*ioapic))
 				break;
 			acpi_cprintf("ioapic#%d @%x id=%d base=%d\n", nioapic, ioapic->addr,
-							ioapic->id, ioapic->interrupt_base);
+									 ioapic->id, ioapic->interrupt_base);
 			if (nioapic) {
 				acpi_cprintf("warning: multiple ioapics are not supported");
 			} else {
@@ -170,7 +171,9 @@ acpi_config_smp(struct acpi_madt *madt)
 	return -1;
 }
 
-static void setup_fadt(struct acpi_fadt *fadt) {
+static void
+setup_fadt(struct acpi_fadt *fadt)
+{
 	if (!fadt)
 		return;
 	acpi_cprintf("Century: %d\n", fadt->century);
@@ -209,7 +212,7 @@ acpiinit(void)
 		memmove(creator, hdr->creator_id, 4);
 		creator[4] = '\0';
 		acpi_cprintf("%s %s %s %x %s %x\n", sig, id, tableid, hdr->oem_revision,
-						creator, hdr->creator_revision);
+								 creator, hdr->creator_revision);
 
 		if (memcmp(hdr->signature, SIG_MADT, 4) == 0)
 			madt = (void *)hdr;

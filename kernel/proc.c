@@ -249,8 +249,7 @@ fork(void)
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait() to find out it exited.
-__noreturn
-void
+__noreturn void
 exit(int status)
 {
 	struct proc *curproc = myproc();

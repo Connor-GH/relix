@@ -8,7 +8,7 @@
 
 // remove "SYS_"
 // sizeof minus one because of the null terminator
-#define REMOVE_SYS_IN_NAME(x) ((char *)(#x)+(sizeof("SYS_")-1))
+#define REMOVE_SYS_IN_NAME(x) ((char *)(#x) + (sizeof("SYS_") - 1))
 
 // read -> 5 for example
 int
@@ -24,12 +24,13 @@ from_name_to_digit(char *string)
 int
 main(int argc, char **argv)
 {
-	char strace_flags[SYSCALL_AMT] = {0};
+	char strace_flags[SYSCALL_AMT] = { 0 };
 
 	int argv_count_start = 0;
 	if (argc < 4) {
-		fprintf(stderr, "Not enough arguments supplied.\n"
-					"Usage: strace [syscall] [/path/to/prog] [prog] [arguments]\n");
+		fprintf(stderr,
+						"Not enough arguments supplied.\n"
+						"Usage: strace [syscall] [/path/to/prog] [prog] [arguments]\n");
 		return 1;
 	}
 	for (int i = 1; i < argc; i++) {
@@ -41,12 +42,10 @@ main(int argc, char **argv)
 		}
 	}
 
-
-
 	if (strace(strace_flags) < 0) {
 		fprintf(stderr, "strace(2) failed!\n");
 		return 1;
 	}
-	execv(argv[argv_count_start], argv+argv_count_start+1);
+	execv(argv[argv_count_start], argv + argv_count_start + 1);
 	return 0;
 }

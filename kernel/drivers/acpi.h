@@ -8,38 +8,38 @@
 // 5.2.5.3
 #define SIG_RSDP "RSD PTR "
 struct acpi_rsdp {
-  uint8_t signature[8];
-  uint8_t checksum;
-  uint8_t oem_id[6];
-  uint8_t revision;
-  uint32_t rsdt_addr_phys;
+	uint8_t signature[8];
+	uint8_t checksum;
+	uint8_t oem_id[6];
+	uint8_t revision;
+	uint32_t rsdt_addr_phys;
 #if ACPI_VERSION_2_0
-  uint32_t length;
+	uint32_t length;
 #if x86_64_BIT_FULLY_READY
 	uint64_t xsdt_addr_phys;
 #endif
-  uint8_t xchecksum;
-  uint8_t reserved[3];
+	uint8_t xchecksum;
+	uint8_t reserved[3];
 #endif
 } __attribute__((__packed__));
 
 // 5.2.6
 struct acpi_desc_header {
-  uint8_t signature[4]; // "APIC"
-  uint32_t length;
-  uint8_t revision;
-  uint8_t checksum;
-  uint8_t oem_id[6];
-  uint8_t oem_tableid[8];
-  uint32_t oem_revision;
-  uint8_t creator_id[4];
-  uint32_t creator_revision;
+	uint8_t signature[4]; // "APIC"
+	uint32_t length;
+	uint8_t revision;
+	uint8_t checksum;
+	uint8_t oem_id[6];
+	uint8_t oem_tableid[8];
+	uint32_t oem_revision;
+	uint8_t creator_id[4];
+	uint32_t creator_revision;
 } __attribute__((__packed__));
 
 // 5.2.7
 struct acpi_rsdt {
-  struct acpi_desc_header header;
-  uint32_t entry[];
+	struct acpi_desc_header header;
+	uint32_t entry[];
 } __attribute__((__packed__));
 
 #define TYPE_LAPIC 0
@@ -51,30 +51,30 @@ struct acpi_rsdt {
 // 5.2.12 Multiple APIC Description Table (MADT)
 #define SIG_MADT "APIC"
 struct acpi_madt {
-  struct acpi_desc_header header;
-  uint32_t lapic_addr_phys;
-  uint32_t flags; // 1 = legacy pics installed.
-  uint8_t table[];
+	struct acpi_desc_header header;
+	uint32_t lapic_addr_phys;
+	uint32_t flags; // 1 = legacy pics installed.
+	uint8_t table[];
 } __attribute__((__packed__));
 
 // 5.2.12.2
 #define APIC_LAPIC_ENABLED 1
 struct madt_lapic {
-  uint8_t type;
-  uint8_t length;
-  uint8_t acpi_id;
-  uint8_t apic_id;
-  uint32_t flags;
+	uint8_t type;
+	uint8_t length;
+	uint8_t acpi_id;
+	uint8_t apic_id;
+	uint32_t flags;
 } __attribute__((__packed__));
 
 // 5.2.12.3
 struct madt_ioapic {
-  uint8_t type;
-  uint8_t length;
-  uint8_t id;
-  uint8_t reserved;
-  uint32_t addr;
-  uint32_t interrupt_base;
+	uint8_t type;
+	uint8_t length;
+	uint8_t id;
+	uint8_t reserved;
+	uint32_t addr;
+	uint32_t interrupt_base;
 } __attribute__((__packed__));
 
 // signature: "FACP"
@@ -143,4 +143,3 @@ _Static_assert(sizeof(struct acpi_fadt) == 276, "ACPI FADT Struct malformed");
 
 int
 acpiinit(void);
-

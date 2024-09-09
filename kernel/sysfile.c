@@ -276,6 +276,10 @@ create(char *path, int mode, short major, short minor)
 			ip->mode = mode; // TODO limit permissions
 			return ip;
 		}
+		if (S_ISLNK(ip->mode) && S_ISLNK(mode)) {
+			ip->mode = mode;
+			return ip;
+		}
 		iunlockput(ip);
 		return 0;
 	}
@@ -391,7 +395,8 @@ sys_mkdir(void)
 	struct inode *ip;
 
 	begin_op();
-	if (argstr(0, &path) < 0 || (ip = create(path, S_IFDIR | S_IAUSR, 0, 0)) == 0) {
+	if (argstr(0, &path) < 0 ||
+			(ip = create(path, S_IFDIR | S_IAUSR, 0, 0)) == 0) {
 		end_op();
 		return -EINVAL;
 	}
@@ -409,7 +414,8 @@ sys_mknod(void)
 
 	begin_op();
 	if ((argstr(0, &path)) < 0 || argint(1, &major) < 0 ||
-			argint(2, &minor) < 0 || (ip = create(path, S_IFBLK | S_IAUSR, major, minor)) == 0) {
+			argint(2, &minor) < 0 ||
+			(ip = create(path, S_IFBLK | S_IAUSR, major, minor)) == 0) {
 		end_op();
 		return -EINVAL;
 	}
@@ -523,6 +529,94 @@ sys_echoout(void)
 		return -EINVAL;
 	}
 	echo_out = answer;
+	end_op();
+	return 0;
+}
+
+// target, linkpath
+int
+sys_symlink(void)
+{
+	char *target, *linkpath;
+	struct inode *eexist;
+	if (argstr(0, &target) < 0 || argstr(1, &linkpath) < 0)
+		return -EINVAL;
+
+	begin_op();
+	if ((eexist = namei(linkpath)) != 0) {
+		end_op();
+		return -EEXIST;
+	}
+	struct inode *ip = create(linkpath, S_IFLNK | S_IAUSR, 0, 0);
+	if (ip == 0) {
+		end_op();
+		return -ENOSPC;
+	}
+	int len = strlen(target);
+	writei(ip, (char *)&len, 0, sizeof(int));
+	writei(ip, (char *)target, sizeof(int), len + 1);
+	iupdate(ip);
+	iunlockput(ip);
+
+	end_op();
+	return 0;
+}
+int
+sys_readlink(void)
+{
+	char *target, *ubuf;
+	int bufsize = 0;
+	if (argstr(0, &target) < 0 || argstr(1, &ubuf) < 0 ||
+			argint(2, &bufsize) < 0) {
+		return -EINVAL;
+	}
+	struct inode *ip;
+	if ((ip = namei(target)) == 0) {
+		return -ENOENT;
+	}
+
+	ilock(ip);
+
+	if (!S_ISLNK(ip->mode)) {
+		iunlockput(ip);
+		return -EINVAL;
+	}
+
+	int count = 0;
+	while (S_ISLNK(ip->mode) && count < NLINK_DEREF) {
+		int len = 0;
+		if (readi(ip, (char *)&len, 0, sizeof(int)) < 0)
+			panic("readlink readi");
+
+		if (len > DIRSIZ)
+			panic("readlink: corrupted symlink inode");
+
+		if (readi(ip, target, sizeof(int), len + 1) < 0)
+			panic("readlink readi");
+		iunlockput(ip);
+
+		if ((ip = namei(target)) == 0) {
+			end_op();
+			return -EFAULT;
+		}
+		ilock(ip);
+		count++;
+		if (count >= NLINK_DEREF) {
+			iunlockput(ip);
+			end_op();
+			return -EMLINK;
+		}
+	}
+
+	// verify bufsize is big enough
+	if (bufsize - strlen(target) < 0) {
+		iunlockput(ip);
+		end_op();
+		return -1;
+	}
+	strncpy(ubuf, target, strlen(target));
+
+	iunlockput(ip);
 	end_op();
 	return 0;
 }

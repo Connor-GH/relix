@@ -118,5 +118,3 @@ stati(struct inode *, struct stat *);
 int
 writei(struct inode *, char *, uint, uint);
 #endif
-
-

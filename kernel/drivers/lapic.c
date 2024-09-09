@@ -205,7 +205,9 @@ fill_rtcdate(struct rtcdate *r)
 	r->month = cmos_read(MONTH);
 	r->year = cmos_read(YEAR);
 }
-static uint8_t bcd_to_binary(uint8_t bcd) {
+static uint8_t
+bcd_to_binary(uint8_t bcd)
+{
 	return ((bcd >> 4) * 10) + (bcd & 0xf);
 }
 
@@ -215,8 +217,6 @@ cmostime(struct rtcdate *r)
 {
 	struct rtcdate t1;
 	int sb, bcd;
-
-
 
 	sb = cmos_read(CMOS_STATB);
 

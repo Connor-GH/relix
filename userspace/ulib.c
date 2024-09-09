@@ -69,9 +69,9 @@ strchr(const char *s, char c)
 char *
 strrchr(const char *s, char c)
 {
-	for (int i = strlen(s)-1; i >= 0; i--)
+	for (int i = strlen(s) - 1; i >= 0; i--)
 		if (s[i] == c)
-			return (char *)s+i;
+			return (char *)s + i;
 	return 0;
 }
 

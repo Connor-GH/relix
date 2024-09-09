@@ -8,4 +8,3 @@ void
 begin_op(void);
 void
 end_op(void);
-

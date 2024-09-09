@@ -73,9 +73,8 @@ printint(int xx, int base, int sign)
 }
 
 // Print to the console. only understands %d, %x, %p, %s.
-__attribute__((format(printf, 1, 2)))
-__nonnull(1) void
-cprintf(const char *fmt, ...)
+__attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *fmt,
+																																...)
 {
 	int i, c, locking;
 	uint *argp;
@@ -311,9 +310,7 @@ consoleintr(int (*getc)(void))
 		procdump(); // now call procdump() wo. cons.lock held
 	}
 }
-__nonnull(1, 2)
-static int
-consoleread(struct inode *ip, char *dst, int n)
+__nonnull(1, 2) static int consoleread(struct inode *ip, char *dst, int n)
 {
 	uint target;
 	int c;
@@ -350,9 +347,7 @@ consoleread(struct inode *ip, char *dst, int n)
 	return target - n;
 }
 
-__nonnull(1, 2)
-static int
-consolewrite(struct inode *ip, char *buf, int n)
+__nonnull(1, 2) static int consolewrite(struct inode *ip, char *buf, int n)
 {
 	iunlock(ip);
 	acquire(&cons.lock);

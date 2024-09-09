@@ -74,9 +74,7 @@ mpsearch(void)
 // Check for correct signature, calculate the checksum and,
 // if correct, check the version.
 // To do: check extended table checksum.
-__nonnull(1)
-static struct mpconf *
-mpconfig(struct mp **pmp)
+__nonnull(1) static struct mpconf *mpconfig(struct mp **pmp)
 {
 	struct mpconf *conf;
 	struct mp *mp;

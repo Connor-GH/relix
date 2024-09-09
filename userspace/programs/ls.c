@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #define KiB (1024UL)
 #define MiB (1024 * KiB)
@@ -32,8 +33,8 @@ enum {
 };
 
 static char *
-to_human_bytes(uint number, char human_name[static 7]) {
-
+to_human_bytes(uint number, char human_name[static 7])
+{
 	char letter;
 	if (number > 1 * GiB) {
 		letter = 'G';
@@ -160,6 +161,7 @@ fmtname(char *path, int fmt_flag)
 	static char buf[DIRSIZ + 1];
 	char *p;
 	char indicator;
+	bool skip_fmt = false;
 	// zero out the buffer.
 	memset(buf, '\0', sizeof(buf));
 
@@ -175,7 +177,7 @@ fmtname(char *path, int fmt_flag)
 	switch (fmt_flag) {
 	default:
 	case FMT_FILE:
-		indicator = ' ';
+		skip_fmt = true;
 		break;
 	case FMT_DIR:
 		indicator = '/';
@@ -193,7 +195,8 @@ fmtname(char *path, int fmt_flag)
 		indicator = '*';
 		break;
 	}
-	memset(buf + strlen(p), indicator, 1);
+	if (!skip_fmt)
+		memset(buf + strlen(p), indicator, 1);
 
 	return buf;
 }
@@ -217,14 +220,61 @@ mode_to_perm(uint mode, char ret[static 11])
 	ret[10] = '\0';
 	return ret;
 }
+static void
+ls_format(char *buf, struct stat st, bool pflag, bool lflag, bool hflag,
+					bool iflag)
+{
+	int fmt_ret = 0;
+	char human_bytes_buf[12];
+	if (pflag) {
+		switch (st.st_mode & S_IFMT) {
+		case S_IFDIR:
+			fmt_ret = FMT_DIR;
+			break;
+		case S_IFLNK:
+			fmt_ret = FMT_LINK;
+			break;
+		default:
+			break;
+		}
+	}
+	if (lflag) {
+		// inodes
+		if (iflag)
+			fprintf(stdout, "% 9d ", st.st_ino);
+		char ret[11];
+		fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
+		if (hflag)
+			fprintf(stdout, "% 4d % 4d %s ", st.st_uid, st.st_gid,
+							to_human_bytes(st.st_size, human_bytes_buf));
+		else
+			fprintf(stdout, "% 4d % 4d % 6d ", st.st_uid, st.st_gid, st.st_size);
+		struct ls_time lt = unix_time_to_human_readable(st.st_mtime);
+		fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
+						lt.hr, lt.min, lt.sec);
+		fprintf(stdout, "%s %s", fmtname(buf, pflag ? fmt_ret : 0),
+						S_ISTYPE(st.st_mode, S_IFLNK) ? ({
+							char sprintf_buf[DIRSIZ];
+							char readlink_buf[DIRSIZ];
+							readlink(buf, readlink_buf, DIRSIZ);
+							sprintf(sprintf_buf, "-> %s", readlink_buf);
+							sprintf_buf;
+						}) :
+																						"");
+		fprintf(stdout, "\n");
+	} else {
+		fprintf(stdout, "%s ", fmtname(buf, pflag ? fmt_ret : 0));
+	}
+}
+
 // this ls(1) tries to follow __minimal__ POSIX stuff.
-void
+static void
 ls(char *path, bool lflag, bool iflag, bool pflag, bool hflag)
 {
-	char buf[512];
 	int fd;
 	struct dirent de;
 	struct stat st;
+	char buf[512];
 
 	if ((fd = open(path, 0)) < 0) {
 		fprintf(stderr, "ls: cannot open %s\n", path);
@@ -241,33 +291,8 @@ ls(char *path, bool lflag, bool iflag, bool pflag, bool hflag)
 
 	switch (st.st_mode & S_IFMT) {
 	case S_IFREG:
-			char human_bytes_buf[12];
-		if (lflag) {
-			// inodes
-			if (iflag)
-				fprintf(stdout, "% 9d ", st.st_ino);
-			char ret[11];
-			fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
-			if (hflag)
-				fprintf(stdout, "% 4d % 4d %s ", st.st_uid, st.st_gid, to_human_bytes(st.st_size, human_bytes_buf));
-			else
-				fprintf(stdout, "% 4d % 4d % 6d ", st.st_uid, st.st_gid, st.st_size);
-			struct ls_time lt = unix_time_to_human_readable(st.st_mtime);
-			fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
-							lt.hr, lt.min, lt.sec);
-			fprintf(stdout, "%s ",
-							fmtname(path,
-											pflag ? (st.st_nlink > 1 ? FMT_LINK : FMT_FILE) : 0));
-		} else {
-			fprintf(stdout, "%s ",
-							fmtname(path,
-											pflag ? (st.st_nlink > 1 ? FMT_LINK : FMT_FILE) : 0));
-		}
-		fprintf(stdout, "\n");
-		break;
-
+		ls_format(path, st, pflag, lflag, hflag, iflag);
 	case S_IFDIR: {
-		char human_bytes_buf[12];
 		if (strlen(path) + 1 + DIRSIZ + 1 > sizeof buf) {
 			fprintf(stderr, "ls: path too long\n");
 			break;
@@ -284,26 +309,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag, bool hflag)
 				perror("stat");
 				continue;
 			}
-			if (lflag) {
-				// inodes
-				if (iflag)
-					fprintf(stdout, "% 9d ", st.st_ino);
-				char ret[11];
-				fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
-				if (hflag)
-					fprintf(stdout, "% 4d % 4d %s ", st.st_uid, st.st_gid, to_human_bytes(st.st_size, human_bytes_buf));
-				else
-					fprintf(stdout, "% 4d % 4d % 6d ", st.st_uid, st.st_gid, st.st_size);
-				struct ls_time lt = unix_time_to_human_readable(st.st_mtime);
-				fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
-								lt.hr, lt.min, lt.sec);
-				fprintf(stdout, "%s ",
-								fmtname(buf, pflag ? (S_ISDIR(st.st_mode) ? FMT_DIR : 0) : 0));
-				fprintf(stdout, "\n");
-			} else {
-				fprintf(stdout, "%s ",
-								fmtname(buf, pflag ? (S_ISDIR(st.st_mode) ? FMT_DIR : 0) : 0));
-			}
+			ls_format(buf, st, pflag, lflag, hflag, iflag);
 		}
 	} break;
 	default:

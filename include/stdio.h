@@ -23,11 +23,9 @@ typedef int FILE;
 
 void
 vfprintf(int, const char *, va_list *argp);
-__attribute__((format(printf, 2, 3)))
-void
+__attribute__((format(printf, 2, 3))) void
 fprintf(int, const char *, ...);
-__attribute__((format(printf, 1, 2)))
-void
+__attribute__((format(printf, 1, 2))) void
 printf(const char *, ...);
 void
 vsprintf(char *restrict str, const char *restrict fmt, va_list *argp);

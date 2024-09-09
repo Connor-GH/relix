@@ -14,7 +14,8 @@ putc(int fd, char c, char *buf)
 	write(fd, &c, 1);
 }
 static void
-string_putc(int fd, char c, char *buf) {
+string_putc(int fd, char c, char *buf)
+{
 	buf[global_idx] = c;
 	global_idx++;
 }
@@ -29,7 +30,8 @@ enum {
 #define IS_SET(x, flag) (bool)((x & flag) == flag)
 
 static void
-printint(void (*put_function)(int, char, char *), char *put_func_buf, int fd, int xx, int base, bool sgn, int flags, int padding)
+printint(void (*put_function)(int, char, char *), char *put_func_buf, int fd,
+				 int xx, int base, bool sgn, int flags, int padding)
 {
 	static const char digits[] = "0123456789ABCDEF";
 	char buf[250];
@@ -74,7 +76,8 @@ printint(void (*put_function)(int, char, char *), char *put_func_buf, int fd, in
 
 // Print to the given fd. Only understands %d, %x, %p, %s.
 static void
-vprintf_internal(void (*put_function)(int fd, char c, char *buf), int fd, char *restrict buf, const char *fmt, va_list *argp)
+vprintf_internal(void (*put_function)(int fd, char c, char *buf), int fd,
+								 char *restrict buf, const char *fmt, va_list *argp)
 {
 	global_idx = 0;
 	char *s;
@@ -179,7 +182,8 @@ skip_state_reset:; // state = '%' if set
 }
 
 void
-vfprintf(int fd, const char *fmt, va_list *argp) {
+vfprintf(int fd, const char *fmt, va_list *argp)
+{
 	vprintf_internal(putc, fd, NULL, fmt, argp);
 }
 

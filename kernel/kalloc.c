@@ -58,9 +58,7 @@ freerange(void *vstart, void *vend)
 // which normally should have been returned by a
 // call to kalloc().  (The exception is when
 // initializing the allocator; see kinit above.)
-__nonnull(1)
-void
-kfree(char *v)
+__nonnull(1) void kfree(char *v)
 {
 	struct run *r;
 

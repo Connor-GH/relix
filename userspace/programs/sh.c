@@ -193,7 +193,8 @@ main(int argc, char **argv)
 			runcmd(parsecmd(buf));
 		pid = wait(&status);
 		if (WEXITSTATUS(status) != 0 && buf[0] != '\n')
-			fprintf(stderr, "ERROR: pid %d returned with status %d\n", pid, WEXITSTATUS(status));
+			fprintf(stderr, "ERROR: pid %d returned with status %d\n", pid,
+							WEXITSTATUS(status));
 	}
 	return 0;
 }

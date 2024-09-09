@@ -7,4 +7,3 @@ void
 ideintr(void);
 void
 iderw(struct buf *);
-

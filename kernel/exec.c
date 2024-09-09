@@ -16,7 +16,8 @@
 // count is argc/envc
 // vec is argv/envp
 static int
-push_user_stack(uint *count, char **vec, uint *ustack, pde_t *pgdir, uint *sp, uint idx)
+push_user_stack(uint *count, char **vec, uint *ustack, pde_t *pgdir, uint *sp,
+								uint idx)
 {
 	for (*count = 0; vec[*count]; (*count)++) {
 		if (*count >= MAXARG)
@@ -24,7 +25,7 @@ push_user_stack(uint *count, char **vec, uint *ustack, pde_t *pgdir, uint *sp, u
 		// move the stack down to account for an argument
 		*sp -= strlen(vec[*count]) + 1;
 		// (seemingly) align the stack to 4 bytes.
-		*sp &= ~(sizeof(uintptr_t)-1);
+		*sp &= ~(sizeof(uintptr_t) - 1);
 		// copy this vector index onto the stack pointer finally.
 		if (copyout(pgdir, *sp, vec[*count], strlen(vec[*count]) + 1) < 0)
 			return -1;
@@ -38,9 +39,7 @@ push_user_stack(uint *count, char **vec, uint *ustack, pde_t *pgdir, uint *sp, u
 	return 0;
 }
 
-__nonnull(1, 2)
-int
-exec(char *path, char **argv)
+__nonnull(1, 2) int exec(char *path, char **argv)
 {
 	char *s, *last;
 	int i, off;

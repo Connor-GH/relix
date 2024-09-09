@@ -192,3 +192,5 @@ qemu-nox-gdb: fs.img xv6.img .gdbinit
 	@echo "*** Now run 'gdb'." 1>&2
 	$(QEMU) -nographic $(QEMUOPTS) -S $(QEMUGDB)
 
+format:
+	@find . -iname *.h -o -iname *.c | xargs clang-format -style=file:.clang-format -i

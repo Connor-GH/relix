@@ -4,8 +4,8 @@ import bindings.stdlib;
 
 extern(C) {
 	int getopt(int argc, char **argv, const char *optstring);
-	__gshared char *optarg;
-	__gshared int optind, opterr, optopt;
+	extern __gshared char *optarg;
+	extern __gshared int optind, opterr, optopt;
 	noreturn exit(int status);
 	size_t strcmp(const char *s, const char *c);
 }
@@ -22,8 +22,6 @@ usage()
 }
 
 extern(C) int main(int argc, char **argv) {
-	optind = 1;
-	opterr = 1;
 	bool zflag, nflag;
 	zflag = nflag = false;
 	int c;

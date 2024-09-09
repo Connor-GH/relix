@@ -69,6 +69,10 @@ char	*optarg;		/* argument associated with option */
 #endif
 #define	BADCH	(int)'?'
 
+int optind;
+int optopt;
+int opterr;
+char *optarg;
 static char	emsg[] = "";
 
 int

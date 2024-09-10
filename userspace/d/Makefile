@@ -4,14 +4,12 @@ D_PROGS = $(D_SRC:$(D_DIR)/%.d=$(SYSROOT)/$(BIN)/_%)
 D_PROGS_OBJ = $(D_SRC:$(D_DIR)/%.d=$(BIN)/%.o)
 
 # we will support dmd-style D compilers only.
-# that is, dmd and ldmd2. ldc2 support is not official but may work,
+# that is, dmd and ldmd2. ldc2 support is not official but may work
 D_INCLUDES = -I$(D_DIR)/
-DC ?= dmd
-DFLAGS ?= -betterC -O -m32 $(D_INCLUDES) $(EXTRA_DFLAGS)
 
 
 $(BIN)/%.o: $(D_DIR)/%.d
-	$(DC) $(DFLAGS) -c -of$@ $^
+	$(DC) $(DFLAGS) $(D_INCLUDES) -c -of$@ $^
 	objcopy --remove-section .note.gnu.property $@
 
 include $(D_DIR)/bindings/Makefile

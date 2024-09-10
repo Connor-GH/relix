@@ -3,5 +3,5 @@ D_BINDINGS_SRC = $(wildcard $(D_BINDINGS_DIR)/*.d)
 D_BINDINGS_OBJ = $(D_BINDINGS_SRC:$(D_BINDINGS_DIR)/%.d=$(BIN)/%.o)
 
 $(BIN)/%.o: $(D_BINDINGS_DIR)/%.d
-	$(DC) $(DFLAGS) -c -of$@ $^
+	$(DC) $(DFLAGS) $(D_INCLUDES) -c -of$@ $^
 	objcopy --remove-section .note.gnu.property $@

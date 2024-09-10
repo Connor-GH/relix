@@ -104,9 +104,9 @@ SYSROOT = sysroot
 
 default: $(CLEAN)
 	$(MAKE) autogenerate
-	$(MAKE) images
 	mkdir -p $(BIN)
 	mkdir -p $(SYSROOT)/{bin,etc}
+	$(MAKE) images
 images: $(BIN)/fs.img $(BIN)/xv6.img
 
 include userspace/Makefile

@@ -1,4 +1,4 @@
-D_DIR = d
+D_DIR = $(UDIR)/d
 D_SRC = $(wildcard $(D_DIR)/*.d)
 D_PROGS = $(D_SRC:$(D_DIR)/%.d=$(SYSROOT)/$(BIN)/_%)
 D_PROGS_OBJ = $(D_SRC:$(D_DIR)/%.d=$(BIN)/%.o)

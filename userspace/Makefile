@@ -22,4 +22,4 @@ $(ULIB_STATIC): $(ULIB_OBJ) $(ULIB_ASM_OBJ)
 	$(RANLIB) $@
 
 include $(UDIR)/programs/Makefile
-include d/Makefile
+include $(UDIR)/d/Makefile

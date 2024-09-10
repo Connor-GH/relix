@@ -6,7 +6,10 @@ ULIB_ASM_OBJ = $(ULIB_ASM:$(UDIR)/%.S=$(BIN)/%.o)
 
 ULIB_STATIC = $(BIN)/ulib.a
 
-UCFLAGS = -flto -I$(UDIR)/include -I. $(IVARS)
+UCFLAGS = -fno-lto -I$(UDIR)/include -I. $(IVARS)
+ifneq ($(RELEASE),)
+	UCFLAGS += -flto
+endif
 
 $(ULIB_OBJ): $(BIN)/%.o : $(UDIR)/%.c
 	$(CC) $(CFLAGS) $(UCFLAGS) -c -o $@ $^

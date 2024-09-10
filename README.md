@@ -17,6 +17,14 @@ but is implemented for a modern x86-based multiprocessor using ANSI C.
 - doubly indirect block pointer inodes (max filesize 1MiB -> 512MiB)
 - ls(1) now has -h, -l, -i, and -p
 
+# dependencies
+- gcc/clang
+- ld/lld
+- objdump, objcopy, ar, ranlib
+- dmd/ldc2/gdc
+- qemu
+- gmake
+
 # BUILDING AND RUNNING XV6
 
 run "make qemu" with a compiler capable of producing ELF files.

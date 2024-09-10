@@ -55,7 +55,7 @@ OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 
 # llvm stuff
-ifeq ($(LLVM),1)
+ifneq ($(LLVM),)
 	CC = clang
 	AS = $(CC) -c
 	LD = ld.lld
@@ -69,9 +69,12 @@ endif
 WFLAGS = -Wnonnull
 
 CFLAGS = -std=gnu11 -pedantic -fno-pic -static -fno-builtin -ffreestanding \
-				 -fno-strict-aliasing -nostdlib -O2 -Wall -ggdb -m32 -Wno-error -fno-omit-frame-pointer \
+				 -fno-strict-aliasing -nostdlib -O0 -Wall -ggdb -m32 -Wno-error -fno-omit-frame-pointer \
 				 -nostdinc -fno-builtin $(ARCHNOFLAGS) $(WNOFLAGS) $(WFLAGS)
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
+ifneq ($(RELEASE),)
+	CFLAGS += -O2
+endif
 ASFLAGS = -m32 -gdwarf-2 -Wa,-divide --mx86-used-note=no
 # FreeBSD ld wants ``elf_i386_fbsd''
 ifeq ($(HOST_OS),FreeBSD)
@@ -100,11 +103,11 @@ BIN = bin
 SYSROOT = sysroot
 
 default: $(CLEAN)
+	$(MAKE) autogenerate
+	$(MAKE) images
 	mkdir -p $(BIN)
 	mkdir -p $(SYSROOT)/{bin,etc}
-	$(MAKE) autogenerate
-	$(MAKE) $(BIN)/fs.img
-	$(MAKE) $(BIN)/xv6.img
+images: $(BIN)/fs.img $(BIN)/xv6.img
 
 include userspace/Makefile
 include kernel/Makefile

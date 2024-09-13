@@ -12,3 +12,4 @@ __nonnull(1, 2) char *strlcpy_nostrlen(char *dst, const char *src, int dst_len,
 __nonnull(1) uint strlen(const char *);
 __nonnull(1, 2) int strncmp(const char *, const char *, uint);
 __nonnull(1, 2) char *strncpy(char *, const char *, int);
+__nonnull(1, 2) char *strcat(char *dst, const char *src);

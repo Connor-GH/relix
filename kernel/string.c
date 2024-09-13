@@ -53,6 +53,17 @@ __nonnull(1, 2) void *memcpy(void *dst, const void *src, uint n)
 	return memmove(dst, src, n);
 }
 
+__nonnull(1, 2)
+char *
+strcat(char *dst, const char *src)
+{
+	int start = strlen(dst);
+	int j = 0;
+	for (int i = start; i < start + strlen(src) + 1; i++, j++) {
+		dst[i] = src[j];
+	}
+	return dst;
+}
 __nonnull(1, 2) int strncmp(const char *p, const char *q, uint n)
 {
 	while (n > 0 && *p && *p == *q)

@@ -30,6 +30,7 @@ extern char end[]; // first address after kernel loaded from ELF file
 // Bootstrap processor starts running C code here.
 // Allocate a real stack and switch to it, first
 // doing some setup required for memory allocator to work.
+extern int example_kernel_binding(void);
 int
 main(void)
 {
@@ -51,6 +52,7 @@ main(void)
 	binit(); // buffer cache
 	fileinit(); // file table
 	ideinit(); // disk
+	example_kernel_binding();
 	startothers(); // start other processors
 	kinit2(P2V(4 * 1024 * 1024), P2V(PHYSTOP)); // must come after startothers()
 	userinit(); // first user process

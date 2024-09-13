@@ -24,7 +24,10 @@
 #include "pipe.h"
 #include "exec.h"
 #include "drivers/lapic.h"
+#include "vm.h"
 
+static struct inode *
+link_dereference(struct inode *ip, char *buff);
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
@@ -362,6 +365,13 @@ sys_open(void)
 			return -ENOENT;
 		}
 		ilock(ip);
+
+		if (S_ISLNK(ip->mode)) {
+			if ((ip = link_dereference(ip, path)) == 0) {
+				end_op();
+				return -EINVAL;
+			}
+		}
 		if (S_ISDIR(ip->mode) && omode != O_RDONLY) {
 			iunlockput(ip);
 			end_op();
@@ -437,6 +447,12 @@ sys_chdir(void)
 		return -EINVAL;
 	}
 	ilock(ip);
+	if (S_ISLNK(ip->mode)) {
+		if ((ip = link_dereference(ip, path)) == 0) {
+			end_op();
+			panic("open link_dereference");
+		}
+	}
 	if (!S_ISDIR(ip->mode)) {
 		iunlockput(ip);
 		end_op();
@@ -538,7 +554,9 @@ int
 sys_symlink(void)
 {
 	char *target, *linkpath;
-	struct inode *eexist;
+	char dir[DIRSIZ];
+	uint poff;
+	struct inode *eexist, *ip;
 	if (argstr(0, &target) < 0 || argstr(1, &linkpath) < 0)
 		return -EINVAL;
 
@@ -547,20 +565,33 @@ sys_symlink(void)
 		end_op();
 		return -EEXIST;
 	}
-	struct inode *ip = create(linkpath, S_IFLNK | S_IAUSR, 0, 0);
-	if (ip == 0) {
+	if ((eexist = nameiparent(linkpath, dir)) == 0) {
+		end_op();
+		return -EEXIST;
+	}
+
+	ilock(eexist);
+
+	if ((ip = dirlookup(eexist, dir, &poff)) != 0) {
+		iunlock(eexist);
+		end_op();
+		return -EEXIST;
+	}
+	iunlock(eexist);
+
+	if ((ip = create(linkpath, S_IFLNK | S_IAUSR, 0, 0)) == 0) {
 		end_op();
 		return -ENOSPC;
 	}
-	int len = strlen(target);
-	writei(ip, (char *)&len, 0, sizeof(int));
-	writei(ip, (char *)target, sizeof(int), len + 1);
-	iupdate(ip);
-	iunlockput(ip);
+	if (writei(ip, target, 0, strlen(target) + 1) != strlen(target) + 1)
+		panic("symlink writei");
 
+	iunlockput(ip);
 	end_op();
+
 	return 0;
 }
+
 int
 sys_readlink(void)
 {
@@ -571,6 +602,7 @@ sys_readlink(void)
 		return -EINVAL;
 	}
 	struct inode *ip;
+	begin_op();
 	if ((ip = namei(target)) == 0) {
 		return -ENOENT;
 	}
@@ -578,45 +610,50 @@ sys_readlink(void)
 	ilock(ip);
 
 	if (!S_ISLNK(ip->mode)) {
-		iunlockput(ip);
+		iunlock(ip);
+		end_op();
 		return -EINVAL;
 	}
 
-	int count = 0;
-	while (S_ISLNK(ip->mode) && count < NLINK_DEREF) {
-		int len = 0;
-		if (readi(ip, (char *)&len, 0, sizeof(int)) < 0)
-			panic("readlink readi");
-
-		if (len > DIRSIZ)
-			panic("readlink: corrupted symlink inode");
-
-		if (readi(ip, target, sizeof(int), len + 1) < 0)
-			panic("readlink readi");
-		iunlockput(ip);
-
-		if ((ip = namei(target)) == 0) {
-			end_op();
-			return -EFAULT;
-		}
-		ilock(ip);
-		count++;
-		if (count >= NLINK_DEREF) {
-			iunlockput(ip);
-			end_op();
-			return -EMLINK;
-		}
-	}
-
-	// verify bufsize is big enough
-	if (bufsize - strlen(target) < 0) {
-		iunlockput(ip);
+	if (ip->size > bufsize) {
+		iunlock(ip);
 		end_op();
-		return -1;
+		return -EINVAL;
 	}
-	strncpy(ubuf, target, strlen(target));
 
-	iunlockput(ip);
+	if (readi(ip, ubuf, 0, bufsize) < 0)
+		panic("readlink readi");
+
+	if (copyout(myproc()->pgdir, (uint)ubuf, ubuf, bufsize) < 0)
+		panic("readlink copyout");
+
+	iunlock(ip);
 	end_op();
+	return 0;
+}
+
+struct inode *
+link_dereference(struct inode *ip, char *buff)
+{
+	int ref_count = NLINK_DEREF;
+	struct inode *new_ip = ip;
+	while (S_ISLNK(new_ip->mode)) {
+		ref_count--;
+		if (ref_count == 0)
+			goto bad;
+
+		if (readi(new_ip, buff, 0, new_ip->size) < 0)
+			goto bad;
+
+		iunlock(new_ip);
+		if ((new_ip = namei(buff)) == 0)
+			return 0;
+
+		ilock(new_ip);
+	}
+	return new_ip;
+
+bad:
+	iunlock(new_ip);
 	return 0;
 }

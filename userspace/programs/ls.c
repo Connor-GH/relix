@@ -197,6 +197,16 @@ fmtname(char *path, int fmt_flag)
 	}
 	if (!skip_fmt)
 		memset(buf + strlen(p), indicator, 1);
+	if (fmt_flag == FMT_LINK) {
+		char sprintf_buf[DIRSIZ];
+		char readlink_buf[DIRSIZ];
+		if (readlink(buf, readlink_buf, DIRSIZ) < 0) {
+			perror("readlink");
+			exit(1);
+		}
+		sprintf(sprintf_buf, "%s%c -> %s", p, indicator, readlink_buf);
+		memcpy(buf, sprintf_buf, DIRSIZ);
+	}
 
 	return buf;
 }
@@ -252,16 +262,13 @@ ls_format(char *buf, struct stat st, bool pflag, bool lflag, bool hflag,
 		struct ls_time lt = unix_time_to_human_readable(st.st_mtime);
 		fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
 						lt.hr, lt.min, lt.sec);
-		fprintf(stdout, "%s %s", fmtname(buf, pflag ? fmt_ret : 0),
-						S_ISTYPE(st.st_mode, S_IFLNK) ? ({
-							char sprintf_buf[DIRSIZ];
-							char readlink_buf[DIRSIZ];
-							readlink(buf, readlink_buf, DIRSIZ);
-							sprintf(sprintf_buf, "-> %s", readlink_buf);
-							sprintf_buf;
-						}) :
-																						"");
-		fprintf(stdout, "\n");
+
+
+		if (S_ISLNK(st.st_mode)) {
+			fprintf(stdout, "%s\n", fmtname(buf, true));
+		} else {
+			fprintf(stdout, "%s\n", fmtname(buf, pflag ? fmt_ret : 0));
+		}
 	} else {
 		fprintf(stdout, "%s ", fmtname(buf, pflag ? fmt_ret : 0));
 	}

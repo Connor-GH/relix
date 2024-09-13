@@ -198,6 +198,12 @@ memmove(void *vdst, const void *vsrc, uint n)
 	return vdst;
 }
 
+void *
+memcpy(void *dst, const void *src, uint n)
+{
+	return memmove(dst, src, n);
+}
+
 char *
 strncpy(char *dst, const char *src, int n)
 {

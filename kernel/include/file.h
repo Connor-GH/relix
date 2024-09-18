@@ -27,6 +27,8 @@ struct file *
 filealloc(void);
 void
 fileclose(struct file *);
+int
+fileopen(char *path, int omode);
 struct file *
 filedup(struct file *);
 void

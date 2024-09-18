@@ -18,6 +18,7 @@
 #define __cleanup(x) __attribute__((__cleanup__(x)))
 #define __nonnull(...) __attribute__((__nonnull__(__VA_ARGS__)))
 #define __unused __attribute__((unused))
+#define __deprecated(msg) __attribute__((deprecated(msg)))
 
 #if __has_builtin(__builtin_constant_p) && __has_builtin(__builtin_expect)
 #define likely(x) (__builtin_expect(!!(x), 1))

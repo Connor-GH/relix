@@ -27,6 +27,10 @@ __nonnull(1, 2) int memcmp(const void *v1, const void *v2, uint n)
 
 	return 0;
 }
+__deprecated("Removed in POSIX.1-2008") __nonnull(1, 2) int bcmp(const void *v1, const void *v2, uint n)
+{
+	return memcmp(v1, v2, n);
+}
 
 __nonnull(1, 2) void *memmove(void *dst, const void *src, uint n)
 {

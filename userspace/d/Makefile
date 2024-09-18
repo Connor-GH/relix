@@ -1,4 +1,3 @@
-include d/Makefile
 USER_D_DIR = $(UDIR)/d
 USER_D_SRC = $(wildcard $(USER_D_DIR)/*.d)
 D_PROGS = $(USER_D_SRC:$(USER_D_DIR)/%.d=$(SYSROOT)/$(BIN)/_%)

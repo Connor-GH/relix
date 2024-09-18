@@ -2,6 +2,7 @@
 #include "compiler_attributes.h"
 #include <types.h>
 __nonnull(1, 2) int memcmp(const void *, const void *, uint);
+__deprecated("Removed in POSIX.1-2008") __nonnull(1, 2) int bcmp(const void *, const void *, uint);
 __nonnull(1, 2) void *memcpy(void *, const void *, uint);
 void *
 memmove(void *, const void *, uint);

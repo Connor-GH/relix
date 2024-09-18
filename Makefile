@@ -67,7 +67,14 @@ ifneq ($(LLVM),)
 endif
 # Dlang toolchain
 DC ?= dmd
+D_PREVIEWS = -preview=systemVariables,in,dip1000,dip1021
 DFLAGS ?= -betterC -O -m32 $(EXTRA_DFLAGS)
+ifneq ($(DC),dmd)
+	DFLAGS += -nodefaultlib -mattr=-avx,-sse
+else
+	DFLAGS += -defaultlib=none
+endif
+# we will support dmd-style D compilers only.
 
 WFLAGS = -Wnonnull
 
@@ -115,6 +122,7 @@ images: $(BIN)/fs.img $(BIN)/xv6.img
 $(DIRECTORIES):
 	mkdir -p $@
 
+include d/Makefile
 include userspace/Makefile
 include kernel/Makefile
 

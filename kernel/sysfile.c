@@ -328,15 +328,12 @@ create(char *path, int mode, short major, short minor)
 }
 
 int
-sys_open(void)
+fileopen(char *path, int omode)
 {
-	char *path;
-	int fd, omode;
+	int fd;
 	struct file *f;
 	struct inode *ip;
 
-	if (argstr(0, &path) < 0 || argint(1, &omode) < 0)
-		return -EINVAL;
 	if (path == NULL)
 		return -EFAULT;
 
@@ -396,6 +393,15 @@ get_fd:
 	f->readable = !(omode & O_WRONLY);
 	f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
 	return fd;
+}
+
+int sys_open(void) {
+	char *path;
+	int omode;
+
+	if (argstr(0, &path) < 0 || argint(1, &omode) < 0)
+		return -EINVAL;
+	return fileopen(path, omode);
 }
 
 int

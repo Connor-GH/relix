@@ -1,16 +1,10 @@
 #pragma once
-#include "compiler_attributes.h"
 #include <types.h>
 #include <console.h>
 
-static __always_inline void
+void
 kernel_assert_fail(const char *assertion, const char *file, int lineno,
-									 const char *func)
-{
-	cprintf("%s:%d: %s: Assertion `%s' failed.\n", file, lineno, func, assertion);
-	cprintf("Aborting.\n");
-	panic("Assertion failed.");
-}
+									 const char *func);
 // the no-op here makes clang happy.
 static inline void
 no_op(void){}

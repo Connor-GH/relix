@@ -1,8 +1,8 @@
 #pragma once
-#include <types.h>
+#include <stdint.h>
 void
 idtinit(void);
-extern uint ticks;
+extern uint32_t ticks;
 void
 tvinit(void);
 extern struct spinlock tickslock;

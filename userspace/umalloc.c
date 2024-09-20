@@ -86,3 +86,10 @@ malloc(uint nbytes)
 				return 0;
 	}
 }
+__attribute__((malloc)) void *
+realloc(void *ptr, size_t size)
+{
+	if (ptr) free(ptr);
+	ptr = malloc(size);
+	return ptr;
+}

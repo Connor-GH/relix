@@ -2,6 +2,7 @@
 // memory for user processes, kernel stacks, page table pages,
 // and pipe buffers. Allocates 4096-byte pages.
 
+#include <stdlib.h>
 #include <types.h>
 #include "drivers/memlayout.h"
 #include "drivers/mmu.h"
@@ -93,4 +94,11 @@ kalloc(void)
 	if (kmem.use_lock)
 		release(&kmem.lock);
 	return (char *)r;
+}
+__attribute__((malloc)) __nonnull(1) void *
+krealloc(char *ptr, size_t size)
+{
+	if (ptr) kfree(ptr);
+	ptr = kalloc();
+	return ptr;
 }

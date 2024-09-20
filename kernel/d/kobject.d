@@ -2,7 +2,10 @@ module kobject;
 import inherit : inherit;
 import optional;
 import console;
-
+import kernel_string;
+import kalloc : kalloc, kfree;
+import libcstring;
+import kernel_assert : kernel_assert;
 
 __gshared:
 enum Diagnostic {
@@ -61,14 +64,13 @@ void kwrite(S...)(auto ref S args) {
 		}
 		else static if (__traits(isArithmetic, arg)) cprintf("%u", arg);
 		else static if (is(typeof(arg) == string)) cprintf("%s", arg.ptr);
+		else static if (is(typeof(arg) == char *)) cprintf("%s", arg);
 		else static if (__traits(isRef, arg) && is(typeof(*arg.type) == KObject)) cprintf("%s", arg.toString().ptr);
 		else static if (is(typeof(arg) == void *)) cprintf("%p", arg);
 	}
 	if (seen_diagnostic)
 		cprintf("\033b0");
 }
-extern(C) char *kalloc();
-extern(C) void kfree(char *ptr);
 
 struct KArray(T) {
 	private:
@@ -119,13 +121,39 @@ struct KArray(T) {
 
 void kwriteln(S...)(auto ref S args) => kwrite(args, "\n");
 
-extern(C) void cprintf(const char *fmt, ...);
+enum isPointer(T) = is(T == U*, U);
+struct KNonNull(T) {
+	private T ptr;
+	public:
+	this(T)(T data)
+	if (isPointer!T)
+	{
+		kernel_assert(data != cast(void *)0);
+ 		ptr = data;
+	}
+
+	void opAssign(T)(T other)
+	if (isPointer!T)
+	{
+		kernel_assert(other != cast(void *)0);
+ 		this.ptr = other;
+	}
+	T release_ptr() => ptr;
+}
+
 extern(C) int example_kernel_binding() {
 	KDevice kd = KDevice("foo");
 	KArray!int ka = KArray!int(3, 4, 5);
-	kwriteln(Diagnostic.Note, "This object is ", ka);
-	kwriteln(Diagnostic.Note, "ka[1] is ", ka.get(1).unwrap());
+	// uncomment to allow NonNull container to give error
+	//Option!(KNonNull!(char *)) i_am_null = Some(KNonNull!(char *)(cast(char *)null));
+	Option!(KNonNull!(char *)) c = Some(KNonNull!(char *)(kalloc()));
+	scope(exit) kfree(c.unwrap().release_ptr());
+	strlcpy_nostrlen(c.unwrap().release_ptr(), "Data", 4096, strlen("Data")+1);
+
+	kernel_assert(ka.toString() == "KArray");
+	kernel_assert(ka.get(1).unwrap() == 4);
+
+	kernel_assert(kd.toString() == "KDevice");
 	kwriteln(Diagnostic.Note, "Dlang kernel systems up and running.");
-	kwriteln(Diagnostic.Note, "This object is ", kd, " with name ", kd.name);
-	return kd.equals(KDevice("foo"));
+	return 0;
 }

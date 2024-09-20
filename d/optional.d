@@ -1,5 +1,6 @@
 module optional;
 
+@safe:
 struct Option(T) {
 	private T data;
 	this(T data) {

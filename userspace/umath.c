@@ -1,4 +1,5 @@
 #include <umath.h>
+#include <stdint.h>
 
 unsigned int
 ui_pow(unsigned int base, unsigned int power)
@@ -15,4 +16,16 @@ ui_pow(unsigned int base, unsigned int power)
 		ret *= base;
 	}
 	return ret;
+}
+
+static size_t
+floor_log2(size_t n)
+{
+	return 31U - __builtin_clzl(n);
+}
+
+// so satisfying.
+size_t ceil_log2(size_t n)
+{
+	return !!n * floor_log2(n - 1) + !!n;
 }

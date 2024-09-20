@@ -1,7 +1,9 @@
 #pragma once
 #include <stdint.h>
+#ifndef __KERNEL__
 int
 kill(int);
+#endif
 
 enum {
 	SIGINT = 2,

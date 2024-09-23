@@ -1,20 +1,21 @@
 #pragma once
 #include "../../include/types.h"
+#include <stdint.h>
 // Format of an ELF executable file
 
 #define ELF_MAGIC 0x464C457FU // "\x7FELF" in little endian
 
 // File header
 struct elfhdr {
-	uint magic; // must equal ELF_MAGIC
+	uint32_t magic; // must equal ELF_MAGIC
 	uchar elf[12];
 	ushort type;
 	ushort machine;
-	uint version;
-	uint entry;
-	uint phoff;
-	uint shoff;
-	uint flags;
+	uint32_t version;
+	uint32_t entry;
+	uint32_t phoff;
+	uint32_t shoff;
+	uint32_t flags;
 	ushort ehsize;
 	ushort phentsize;
 	ushort phnum;
@@ -25,15 +26,38 @@ struct elfhdr {
 
 // Program section header
 struct proghdr {
-	uint type;
-	uint off;
-	uint vaddr;
-	uint paddr;
-	uint filesz;
-	uint memsz;
-	uint flags;
-	uint align;
+	uint32_t type;
+	uint32_t off;
+	uint32_t vaddr;
+	uint32_t paddr;
+	uint32_t filesz;
+	uint32_t memsz;
+	uint32_t flags;
+	uint32_t align;
 };
+
+struct elf32_shdr {
+uint32_t sh_name;
+uint32_t sh_type;
+uint32_t sh_flags;
+uint32_t sh_addr;
+uint32_t sh_offset;
+uint32_t sh_size;
+uint32_t sh_link;
+uint32_t sh_info;
+uint32_t sh_addralign;
+uint32_t sh_entsize;
+};
+
+struct elf32_symhdr {
+	uint32_t	name;
+	uint32_t	value;
+	uint32_t	size;
+	uint8_t	  info;
+	uint8_t 	other;
+	uint16_t	st_shndx;
+};
+
 
 // Values for Proghdr type
 #define ELF_PROG_LOAD 1
@@ -42,3 +66,19 @@ struct proghdr {
 #define ELF_PROG_FLAG_EXEC 1
 #define ELF_PROG_FLAG_WRITE 2
 #define ELF_PROG_FLAG_READ 4
+enum {
+	SHT_NULL = 0,
+	SHT_PROGBITS = 1,
+	SHT_SYMTAB = 2,
+	SHT_STRTAB = 3,
+	SHT_RELA = 4,
+	SHT_HASH = 5,
+	SHT_DYNAMIC = 6,
+	SHT_NOTE = 7,
+	SHT_NOBITS = 8,
+	SHT_REL = 9,
+	SHT_SHLIB = 10,
+	SHT_DYNSYM = 11,
+	SHT_LOPROC = 0x70000000,
+	SHT_HIPROC = 0x7fffffff,
+};

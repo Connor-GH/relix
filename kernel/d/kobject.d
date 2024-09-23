@@ -1,10 +1,11 @@
 module kobject;
 import inherit : inherit;
 import optional;
+import libkant;
+import traits;
 import console;
 import kernel_string;
 import kalloc : kalloc, kfree;
-import libcstring;
 import kernel_assert : kernel_assert;
 
 __gshared:
@@ -14,7 +15,7 @@ enum Diagnostic {
 	Note,
 }
 
-struct KObject {
+@safe struct KObject {
 	public:
 	typeof(this) *type;
 	bool equals(KObject o) {
@@ -121,24 +122,25 @@ struct KArray(T) {
 
 void kwriteln(S...)(auto ref S args) => kwrite(args, "\n");
 
-enum isPointer(T) = is(T == U*, U);
-struct KNonNull(T) {
+enum NULL = cast(void *)0;
+
+@safe struct KNonNull(T) {
 	private T ptr;
 	public:
 	this(T)(T data)
-	if (isPointer!T)
+	if (isPointer!T && !is(T == typeof(null)))
 	{
-		kernel_assert(data != cast(void *)0);
+		kernel_assert(data != NULL, "data != NULL");
  		ptr = data;
 	}
 
 	void opAssign(T)(T other)
-	if (isPointer!T)
+	if (isPointer!T && !is(T == typeof(null)))
 	{
-		kernel_assert(other != cast(void *)0);
+		kernel_assert(other != NULL, "other != NULL");
  		this.ptr = other;
 	}
-	T release_ptr() => ptr;
+	Option!T release_ptr() => ptr != NULL ? Some!T(ptr) : None!T;
 }
 
 extern(C) int example_kernel_binding() {
@@ -146,14 +148,20 @@ extern(C) int example_kernel_binding() {
 	KArray!int ka = KArray!int(3, 4, 5);
 	// uncomment to allow NonNull container to give error
 	//Option!(KNonNull!(char *)) i_am_null = Some(KNonNull!(char *)(cast(char *)null));
-	Option!(KNonNull!(char *)) c = Some(KNonNull!(char *)(kalloc()));
-	scope(exit) kfree(c.unwrap().release_ptr());
-	strlcpy_nostrlen(c.unwrap().release_ptr(), "Data", 4096, strlen("Data")+1);
+
+	int myfunc(int a) => a * a;
+	auto c = KNonNull!(char *)(kalloc());
+	scope(exit) kfree(c.release_ptr().unwrap());
+	strlcpy_nostrlen(c.release_ptr().unwrap(), "Data", 4096, strlen("Data")+1);
+
+
+	//kernel_assert(__equals!(char *, char *)(c.release_ptr().unwrap(), "Data"));
 
 	kernel_assert(ka.toString() == "KArray");
 	kernel_assert(ka.get(1).unwrap() == 4);
 
 	kernel_assert(kd.toString() == "KDevice");
+	kant!(myfunc)(9);
 	kwriteln(Diagnostic.Note, "Dlang kernel systems up and running.");
 	return 0;
 }

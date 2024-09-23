@@ -22,7 +22,7 @@ enum DEVSPACE = 0xFE000000; // Other devices are at high addresses
 // Key addresses for address space layout (see kmap in vm.c for layout)
 enum KERNLINK = (KERNBASE + EXTMEM); // Address where kernel is linked
 
-enum string V2P(string a) = `((cast(uint_)(` ~ a ~ `)) - KERNBASE)`;
+enum string V2P(string a) = `((cast(uint)(` ~ a ~ `)) - KERNBASE)`;
 enum string P2V(string a) = `(cast(void*)((cast(char*)(` ~ a ~ `)) + KERNBASE))`;
 
 enum string V2P_WO(string x) = `((x) - KERNBASE) // same as V2P, but without casts`;

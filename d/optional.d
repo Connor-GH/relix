@@ -17,7 +17,7 @@ Option!T None(T)() {
 }
 
 T unwrap(T)(Option!T o) {
-	static if (__traits(isArithmetic, o))
+	static if (!__traits(isArithmetic, o))
 		assert(o.data != T.init);
 	return o.data;
 }

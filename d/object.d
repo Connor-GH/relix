@@ -1,14 +1,21 @@
 module object;
+import traits;
 version (X86_64) {} else {
 	alias size_t = uint;
 	alias noreturn = typeof(*null);
 	alias string = immutable(char)[];
 }
+
+version (__KERNEL__) {
+	import kernel.d.bindings.kernel_string;
+} else {
+	import userspace.d.bindings.string_;
+}
 // define dummy methods until the assert bug is fixed in dmd
 extern(C) void __assert(const char *, const char *, int, const char*) {}
 extern(C) void __assert_fail(const char *, const char *, int, const char*) {}
 
-
+@safe:
 bool __equals(T1, T2)(T1[] lhs, T2[] rhs) {
 	static if (!is(typeof(lhs) == typeof(rhs)))
 		return false;
@@ -33,4 +40,15 @@ bool __equals(T1, T2)(T1[] lhs, T2[] rhs) {
 		return true;
 	}
 	return false;
+}
+
+
+@system bool __equals(T1, T2)(const T1 t1, const T2 t2)
+	if (isPointer!T1 && isPointer!T2)
+{
+	static if (is(T1 == char *) && is(T2 == char *)) {
+		return strncmp(t1, t2, strlen(t1)) == 0;
+	} else {
+		return t1 == t2;
+	}
 }

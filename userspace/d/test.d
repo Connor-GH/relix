@@ -1,4 +1,5 @@
-extern(C) void printf(const char *fmt, ...);
+import userspace.d.bindings.stdio : printf;
+
 extern(C) noreturn exit(int);
 
 extern(C) int main(int argc, char **argv)

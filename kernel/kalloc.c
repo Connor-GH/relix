@@ -117,8 +117,6 @@ kalloc(void)
 
 	if (r)
 		memset((char *)r, 5, PGSIZE);
-	else
-		panic("kalloc out of memory");
 	popcli();
 	return (char *)r;
 }

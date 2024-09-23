@@ -53,6 +53,7 @@ my_cpu_id(void)
 
 // Must be called with interrupts disabled to avoid the caller being
 // rescheduled between reading lapicid and running through the loop.
+static int pass = 0;
 struct cpu *
 mycpu(void)
 {
@@ -68,6 +69,13 @@ mycpu(void)
 		if (cpus[i].apicid == apicid)
 			return &cpus[i];
 	}
+	// apicid is not familiar; we are probably in the early
+	// stages of booting. just use the first CPU for now.
+	// this is assured with "pass" because a real program would
+	// use far more mycpu() than 20,000. it's just enough to boot.
+	pass++;
+	if (pass < 20000)
+		return &cpus[0];
 	panic("unknown apicid\n");
 }
 

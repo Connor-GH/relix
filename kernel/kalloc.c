@@ -2,6 +2,7 @@
 // memory for user processes, kernel stacks, page table pages,
 // and pipe buffers. Allocates 4096-byte pages.
 
+#include "x86.h"
 #include <stdlib.h>
 #include <types.h>
 #include "drivers/memlayout.h"
@@ -10,6 +11,8 @@
 #include "kalloc.h"
 #include "kernel_string.h"
 #include "console.h"
+#include "kernel/include/param.h"
+#include "proc.h"
 
 void
 freerange(void *vstart, void *vend);
@@ -21,9 +24,8 @@ struct run {
 };
 
 struct {
-	struct spinlock lock;
-	int use_lock;
-	struct run *freelist;
+	struct spinlock lock[NCPU];
+	struct run *freelist[NCPU];
 } kmem;
 
 // Initialization happens in two phases.
@@ -34,25 +36,26 @@ struct {
 void
 kinit1(void *vstart, void *vend)
 {
-	initlock(&kmem.lock, "kmem");
-	kmem.use_lock = 0;
 	freerange(vstart, vend);
 }
 
 void
 kinit2(void *vstart, void *vend)
 {
+	for (int i = 0; i < NCPU; i++)
+		initlock(&kmem.lock[i], "kmem");
 	freerange(vstart, vend);
-	kmem.use_lock = 1;
 }
 
 void
 freerange(void *vstart, void *vend)
 {
+	pushcli();
 	char *p;
 	p = (char *)PGROUNDUP((uint)vstart);
 	for (; p + PGSIZE <= (char *)vend; p += PGSIZE)
 		kfree(p);
+	popcli();
 }
 
 // Free the page of physical memory pointed at by v,
@@ -61,7 +64,9 @@ freerange(void *vstart, void *vend)
 // initializing the allocator; see kinit above.)
 __nonnull(1) void kfree(char *v)
 {
+	pushcli();
 	struct run *r;
+	int id = my_cpu_id();
 
 	if ((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
 		panic("kfree");
@@ -69,13 +74,14 @@ __nonnull(1) void kfree(char *v)
 	// Fill with junk to catch dangling refs.
 	memset(v, 1, PGSIZE);
 
-	if (kmem.use_lock)
-		acquire(&kmem.lock);
+	//if (kmem.use_lock)
+	acquire(&kmem.lock[id]);
 	r = (struct run *)v;
-	r->next = kmem.freelist;
-	kmem.freelist = r;
-	if (kmem.use_lock)
-		release(&kmem.lock);
+	r->next = kmem.freelist[id];
+	kmem.freelist[id] = r;
+	//if (kmem.use_lock)
+	release(&kmem.lock[id]);
+	popcli();
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -84,15 +90,36 @@ __nonnull(1) void kfree(char *v)
 char *
 kalloc(void)
 {
+	pushcli();
+	int id = my_cpu_id();
 	struct run *r;
 
-	if (kmem.use_lock)
-		acquire(&kmem.lock);
-	r = kmem.freelist;
+	//if (kmem.use_lock)
+	acquire(&kmem.lock[id]);
+	r = kmem.freelist[id];
 	if (r)
-		kmem.freelist = r->next;
-	if (kmem.use_lock)
-		release(&kmem.lock);
+		kmem.freelist[id] = r->next;
+	//if (kmem.use_lock)
+	release(&kmem.lock[id]);
+
+	if (!r) {
+		for (int i = 0; i < NCPU; i++) {
+			acquire(&kmem.lock[i]);
+			r = kmem.freelist[i];
+			if (r)
+				kmem.freelist[i] = r->next;
+			release(&kmem.lock[i]);
+
+			if (r)
+				break;
+		}
+	}
+
+	if (r)
+		memset((char *)r, 5, PGSIZE);
+	else
+		panic("kalloc out of memory");
+	popcli();
 	return (char *)r;
 }
 __attribute__((malloc)) __nonnull(1) void *

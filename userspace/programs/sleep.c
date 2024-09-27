@@ -25,7 +25,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "%s: [file]\n", argv[0]);
 		exit(-1);
 	}
-	int ret = sleep(my_atoi(argv[1]) * 100);
+	int ret = sleep(my_atoi(argv[1]) * 1000);
 	while (ret != 0) {
 		ret = sleep(ret);
 	}

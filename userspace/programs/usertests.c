@@ -1771,6 +1771,20 @@ main(int argc, char *argv[])
 		exit(0);
 	}
 	close(open("usertests.ran", O_CREATE));
+	if (argc > 1) {
+		if (strcmp(argv[1], "iotest") == 0) {
+			if (argc == 3 && strcmp(argv[2], "full") == 0) {
+				linktest();
+				unlinkread();
+				createdelete();
+				linkunlink();
+			}
+			concreate();
+			bigwrite();
+			bigdir();
+			return 0;
+		}
+	}
 
 	argptest();
 	createdelete();

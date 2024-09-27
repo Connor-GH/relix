@@ -1,3 +1,4 @@
+#include "trap.h"
 #include <types.h>
 #include <defs.h>
 #include "proc.h"
@@ -165,10 +166,20 @@ syscall(void)
 
 	num = curproc->tf->eax;
 	if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-		curproc->tf->eax = syscalls[num]();
 		if (curproc->strace_mask_ptr[num] == 1) {
-			cprintf("pid %d: syscall %s returned %d\n", curproc->pid,
-							syscall_names[num], curproc->tf->eax);
+			int xticks, yticks;
+			acquire(&tickslock);
+			xticks = ticks;
+			release(&tickslock);
+			curproc->tf->eax = syscalls[num]();
+			acquire(&tickslock);
+			yticks = ticks;
+			release(&tickslock);
+
+			cprintf("pid %d: syscall %s => %d (%d ticks)\n", curproc->pid,
+							syscall_names[num], curproc->tf->eax, yticks - xticks);
+		} else {
+			curproc->tf->eax = syscalls[num]();
 		}
 	} else {
 		cprintf("%d %s: unknown sys call %d\n", curproc->pid, curproc->name, num);

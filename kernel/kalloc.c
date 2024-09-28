@@ -11,8 +11,9 @@
 #include "kalloc.h"
 #include "kernel_string.h"
 #include "console.h"
-#include "kernel/include/param.h"
+#include "param.h"
 #include "proc.h"
+#include "macros.h"
 
 void
 freerange(void *vstart, void *vend);
@@ -42,7 +43,7 @@ kinit1(void *vstart, void *vend)
 void
 kinit2(void *vstart, void *vend)
 {
-	for (int i = 0; i < NCPU; i++)
+	for (int i = 0; i < min(NCPU, ncpu); i++)
 		initlock(&kmem.lock[i], "kmem");
 	freerange(vstart, vend);
 }
@@ -103,7 +104,7 @@ kalloc(void)
 	release(&kmem.lock[id]);
 
 	if (!r) {
-		for (int i = 0; i < NCPU; i++) {
+		for (int i = 0; i < min(NCPU, ncpu); i++) {
 			acquire(&kmem.lock[i]);
 			r = kmem.freelist[i];
 			if (r)

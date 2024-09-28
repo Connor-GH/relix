@@ -25,6 +25,7 @@
 #include "bio.h"
 #include "log.h"
 #include "console.h"
+#include "stdbool.h"
 #include "drivers/lapic.h"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -170,19 +171,23 @@ bfree(int dev, uint b)
 // dev, and inum.  One must hold ip->lock in order to
 // read or write that inode's ip->valid, ip->size, ip->type, &c.
 
+#define NBUCKET NCPU
 struct {
-	struct spinlock lock;
-	struct inode inode[NINODE];
+	struct spinlock lock[NBUCKET];
+	struct inode inode[NINODE][NBUCKET];
 } icache;
 
 void
 iinit(int dev)
 {
-	int i = 0;
-
-	initlock(&icache.lock, "icache");
-	for (i = 0; i < NINODE; i++) {
-		initsleeplock(&icache.inode[i].lock, "inode");
+	for (int i = 0; i < min(NBUCKET, ncpu); i++) {
+		initlock(&icache.lock[i], "inode.bucket");
+	}
+	//initlock(&icache.lock, "icache");
+	for (int j = 0; j < min(NBUCKET, ncpu); j++) {
+		for (int i = 0; i < NINODE; i++) {
+			initsleeplock(&icache.inode[i][j].lock, "inode");
+		}
 	}
 
 	readsb(dev, &sb);
@@ -263,18 +268,38 @@ iget(uint dev, uint inum)
 {
 	struct inode *ip, *empty;
 
-	acquire(&icache.lock);
+	int hash = dev % min(NBUCKET, ncpu);
+	acquire(&icache.lock[hash]);
 
 	// Is the inode already cached?
 	empty = 0;
-	for (ip = &icache.inode[0]; ip < &icache.inode[NINODE]; ip++) {
+	for (ip = &icache.inode[0][hash]; ip < &icache.inode[NINODE][hash]; ip++) {
 		if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {
 			ip->ref++;
-			release(&icache.lock);
+			release(&icache.lock[hash]);
 			return ip;
 		}
 		if (empty == 0 && ip->ref == 0) // Remember empty slot.
 			empty = ip;
+	}
+	if (empty == 0) {
+		release(&icache.lock[hash]);
+		for (int i = 0; i < min(NBUCKET, ncpu); i++) {
+			acquire(&icache.lock[i]);
+			for (ip = &icache.inode[0][i]; ip < &icache.inode[NINODE][i];
+					 ip++) {
+				if (i == hash)
+					continue;
+				if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {
+					ip->ref++;
+					release(&icache.lock[i]);
+					return ip;
+				}
+				if (empty == 0 && ip->ref == 0) // Remember empty slot.
+					empty = ip;
+			}
+			release(&icache.lock[i]);
+		}
 	}
 
 	// Recycle an inode cache entry.
@@ -286,7 +311,7 @@ iget(uint dev, uint inum)
 	ip->inum = inum;
 	ip->ref = 1;
 	ip->valid = 0;
-	release(&icache.lock);
+	release(&icache.lock[hash]);
 
 	return ip;
 }
@@ -296,9 +321,10 @@ iget(uint dev, uint inum)
 struct inode *
 idup(struct inode *ip)
 {
-	acquire(&icache.lock);
-	ip->ref++;
-	release(&icache.lock);
+	__sync_add_and_fetch(&ip->ref, 1);
+	//acquire(&icache.lock);
+	//ip->ref++;
+	//release(&icache.lock);
 	return ip;
 }
 
@@ -359,9 +385,9 @@ iput(struct inode *ip)
 {
 	acquiresleep(&ip->lock);
 	if (ip->valid && ip->nlink == 0) {
-		acquire(&icache.lock);
+		acquire(&icache.lock[1]);
 		int r = ip->ref;
-		release(&icache.lock);
+		release(&icache.lock[1]);
 		if (r == 1) {
 			// inode has no links and no other references: truncate and free.
 			itrunc(ip);
@@ -372,9 +398,10 @@ iput(struct inode *ip)
 	}
 	releasesleep(&ip->lock);
 
-	acquire(&icache.lock);
-	ip->ref--;
-	release(&icache.lock);
+	//acquire(&icache.lock);
+	__sync_sub_and_fetch(&ip->ref, 1);
+	//ip->ref--;
+	//release(&icache.lock);
 }
 
 // Common idiom: unlock, then put.
@@ -635,10 +662,12 @@ dirlookup(struct inode *dp, const char *name, uint *poff)
 }
 
 // Write a new directory entry (name, inum) into the directory dp.
+static uint last_inum = 0;
+static uint last_offset_from_inum = 0;
 int
 dirlink(struct inode *dp, const char *name, uint inum)
 {
-	int off;
+	int off = 0;
 	struct dirent de;
 	struct inode *ip;
 
@@ -647,19 +676,28 @@ dirlink(struct inode *dp, const char *name, uint inum)
 		iput(ip);
 		return -1;
 	}
-
+	if (inum == last_inum) {
+		if (last_offset_from_inum + sizeof(de) < dp->size) {
+			off = last_offset_from_inum + sizeof(de);
+		} else {
+			off = 0;
+		}
+	}
 	// Look for an empty dirent.
-	for (off = 0; off < dp->size; off += sizeof(de)) {
+	for (; off < dp->size; off += sizeof(de)) {
 		if (readi(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
 			panic("dirlink read");
-		if (de.inum == 0)
+		if (de.inum == 0) {
+			last_offset_from_inum = off;
 			break;
+		}
 	}
 
 	strncpy(de.name, name, DIRSIZ);
 	de.inum = inum;
 	if (writei(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
 		panic("dirlink");
+	last_inum = inum;
 
 	return 0;
 }

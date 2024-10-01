@@ -2,6 +2,7 @@
 // Search memory for MP description structures.
 // http://developer.intel.com/design/pentium/datashts/24201606.pdf
 
+#include <stdint.h>
 #include <types.h>
 #include "drivers/memlayout.h"
 #include "drivers/lapic.h"

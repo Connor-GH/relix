@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <types.h>
 #include "drivers/mmu.h"
 #include "drivers/lapic.h"

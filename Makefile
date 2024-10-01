@@ -78,7 +78,7 @@ endif
 
 WFLAGS = -Wnonnull
 
-CFLAGS = -std=gnu11 -pedantic -fno-pic -static -fno-builtin -ffreestanding \
+CFLAGS = -std=gnu11 -pipe -pedantic -fno-pic -static -fno-builtin -ffreestanding \
 				 -fno-strict-aliasing -nostdlib -O0 -Wall -ggdb -m32 -Wno-error -fno-omit-frame-pointer \
 				 -nostdinc -fno-builtin $(ARCHNOFLAGS) $(WNOFLAGS) $(WFLAGS)
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)

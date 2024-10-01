@@ -9,6 +9,7 @@
 // routines.	The (higher-level) system call implementations
 // are in sysfile.c.
 
+#include "sleeplock.h"
 #include <types.h>
 #include <stat.h>
 #include <dirent.h>

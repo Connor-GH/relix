@@ -7,8 +7,10 @@
 #include "proc.h"
 #include "kalloc.h"
 #include "console.h"
-#include "kernel_string.h"
 #include "vm.h"
+#include "fs.h"
+#include "spinlock.h"
+#include "kernel_string.h"
 
 extern char data[]; // defined by kernel.ld
 pde_t *kpgdir; // for use in scheduler()

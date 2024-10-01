@@ -1,3 +1,4 @@
+#include "types.h"
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <kernel/include/param.h>
@@ -11,6 +12,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
+#include <stddef.h>
 
 char buf[8192];
 char name[3];

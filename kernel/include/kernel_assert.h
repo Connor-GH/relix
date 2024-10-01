@@ -1,6 +1,4 @@
 #pragma once
-#include <types.h>
-#include <console.h>
 
 void
 kernel_assert_fail(const char *assertion, const char *file, int lineno,

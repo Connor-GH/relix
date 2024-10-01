@@ -1,3 +1,4 @@
+#include "types.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -5,6 +6,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 static uint global_idx = 0;
 

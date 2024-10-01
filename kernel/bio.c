@@ -13,18 +13,14 @@
 // * Only one process at a time can use a buffer,
 //     so do not keep them longer than necessary.
 
+#include "compiler_attributes.h"
 #include "types.h"
 #include "param.h"
 #include "spinlock.h"
 #include "sleeplock.h"
 #include "console.h"
-#include "x86.h"
-#include "defs.h"
-#include "trap.h"
-#include "fs.h"
 #include "buf.h"
 #include "ide.h"
-#include "mp.h"
 #include "macros.h"
 
 extern int ncpu;

@@ -2,6 +2,7 @@
 
 #include "param.h"
 #include "proc.h"
+#include "sleeplock.h"
 #include "x86.h"
 #include "traps.h"
 #include "spinlock.h"

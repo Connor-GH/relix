@@ -13,16 +13,17 @@
 #include <time.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <stddef.h>
 #include "param.h"
 #include "proc.h"
 #include "fs.h"
 #include "file.h"
-#include "kernel_string.h"
 #include "console.h"
 #include "log.h"
 #include "syscall.h"
 #include "pipe.h"
 #include "exec.h"
+#include "kernel_string.h"
 #include "drivers/lapic.h"
 #include "vm.h"
 

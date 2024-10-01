@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <stddef.h>
 
 int
 usertouid(const char *user)

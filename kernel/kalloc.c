@@ -2,18 +2,18 @@
 // memory for user processes, kernel stacks, page table pages,
 // and pipe buffers. Allocates 4096-byte pages.
 
-#include "x86.h"
-#include <stdlib.h>
 #include <types.h>
+#include <stdint.h>
+#include "compiler_attributes.h"
 #include "drivers/memlayout.h"
 #include "drivers/mmu.h"
 #include "spinlock.h"
 #include "kalloc.h"
-#include "kernel_string.h"
 #include "console.h"
 #include "param.h"
 #include "proc.h"
 #include "macros.h"
+#include "kernel_string.h"
 
 void
 freerange(void *vstart, void *vend);

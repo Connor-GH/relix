@@ -1,3 +1,4 @@
+#include "console.h"
 #include <kernel_assert.h>
 
 void

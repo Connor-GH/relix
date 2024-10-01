@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <stddef.h>
 
 char *argv[] = { "/bin/sh", 0 };
 

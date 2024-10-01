@@ -1,3 +1,6 @@
+#include "stat.h"
+#include "types.h"
+#include <errno.h>
 #include <sys/stat.h>
 #include <ctype.h>
 #include <dirent.h>
@@ -8,6 +11,7 @@
 #include <kernel/include/x86.h>
 #include <string.h>
 #include <unistd.h>
+#include <stddef.h>
 
 int errno;
 

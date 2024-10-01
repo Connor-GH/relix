@@ -1,7 +1,6 @@
 #pragma once
 #include <types.h>
 #include <stdint.h>
-#define NULL ((void *)0)
 
 #ifndef __KERNEL__
 __attribute__((malloc)) void *malloc(uint);

@@ -2,6 +2,7 @@
 // File descriptors
 //
 
+#include "fs.h"
 #include <errno.h>
 #include "param.h"
 #include "spinlock.h"

@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
+#include <stddef.h>
 
 // Parsed command representation
 #define EXEC 1

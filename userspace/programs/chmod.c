@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <stdlib.h> // for atoi_base (nonstandard)
 // TODO atoi_base is pretty much strol

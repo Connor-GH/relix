@@ -1,3 +1,4 @@
+#include "spinlock.h"
 #include "trap.h"
 #include <types.h>
 #include <defs.h>

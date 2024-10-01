@@ -1,6 +1,8 @@
 #pragma once
 // Per-CPU state
+#include "fs.h"
 #include "param.h"
+#include "spinlock.h"
 #include "syscall.h"
 #include <types.h>
 #include "../drivers/mmu.h"

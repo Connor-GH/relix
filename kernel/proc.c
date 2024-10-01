@@ -1,6 +1,7 @@
 #include <types.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <stddef.h>
 #include "drivers/mmu.h"
 #include "drivers/lapic.h"
 #include "defs.h"
@@ -15,6 +16,8 @@
 #include "log.h"
 #include "swtch.h"
 #include "syscall.h"
+#include "file.h"
+#include "fs.h"
 #include "compiler_attributes.h"
 
 #define W_EXITCODE(ret, signal) ((ret) << 8 | (signal))

@@ -1,5 +1,4 @@
 #pragma once
-#include <types.h>
 void
 uartinit(void);
 void

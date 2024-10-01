@@ -1,6 +1,6 @@
+#include <stdint.h>
 #include <types.h>
 #include <stat.h>
-#include <defs.h>
 #include "param.h"
 #include "proc.h"
 #include "x86.h"

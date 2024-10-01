@@ -1,6 +1,7 @@
 // Sleeping locks
 
 #include "proc.h"
+#include "spinlock.h"
 #include "sleeplock.h"
 
 void

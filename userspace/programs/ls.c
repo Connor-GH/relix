@@ -1,5 +1,6 @@
+#include "stat.h"
+#include "types.h"
 #include <sys/stat.h>
-#include <kernel/include/fs.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>

@@ -4,9 +4,11 @@ ULIB_OBJ = $(ULIB:$(UDIR)/%.c=$(BIN)/%.o)
 ULIB_ASM = $(wildcard $(UDIR)/*.S)
 ULIB_ASM_OBJ = $(ULIB_ASM:$(UDIR)/%.S=$(BIN)/%.o)
 
+USER_EXTRAS = -D__USER__
+
 ULIB_STATIC = $(BIN)/ulib.a
 
-UCFLAGS = -fno-lto -I$(UDIR)/include -I. $(IVARS)
+UCFLAGS = -fno-lto $(USER_EXTRAS) -I$(UDIR)/include -I. $(IVARS)
 ifneq ($(RELEASE),)
 	UCFLAGS += -flto
 endif

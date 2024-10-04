@@ -1,11 +1,13 @@
 module kobject;
 import inherit : inherit;
+import unique_ptr;
+import memory;
 import optional;
 import libkant;
 import traits;
 import console;
 import kernel_string;
-import kalloc : kalloc, kfree;
+import kalloc : kmalloc, kfree;
 import kernel_assert : kernel_assert;
 
 __gshared:
@@ -82,9 +84,9 @@ struct KArray(T) {
 	this(T...)(T args) {
 		static assert(args.length >= 1);
 		this.size = args.length;
-		data = cast(typeof(data))kalloc();
+		data = cast(typeof(data))kmalloc(args.length * args[0].sizeof);
 		if (data is null)
-			panic("kalloc() failed");
+			panic("kmalloc() failed");
 
 		foreach (size_t i, arg; args) {
 			this.data[i] = arg;
@@ -106,6 +108,8 @@ struct KArray(T) {
 			panic("index too large");
 		return Some!T(data[index]);
 	}
+
+	Option!T opIndex(size_t index) => get(index);
 
 	bool equals(KArray other) {
 		if (this.size != other.size)
@@ -150,16 +154,18 @@ extern(C) int example_kernel_binding() {
 	//Option!(KNonNull!(char *)) i_am_null = Some(KNonNull!(char *)(cast(char *)null));
 
 	int myfunc(int a) => a * a;
-	auto c = KNonNull!(char *)(kalloc());
+
+	auto c = KNonNull!(void *)(kmalloc(1));
 	scope(exit) kfree(c.release_ptr().unwrap());
-	strlcpy_nostrlen(c.release_ptr().unwrap(), "Data", 4096, strlen("Data")+1);
 
+	auto d = make_unique!(KArray!int)(3, 4, 5);
+	kernel_assert(isPointer!(typeof(d.get())) && ((*d.get())[1]).unwrap() == 4);
 
-	//kernel_assert(__equals!(char *, char *)(c.release_ptr().unwrap(), "Data"));
+	strlcpy_nostrlen(cast(char *)c.release_ptr().unwrap(), "Data", 4096, strlen("Data")+1);
+
 
 	kernel_assert(ka.toString() == "KArray");
-	kernel_assert(ka.get(1).unwrap() == 4);
-
+	kernel_assert(ka[1].unwrap() == 4);
 	kernel_assert(kd.toString() == "KDevice");
 	kant!(myfunc)(9);
 	kwriteln(Diagnostic.Note, "Dlang kernel systems up and running.");

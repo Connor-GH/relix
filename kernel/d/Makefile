@@ -4,7 +4,7 @@ include kernel/d/bindings/Makefile
 KERNEL_D_SRC = $(wildcard $(KERNEL_D_DIR)/*.d)
 KERNEL_D_OBJ = $(KERNEL_D_SRC:$(KERNEL_D_DIR)/%.d=$(BIN)/%_d.o)
 
-ifneq ($(DC),dmd)
+ifneq ($(DC_type),dmd)
 	DASH_D = -d
 else
 	DASH_D =

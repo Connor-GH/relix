@@ -2,6 +2,7 @@
 // memory for user processes, kernel stacks, page table pages,
 // and pipe buffers. Allocates 4096-byte pages.
 
+#include <stdlib.h>
 #include <types.h>
 #include <stdint.h>
 #include "compiler_attributes.h"
@@ -13,6 +14,7 @@
 #include "param.h"
 #include "proc.h"
 #include "macros.h"
+#include <stddef.h>
 #include "kernel_string.h"
 
 void
@@ -55,22 +57,22 @@ freerange(void *vstart, void *vend)
 	char *p;
 	p = (char *)PGROUNDUP((uint)vstart);
 	for (; p + PGSIZE <= (char *)vend; p += PGSIZE)
-		kfree(p);
+		kpage_free(p);
 	popcli();
 }
 
 // Free the page of physical memory pointed at by v,
 // which normally should have been returned by a
-// call to kalloc().  (The exception is when
+// call to kpage_alloc().	(The exception is when
 // initializing the allocator; see kinit above.)
-__nonnull(1) void kfree(char *v)
+__nonnull(1) void kpage_free(char *v)
 {
 	pushcli();
 	struct run *r;
 	int id = my_cpu_id();
 
 	if ((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
-		panic("kfree");
+		panic("kpage_free");
 
 	// Fill with junk to catch dangling refs.
 	memset(v, 1, PGSIZE);
@@ -89,7 +91,7 @@ __nonnull(1) void kfree(char *v)
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
 char *
-kalloc(void)
+kpage_alloc(void)
 {
 	pushcli();
 	int id = my_cpu_id();
@@ -121,10 +123,99 @@ kalloc(void)
 	popcli();
 	return (char *)r;
 }
-__attribute__((malloc)) __nonnull(1) void *
-krealloc(char *ptr, size_t size)
+__attribute__((malloc)) __nonnull(1) void *krealloc(char *ptr, size_t size)
 {
-	if (ptr) kfree(ptr);
-	ptr = kalloc();
+	if (ptr)
+		kpage_free(ptr);
+	ptr = kpage_alloc();
 	return ptr;
+}
+
+// Memory allocator by Kernighan and Ritchie,
+// The C programming Language, 2nd ed.  Section 8.7.
+
+typedef long Align;
+
+union header {
+	struct {
+		union header *ptr;
+		uint size;
+	} s;
+	Align x;
+};
+
+typedef union header Header;
+
+static Header base;
+static Header *freep;
+
+void
+kfree(void *ap)
+{
+	Header *bp, *p;
+
+	bp = (Header *)ap - 1;
+	for (p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
+		if (p >= p->s.ptr && (bp > p || bp < p->s.ptr))
+			break;
+
+	if (bp + bp->s.size == p->s.ptr) {
+		bp->s.size += p->s.ptr->s.size;
+		bp->s.ptr = p->s.ptr->s.ptr;
+	} else
+		bp->s.ptr = p->s.ptr;
+	if (p + p->s.size == bp) {
+		p->s.size += bp->s.size;
+		p->s.ptr = bp->s.ptr;
+	} else
+		p->s.ptr = bp;
+	freep = p;
+}
+
+static Header *
+morecore(uint nu)
+{
+	char *p;
+	Header *hp;
+
+	p = kpage_alloc();
+	if (p == 0)
+		return 0;
+	hp = (Header *)p;
+	hp->s.size = 4096 / sizeof(Header); // kalloc always allocates 4096 bytes
+	kfree((void *)(hp + 1));
+	return freep;
+}
+
+void *
+kmalloc(uint nbytes)
+{
+	Header *p, *prevp;
+	uint nunits;
+
+	if (nbytes > 4096) {
+		panic("kmalloc: requested more than allowed in a single allocation");
+	}
+
+	nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
+	if ((prevp = freep) == 0) {
+		base.s.ptr = freep = prevp = &base;
+		base.s.size = 0;
+	}
+	for (p = prevp->s.ptr;; prevp = p, p = p->s.ptr) {
+		if (p->s.size >= nunits) {
+			if (p->s.size == nunits)
+				prevp->s.ptr = p->s.ptr;
+			else {
+				p->s.size -= nunits;
+				p += p->s.size;
+				p->s.size = nunits;
+			}
+			freep = prevp;
+			return (void *)(p + 1);
+		}
+		if (p == freep)
+			if ((p = morecore(nunits)) == 0)
+				return 0;
+	}
 }

@@ -69,8 +69,14 @@ endif
 DC ?= dmd
 D_PREVIEWS = -preview=systemVariables,in,dip1000,dip1021
 DFLAGS ?= -betterC -O -m32 $(EXTRA_DFLAGS)
-ifneq ($(DC),dmd)
-	DFLAGS += -nodefaultlib -mattr=-avx,-sse
+
+ifeq ($(shell $(DC) --version | sed -n 1p | awk '{print $$1}'),DMD64)
+	DC_type = dmd
+else
+	DC_type = ldc2
+endif
+ifneq ($(DC_type),dmd)
+	DFLAGS += -defaultlib -mattr=-avx,-sse
 else
 	DFLAGS += -defaultlib=none
 endif

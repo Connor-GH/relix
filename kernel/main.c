@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <string.h>
 #include <types.h>
 #include "drivers/memlayout.h"
@@ -33,6 +34,7 @@ extern char end[]; // first address after kernel loaded from ELF file
 // Allocate a real stack and switch to it, first
 // doing some setup required for memory allocator to work.
 extern int example_kernel_binding(void);
+extern int example_rust_binding(uint32_t, uint32_t);
 int
 main(void)
 {
@@ -55,6 +57,7 @@ main(void)
 	fileinit(); // file table
 	ideinit(); // disk
 	example_kernel_binding();
+	example_rust_binding(1, 2);
 	startothers(); // start other processors
 	kinit2(P2V(4 * 1024 * 1024), P2V(PHYSTOP)); // must come after startothers()
 	userinit(); // first user process

@@ -1,0 +1,40 @@
+{
+  "arch": "x86",
+  "cpu": "pentium4",
+  "crt-objects-fallback": "false",
+  "crt-static-respected": true,
+  "data-layout": "e-m:e-p:32:32-p270:32:32-p271:32:32-p272:64:64-i128:128-f64:32:64-f80:32-n8:16:32-S128",
+  "dynamic-linking": false,
+  "is-builtin": false,
+  "linker-flavor": "gnu-lld",
+  "llvm-target": "i686-unknown-none-elf",
+  "max-atomic-width": 64,
+  "metadata": {
+    "description": "32-bit baremetal x86",
+    "host_tools": true,
+    "std": false,
+    "tier": 2
+  },
+  "position-independent-executables": true,
+	"panic-strategy": "abort",
+  "pre-link-args": {
+    "gnu-lld": [
+      "-m32"
+    ],
+    "gnu-lld-cc": [
+      "-m32"
+    ]
+  },
+  "relro-level": "full",
+  "stack-probes": {
+    "kind": "inline"
+  },
+  "supported-sanitizers": [
+    "kcfi",
+		"kernel-address"
+  ],
+  "target-family": [
+    "unix"
+  ],
+  "target-pointer-width": "32"
+}

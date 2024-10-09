@@ -1,6 +1,3 @@
-#![no_std]
-#![feature(c_variadic)]
-
 use core::panic::PanicInfo;
 pub mod console;
 pub mod kalloc;

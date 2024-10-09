@@ -1,5 +1,5 @@
 #![no_std]
-#![feature(c_size_t)]
+#![feature(c_size_t, c_variadic)]
 
 mod kernel_binding;
 use kernel_binding::console;

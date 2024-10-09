@@ -88,7 +88,7 @@ CFLAGS = -std=gnu11 -pipe -pedantic -fno-pic -static -fno-builtin -ffreestanding
 				 -fno-strict-aliasing -nostdlib -O0 -Wall -ggdb -m32 -Wno-error -fno-omit-frame-pointer \
 				 -nostdinc -fno-builtin $(ARCHNOFLAGS) $(WNOFLAGS) $(WFLAGS)
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
-RUSTFLAGS = -Copt-level=0 -Ccode-model=kernel -Cno-redzone -Cincremental=true
+RUSTFLAGS = -Copt-level=0 -Ccode-model=kernel -Cno-redzone -Cincremental=true -Zthreads=2
 ifneq ($(RELEASE),)
 	CFLAGS += -O2
 	CARGO_RELEASE = --release

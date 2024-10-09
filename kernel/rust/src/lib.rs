@@ -1,17 +1,10 @@
 #![no_std]
 #![feature(c_size_t)]
 
-use core::{
-    ffi::{c_char, c_size_t, c_void, CStr},
-    panic::PanicInfo,
-};
-
-unsafe extern "C" {
-    pub fn cprintf(fmt: *const c_char, ...) -> c_void;
-    pub fn panic(fmt: *const c_char) -> !;
-    pub fn kmalloc(size: c_size_t) -> *mut c_void;
-    pub fn kfree(ptr: *mut c_void) -> c_void;
-}
+mod kernel_binding;
+use kernel_binding::console;
+use crate::console::cprintf;
+use core::ffi::{c_char, CStr};
 
 fn to_cstr(s: &CStr) -> *const c_char {
     s.as_ptr()
@@ -54,11 +47,4 @@ pub extern "C" fn example_rust_binding(left: u32, right: u32) -> u32 {
         )
     };
     left + right
-}
-
-#[panic_handler]
-fn rs_panic(info: &PanicInfo) -> ! {
-    unsafe {
-        panic(c"rust panic".as_ptr());
-    }
 }

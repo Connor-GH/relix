@@ -2,9 +2,18 @@ module optional;
 
 @safe:
 struct Option(T) {
-	private T data;
+	private T data = void;
+	private bool is_none = true;
+	@disable this();
 	this(T data) {
 		this.data = data;
+		is_none = false;
+	}
+	this(typeof(null)) {
+		is_none = true;
+	}
+	bool is_ok() {
+		return !this.is_none;
 	}
 }
 
@@ -13,11 +22,9 @@ Option!T Some(T)(T value) {
 }
 
 Option!T None(T)() {
-	return Option!T(T.init);
+	return Option!T(null);
 }
 
-T unwrap(T)(Option!T o) {
-	static if (!__traits(isArithmetic, o))
-		assert(o.data != T.init);
+T __unwrap(T)(Option!T o) {
 	return o.data;
 }

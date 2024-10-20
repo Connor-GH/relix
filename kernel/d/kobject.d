@@ -2,7 +2,7 @@ module kobject;
 import inherit : inherit;
 import unique_ptr;
 import memory;
-import optional;
+import kernel_optional;
 import libkant;
 import traits;
 import console;

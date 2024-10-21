@@ -76,7 +76,7 @@ else
 	DC_type = ldc2
 endif
 ifneq ($(DC_type),dmd)
-	DFLAGS += -defaultlib -mattr=-avx,-sse
+	DFLAGS += -defaultlib -mattr=-avx,-sse -mcpu=i686
 else
 	DFLAGS += -defaultlib=none
 endif

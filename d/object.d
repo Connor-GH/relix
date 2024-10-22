@@ -11,9 +11,6 @@ version (__KERNEL__) {
 } else {
 	import userspace.d.bindings.string_;
 }
-// define dummy methods until the assert bug is fixed in dmd
-extern(C) void __assert(const char *, const char *, int, const char*) {}
-extern(C) void __assert_fail(const char *, const char *, int, const char*) {}
 
 @safe:
 bool __equals(T1, T2)(T1[] lhs, T2[] rhs) {

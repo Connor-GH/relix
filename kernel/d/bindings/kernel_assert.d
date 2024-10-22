@@ -1,6 +1,17 @@
 module kernel_assert;
 extern(C) @nogc:
 import console;
+import compiler_info;
+	// get around assert bug that existed in betterC from versions <2.110
+static if (vendor == Vendor.digitalMars && version_major == 2 && version_minor < 110) {
+	static assert(false, "You need to use DMD >= 2.110.0-beta.1");
+}
+
+
+// used by LDC2
+extern(C) void __assert_fail(const char *expression, const char *filename, int line, const char *func) {
+	kernel_assert_fail(expression, filename, line, func);
+}
 @trusted noreturn
 kernel_assert_fail(const char *assertion, const char *file, int lineno,
 									const char *func);

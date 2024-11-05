@@ -1,6 +1,6 @@
 #include "spinlock.h"
 #include "trap.h"
-#include <types.h>
+#include <stdint.h>
 #include <defs.h>
 #include "proc.h"
 #include "x86.h"
@@ -15,7 +15,7 @@
 
 // Fetch the int at addr from the current process.
 int
-fetchint(uint addr, int *ip)
+fetchint(uint32_t addr, int *ip)
 {
 	struct proc *curproc = myproc();
 
@@ -29,7 +29,7 @@ fetchint(uint addr, int *ip)
 // Doesn't actually copy the string - just sets *pp to point at it.
 // Returns length of string, not including nul.
 int
-fetchstr(uint addr, char **pp)
+fetchstr(uint32_t addr, char **pp)
 {
 	char *s, *ep;
 	struct proc *curproc = myproc();
@@ -63,7 +63,8 @@ argptr(int n, char **pp, int size)
 
 	if (argint(n, &i) < 0)
 		return -1;
-	if (size < 0 || (uint)i >= curproc->sz || (uint)i + size > curproc->sz)
+	if (size < 0 || (uint32_t)i >= curproc->sz ||
+			(uint32_t)i + size > curproc->sz)
 		return -1;
 	*pp = (char *)i;
 	return 0;

@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <string.h>
-#include <types.h>
+#include <stdint.h>
 #include "drivers/memlayout.h"
 #include "drivers/acpi.h"
 #include "drivers/lapic.h"
@@ -27,13 +27,14 @@ static void
 startothers(void);
 static void
 mpmain(void) __attribute__((noreturn));
-extern pde_t *kpgdir;
+extern uint32_t *kpgdir;
 extern char end[]; // first address after kernel loaded from ELF file
 
 // Bootstrap processor starts running C code here.
 // Allocate a real stack and switch to it, first
 // doing some setup required for memory allocator to work.
-extern int example_kernel_binding(void);
+extern int
+example_kernel_binding(void);
 int
 main(void)
 {
@@ -82,7 +83,7 @@ mpmain(void)
 	scheduler(); // start running processes
 }
 
-extern pde_t entrypgdir[]; // For entry.S
+extern uint32_t entrypgdir[]; // For entry.S
 
 // Start the non-boot (AP) processors.
 static void
@@ -92,8 +93,8 @@ startothers(void)
   * the value of this var is determined by the linker. It needs to be the full directory.
   * _binary_[file_path]_start
   * */
-	extern uchar _binary_bin_entryother_start[], _binary_bin_entryother_size[];
-	uchar *code;
+	extern uint8_t _binary_bin_entryother_start[], _binary_bin_entryother_size[];
+	uint8_t *code;
 	struct cpu *c;
 	char *stack;
 
@@ -102,7 +103,7 @@ startothers(void)
 	// _binary_entryother_start.
 	code = P2V(0x7000);
 	memmove(code, _binary_bin_entryother_start,
-					(uint)_binary_bin_entryother_size);
+					(uint32_t)_binary_bin_entryother_size);
 
 	for (c = cpus; c < cpus + ncpu; c++) {
 		if (c == mycpu()) // We've started already.
@@ -129,7 +130,7 @@ startothers(void)
 // hence the __aligned__ attribute.
 // PTE_PS in a page directory entry enables 4Mbyte pages.
 
-__attribute__((__aligned__(PGSIZE))) pde_t entrypgdir[NPDENTRIES] = {
+__attribute__((__aligned__(PGSIZE))) uint32_t entrypgdir[NPDENTRIES] = {
 	// Map VA's [0, 4MB) to PA's [0, 4MB)
 	[0] = (0) | PTE_P | PTE_W | PTE_PS,
 	PTE_PS,

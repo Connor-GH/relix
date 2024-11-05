@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <types.h>
+#include <stdint.h>
 #include <stat.h>
 #include "param.h"
 #include "proc.h"
@@ -16,8 +16,8 @@
 // count is argc/envc
 // vec is argv/envp
 static int
-push_user_stack(uint *count, char **vec, uint *ustack, pde_t *pgdir, uint *sp,
-								uint idx)
+push_user_stack(uint32_t *count, char **vec, uint32_t *ustack, uint32_t *pgdir,
+								uint32_t *sp, uint32_t idx)
 {
 	for (*count = 0; vec[*count]; (*count)++) {
 		if (*count >= MAXARG)
@@ -43,11 +43,11 @@ __nonnull(1, 2) int exec(char *path, char **argv)
 {
 	char *s, *last;
 	int i, off;
-	uint argc = 0, sz, sp, ustack[3 + MAXARG + MAXENV + 1] = {};
+	uint32_t argc = 0, sz, sp, ustack[3 + MAXARG + MAXENV + 1] = {};
 	struct elfhdr elf;
 	struct inode *ip;
 	struct proghdr ph;
-	pde_t *pgdir, *oldpgdir;
+	uint32_t *pgdir, *oldpgdir;
 	struct proc *curproc = myproc();
 
 	begin_op();
@@ -140,13 +140,13 @@ ok:
 	* ^ we need argv to point to this segment of memory
 	* 5 = envp_data ...
 	*/
-	const uint argv_size = argc + 1;
+	const uint32_t argv_size = argc + 1;
 
 	ustack[0] = 0xffffffff; // fake return PC
 	ustack[1] = argc;
 	ustack[2] = sp - (argv_size) * 4; // argv pointer
 	// ustack[3 .. 3 + argv_size] is argv arguments
-	uint total_mainargs_size = (3 + argv_size) * sizeof(uintptr_t);
+	uint32_t total_mainargs_size = (3 + argv_size) * sizeof(uintptr_t);
 	sp -= total_mainargs_size;
 	if (copyout(pgdir, sp, ustack, total_mainargs_size) < 0)
 		goto bad;

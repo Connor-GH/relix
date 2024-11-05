@@ -25,7 +25,8 @@ floor_log2(size_t n)
 }
 
 // so satisfying.
-size_t ceil_log2(size_t n)
+size_t
+ceil_log2(size_t n)
 {
 	return !!n * floor_log2(n - 1) + !!n;
 }

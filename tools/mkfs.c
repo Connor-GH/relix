@@ -5,10 +5,10 @@
 #include <fcntl.h>
 #include <assert.h>
 #include <time.h>
+#include <stdint.h>
 #define SYSROOT "sysroot/"
 
 #define stat xv6_stat // avoid clash with host struct stat
-#include "../include/types.h"
 #define USE_HOST_TOOLS
 #include "../kernel/include/fs.h"
 #include "../include/stat.h"
@@ -29,49 +29,48 @@
 // Disk layout:
 // [ boot block | sb block | log | inode blocks | free bit map | data blocks ]
 
-static int nbitmap = FSSIZE / (BSIZE * 8) + 1;
-static int ninodeblocks = NINODES / IPB + 1;
-static int nlog = LOGSIZE;
-static int nmeta; // Number of meta blocks (boot, sb, nlog, inode, bitmap)
-static int nblocks; // Number of data blocks
+static uint32_t nbitmap = FSSIZE / (BSIZE * 8) + 1;
+static uint32_t ninodeblocks = NINODES / IPB + 1;
+static uint32_t nlog = LOGSIZE;
+static uint32_t nmeta; // Number of meta blocks (boot, sb, nlog, inode, bitmap)
+static uint32_t nblocks; // Number of data blocks
 
-static int fsfd;
+static uint32_t fsfd;
 static struct superblock sb;
 static char zeroes[BSIZE];
-static uint freeinode = 1;
-static uint freeblock;
+static uint32_t freeinode = 1;
+static uint32_t freeblock;
 
+static void balloc(int32_t);
 static void
-balloc(int);
+wsect(uint32_t, void *);
 static void
-wsect(uint, void *);
+winode(uint32_t, struct dinode *);
 static void
-winode(uint, struct dinode *);
+rinode(uint32_t inum, struct dinode *ip);
 static void
-rinode(uint inum, struct dinode *ip);
+rsect(uint32_t sec, void *buf);
+static uint32_t
+ialloc(uint32_t type);
 static void
-rsect(uint sec, void *buf);
-static uint
-ialloc(uint type);
-static void
-iappend(uint inum, void *p, int n);
+iappend(uint32_t inum, void *p, uint32_t n);
 
 // convert to intel byte order
-static ushort
-xshort(ushort x)
+static uint16_t
+xshort(uint16_t x)
 {
-	ushort y;
-	uchar *a = (uchar *)&y;
+	uint16_t y;
+	uint8_t *a = (uint8_t *)&y;
 	a[0] = x;
 	a[1] = x >> 8;
 	return y;
 }
 
-static uint
-xint(uint x)
+static uint32_t
+xint(uint32_t x)
 {
-	uint y;
-	uchar *a = (uchar *)&y;
+	uint32_t y;
+	uint8_t *a = (uint8_t *)&y;
 	a[0] = x;
 	a[1] = x >> 8;
 	a[2] = x >> 16;
@@ -79,12 +78,12 @@ xint(uint x)
 	return y;
 }
 
-static uint rootino;
-static uint etcino;
-static uint binino;
+static uint32_t rootino;
+static uint32_t etcino;
+static uint32_t binino;
 
 static void
-make_file(uint currentino, const char *name, uint parentino)
+make_file(uint32_t currentino, const char *name, uint32_t parentino)
 {
 	struct dirent de;
 	bzero(&de, sizeof(de));
@@ -93,10 +92,10 @@ make_file(uint currentino, const char *name, uint parentino)
 	iappend(parentino == 0 ? currentino : parentino, &de, sizeof(de));
 }
 
-static uint
-make_dir(uint parentino, const char *name)
+static uint32_t
+make_dir(uint32_t parentino, const char *name)
 {
-	uint currentino = ialloc(S_IFDIR | S_IAUSR);
+	uint32_t currentino = ialloc(S_IFDIR | S_IAUSR);
 
 	// creates dir
 	make_file(currentino, name, parentino);
@@ -114,10 +113,10 @@ makedirs(void)
 }
 
 int
-main(int argc, char *argv[])
+main(int32_t argc, char *argv[])
 {
-	int i, cc, fd;
-	uint ino, inum, off;
+	uint32_t i, cc, fd;
+	uint32_t ino, inum, off;
 	struct dirent de;
 	char buf[BSIZE];
 	struct dinode din;
@@ -194,9 +193,9 @@ main(int argc, char *argv[])
 		// build operating system from trying to execute them
 		// in place of system binaries like rm and cat.
 		// ../bin/_rm => ../bin/rm
-		int k = 0;
+		uint32_t k = 0;
 		char *str = malloc(FILENAME_MAX);
-		for (int j = 0; j < strlen(argv[i]); j++) {
+		for (int32_t j = 0; j < strlen(argv[i]); j++) {
 			if (argv[i][j] != '_') {
 				str[k] = argv[i][j];
 				k++;
@@ -250,7 +249,7 @@ main(int argc, char *argv[])
 }
 
 void
-wsect(uint sec, void *buf)
+wsect(uint32_t sec, void *buf)
 {
 	if (lseek(fsfd, sec * BSIZE, 0) != sec * BSIZE) {
 		perror("lseek");
@@ -263,10 +262,10 @@ wsect(uint sec, void *buf)
 }
 
 static void
-winode(uint inum, struct dinode *ip)
+winode(uint32_t inum, struct dinode *ip)
 {
 	char buf[BSIZE];
-	uint bn;
+	uint32_t bn;
 	struct dinode *dip;
 
 	bn = IBLOCK(inum, sb);
@@ -277,10 +276,10 @@ winode(uint inum, struct dinode *ip)
 }
 
 static void
-rinode(uint inum, struct dinode *ip)
+rinode(uint32_t inum, struct dinode *ip)
 {
 	char buf[BSIZE];
-	uint bn;
+	uint32_t bn;
 	struct dinode *dip;
 
 	bn = IBLOCK(inum, sb);
@@ -290,7 +289,7 @@ rinode(uint inum, struct dinode *ip)
 }
 
 static void
-rsect(uint sec, void *buf)
+rsect(uint32_t sec, void *buf)
 {
 	if (lseek(fsfd, sec * BSIZE, 0) != sec * BSIZE) {
 		perror("lseek");
@@ -302,10 +301,10 @@ rsect(uint sec, void *buf)
 	}
 }
 
-static uint
-ialloc(uint mode)
+static uint32_t
+ialloc(uint32_t mode)
 {
-	uint inum = freeinode++;
+	uint32_t inum = freeinode++;
 	struct dinode din;
 
 	bzero(&din, sizeof(din));
@@ -322,10 +321,10 @@ ialloc(uint mode)
 }
 
 static void
-balloc(int used)
+balloc(int32_t used)
 {
-	uchar buf[BSIZE];
-	int i;
+	uint8_t buf[BSIZE];
+	uint32_t i;
 
 	printf("balloc: first %d blocks have been allocated\n", used);
 	assert(used < BSIZE * 8);
@@ -340,15 +339,15 @@ balloc(int used)
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 static void
-iappend(uint inum, void *xp, int n)
+iappend(uint32_t inum, void *xp, uint32_t n)
 {
 	char *p = (char *)xp;
-	uint fbn, off, n1;
+	uint32_t fbn, off, n1;
 	struct dinode din;
 	char buf[BSIZE];
-	uint indirect[NINDIRECT];
-	uint double_indirect[NINDIRECT];
-	uint x;
+	uint32_t indirect[NINDIRECT];
+	uint32_t double_indirect[NINDIRECT];
+	uint32_t x;
 
 	rinode(inum, &din);
 	off = xint(din.size);

@@ -1,5 +1,4 @@
 #include "stat.h"
-#include "types.h"
 #include <errno.h>
 #include <sys/stat.h>
 #include <ctype.h>
@@ -42,10 +41,10 @@ strcmp(const char *p, const char *q)
 {
 	while (*p && *p == *q)
 		p++, q++;
-	return (uchar)*p - (uchar)*q;
+	return (uint8_t)*p - (uint8_t)*q;
 }
 
-uint
+uint32_t
 strlen(const char *s)
 {
 	int n;
@@ -56,7 +55,7 @@ strlen(const char *s)
 }
 
 void *
-memset(void *dst, int c, uint n)
+memset(void *dst, int c, uint32_t n)
 {
 	stosb(dst, c, n);
 	return dst;
@@ -168,7 +167,7 @@ atoi(const char *s)
 	return n;
 }
 int
-atoi_base(const char *s, uint base)
+atoi_base(const char *s, uint32_t base)
 {
 	int n = 0;
 
@@ -190,7 +189,7 @@ atoi_base(const char *s, uint base)
 }
 
 void *
-memmove(void *vdst, const void *vsrc, uint n)
+memmove(void *vdst, const void *vsrc, uint32_t n)
 {
 	char *dst;
 	const char *src;
@@ -203,7 +202,7 @@ memmove(void *vdst, const void *vsrc, uint n)
 }
 
 void *
-memcpy(void *dst, const void *src, uint n)
+memcpy(void *dst, const void *src, uint32_t n)
 {
 	return memmove(dst, src, n);
 }

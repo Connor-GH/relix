@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef USE_HOST_TOOLS
-#include <types.h>
+#include <stdint.h>
 /* fields do not begin with "st_" if they are nonstandard. */
 //
 // +--------->+-------+
@@ -56,15 +56,15 @@
 #define S_IXOTH 00001
 struct stat {
 	int st_dev; /* u32 or u64 */ // File system's disk device
-	uint st_ino; /* u32 or u64 */ // Inode number
+	uint32_t st_ino; /* u32 or u64 */ // Inode number
 	short st_nlink; /* u32 or u64 */ // Number of links to file
-	uint st_size; /* u32 or u64 */ // Size of file in bytes
-	uint st_mode; /* u32 */
-	ushort st_uid; /* u32 */
-	ushort st_gid; /* u32 */
-	uint st_ctime; /* u32 or u64 */ // change
-	uint st_atime; /* u32 or u64 */ // access
-	uint st_mtime; /* u32 or u64 */ // modification
+	uint32_t st_size; /* u32 or u64 */ // Size of file in bytes
+	uint32_t st_mode; /* u32 */
+	uint16_t st_uid; /* u32 */
+	uint16_t st_gid; /* u32 */
+	uint32_t st_ctime; /* u32 or u64 */ // change
+	uint32_t st_atime; /* u32 or u64 */ // access
+	uint32_t st_mtime; /* u32 or u64 */ // modification
 };
 #endif
 // 0700

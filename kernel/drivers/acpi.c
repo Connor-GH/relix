@@ -25,7 +25,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "types.h"
+#include "stdint.h"
 #include "param.h"
 #include "memlayout.h"
 #include "proc.h"
@@ -47,7 +47,7 @@ extern uint8_t ioapicid;
 static int
 do_checksum(struct acpi_desc_header *dsc)
 {
-	uint sum = 0;
+	uint32_t sum = 0;
 	for (int i = 0; i < dsc->length; i++) {
 		sum += ((char *)dsc)[i];
 	}
@@ -56,7 +56,7 @@ do_checksum(struct acpi_desc_header *dsc)
 static int
 do_checksum_rsdp(struct acpi_rsdp *r, uint32_t len)
 {
-	uint sum = 0;
+	uint32_t sum = 0;
 	for (int i = 0; i < len; i++) {
 		sum += ((char *)r)[i];
 	}
@@ -64,7 +64,7 @@ do_checksum_rsdp(struct acpi_rsdp *r, uint32_t len)
 }
 
 static struct acpi_rsdp *
-scan_rsdp(uint base, uint len)
+scan_rsdp(uint32_t base, uint32_t len)
 {
 	uint8_t *p;
 	_Static_assert(sizeof(struct acpi_rsdp) == 20, "ACPI rsdp struct malformed.");
@@ -101,7 +101,7 @@ find_rsdp(void)
 	struct acpi_rsdp *rsdp;
 	uintptr_t pa;
 	// PA is mapped in kmap; vm.c. TODO: mappages needs to be dynamic
-	pa = *((ushort *)p2v(0x40E)) << 4; // EBDA pointer
+	pa = *((uint16_t *)p2v(0x40E)) << 4; // EBDA pointer
 	rsdp = scan_rsdp(pa, 1 * kiB);
 	if (pa && (rsdp != NULL))
 		return rsdp;
@@ -113,7 +113,7 @@ static int
 acpi_config_smp(struct acpi_madt *madt)
 {
 	uint32_t lapic_addr;
-	uint nioapic = 0;
+	uint32_t nioapic = 0;
 	uint8_t *p, *e;
 
 	if (!madt)
@@ -127,7 +127,7 @@ acpi_config_smp(struct acpi_madt *madt)
 	e = p + madt->header.length - sizeof(struct acpi_madt);
 
 	while (p < e) {
-		uint len;
+		uint32_t len;
 		if ((e - p) < 2)
 			break;
 		len = p[1];

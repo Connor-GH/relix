@@ -1,8 +1,8 @@
 #pragma once
-#include "types.h"
+#include "stdint.h"
 #include "kernel/include/fs.h"
 struct dirent {
-	ushort inum;
+	uint16_t inum;
 	char name[DIRSIZ];
 };
 struct __DIR {

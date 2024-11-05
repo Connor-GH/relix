@@ -2,7 +2,7 @@
 // http://www.intel.com/design/chipsets/datashts/29056601.pdf
 // See also picirq.c.
 
-#include <types.h>
+#include <stdint.h>
 #include "traps.h"
 #include "ioapic.h"
 #include "console.h"
@@ -27,12 +27,12 @@ volatile struct ioapic *ioapic;
 
 // IO APIC MMIO structure: write reg, then read or write data.
 struct ioapic {
-	uint reg;
-	uint pad[3];
-	uint data;
+	uint32_t reg;
+	uint32_t pad[3];
+	uint32_t data;
 };
 
-static uint
+static uint32_t
 ioapicread(int reg)
 {
 	ioapic->reg = reg;
@@ -40,7 +40,7 @@ ioapicread(int reg)
 }
 
 static void
-ioapicwrite(int reg, uint data)
+ioapicwrite(int reg, uint32_t data)
 {
 	ioapic->reg = reg;
 	ioapic->data = data;

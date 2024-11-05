@@ -10,7 +10,7 @@
 // are in sysfile.c.
 
 #include "sleeplock.h"
-#include <types.h>
+#include <stdint.h>
 #include <stat.h>
 #include <dirent.h>
 #include <date.h>
@@ -62,8 +62,8 @@ bzero(int dev, int bno)
 // Blocks.
 
 // Allocate a zeroed disk block.
-static uint
-balloc(uint dev)
+static uint32_t
+balloc(uint32_t dev)
 {
 	int b, bi, m;
 	struct buf *bp;
@@ -88,7 +88,7 @@ balloc(uint dev)
 
 // Free a disk block.
 static void
-bfree(int dev, uint b)
+bfree(int dev, uint32_t b)
 {
 	struct buf *bp;
 	int bi, m;
@@ -199,13 +199,13 @@ iinit(int dev)
 }
 
 static struct inode *
-iget(uint dev, uint inum);
+iget(uint32_t dev, uint32_t inum);
 
 // Allocate an inode on device dev.
 // Mark it as allocated by giving it type type.
 // Returns an unlocked but allocated and referenced inode.
 struct inode *
-ialloc(uint dev, int mode)
+ialloc(uint32_t dev, int mode)
 {
 	int inum;
 	struct buf *bp;
@@ -265,7 +265,7 @@ iupdate(struct inode *ip)
 // and return the in-memory copy. Does not lock
 // the inode and does not read it from disk.
 static struct inode *
-iget(uint dev, uint inum)
+iget(uint32_t dev, uint32_t inum)
 {
 	struct inode *ip, *empty;
 
@@ -287,8 +287,7 @@ iget(uint dev, uint inum)
 		release(&icache.lock[hash]);
 		for (int i = 0; i < min(NBUCKET, ncpu); i++) {
 			acquire(&icache.lock[i]);
-			for (ip = &icache.inode[0][i]; ip < &icache.inode[NINODE][i];
-					 ip++) {
+			for (ip = &icache.inode[0][i]; ip < &icache.inode[NINODE][i]; ip++) {
 				if (i == hash)
 					continue;
 				if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {
@@ -422,10 +421,10 @@ iunlockput(struct inode *ip)
 
 // Return the disk block address of the nth block in inode ip.
 // If there is no such block, bmap allocates one.
-static uint
-bmap(struct inode *ip, uint bn)
+static uint32_t
+bmap(struct inode *ip, uint32_t bn)
 {
-	uint addr, *a;
+	uint32_t addr, *a;
 	struct buf *bp;
 
 	if (bn < NDIRECT) {
@@ -440,7 +439,7 @@ bmap(struct inode *ip, uint bn)
 		if ((addr = ip->addrs[NDIRECT]) == 0)
 			ip->addrs[NDIRECT] = addr = balloc(ip->dev);
 		bp = bread(ip->dev, addr);
-		a = (uint *)bp->data;
+		a = (uint32_t *)bp->data;
 		if ((addr = a[bn]) == 0) {
 			a[bn] = addr = balloc(ip->dev);
 			log_write(bp);
@@ -457,8 +456,8 @@ bmap(struct inode *ip, uint bn)
 		if ((addr = ip->addrs[NDIRECT + 1]) == 0)
 			ip->addrs[NDIRECT + 1] = addr = balloc(ip->dev);
 		bp = bread(ip->dev, addr);
-		a = (uint *)bp->data;
-		uint double_index = bn / NINDIRECT;
+		a = (uint32_t *)bp->data;
+		uint32_t double_index = bn / NINDIRECT;
 
 		if ((addr = a[double_index]) == 0) {
 			a[double_index] = addr = balloc(ip->dev);
@@ -467,8 +466,8 @@ bmap(struct inode *ip, uint bn)
 		brelse(bp);
 
 		bp = bread(ip->dev, addr);
-		a = (uint *)bp->data;
-		uint pos = bn % NINDIRECT;
+		a = (uint32_t *)bp->data;
+		uint32_t pos = bn % NINDIRECT;
 
 		// load doubly indirect block
 		if ((addr = a[pos]) == 0) {
@@ -491,7 +490,7 @@ static void
 itrunc(struct inode *ip)
 {
 	struct buf *bp;
-	uint *a;
+	uint32_t *a;
 
 	for (int i = 0; i < NDIRECT; i++) {
 		if (ip->addrs[i]) {
@@ -502,7 +501,7 @@ itrunc(struct inode *ip)
 
 	if (ip->addrs[NDIRECT]) {
 		bp = bread(ip->dev, ip->addrs[NDIRECT]);
-		a = (uint *)bp->data;
+		a = (uint32_t *)bp->data;
 		for (int j = 0; j < NINDIRECT; j++) {
 			if (a[j]) {
 				bfree(ip->dev, a[j]);
@@ -519,12 +518,12 @@ itrunc(struct inode *ip)
 	if (ip->addrs[NDIRECT + 1]) {
 		// get doubly indirect block
 		bp = bread(ip->dev, ip->addrs[NDIRECT + 1]);
-		a = (uint *)bp->data;
+		a = (uint32_t *)bp->data;
 		for (int i = 0; i < NINDIRECT; i++) {
 			// get indirect block
 			if (a[i]) {
 				struct buf *bp2 = bread(ip->dev, a[i]);
-				uint *a2 = (uint *)bp2->data;
+				uint32_t *a2 = (uint32_t *)bp2->data;
 				for (int j = 0; j < NINDIRECT; j++) {
 					// free block
 					if (a2[j]) {
@@ -567,9 +566,9 @@ stati(struct inode *ip, struct stat *st)
 // Read data from inode.
 // Caller must hold ip->lock.
 int
-readi(struct inode *ip, char *dst, uint off, uint n)
+readi(struct inode *ip, char *dst, uint32_t off, uint32_t n)
 {
-	uint tot, m;
+	uint32_t tot, m;
 	struct buf *bp;
 
 	if (S_ISBLK(ip->mode)) {
@@ -595,9 +594,9 @@ readi(struct inode *ip, char *dst, uint off, uint n)
 // Write data to inode.
 // Caller must hold ip->lock.
 int
-writei(struct inode *ip, char *src, uint off, uint n)
+writei(struct inode *ip, char *src, uint32_t off, uint32_t n)
 {
-	uint tot, m;
+	uint32_t tot, m;
 	struct buf *bp;
 
 	if (S_ISBLK(ip->mode)) {
@@ -637,9 +636,9 @@ namecmp(const char *s, const char *t)
 // Look for a directory entry in a directory.
 // If found, set *poff to byte offset of entry.
 struct inode *
-dirlookup(struct inode *dp, const char *name, uint *poff)
+dirlookup(struct inode *dp, const char *name, uint32_t *poff)
 {
-	uint off, inum;
+	uint32_t off, inum;
 	struct dirent de;
 
 	if (!S_ISDIR(dp->mode))
@@ -663,10 +662,10 @@ dirlookup(struct inode *dp, const char *name, uint *poff)
 }
 
 // Write a new directory entry (name, inum) into the directory dp.
-static uint last_inum = 0;
-static uint last_offset_from_inum = 0;
+static uint32_t last_inum = 0;
+static uint32_t last_offset_from_inum = 0;
 int
-dirlink(struct inode *dp, const char *name, uint inum)
+dirlink(struct inode *dp, const char *name, uint32_t inum)
 {
 	int off = 0;
 	struct dirent de;

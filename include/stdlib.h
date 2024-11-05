@@ -1,15 +1,14 @@
 #pragma once
-#include <types.h>
-#include <stdint.h>
 
 #ifndef __KERNEL__
-__attribute__((malloc)) void *malloc(uint);
+#include <stdint.h>
+__attribute__((malloc)) void *malloc(uint32_t);
 void
 free(void *);
 int
 atoi(const char *);
 int
-atoi_base(const char *, uint base);
+atoi_base(const char *, uint32_t base);
 __attribute__((malloc)) void *
 realloc(void *ptr, size_t size);
 #endif

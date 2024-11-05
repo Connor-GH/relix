@@ -1,7 +1,7 @@
 #pragma once
-#include <types.h>
+#include <stdint.h>
 #include <date.h>
-extern volatile uint *lapic;
+extern volatile uint32_t *lapic;
 
 void
 cmostime(struct rtcdate *r);
@@ -12,6 +12,6 @@ lapiceoi(void);
 void
 lapicinit(void);
 void
-lapicstartap(uchar a, uint b);
+lapicstartap(uint8_t a, uint32_t b);
 void
 microdelay(int);

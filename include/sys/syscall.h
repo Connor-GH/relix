@@ -1,9 +1,7 @@
 #pragma once
-#undef __KERNEL__
 #include "kernel/include/syscall.h"
-#pragma once
+#undef __KERNEL__
 #include "kernel/include/traps.h"
-#include <stdint.h>
 #define STRINGIFY(s) #s
 #define BOILERPLATE(s) STRINGIFY(s)
 #define SC_STRING BOILERPLATE(T_SYSCALL)

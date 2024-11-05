@@ -3,7 +3,7 @@
 // http://developer.intel.com/design/pentium/datashts/24201606.pdf
 
 #include <stdint.h>
-#include <types.h>
+#include <stdint.h>
 #include "drivers/memlayout.h"
 #include "drivers/lapic.h"
 #include "param.h"
@@ -17,10 +17,10 @@
 
 struct cpu cpus[NCPU];
 int ncpu;
-uchar ioapicid;
+uint8_t ioapicid;
 
-static uchar
-sum(uchar *addr, int len)
+static uint8_t
+sum(uint8_t *addr, int len)
 {
 	int i, sum;
 
@@ -32,9 +32,9 @@ sum(uchar *addr, int len)
 
 // Look for an MP structure in the len bytes at addr.
 static struct mp *
-mpsearch1(uint a, int len)
+mpsearch1(uint32_t a, int len)
 {
-	uchar *e, *p, *addr;
+	uint8_t *e, *p, *addr;
 
 	addr = P2V(a);
 	e = addr + len;
@@ -54,11 +54,11 @@ mpsearch1(uint a, int len)
 static struct mp *
 mpsearch(void)
 {
-	uchar *bda;
-	uint p;
+	uint8_t *bda;
+	uint32_t p;
 	struct mp *mp;
 
-	bda = (uchar *)P2V(0x400);
+	bda = (uint8_t *)P2V(0x400);
 	if ((p = ((bda[0x0F] << 8) | bda[0x0E]) << 4)) {
 		if ((mp = mpsearch1(p, 1024)))
 			return mp;
@@ -87,7 +87,7 @@ __nonnull(1) static struct mpconf *mpconfig(struct mp **pmp)
 		return 0;
 	if (conf->version != 1 && conf->version != 4)
 		return 0;
-	if (sum((uchar *)conf, conf->length) != 0)
+	if (sum((uint8_t *)conf, conf->length) != 0)
 		return 0;
 	*pmp = mp;
 	return conf;
@@ -96,7 +96,7 @@ __nonnull(1) static struct mpconf *mpconfig(struct mp **pmp)
 void
 mpinit(void)
 {
-	uchar *p, *e;
+	uint8_t *p, *e;
 	int ismp;
 	struct mp *mp;
 	struct mpconf *conf;
@@ -115,8 +115,8 @@ mpinit(void)
 	if ((conf = mpconfig(&mp)) == 0)
 		panic("Expect to run on an SMP");
 	ismp = 1;
-	lapic = (uint *)conf->lapicaddr;
-	for (p = (uchar *)(conf + 1), e = (uchar *)conf + conf->length; p < e;) {
+	lapic = (uint32_t *)conf->lapicaddr;
+	for (p = (uint8_t *)(conf + 1), e = (uint8_t *)conf + conf->length; p < e;) {
 		switch (*p) {
 		case MPPROC:
 			proc = (struct mpproc *)p;

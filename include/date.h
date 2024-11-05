@@ -1,10 +1,10 @@
 #pragma once
-#include <types.h>
+#include <stdint.h>
 struct rtcdate {
-	uint second;
-	uint minute;
-	uint hour;
-	uint day;
-	uint month;
-	uint year;
+	uint32_t second;
+	uint32_t minute;
+	uint32_t hour;
+	uint32_t day;
+	uint32_t month;
+	uint32_t year;
 };

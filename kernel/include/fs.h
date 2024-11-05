@@ -2,10 +2,10 @@
 // On-disk file system format.
 // Both the kernel and user programs use this header file.
 #ifndef USE_HOST_TOOLS
-#include <types.h>
+#include <stdint.h>
 #include "sleeplock.h"
 #else
-#include <../../include/types.h>
+#include <../../include/stdint.h>
 #include <../../kernel/include/sleeplock.h>
 #endif
 
@@ -16,23 +16,23 @@
 // mkfs computes the super block and builds an initial file system. The
 // super block describes the disk layout:
 struct superblock {
-	uint size; // Size of file system image (blocks)
-	uint nblocks; // Number of data blocks
-	uint ninodes; // Number of inodes.
-	uint nlog; // Number of log blocks
-	uint logstart; // Block number of first log block
-	uint inodestart; // Block number of first inode block
-	uint bmapstart; // Block number of first free map block
+	uint32_t size; // Size of file system image (blocks)
+	uint32_t nblocks; // Number of data blocks
+	uint32_t ninodes; // Number of inodes.
+	uint32_t nlog; // Number of log blocks
+	uint32_t logstart; // Block number of first log block
+	uint32_t inodestart; // Block number of first inode block
+	uint32_t bmapstart; // Block number of first free map block
 };
 #define NDIRECT 6U
-#define NINDIRECT (BSIZE / sizeof(uint))
+#define NINDIRECT (BSIZE / sizeof(uint32_t))
 #define MAXFILE (NDIRECT + NINDIRECT + (NINDIRECT * NINDIRECT))
 #define NDINDIRECT_PER_ENTRY NDIRECT
 #define NDINDIRECT_ENTRY NDIRECT
 // in-memory copy of an inode
 struct inode {
-	uint dev; // Device number
-	uint inum; // Inode number
+	uint32_t dev; // Device number
+	uint32_t inum; // Inode number
 	int ref; // Reference count
 	struct sleeplock lock; // protects everything below here
 	int valid; // inode has been read from disk?
@@ -40,28 +40,28 @@ struct inode {
 	short major;
 	short minor;
 	short nlink;
-	uint size;
-	uint mode; // copy of disk inode
-	ushort gid;
-	ushort uid;
-	uint ctime; // change
-	uint atime; // access
-	uint mtime; // modification
-	uint addrs[NDIRECT + 1 + 1];
+	uint32_t size;
+	uint32_t mode; // copy of disk inode
+	uint16_t gid;
+	uint16_t uid;
+	uint32_t ctime; // change
+	uint32_t atime; // access
+	uint32_t mtime; // modification
+	uint32_t addrs[NDIRECT + 1 + 1];
 };
 // On-disk inode structure
 struct dinode {
 	short major; // Major device number (T_DEV only)
 	short minor; // Minor device number (T_DEV only)
 	short nlink; // Number of links to inode in file system
-	uint size; // Size of file (bytes)
-	uint mode; // File type and permissions
-	ushort gid;
-	ushort uid;
-	uint ctime; // change
-	uint atime; // access
-	uint mtime; // modification
-	uint addrs[NDIRECT + 1 + 1]; // Data block addresses
+	uint32_t size; // Size of file (bytes)
+	uint32_t mode; // File type and permissions
+	uint16_t gid;
+	uint16_t uid;
+	uint32_t ctime; // change
+	uint32_t atime; // access
+	uint32_t mtime; // modification
+	uint32_t addrs[NDIRECT + 1 + 1]; // Data block addresses
 };
 
 // Inodes per block.
@@ -86,11 +86,10 @@ struct dinode {
 void
 readsb(int dev, struct superblock *sb);
 int
-dirlink(struct inode *, const char *, uint);
+dirlink(struct inode *, const char *, uint32_t);
 struct inode *
-dirlookup(struct inode *, const char *, uint *);
-struct inode *
-ialloc(uint, int);
+dirlookup(struct inode *, const char *, uint32_t *);
+struct inode *ialloc(uint32_t, int32_t);
 struct inode *
 idup(struct inode *);
 void
@@ -112,9 +111,9 @@ namei(char *);
 struct inode *
 nameiparent(char *, char *);
 int
-readi(struct inode *, char *, uint, uint);
+readi(struct inode *, char *, uint32_t, uint32_t);
 void
 stati(struct inode *, struct stat *);
 int
-writei(struct inode *, char *, uint, uint);
+writei(struct inode *, char *, uint32_t, uint32_t);
 #endif

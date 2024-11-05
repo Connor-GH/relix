@@ -1,13 +1,13 @@
 #pragma once
-#include <types.h>
+#include <stdint.h>
 #include <stdint.h>
 #include "compiler_attributes.h"
 // Routines to let C code use special x86 instructions.
 
-static __always_inline uchar
-inb(ushort port)
+static __always_inline uint8_t
+inb(uint16_t port)
 {
-	uchar data;
+	uint8_t data;
 
 	__asm__ __volatile__("in %1,%0" : "=a"(data) : "d"(port));
 	return data;
@@ -23,13 +23,13 @@ insl(int port, void *addr, int cnt)
 }
 
 static __always_inline void
-outb(ushort port, uchar data)
+outb(uint16_t port, uint8_t data)
 {
 	__asm__ __volatile__("out %0,%1" : : "a"(data), "d"(port));
 }
 
 static __always_inline void
-outw(ushort port, ushort data)
+outw(uint16_t port, uint16_t data)
 {
 	__asm__ __volatile__("out %0,%1" : : "a"(data), "d"(port));
 }
@@ -66,11 +66,11 @@ struct segdesc;
 static __always_inline void
 lgdt(struct segdesc *p, int size)
 {
-	volatile ushort pd[3];
+	volatile uint16_t pd[3];
 
 	pd[0] = size - 1;
-	pd[1] = (uint)p;
-	pd[2] = (uint)p >> 16;
+	pd[1] = (uint32_t)p;
+	pd[2] = (uint32_t)p >> 16;
 
 	__asm__ __volatile__("lgdt (%0)" : : "r"(pd));
 }
@@ -80,31 +80,31 @@ struct gatedesc;
 static __always_inline void
 lidt(struct gatedesc *p, int size)
 {
-	volatile ushort pd[3];
+	volatile uint16_t pd[3];
 
 	pd[0] = size - 1;
-	pd[1] = (uint)p;
-	pd[2] = (uint)p >> 16;
+	pd[1] = (uint32_t)p;
+	pd[2] = (uint32_t)p >> 16;
 
 	__asm__ __volatile__("lidt (%0)" : : "r"(pd));
 }
 
 static __always_inline void
-ltr(ushort sel)
+ltr(uint16_t sel)
 {
 	__asm__ __volatile__("ltr %0" : : "r"(sel));
 }
 
-static __always_inline uint
+static __always_inline uint32_t
 readeflags(void)
 {
-	uint eflags;
+	uint32_t eflags;
 	__asm__ __volatile__("pushfl; popl %0" : "=r"(eflags));
 	return eflags;
 }
 
 static __always_inline void
-loadgs(ushort v)
+loadgs(uint16_t v)
 {
 	__asm__ __volatile__("movw %0, %%gs" : : "r"(v));
 }
@@ -121,10 +121,10 @@ sti(void)
 	__asm__ __volatile__("sti");
 }
 
-static __always_inline uint
-xchg(volatile uint *addr, uint newval)
+static __always_inline uint32_t
+xchg(volatile uint32_t *addr, uint32_t newval)
 {
-	uint result;
+	uint32_t result;
 
 	// The + in "+m" denotes a read-modify-write operand.
 	__asm__ __volatile__("lock; xchgl %0, %1"
@@ -134,16 +134,16 @@ xchg(volatile uint *addr, uint newval)
 	return result;
 }
 
-static __always_inline uint
+static __always_inline uint32_t
 rcr2(void)
 {
-	uint val;
+	uint32_t val;
 	__asm__ __volatile__("movl %%cr2,%0" : "=r"(val));
 	return val;
 }
 
 static __always_inline void
-lcr3(uint val)
+lcr3(uint32_t val)
 {
 	__asm__ __volatile__("movl %0,%%cr3" : : "r"(val));
 }
@@ -168,35 +168,35 @@ cpuid(uint32_t id, uint32_t count, uint32_t *a, uint32_t *b, uint32_t *c,
 // hardware and by trapasm.S, and passed to trap().
 struct trapframe {
 	// registers as pushed by pusha
-	uint edi;
-	uint esi;
-	uint ebp;
-	uint oesp; // useless & ignored
-	uint ebx;
-	uint edx;
-	uint ecx;
-	uint eax;
+	uint32_t edi;
+	uint32_t esi;
+	uint32_t ebp;
+	uint32_t oesp; // useless & ignored
+	uint32_t ebx;
+	uint32_t edx;
+	uint32_t ecx;
+	uint32_t eax;
 
 	// rest of trap frame
-	ushort gs;
-	ushort padding1;
-	ushort fs;
-	ushort padding2;
-	ushort es;
-	ushort padding3;
-	ushort ds;
-	ushort padding4;
-	uint trapno;
+	uint16_t gs;
+	uint16_t padding1;
+	uint16_t fs;
+	uint16_t padding2;
+	uint16_t es;
+	uint16_t padding3;
+	uint16_t ds;
+	uint16_t padding4;
+	uint32_t trapno;
 
 	// below here defined by x86 hardware
-	uint err;
-	uint eip;
-	ushort cs;
-	ushort padding5;
-	uint eflags;
+	uint32_t err;
+	uint32_t eip;
+	uint16_t cs;
+	uint16_t padding5;
+	uint32_t eflags;
 
 	// below here only when crossing rings, such as from user to kernel
-	uint esp;
-	ushort ss;
-	ushort padding6;
+	uint32_t esp;
+	uint16_t ss;
+	uint16_t padding6;
 };

@@ -4,29 +4,29 @@
 #include "param.h"
 #include "spinlock.h"
 #include "syscall.h"
-#include <types.h>
+#include <stdint.h>
 #include "../drivers/mmu.h"
 #include "../include/file.h"
 
 struct groups {
 	char *gr_name;
 	char *gr_passwd;
-	uint gr_gid;
+	uint32_t gr_gid;
 	char **gr_mem;
 };
 
 struct cred {
-	uint uid;
-	uint gid;
+	uint32_t uid;
+	uint32_t gid;
 	struct groups groups[MAXGROUPS];
 };
 
 struct cpu {
-	uchar apicid; // Local APIC ID
+	uint8_t apicid; // Local APIC ID
 	struct context *scheduler; // swtch() here to enter scheduler
 	struct taskstate ts; // Used by x86 to find stack for interrupt
 	struct segdesc gdt[NSEGS]; // x86 global descriptor table
-	volatile uint started; // Has the CPU started?
+	volatile uint32_t started; // Has the CPU started?
 	int ncli; // Depth of pushcli nesting.
 	int intena; // Were interrupts enabled before pushcli?
 	struct proc *proc; // The process running on this cpu or null
@@ -46,19 +46,19 @@ extern int ncpu;
 // at the "Switch stacks" comment. Switch doesn't save eip explicitly,
 // but it is on the stack and allocproc() manipulates it.
 struct context {
-	uint edi;
-	uint esi;
-	uint ebx;
-	uint ebp;
-	uint eip;
+	uint32_t edi;
+	uint32_t esi;
+	uint32_t ebx;
+	uint32_t ebp;
+	uint32_t eip;
 };
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 // Per-process state
 struct proc {
-	uint sz; // Size of process memory (bytes)
-	pde_t *pgdir; // Page table
+	uint32_t sz; // Size of process memory (bytes)
+	uint32_t *pgdir; // Page table
 	char *kstack; // Bottom of kernel stack for this process
 	enum procstate state; // Process state
 	int pid; // Process ID

@@ -14,7 +14,7 @@
 //     so do not keep them longer than necessary.
 
 #include "compiler_attributes.h"
-#include "types.h"
+#include "stdint.h"
 #include "param.h"
 #include "spinlock.h"
 #include "sleeplock.h"
@@ -38,7 +38,7 @@ struct {
 } bcache;
 
 int
-hash(uint blockno)
+hash(uint32_t blockno)
 {
 	return blockno % min(NBUCKET, ncpu);
 }
@@ -71,7 +71,7 @@ binit(void)
 static int i = 0;
 
 static struct buf *
-bget(uint dev, uint blockno)
+bget(uint32_t dev, uint32_t blockno)
 {
 	struct buf *b;
 	int hi = hash(blockno);
@@ -129,7 +129,7 @@ bget(uint dev, uint blockno)
 
 // Return a locked buf with the contents of the indicated block.
 struct buf *
-bread(uint dev, uint blockno)
+bread(uint32_t dev, uint32_t blockno)
 {
 	struct buf *b;
 	b = bget(dev, blockno);

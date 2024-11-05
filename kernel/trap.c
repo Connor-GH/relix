@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <types.h>
+#include <stdint.h>
 #include "drivers/mmu.h"
 #include "drivers/lapic.h"
 #include "proc.h"
@@ -16,7 +16,7 @@
 
 // Interrupt descriptor table (shared by all CPUs).
 struct gatedesc idt[256];
-extern uint vectors[]; // in vectors.S: array of 256 entry pointers
+extern uint32_t vectors[]; // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint32_t ticks;
 

@@ -51,7 +51,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 };
 #endif
 #if defined(__KERNEL__) && !defined(__ASSEMBLER__)
-#include <types.h>
+#include <stdint.h>
 int
 argint(int, int *);
 int
@@ -59,9 +59,9 @@ argptr(int, char **, int);
 int
 argstr(int, char **);
 int
-fetchint(uint, int *);
+fetchint(uint32_t, int *);
 int
-fetchstr(uint, char **);
+fetchstr(uint32_t, char **);
 void
 syscall(void);
 #endif

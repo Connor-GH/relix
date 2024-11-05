@@ -1,4 +1,4 @@
-#include <types.h>
+#include <stdint.h>
 #include <defs.h>
 #include "drivers/memlayout.h"
 #include "drivers/mmu.h"
@@ -13,7 +13,7 @@
 #include "kernel_string.h"
 
 extern char data[]; // defined by kernel.ld
-pde_t *kpgdir; // for use in scheduler()
+uint32_t *kpgdir; // for use in scheduler()
 
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
@@ -38,9 +38,9 @@ seginit(void)
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page table pages.
 static pte_t *
-walkpgdir(pde_t *pgdir, const void *va, int alloc)
+walkpgdir(uint32_t *pgdir, const void *va, int alloc)
 {
-	pde_t *pde;
+	uint32_t *pde;
 	pte_t *pgtab;
 
 	pde = &pgdir[PDX(va)];
@@ -63,13 +63,13 @@ walkpgdir(pde_t *pgdir, const void *va, int alloc)
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
 int
-mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
+mappages(uint32_t *pgdir, void *va, uint32_t size, uint32_t pa, int perm)
 {
 	char *a, *last;
 	pte_t *pte;
 
-	a = (char *)PGROUNDDOWN((uint)va);
-	last = (char *)PGROUNDDOWN(((uint)va) + size - 1);
+	a = (char *)PGROUNDDOWN((uint32_t)va);
+	last = (char *)PGROUNDDOWN(((uint32_t)va) + size - 1);
 	for (;;) {
 		if ((pte = walkpgdir(pgdir, a, 1)) == 0)
 			return -1;
@@ -109,8 +109,8 @@ mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm)
 // every process's page table.
 static struct kmap {
 	void *virt;
-	uint phys_start;
-	uint phys_end;
+	uint32_t phys_start;
+	uint32_t phys_end;
 	int perm;
 } kmap[] = {
 	{ (void *)KERNBASE, 0, EXTMEM, PTE_W }, // I/O space
@@ -120,20 +120,20 @@ static struct kmap {
 };
 
 // Set up kernel part of a page table.
-pde_t *
+uint32_t *
 setupkvm(void)
 {
-	pde_t *pgdir;
+	uint32_t *pgdir;
 	struct kmap *k;
 
-	if ((pgdir = (pde_t *)kpage_alloc()) == 0)
+	if ((pgdir = (uint32_t *)kpage_alloc()) == 0)
 		return 0;
 	memset(pgdir, 0, PGSIZE);
 	if (P2V(PHYSTOP) > (void *)DEVSPACE)
 		panic("PHYSTOP too high");
 	for (k = kmap; k < &kmap[NELEM(kmap)]; k++)
 		if (mappages(pgdir, k->virt, k->phys_end - k->phys_start,
-								 (uint)k->phys_start, k->perm) < 0) {
+								 (uint32_t)k->phys_start, k->perm) < 0) {
 			freevm(pgdir);
 			return 0;
 		}
@@ -173,10 +173,10 @@ switchuvm(struct proc *p)
 		SEG16(STS_T32A, &mycpu()->ts, sizeof(mycpu()->ts) - 1, 0);
 	mycpu()->gdt[SEG_TSS].s = 0;
 	mycpu()->ts.ss0 = SEG_KDATA << 3;
-	mycpu()->ts.esp0 = (uint)p->kstack + KSTACKSIZE;
+	mycpu()->ts.esp0 = (uint32_t)p->kstack + KSTACKSIZE;
 	// setting IOPL=0 in eflags *and* iomb beyond the tss segment limit
 	// forbids I/O instructions (e.g., inb and outb) from user space
-	mycpu()->ts.iomb = (ushort)0xFFFF;
+	mycpu()->ts.iomb = (uint16_t)0xFFFF;
 	ltr(SEG_TSS << 3);
 	lcr3(V2P(p->pgdir)); // switch to process's address space
 	popcli();
@@ -185,7 +185,7 @@ switchuvm(struct proc *p)
 // Load the initcode into address 0 of pgdir.
 // sz must be less than a page.
 void
-inituvm(pde_t *pgdir, char *init, uint sz)
+inituvm(uint32_t *pgdir, char *init, uint32_t sz)
 {
 	char *mem;
 
@@ -200,12 +200,13 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 // Load a program segment into pgdir.  addr must be page-aligned
 // and the pages from addr to addr+sz must already be mapped.
 int
-loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
+loaduvm(uint32_t *pgdir, char *addr, struct inode *ip, uint32_t offset,
+				uint32_t sz)
 {
-	uint i, pa, n;
+	uint32_t i, pa, n;
 	pte_t *pte;
 
-	if ((uint)addr % PGSIZE != 0)
+	if ((uint32_t)addr % PGSIZE != 0)
 		panic("loaduvm: addr must be page aligned");
 	for (i = 0; i < sz; i += PGSIZE) {
 		if ((pte = walkpgdir(pgdir, addr + i, 0)) == 0)
@@ -224,10 +225,10 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
 // Allocate page tables and physical memory to grow process from oldsz to
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
 int
-allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
+allocuvm(uint32_t *pgdir, uint32_t oldsz, uint32_t newsz)
 {
 	char *mem;
-	uint a;
+	uint32_t a;
 
 	if (newsz >= KERNBASE)
 		return 0;
@@ -258,10 +259,10 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 // need to be less than oldsz.  oldsz can be larger than the actual
 // process size.  Returns the new process size.
 int
-deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
+deallocuvm(uint32_t *pgdir, uint32_t oldsz, uint32_t newsz)
 {
 	pte_t *pte;
-	uint a, pa;
+	uint32_t a, pa;
 
 	if (newsz >= oldsz)
 		return oldsz;
@@ -286,9 +287,9 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
 // Free a page table and all the physical memory pages
 // in the user part.
 void
-freevm(pde_t *pgdir)
+freevm(uint32_t *pgdir)
 {
-	uint i;
+	uint32_t i;
 
 	if (pgdir == 0)
 		panic("freevm: no pgdir");
@@ -305,7 +306,7 @@ freevm(pde_t *pgdir)
 // Clear PTE_U on a page. Used to create an inaccessible
 // page beneath the user stack.
 void
-clearpteu(pde_t *pgdir, char *uva)
+clearpteu(uint32_t *pgdir, char *uva)
 {
 	pte_t *pte;
 
@@ -317,12 +318,12 @@ clearpteu(pde_t *pgdir, char *uva)
 
 // Given a parent process's page table, create a copy
 // of it for a child.
-pde_t *
-copyuvm(pde_t *pgdir, uint sz)
+uint32_t *
+copyuvm(uint32_t *pgdir, uint32_t sz)
 {
-	pde_t *d;
+	uint32_t *d;
 	pte_t *pte;
-	uint pa, i, flags;
+	uint32_t pa, i, flags;
 	char *mem;
 
 	if ((d = setupkvm()) == 0)
@@ -351,7 +352,7 @@ bad:
 
 // Map user virtual address to kernel address.
 char *
-uva2ka(pde_t *pgdir, char *uva)
+uva2ka(uint32_t *pgdir, char *uva)
 {
 	pte_t *pte;
 
@@ -367,14 +368,14 @@ uva2ka(pde_t *pgdir, char *uva)
 // Most useful when pgdir is not the current page table.
 // uva2ka ensures this only works for PTE_U pages.
 int
-copyout(pde_t *pgdir, uint va, void *p, uint len)
+copyout(uint32_t *pgdir, uint32_t va, void *p, uint32_t len)
 {
 	char *buf, *pa0;
-	uint n, va0;
+	uint32_t n, va0;
 
 	buf = (char *)p;
 	while (len > 0) {
-		va0 = (uint)PGROUNDDOWN(va);
+		va0 = (uint32_t)PGROUNDDOWN(va);
 		pa0 = uva2ka(pgdir, (char *)va0);
 		if (pa0 == 0)
 			return -1;

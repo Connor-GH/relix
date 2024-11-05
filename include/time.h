@@ -1,7 +1,7 @@
 #pragma once
-#include <types.h>
 #include <date.h>
-typedef uint time_t;
+#include <stdint.h>
+typedef uint32_t time_t;
 
 time_t
 time(time_t *tloc);

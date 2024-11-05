@@ -14,6 +14,7 @@ KERNEL_INC = $(IVARS) \
 						 -I$(KERNELDIR)/drivers \
 						 $(KERNEL_EXTRAS)
 
+
 include $(KERNELDIR)/boot/Makefile
 include $(KERNELDIR)/d/Makefile
 
@@ -28,7 +29,7 @@ $(BIN)/xv6memfs.img: bootblock kernelmemfs
 	dd if=$(BIN)/kernelmemfs of=$@ seek=1 conv=notrunc
 
 $(BIN)/kernel: $(KERNELDIR)/kernel.ld $(KERNEL_OBJS) $(KERNEL_D_OBJ) $(K_D_BINDINGS_OBJ) $(D_OBJ) $(BIN)/entry.o $(BIN)/entryother.o $(BIN)/initcode.o $(BIN)/bootblock $(BIN)/sign
-	$(LD) $(LDFLAGS) -T $(KERNELDIR)/kernel.ld -o $@ $(BIN)/entry.o $(KERNEL_OBJS) $(KERNEL_D_OBJ) $(K_D_BINDINGS_OBJ) $(D_OBJ) \
+	$(LD) $(LDFLAGS) -T $(KERNELDIR)/kernel$(BITS).ld -o $@ $(BIN)/entry.o $(KERNEL_OBJS) $(KERNEL_D_OBJ) $(K_D_BINDINGS_OBJ) $(D_OBJ) \
 		-b binary $(BIN)/initcode $(BIN)/entryother
 
 $(BIN)/%.o: $(KERNELDIR)/%.c

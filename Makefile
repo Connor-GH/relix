@@ -54,6 +54,9 @@ RANLIB = $(TOOLPREFIX)ranlib
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 
+# set to 64 when ready
+BITS =
+
 # llvm stuff
 ifneq ($(LLVM),)
 	CC = clang

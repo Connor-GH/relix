@@ -134,14 +134,14 @@ enum NULL = cast(void *)0;
 	this(T)(T data)
 	if (isPointer!T && !is(T == typeof(null)))
 	{
-		kernel_assert(data != NULL, "data != NULL");
+		assert(data != NULL);
  		ptr = data;
 	}
 
 	void opAssign(T)(T other)
 	if (isPointer!T && !is(T == typeof(null)))
 	{
-		kernel_assert(other != NULL, "other != NULL");
+		assert(other != NULL);
  		this.ptr = other;
 	}
 	Option!T release_ptr() => ptr != NULL ? Some!T(ptr) : None!T;
@@ -159,14 +159,13 @@ extern(C) int example_kernel_binding() {
 	scope(exit) kfree(c.release_ptr().unwrap());
 
 	auto d = make_unique!(KArray!int)(3, 4, 5);
-	kernel_assert(isPointer!(typeof(d.get())) && ((*d.get())[1]).unwrap() == 4);
+	assert(isPointer!(typeof(d.get())) && ((*d.get())[1]).unwrap() == 4);
+	assert(isPointer!(typeof(d.get())) && ((*d.get())[0]).unwrap() == 3);
 
-	strlcpy_nostrlen(cast(char *)c.release_ptr().unwrap(), "Data", 4096, strlen("Data")+1);
 
-
-	kernel_assert(ka.toString() == "KArray");
-	kernel_assert(ka[1].unwrap() == 4);
-	kernel_assert(kd.toString() == "KDevice");
+	assert(ka.toString() == "KArray");
+	assert(ka[1].unwrap() == 4);
+	assert(kd.toString() == "KDevice");
 	kant!(myfunc)(9);
 	kwriteln(Diagnostic.Note, "Dlang kernel systems up and running.");
 	return 0;

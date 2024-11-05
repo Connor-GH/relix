@@ -67,7 +67,7 @@ ifneq ($(LLVM),)
 endif
 # Dlang toolchain
 DC ?= dmd
-D_PREVIEWS = -preview=systemVariables,in,dip1000,dip1021
+D_PREVIEWS = -preview=systemVariables,in,dip1000,dip1021,nosharedaccess,fixImmutableConv
 DFLAGS ?= -betterC -O -m32 $(EXTRA_DFLAGS)
 
 ifeq ($(shell $(DC) --version | sed -n 1p | awk '{print $$1}'),DMD64)

@@ -15,21 +15,30 @@
 
 // Fetch the int at addr from the current process.
 int
-fetchint(uint32_t addr, int *ip)
+fetchint(uintptr_t addr, int *ip)
 {
 	struct proc *curproc = myproc();
 
-	if (addr >= curproc->sz || addr + 4 > curproc->sz)
+	if (addr >= curproc->sz || addr + sizeof(int) > curproc->sz)
 		return -1;
 	*ip = *(int *)(addr);
 	return 0;
+}
+int
+fetchuintp(uintptr_t addr, uintptr_t *ip)
+{
+	struct proc *proc = myproc();
+  if(addr >= proc->sz || addr+sizeof(uintptr_t) > proc->sz)
+    return -1;
+  *ip = *(uintptr_t*)(addr);
+  return 0;
 }
 
 // Fetch the nul-terminated string at addr from the current process.
 // Doesn't actually copy the string - just sets *pp to point at it.
 // Returns length of string, not including nul.
 int
-fetchstr(uint32_t addr, char **pp)
+fetchstr(uintptr_t addr, char **pp)
 {
 	char *s, *ep;
 	struct proc *curproc = myproc();
@@ -44,13 +53,49 @@ fetchstr(uint32_t addr, char **pp)
 	}
 	return -1;
 }
+#if X64
 
+// arguments passed in registers on x64
+static uintptr_t
+fetcharg(int n)
+{
+	struct proc *proc = myproc();
+  switch (n) {
+  case 0: return proc->tf->rdi;
+  case 1: return proc->tf->rsi;
+  case 2: return proc->tf->rdx;
+  case 3: return proc->tf->rcx;
+  case 4: return proc->tf->r8;
+  case 5: return proc->tf->r9;
+  }
+}
+
+int
+argint(int n, int *ip)
+{
+  *ip = fetcharg(n);
+  return 0;
+}
+int
+arguintptr(int n, uintptr_t *ip)
+{
+  *ip = fetcharg(n);
+  return 0;
+}
+
+#else
 // Fetch the nth 32-bit system call argument.
 int
 argint(int n, int *ip)
 {
 	return fetchint((myproc()->tf->esp) + 4 + 4 * n, ip);
 }
+int
+arguintptr(int n, uintptr_t *ip)
+{
+  return fetchuintp(myproc()->tf->esp + sizeof(uintptr_t) + sizeof(uintptr_t)*n, ip);
+}
+#endif
 
 // Fetch the nth word-sized system call argument as a pointer
 // to a block of memory of size bytes.  Check that the pointer
@@ -58,13 +103,13 @@ argint(int n, int *ip)
 int
 argptr(int n, char **pp, int size)
 {
-	int i;
+	uintptr_t i;
 	struct proc *curproc = myproc();
 
-	if (argint(n, &i) < 0)
+	if (arguintptr(n, &i) < 0)
 		return -1;
-	if (size < 0 || (uint32_t)i >= curproc->sz ||
-			(uint32_t)i + size > curproc->sz)
+	if (size < 0 || (uintptr_t)i >= curproc->sz ||
+			(uintptr_t)i + size > curproc->sz)
 		return -1;
 	*pp = (char *)i;
 	return 0;
@@ -77,8 +122,8 @@ argptr(int n, char **pp, int size)
 int
 argstr(int n, char **pp)
 {
-	int addr;
-	if (argint(n, &addr) < 0)
+	uintptr_t addr;
+	if (arguintptr(n, &addr) < 0)
 		return -1;
 	return fetchstr(addr, pp);
 }
@@ -178,7 +223,7 @@ syscall(void)
 			yticks = ticks;
 			release(&tickslock);
 
-			cprintf("pid %d: syscall %s => %d (%d ticks)\n", curproc->pid,
+			cprintf("pid %d: syscall %s => %ld (%d ticks)\n", curproc->pid,
 							syscall_names[num], curproc->tf->eax, yticks - xticks);
 		} else {
 			curproc->tf->eax = syscalls[num]();

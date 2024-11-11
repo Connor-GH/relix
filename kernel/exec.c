@@ -16,16 +16,14 @@
 // count is argc/envc
 // vec is argv/envp
 static int
-push_user_stack(uint32_t *count, char **vec, uint32_t *ustack, uint32_t *pgdir,
-								uint32_t *sp, uint32_t idx)
+push_user_stack(uintptr_t *count, char **vec, uintptr_t *ustack, uintptr_t *pgdir,
+								uintptr_t *sp, uint32_t idx)
 {
 	for (*count = 0; vec[*count]; (*count)++) {
 		if (*count >= MAXARG)
 			return -1;
 		// move the stack down to account for an argument
-		*sp -= strlen(vec[*count]) + 1;
-		// (seemingly) align the stack to 4 bytes.
-		*sp &= ~(sizeof(uintptr_t) - 1);
+		*sp = (*sp - (strlen(vec[*count]) + 1)) & ~(sizeof(uintptr_t) - 1);
 		// copy this vector index onto the stack pointer finally.
 		if (copyout(pgdir, *sp, vec[*count], strlen(vec[*count]) + 1) < 0)
 			return -1;
@@ -43,11 +41,11 @@ __nonnull(1, 2) int exec(char *path, char **argv)
 {
 	char *s, *last;
 	int i, off;
-	uint32_t argc = 0, sz, sp, ustack[3 + MAXARG + MAXENV + 1] = {};
+	uintptr_t argc = 0, sz, sp, ustack[3 + MAXARG + MAXENV + 1] = {};
 	struct elfhdr elf;
 	struct inode *ip;
 	struct proghdr ph;
-	uint32_t *pgdir, *oldpgdir;
+	uintptr_t *pgdir, *oldpgdir;
 	struct proc *curproc = myproc();
 
 	begin_op();
@@ -144,9 +142,13 @@ ok:
 
 	ustack[0] = 0xffffffff; // fake return PC
 	ustack[1] = argc;
-	ustack[2] = sp - (argv_size) * 4; // argv pointer
+	ustack[2] = sp - (argv_size) * sizeof(uintptr_t); // argv pointer
 	// ustack[3 .. 3 + argv_size] is argv arguments
 	uint32_t total_mainargs_size = (3 + argv_size) * sizeof(uintptr_t);
+#ifdef X64
+	myproc()->tf->rdi = argc;
+	myproc()->tf->rsi = sp - argv_size * sizeof(uintptr_t);
+#endif
 	sp -= total_mainargs_size;
 	if (copyout(pgdir, sp, ustack, total_mainargs_size) < 0)
 		goto bad;

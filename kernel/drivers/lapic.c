@@ -8,6 +8,7 @@
 #include "memlayout.h"
 #include "stdbool.h"
 #include "kernel_string.h"
+#include "console.h"
 
 // Local APIC registers, divided by 4 for use as uint[] indices.
 #define ID (0x0020 / 4) // ID

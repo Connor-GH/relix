@@ -11,9 +11,9 @@ struct elfhdr {
 	uint16_t type;
 	uint16_t machine;
 	uint32_t version;
-	uint32_t entry;
-	uint32_t phoff;
-	uint32_t shoff;
+	uintptr_t entry;
+	uintptr_t phoff;
+	uintptr_t shoff;
 	uint32_t flags;
 	uint16_t ehsize;
 	uint16_t phentsize;
@@ -26,13 +26,13 @@ struct elfhdr {
 // Program section header
 struct proghdr {
 	uint32_t type;
-	uint32_t off;
-	uint32_t vaddr;
-	uint32_t paddr;
-	uint32_t filesz;
-	uint32_t memsz;
 	uint32_t flags;
-	uint32_t align;
+	uintptr_t off;
+	uintptr_t vaddr;
+	uintptr_t paddr;
+	uintptr_t filesz;
+	uintptr_t memsz;
+	uintptr_t align;
 };
 
 struct elf32_shdr {

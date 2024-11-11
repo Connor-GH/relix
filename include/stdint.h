@@ -1,7 +1,7 @@
 #pragma once
 #ifndef __ASSEMBLER__
-#if defined(__X86_64__) || defined(__i386__)
-typedef char int8_t;
+#if defined(__x86_64__) || defined(__i386__)
+typedef signed char int8_t;
 typedef short int16_t;
 typedef int int32_t;
 

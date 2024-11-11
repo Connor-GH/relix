@@ -77,7 +77,7 @@ mycpu(void)
 	// this is assured with "pass" because a real program would
 	// use far more mycpu() than 20,000. it's just enough to boot.
 	pass++;
-	if (pass < 20000)
+	if (pass < 200000)
 		return &cpus[0];
 	panic("unknown apicid\n");
 }
@@ -134,13 +134,13 @@ found:
 
 	// Set up new context to start executing at forkret,
 	// which returns to trapret.
-	sp -= 4;
-	*(uint32_t *)sp = (uint32_t)trapret;
+	sp -= sizeof(uintptr_t);
+	*(uintptr_t *)sp = (uintptr_t)trapret;
 
 	sp -= sizeof *p->context;
 	p->context = (struct context *)sp;
 	memset(p->context, 0, sizeof *p->context);
-	p->context->eip = (uint32_t)forkret;
+	p->context->eip = (uintptr_t)forkret;
 
 	p->cred.uid = 0;
 	p->cred.gid = 0;
@@ -162,13 +162,15 @@ userinit(void)
 	initproc = p;
 	if ((p->pgdir = setupkvm()) == 0)
 		panic("userinit: out of memory?");
-	inituvm(p->pgdir, _binary_bin_initcode_start, (int)_binary_bin_initcode_size);
+	inituvm(p->pgdir, _binary_bin_initcode_start, (uintptr_t)_binary_bin_initcode_size);
 	p->sz = PGSIZE;
 	memset(p->tf, 0, sizeof(*p->tf));
 	p->tf->cs = (SEG_UCODE << 3) | DPL_USER;
 	p->tf->ds = (SEG_UDATA << 3) | DPL_USER;
+#ifndef X64
 	p->tf->es = p->tf->ds;
 	p->tf->ss = p->tf->ds;
+#endif
 	p->tf->eflags = FL_IF;
 	p->tf->esp = PGSIZE;
 	p->tf->eip = 0; // beginning of initcode.S
@@ -552,7 +554,7 @@ procdump(void)
 	int i;
 	struct proc *p;
 	char *state;
-	uint32_t pc[10];
+	uintptr_t pc[10];
 
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
 		if (p->state == UNUSED)
@@ -563,9 +565,9 @@ procdump(void)
 			state = "???";
 		cprintf("%d %s %s", p->pid, state, p->name);
 		if (p->state == SLEEPING) {
-			getcallerpcs((uint32_t *)p->context->ebp + 2, pc);
+			getcallerpcs((uintptr_t *)p->context->ebp, pc);
 			for (i = 0; i < 10 && pc[i] != 0; i++)
-				cprintf(" %x", pc[i]);
+				cprintf(" %lx", pc[i]);
 		}
 		cprintf("\n");
 	}

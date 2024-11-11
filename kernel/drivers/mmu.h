@@ -15,6 +15,15 @@
 
 #define CR4_PSE 0x00000010 // Page size extension
 
+#if X64
+#define SEG_KCODE 1  // kernel code
+#define SEG_KDATA 2  // kernel data+stack
+#define SEG_KCPU  3  // kernel per-cpu data
+#define SEG_UCODE 4  // user code
+#define SEG_UDATA 5  // user data+stack
+#define SEG_TSS   6  // this process's task state
+#define NSEGS 8
+#else
 // various segment selectors.
 #define SEG_KCODE 1 // kernel code
 #define SEG_KDATA 2 // kernel data+stack
@@ -25,6 +34,7 @@
 // cpu->gdt[NSEGS] holds the above segments.
 #define NSEGS 6
 
+#endif
 #ifndef __ASSEMBLER__
 // Segment Descriptor
 struct segdesc {
@@ -48,15 +58,15 @@ struct segdesc {
 	(struct segdesc)                                                             \
 	{                                                                            \
 		((lim) >> 12) & 0xffff, (uint32_t)(base) & 0xffff,                         \
-			((uint32_t)(base) >> 16) & 0xff, type, 1, dpl, 1, (uint32_t)(lim) >> 28, \
-			0, 0, 1, 1, (uint32_t)(base) >> 24                                       \
+			((uintptr_t)(base) >> 16) & 0xff, type, 1, dpl, 1, (uintptr_t)(lim) >> 28, \
+			0, 0, 1, 1, (uintptr_t)(base) >> 24                                       \
 	}
 #define SEG16(type, base, lim, dpl)                                            \
 	(struct segdesc)                                                             \
 	{                                                                            \
 		(lim) & 0xffff, (uint32_t)(base) & 0xffff,                                 \
-			((uint32_t)(base) >> 16) & 0xff, type, 1, dpl, 1, (uint32_t)(lim) >> 16, \
-			0, 0, 1, 0, (uint32_t)(base) >> 24                                       \
+			((uintptr_t)(base) >> 16) & 0xff, type, 1, dpl, 1, (uintptr_t)(lim) >> 16, \
+			0, 0, 1, 0, (uintptr_t)(base) >> 24                                       \
 	}
 #endif
 
@@ -81,37 +91,54 @@ struct segdesc {
 //  \--- PDX(va) --/ \--- PTX(va) --/
 
 // page directory index
-#define PDX(va) (((uint32_t)(va) >> PDXSHIFT) & 0x3FF)
+#define PDX(va) (((uintptr_t)(va) >> PDXSHIFT) & PXMASK)
 
 // page table index
-#define PTX(va) (((uint32_t)(va) >> PTXSHIFT) & 0x3FF)
+#define PTX(va) (((uintptr_t)(va) >> PTXSHIFT) & PXMASK)
 
 // construct virtual address from indexes and offset
-#define PGADDR(d, t, o) ((uint32_t)((d) << PDXSHIFT | (t) << PTXSHIFT | (o)))
+#define PGADDR(d, t, o) ((uintptr_t)((d) << PDXSHIFT | (t) << PTXSHIFT | (o)))
 
+#if X64
+#define NPDENTRIES 512
+#define NPTENTRIES 512
+#define PGSIZE 4096
+#define PGSHIFT 12
+#define PTXSHIFT 12
+#define PDXSHIFT 21
+#define PXMASK 0x1FF
+#else
 // Page directory and page table constants.
 #define NPDENTRIES 1024 // # directory entries per page directory
 #define NPTENTRIES 1024 // # PTEs per page table
 #define PGSIZE 4096 // bytes mapped by a page
 
+#define PGSHIFT 12
 #define PTXSHIFT 12 // offset of PTX in a linear address
 #define PDXSHIFT 22 // offset of PDX in a linear address
+#define PXMASK 0x3FF
 
-#define PGROUNDUP(sz) (((sz) + PGSIZE - 1) & ~(PGSIZE - 1))
-#define PGROUNDDOWN(a) (((a)) & ~(PGSIZE - 1))
+#endif
+#define PGROUNDUP(sz) (((sz) + (uintptr_t)PGSIZE - 1) & ~((uintptr_t)PGSIZE - 1))
+#define PGROUNDDOWN(a) (((a)) & ~((uintptr_t)PGSIZE - 1))
 
 // Page table/directory entry flags.
 #define PTE_P 0x001 // Present
 #define PTE_W 0x002 // Writeable
 #define PTE_U 0x004 // User
+#define PTE_PWT 0x008 // Write-Through
+#define PTE_PCD 0x010 // Cache-Disable
+#define PTE_A 0x020 // Accessed
+#define PTE_D 0x040 // Dirty
 #define PTE_PS 0x080 // Page Size
+#define PTE_MBZ 0x180 // Bits must be zero
 
 // Address in page table or page directory entry
-#define PTE_ADDR(pte) ((uint32_t)(pte) & ~0xFFF)
-#define PTE_FLAGS(pte) ((uint32_t)(pte) & 0xFFF)
+#define PTE_ADDR(pte) ((uintptr_t)(pte) & ~0xFFF)
+#define PTE_FLAGS(pte) ((uintptr_t)(pte) & 0xFFF)
 
 #ifndef __ASSEMBLER__
-typedef uint32_t pte_t;
+typedef uintptr_t pte_t;
 
 // Task state segment format
 struct taskstate {

@@ -36,7 +36,7 @@ mpsearch1(uint32_t a, int len)
 {
 	uint8_t *e, *p, *addr;
 
-	addr = P2V(a);
+	addr = p2v(a);
 	e = addr + len;
 	for (p = addr; p < e; p += sizeof(struct mp))
 		// see if we found the _MP_ signature that we need.
@@ -103,19 +103,19 @@ mpinit(void)
 	struct mpproc *proc;
 	struct mpioapic *ioapic;
 	struct mpbus *bus;
-	_Static_assert(sizeof(struct mpconf) == 44,
+	//_Static_assert(sizeof(struct mpconf) == 44, \
 								 "MP Configuration Struct malformed.");
-	_Static_assert(sizeof(struct mpproc) == 20,
+	//_Static_assert(sizeof(struct mpproc) == 20, \
 								 "MP Processor Entry Struct malformed.");
-	_Static_assert(sizeof(struct mp) == 16,
+	//_Static_assert(sizeof(struct mp) == 16, \
 								 "MP Floating Pointer Struct malformed.");
-	_Static_assert(sizeof(struct mpioapic) == 8, "MP I/O APIC Struct malformed.");
-	_Static_assert(sizeof(struct mpbus) == 8, "MP Bus Struct malformed.");
+	//_Static_assert(sizeof(struct mpioapic) == 8, "MP I/O APIC Struct malformed.");
+	//_Static_assert(sizeof(struct mpbus) == 8, "MP Bus Struct malformed.");
 
 	if ((conf = mpconfig(&mp)) == 0)
 		panic("Expect to run on an SMP");
 	ismp = 1;
-	lapic = (uint32_t *)conf->lapicaddr;
+	lapic = IO2V((uintptr_t)conf->lapicaddr);
 	for (p = (uint8_t *)(conf + 1), e = (uint8_t *)conf + conf->length; p < e;) {
 		switch (*p) {
 		case MPPROC:

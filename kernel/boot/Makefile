@@ -8,11 +8,11 @@ $(BIN)/sign:
 # override the optimization with small size
 
 $(BIN)/bootmain.o: $(BOOTDIR)/bootmain.c
-	$(CC) $(CFLAGS) -Oz -fno-pic -nostdinc $(BOOT_INC) -c $(BOOTDIR)/bootmain.c -o $@
+	$(CC) -fno-builtin -Oz -m32 -fno-pic -nostdinc $(BOOT_INC) -c $(BOOTDIR)/bootmain.c -o $@
 
 $(BIN)/bootblock: $(BOOTDIR)/bootasm.S $(BIN)/bootmain.o $(BIN)/sign
-	$(CC) $(CFLAGS) -fno-pic -nostdinc $(BOOT_INC) -c $(BOOTDIR)/bootasm.S -o $(BIN)/bootasm.o
-	$(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o $(BIN)/bootblock.o $(BIN)/bootasm.o $(BIN)/bootmain.o
+	$(CC) -fno-builtin -fno-pic -m32 -nostdinc $(BOOT_INC) -c $(BOOTDIR)/bootasm.S -o $(BIN)/bootasm.o
+	$(LD) -melf_i386 -N -e start -Ttext 0x7C00 -o $(BIN)/bootblock.o $(BIN)/bootasm.o $(BIN)/bootmain.o
 	$(OBJCOPY) -S -O binary -j .text $(BIN)/bootblock.o $@
 	$(BIN)/sign $(BIN)/bootblock
 
@@ -27,5 +27,5 @@ $(BIN)/initcode.o: $(BOOTDIR)/initcode$(BITS).S
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0 -o $(BIN)/initcode.out $@
 	$(OBJCOPY) -S -O binary $(BIN)/initcode.out $(BIN)/initcode
 $(BIN)/entry.o: $(BOOTDIR)/entry$(BITS).S
-	$(CC) $(CFLAGS) -nostdinc $(BOOT_INC) -c $(BOOTDIR)/entry$(BITS).S -o $@
+	$(CC) $(CFLAGS) -O0 -nostdinc $(BOOT_INC) -c $(BOOTDIR)/entry$(BITS).S -o $@
 	objcopy --remove-section .note.gnu.property $(BIN)/entry.o

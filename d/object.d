@@ -1,10 +1,12 @@
 module object;
 import traits;
-version (X86_64) {} else {
+version (X86_64) {
+	alias size_t = ulong;
+} else {
 	alias size_t = uint;
-	alias noreturn = typeof(*null);
-	alias string = immutable(char)[];
 }
+alias noreturn = typeof(*null);
+alias string = immutable(char)[];
 
 version (__KERNEL__) {
 	import kernel.d.bindings.kernel_string;

@@ -25,11 +25,19 @@ struct cpu {
 	uint8_t apicid; // Local APIC ID
 	struct context *scheduler; // swtch() here to enter scheduler
 	struct taskstate ts; // Used by x86 to find stack for interrupt
-	struct segdesc gdt[NSEGS]; // x86 global descriptor table
+	union {
+		struct segdesc gdt[NSEGS]; // x86 global descriptor table
+#if X64
+		uint64_t gdt_bits[NSEGS];
+#endif
+	};
 	volatile uint32_t started; // Has the CPU started?
 	int ncli; // Depth of pushcli nesting.
 	int intena; // Were interrupts enabled before pushcli?
 	struct proc *proc; // The process running on this cpu or null
+#if X64
+	void *local;
+#endif
 };
 
 extern struct cpu cpus[NCPU];
@@ -46,19 +54,30 @@ extern int ncpu;
 // at the "Switch stacks" comment. Switch doesn't save eip explicitly,
 // but it is on the stack and allocproc() manipulates it.
 struct context {
-	uint32_t edi;
-	uint32_t esi;
-	uint32_t ebx;
-	uint32_t ebp;
-	uint32_t eip;
+#if X64
+	uintptr_t r15;
+	uintptr_t r14;
+	uintptr_t r13;
+	uintptr_t r12;
+	uintptr_t r11;
+	uintptr_t rbx;
+	uintptr_t ebp;
+	uintptr_t eip;
+#else
+	uintptr_t edi;
+	uintptr_t esi;
+	uintptr_t ebx;
+	uintptr_t ebp;
+	uintptr_t eip;
+#endif
 };
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 // Per-process state
 struct proc {
-	uint32_t sz; // Size of process memory (bytes)
-	uint32_t *pgdir; // Page table
+	uintptr_t sz; // Size of process memory (bytes)
+	uintptr_t *pgdir; // Page table
 	char *kstack; // Bottom of kernel stack for this process
 	enum procstate state; // Process state
 	int pid; // Process ID

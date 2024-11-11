@@ -479,16 +479,16 @@ sys_exec(void)
 {
 	char *path, *argv[MAXARG];
 	int i;
-	uint32_t uargv, uarg;
+	uintptr_t uargv, uarg;
 
-	if (argstr(0, &path) < 0 || argint(1, (int *)&uargv) < 0) {
+	if (argstr(0, &path) < 0 || arguintptr(1, &uargv) < 0) {
 		return -EINVAL;
 	}
 	memset(argv, 0, sizeof(argv));
 	for (i = 0;; i++) {
 		if (i >= NELEM(argv))
 			return -ENOEXEC;
-		if (fetchint(uargv + 4 * i, (int *)&uarg) < 0)
+		if (fetchuintp(uargv + sizeof(uintptr_t) * i, &uarg) < 0)
 			return -ENOEXEC;
 		if (uarg == 0) {
 			argv[i] = 0;
@@ -633,7 +633,7 @@ sys_readlink(void)
 	if (readi(ip, ubuf, 0, bufsize) < 0)
 		panic("readlink readi");
 
-	if (copyout(myproc()->pgdir, (uint32_t)ubuf, ubuf, bufsize) < 0)
+	if (copyout(myproc()->pgdir, (uintptr_t)ubuf, ubuf, bufsize) < 0)
 		panic("readlink copyout");
 
 	iunlock(ip);

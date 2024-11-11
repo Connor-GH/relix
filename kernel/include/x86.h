@@ -66,11 +66,15 @@ struct segdesc;
 static __always_inline void
 lgdt(struct segdesc *p, int size)
 {
-	volatile uint16_t pd[3];
+	volatile uint16_t pd[5];
 
 	pd[0] = size - 1;
-	pd[1] = (uint32_t)p;
-	pd[2] = (uint32_t)p >> 16;
+	pd[1] = (uintptr_t)p;
+	pd[2] = (uintptr_t)p >> 16;
+#if X64
+	pd[3] = (uintptr_t)p >> 32;
+	pd[4] = (uintptr_t)p >> 48;
+#endif
 
 	__asm__ __volatile__("lgdt (%0)" : : "r"(pd));
 }
@@ -80,11 +84,15 @@ struct gatedesc;
 static __always_inline void
 lidt(struct gatedesc *p, int size)
 {
-	volatile uint16_t pd[3];
+	volatile uint16_t pd[5];
 
 	pd[0] = size - 1;
-	pd[1] = (uint32_t)p;
-	pd[2] = (uint32_t)p >> 16;
+	pd[1] = (uintptr_t)p;
+	pd[2] = (uintptr_t)p >> 16;
+#if X64
+	pd[3] = (uintptr_t)p >> 32;
+	pd[4] = (uintptr_t)p >> 48;
+#endif
 
 	__asm__ __volatile__("lidt (%0)" : : "r"(pd));
 }
@@ -95,11 +103,11 @@ ltr(uint16_t sel)
 	__asm__ __volatile__("ltr %0" : : "r"(sel));
 }
 
-static __always_inline uint32_t
+static __always_inline uintptr_t
 readeflags(void)
 {
-	uint32_t eflags;
-	__asm__ __volatile__("pushfl; popl %0" : "=r"(eflags));
+	uintptr_t eflags;
+	__asm__ __volatile__("pushf; pop %0" : "=r"(eflags));
 	return eflags;
 }
 
@@ -121,31 +129,31 @@ sti(void)
 	__asm__ __volatile__("sti");
 }
 
-static __always_inline uint32_t
-xchg(volatile uint32_t *addr, uint32_t newval)
+static __always_inline uintptr_t
+xchg(volatile uint32_t *addr, uintptr_t newval)
 {
-	uint32_t result;
+	uintptr_t result;
 
 	// The + in "+m" denotes a read-modify-write operand.
-	__asm__ __volatile__("lock; xchgl %0, %1"
+	__asm__ __volatile__("lock; xchg %0, %1"
 											 : "+m"(*addr), "=a"(result)
 											 : "1"(newval)
 											 : "cc");
 	return result;
 }
 
-static __always_inline uint32_t
+static __always_inline uintptr_t
 rcr2(void)
 {
-	uint32_t val;
-	__asm__ __volatile__("movl %%cr2,%0" : "=r"(val));
+	uintptr_t val;
+	__asm__ __volatile__("mov %%cr2,%0" : "=r"(val));
 	return val;
 }
 
 static __always_inline void
-lcr3(uint32_t val)
+lcr3(uintptr_t val)
 {
-	__asm__ __volatile__("movl %0,%%cr3" : : "r"(val));
+	__asm__ __volatile__("movq %0,%%cr3" : : "r"(val));
 }
 
 static __always_inline void
@@ -166,6 +174,34 @@ cpuid(uint32_t id, uint32_t count, uint32_t *a, uint32_t *b, uint32_t *c,
 
 // Layout of the trap frame built on the stack by the
 // hardware and by trapasm.S, and passed to trap().
+#ifdef X64
+struct trapframe {
+  uint64_t eax;      // rax
+  uint64_t rbx;
+  uint64_t rcx;
+  uint64_t rdx;
+  uint64_t rbp;
+  uint64_t rsi;
+  uint64_t rdi;
+  uint64_t r8;
+  uint64_t r9;
+  uint64_t r10;
+  uint64_t r11;
+  uint64_t r12;
+  uint64_t r13;
+  uint64_t r14;
+  uint64_t r15;
+
+  uint64_t trapno;
+  uint64_t err;
+
+  uint64_t eip;     // rip
+  uint64_t cs;
+  uint64_t eflags;  // rflags
+  uint64_t esp;     // rsp
+  uint64_t ds;      // ss
+};
+#else
 struct trapframe {
 	// registers as pushed by pusha
 	uint32_t edi;
@@ -200,3 +236,4 @@ struct trapframe {
 	uint16_t ss;
 	uint16_t padding6;
 };
+#endif

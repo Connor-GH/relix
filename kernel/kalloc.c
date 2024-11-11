@@ -55,7 +55,7 @@ freerange(void *vstart, void *vend)
 {
 	pushcli();
 	char *p;
-	p = (char *)PGROUNDUP((uint32_t)vstart);
+	p = (char *)PGROUNDUP((uintptr_t)vstart);
 	for (; p + PGSIZE <= (char *)vend; p += PGSIZE)
 		kpage_free(p);
 	popcli();
@@ -71,7 +71,7 @@ __nonnull(1) void kpage_free(char *v)
 	struct run *r;
 	int id = my_cpu_id();
 
-	if ((uint32_t)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
+	if ((uintptr_t)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
 		panic("kpage_free");
 
 	// Fill with junk to catch dangling refs.
@@ -188,7 +188,7 @@ morecore(uint32_t nu)
 }
 
 void *
-kmalloc(uint32_t nbytes)
+kmalloc(size_t nbytes)
 {
 	Header *p, *prevp;
 	uint32_t nunits;

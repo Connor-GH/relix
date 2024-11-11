@@ -1,7 +1,7 @@
-/* vm64.c 
+/* vm64.c
  *
  * Copyright (c) 2013 Brian Swetland
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -12,7 +12,7 @@
  *
  * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -23,26 +23,27 @@
  *
  */
 
+#include "compiler_attributes.h"
 #include "param.h"
 #include "stdint.h"
-#include "defs.h"
+#include "console.h"
+#include "kernel_string.h"
 #include "x86.h"
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
-#include "elf.h"
+#include "kalloc.h"
+#include <stdint.h>
 
-__thread struct cpu *cpu;
-__thread struct proc *proc;
-
-static uint32_t *kpml4;
-static uint32_t *kpdpt;
-static uint32_t *iopgdir;
-static uint32_t *kpgdir0;
-static uint32_t *kpgdir1;
+#define kalloc() kpage_alloc()
+static uintptr_t *kpml4;
+static uintptr_t *kpdpt;
+static uintptr_t *iopgdir;
+static uintptr_t *kpgdir0;
+static uintptr_t *kpgdir1;
 
 void
-wrmsr(uint32_t msr, uint64 val);
+wrmsr(uint32_t msr, uint64_t val);
 
 void
 tvinit(void)
@@ -56,7 +57,7 @@ idtinit(void)
 static void
 mkgate(uint32_t *idt, uint32_t n, void *kva, uint32_t pl, uint32_t trap)
 {
-	uint64 addr = (uint32_t64)kva;
+	uint64_t addr = (uint64_t)kva;
 	n *= 4;
 	trap = trap ? 0x8F00 : 0x8E00; // TRAP vs INTERRUPT gate;
 	idt[n + 0] = (addr & 0xFFFF) | ((SEG_KCODE << 3) << 16);
@@ -66,14 +67,14 @@ mkgate(uint32_t *idt, uint32_t n, void *kva, uint32_t pl, uint32_t trap)
 }
 
 static void
-tss_set_rsp(uint32_t *tss, uint32_t n, uint64 rsp)
+tss_set_rsp(uint32_t *tss, uint32_t n, uint64_t rsp)
 {
 	tss[n * 2 + 1] = rsp;
 	tss[n * 2 + 2] = rsp >> 32;
 }
 
 static void
-tss_set_ist(uint32_t *tss, uint32_t n, uint64 ist)
+tss_set_ist(uint32_t *tss, uint32_t n, uint64_t ist)
 {
 	tss[n * 2 + 7] = ist;
 	tss[n * 2 + 8] = ist >> 32;
@@ -86,9 +87,9 @@ extern void *vectors[];
 void
 seginit(void)
 {
-	uint64 *gdt;
+	uint64_t *gdt;
 	uint32_t *tss;
-	uint64 addr;
+	uint64_t addr;
 	void *local;
 	struct cpu *c;
 	uint32_t *idt = (uint32_t *)kalloc();
@@ -105,46 +106,45 @@ seginit(void)
 	local = kalloc();
 	memset(local, 0, PGSIZE);
 
-	gdt = (uint32_t64 *)local;
+	gdt = (uint64_t *)local;
 	tss = (uint32_t *)(((char *)local) + 1024);
-	tss[16] = 0x00680000; // IO Map Base = End of TSS
+	tss[16] = 0x0068 << 16 | 0x0000 /* reserved bits */; // IO Map Base = End of TSS
 
 	// point FS smack in the middle of our local storage page
-	wrmsr(0xC0000100, ((uint32_t64)local) + (PGSIZE / 2));
+	wrmsr(0xC0000100, ((uint64_t)local) + (PGSIZE / 2));
 
-	c = &cpus[cpunum()];
+	c = &cpus[my_cpu_id()];
 	c->local = local;
 
-	cpu = c;
-	proc = 0;
+	c->proc = 0;
 
-	addr = (uint32_t64)tss;
-	gdt[0] = 0x0000000000000000;
-	gdt[SEG_KCODE] = 0x0020980000000000; // Code, DPL=0, R/X
-	gdt[SEG_UCODE] = 0x0020F80000000000; // Code, DPL=3, R/X
-	gdt[SEG_KDATA] = 0x0000920000000000; // Data, DPL=0, W
-	gdt[SEG_KCPU] = 0x0000000000000000; // unused
-	gdt[SEG_UDATA] = 0x0000F20000000000; // Data, DPL=3, W
-	gdt[SEG_TSS + 0] = (0x0067) | ((addr & 0xFFFFFF) << 16) | (0x00E9LL << 40) |
+	addr = (uint64_t)tss;
+	c->gdt_bits[0] = 0x0000000000000000;
+	c->gdt_bits[SEG_KCODE] = 0x0020980000000000; // Code, DPL=0, R/X
+	c->gdt_bits[SEG_UCODE] = 0x0020F80000000000; // Code, DPL=3, R/X
+	c->gdt_bits[SEG_KDATA] = 0x0000920000000000; // Data, DPL=0, W
+	c->gdt_bits[SEG_KCPU] = 0;
+	c->gdt_bits[SEG_UDATA] = 0x0000F20000000000; // Data, DPL=3, W
+	c->gdt_bits[SEG_TSS + 0] = (0x0067) | ((addr & 0xFFFFFF) << 16) | (0x00E9LL << 40) |
 										 (((addr >> 24) & 0xFF) << 56);
-	gdt[SEG_TSS + 1] = (addr >> 32);
+	c->gdt_bits[SEG_TSS + 1] = (addr >> 32);
 
-	lgdt((void *)gdt, 8 * sizeof(uint32_t64));
+	lgdt((void *)c->gdt, sizeof(c->gdt));
 
 	ltr(SEG_TSS << 3);
-};
+}
 
 // The core xv6 code only knows about two levels of page tables,
 // so we will create all four, but only return the second level.
 // because we need to find the other levels later, we'll stash
 // backpointers to them in the top two entries of the level two
 // table.
-uint32_t *
+uintptr_t *
 setupkvm(void)
 {
-	uint32_t *pml4 = (uint32_t *)kalloc();
-	uint32_t *pdpt = (uint32_t *)kalloc();
-	uint32_t *pgdir = (uint32_t *)kalloc();
+	uintptr_t *pml4 = (uintptr_t *)kalloc();
+	uintptr_t *pdpt = (uintptr_t *)kalloc();
+	uintptr_t *pgdir = (uintptr_t *)kalloc();
 
 	memset(pml4, 0, PGSIZE);
 	memset(pdpt, 0, PGSIZE);
@@ -154,12 +154,17 @@ setupkvm(void)
 	pdpt[0] = v2p(pgdir) | PTE_P | PTE_W | PTE_U;
 
 	// virtual backpointers
-	pgdir[511] = ((uint32_tp)pml4) | PTE_P;
-	pgdir[510] = ((uint32_tp)pdpt) | PTE_P;
+	pgdir[511] = ((uintptr_t)pml4) | PTE_P;
+	pgdir[510] = ((uintptr_t)pdpt) | PTE_P;
 
 	return pgdir;
-};
+}
 
+void
+switchkvm(void)
+{
+	lcr3(v2p(kpml4));
+}
 // Allocate one page table for the machine for the kernel address
 // space for scheduler processes.
 //
@@ -168,11 +173,11 @@ void
 kvmalloc(void)
 {
 	int n;
-	kpml4 = (uint32_t *)kalloc();
-	kpdpt = (uint32_t *)kalloc();
-	kpgdir0 = (uint32_t *)kalloc();
-	kpgdir1 = (uint32_t *)kalloc();
-	iopgdir = (uint32_t *)kalloc();
+	kpml4 = (uintptr_t *)kalloc();
+	kpdpt = (uintptr_t *)kalloc();
+	kpgdir0 = (uintptr_t *)kalloc();
+	kpgdir1 = (uintptr_t *)kalloc();
+	iopgdir = (uintptr_t *)kalloc();
 	memset(kpml4, 0, PGSIZE);
 	memset(kpdpt, 0, PGSIZE);
 	memset(iopgdir, 0, PGSIZE);
@@ -190,11 +195,7 @@ kvmalloc(void)
 	switchkvm();
 }
 
-void
-switchkvm(void)
-{
-	lcr3(v2p(kpml4));
-}
+
 
 void
 switchuvm(struct proc *p)
@@ -204,8 +205,14 @@ switchuvm(struct proc *p)
 	pushcli();
 	if (p->pgdir == 0)
 		panic("switchuvm: no pgdir");
-	tss = (uint32_t *)(((char *)cpu->local) + 1024);
-	tss_set_rsp(tss, 0, (uint32_tp)proc->kstack + KSTACKSIZE);
+	tss = (uint32_t *) (((char *) mycpu()->local) + 1024);
+	tss_set_rsp(tss, 0, (uintptr_t)myproc()->kstack + KSTACKSIZE);
+	/*mycpu()->gdt[SEG_TSS] =
+		SEG16(STS_T32A, &mycpu()->ts, sizeof(mycpu()->ts) - 1, 0);
+	mycpu()->gdt[SEG_TSS].s = 0;
+	mycpu()->ts.ss0 = SEG_KDATA << 3;
+	mycpu()->ts.esp0 = (uintptr_t)p->kstack + KSTACKSIZE;
+	*/
 	pml4 = (void *)PTE_ADDR(p->pgdir[511]);
 	lcr3(v2p(pml4));
 	popcli();

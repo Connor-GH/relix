@@ -34,7 +34,7 @@
 #include "kernel_assert.h"
 #include "console.h"
 #include "lapic.h"
-#if X64
+#ifdef X64
 #define PHYSLIMIT 0x80000000
 #else
 #define PHYSLIMIT 0x0E000000
@@ -222,6 +222,7 @@ acpiinit(void)
 		}
 	}
 
+	kernel_assert(madt != NULL);
 	return acpi_config_smp(madt);
 
 notmapped:

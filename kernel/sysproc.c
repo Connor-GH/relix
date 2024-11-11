@@ -55,10 +55,10 @@ sys_getpid(void)
 int
 sys_sbrk(void)
 {
-	int addr;
-	int n;
+	uintptr_t addr;
+	uintptr_t n;
 
-	if (argint(0, &n) < 0)
+	if (arguintptr(0, &n) < 0)
 		return -EINVAL;
 	addr = myproc()->sz;
 	if (growproc(n) < 0)

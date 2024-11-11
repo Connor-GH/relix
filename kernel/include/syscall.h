@@ -57,11 +57,15 @@ argint(int, int *);
 int
 argptr(int, char **, int);
 int
+arguintptr(int n, uintptr_t *ip);
+int
 argstr(int, char **);
 int
-fetchint(uint32_t, int *);
+fetchint(uintptr_t, int *);
 int
-fetchstr(uint32_t, char **);
+fetchuintp(uintptr_t addr, uintptr_t *ip);
+int
+fetchstr(uintptr_t, char **);
 void
 syscall(void);
 #endif

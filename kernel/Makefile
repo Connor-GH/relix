@@ -1,6 +1,13 @@
 KERNELDIR = kernel
 KERNEL_SRC = $(wildcard $(KERNELDIR)/*.c)
 KERNEL_ASM = $(wildcard $(KERNELDIR)/*.S)
+ifeq ($(BITS),64)
+	KERNEL_SRC += $(wildcard $(KERNELDIR)/64/*.c)
+	KERNEL_ASM += $(wildcard $(KERNELDIR)/64/*.S)
+else
+	KERNEL_SRC += $(wildcard $(KERNELDIR)/32/*.c)
+	KERNEL_ASM += $(wildcard $(KERNELDIR)/32/*.S)
+endif
 KERNEL_DRIVERS = $(KERNELDIR)/drivers/kbd.c \
 								 $(KERNELDIR)/drivers/lapic.c \
 								 $(KERNELDIR)/drivers/acpi.c

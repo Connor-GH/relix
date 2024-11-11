@@ -1465,7 +1465,7 @@ sbrktest(void)
 	// can one grow address space to something big?
 #define BIG (100 * 1024 * 1024)
 	a = sbrk(0);
-	amt = (BIG) - (uint32_t)a;
+	amt = (BIG) - (uintptr_t)a;
 	p = sbrk(amt);
 	if (p != a) {
 		fprintf(stdout,
@@ -1534,7 +1534,7 @@ sbrktest(void)
 	for (i = 0; i < sizeof(pids) / sizeof(pids[0]); i++) {
 		if ((pids[i] = fork()) == 0) {
 			// allocate a lot of memory
-			sbrk(BIG - (uint32_t)sbrk(0));
+			sbrk(BIG - (uintptr_t)sbrk(0));
 			write(fds[1], "x", 1);
 			// sit around until killed
 			for (;;)
@@ -1567,20 +1567,22 @@ void
 validateint(int *p)
 {
 	int res;
+	#ifndef X64
 	asm("mov %%esp, %%ebx\n\t"
-			"mov %3, %%esp\n\t"
+			"mov %3, %%rsp\n\t"
 			"int %2\n\t"
 			"mov %%ebx, %%esp"
 			: "=a"(res)
 			: "a"(SYS_sleep), "n"(T_SYSCALL), "c"(p)
 			: "ebx");
+#endif
 }
 
 void
 validatetest(void)
 {
 	int hi, pid;
-	uint32_t p;
+	uintptr_t p;
 
 	fprintf(stdout, "validate test\n");
 	hi = 1100 * 1024;

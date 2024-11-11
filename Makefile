@@ -70,13 +70,8 @@ ifneq ($(LLVM),)
 endif
 # Dlang toolchain
 DC ?= dmd
-<<<<<<< HEAD
 D_PREVIEWS = -preview=systemVariables,in,dip1000,dip1021
 DFLAGS ?= -betterC -O $(EXTRA_DFLAGS)
-=======
-D_PREVIEWS = -preview=systemVariables,in,dip1000,dip1021,nosharedaccess,fixImmutableConv
-DFLAGS ?= -betterC -O -m32 $(EXTRA_DFLAGS)
->>>>>>> relics
 
 ifeq ($(shell $(DC) --version | sed -n 1p | awk '{print $$1}'),DMD64)
 	DC_type = dmd

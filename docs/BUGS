@@ -1,5 +1,5 @@
-formatting:
-	need to fix PAGEBREAK mechanism
+date:
+	illegal instruction in date(1), TODO
 
 sh:
 	can't always runcmd in child -- breaks cd.

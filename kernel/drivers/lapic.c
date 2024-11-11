@@ -1,13 +1,14 @@
 // The local APIC manages internal (non-I/O) interrupts.
 // See Chapter 8 & Appendix C of Intel processor manual volume 3.
 
-#include <types.h>
+#include <stdint.h>
 #include <date.h>
 #include "traps.h"
 #include "x86.h"
 #include "memlayout.h"
 #include "stdbool.h"
 #include "kernel_string.h"
+#include "console.h"
 
 // Local APIC registers, divided by 4 for use as uint[] indices.
 #define ID (0x0020 / 4) // ID
@@ -43,7 +44,7 @@
 #define TCCR (0x0390 / 4) // Timer Current Count
 #define TDCR (0x03E0 / 4) // Timer Divide Configuration
 
-volatile uint *lapic; // Initialized in mp.c
+volatile uint32_t *lapic; // Initialized in mp.c
 
 static void
 lapicw(int index, int value)
@@ -137,17 +138,17 @@ microdelay(int us)
 // Start additional processor running entry code at addr.
 // See Appendix B of MultiProcessor Specification.
 void
-lapicstartap(uchar apicid, uint addr)
+lapicstartap(uint8_t apicid, uint32_t addr)
 {
 	int i;
-	ushort *wrv;
+	uint16_t *wrv;
 
 	// "The BSP must initialize CMOS shutdown code to 0AH
 	// and the warm reset vector (DWORD based at 40:67) to point at
 	// the AP startup code prior to the [universal startup algorithm]."
 	outb(CMOS_PORT, 0xF); // offset 0xF is shutdown code
 	outb(CMOS_PORT + 1, 0x0A);
-	wrv = (ushort *)P2V((0x40 << 4 | 0x67)); // Warm reset vector
+	wrv = (uint16_t *)P2V((0x40 << 4 | 0x67)); // Warm reset vector
 	wrv[0] = 0;
 	wrv[1] = addr >> 4;
 

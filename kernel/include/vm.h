@@ -1,34 +1,34 @@
 #pragma once
 #include "fs.h"
-#include <types.h>
+#include <stdint.h>
 #include <proc.h>
 void
 seginit(void);
 void
 kvmalloc(void);
-pde_t *
+uintptr_t *
 setupkvm(void);
 char *
-uva2ka(pde_t *, char *);
+uva2ka(uintptr_t *, char *);
 int
-allocuvm(pde_t *, uint, uint);
+allocuvm(uintptr_t *, uintptr_t, uintptr_t);
 int
-deallocuvm(pde_t *, uint, uint);
+deallocuvm(uintptr_t *, uintptr_t, uintptr_t);
 void
-freevm(pde_t *);
+freevm(uintptr_t *);
 void
-inituvm(pde_t *, char *, uint);
+inituvm(uintptr_t *, char *, uint32_t);
 int
-loaduvm(pde_t *, char *, struct inode *, uint, uint);
-pde_t *
-copyuvm(pde_t *, uint);
+loaduvm(uintptr_t *, char *, struct inode *, uint32_t, uint32_t);
+uintptr_t *
+copyuvm(uintptr_t *, uint32_t);
 void
 switchuvm(struct proc *);
 void
 switchkvm(void);
 int
-copyout(pde_t *, uint, void *, uint);
+copyout(uintptr_t *, uint32_t, void *, uint32_t);
 void
-clearpteu(pde_t *pgdir, char *uva);
+clearpteu(uintptr_t *pgdir, char *uva);
 int
-mappages(pde_t *pgdir, void *va, uint size, uint pa, int perm);
+mappages(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm);

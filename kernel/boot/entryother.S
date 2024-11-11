@@ -55,6 +55,9 @@ start32:
   movw    %ax, %fs                # -> FS
   movw    %ax, %gs                # -> GS
 
+#if X64
+	mov $1, %ebx # defer paging till 64 bit
+#else
   # Turn on page size extension for 4Mbyte pages
   movl    %cr4, %eax
   orl     $(CR4_PSE), %eax
@@ -66,6 +69,7 @@ start32:
   movl    %cr0, %eax
   orl     $(CR0_PE|CR0_PG|CR0_WP), %eax
   movl    %eax, %cr0
+	#endif
 
   # Switch to the stack allocated by startothers()
   movl    (start-4), %esp

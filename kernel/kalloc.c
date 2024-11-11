@@ -3,7 +3,7 @@
 // and pipe buffers. Allocates 4096-byte pages.
 
 #include <stdlib.h>
-#include <types.h>
+#include <stdint.h>
 #include <stdint.h>
 #include "compiler_attributes.h"
 #include "drivers/memlayout.h"
@@ -55,7 +55,7 @@ freerange(void *vstart, void *vend)
 {
 	pushcli();
 	char *p;
-	p = (char *)PGROUNDUP((uint)vstart);
+	p = (char *)PGROUNDUP((uintptr_t)vstart);
 	for (; p + PGSIZE <= (char *)vend; p += PGSIZE)
 		kpage_free(p);
 	popcli();
@@ -71,7 +71,7 @@ __nonnull(1) void kpage_free(char *v)
 	struct run *r;
 	int id = my_cpu_id();
 
-	if ((uint)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
+	if ((uintptr_t)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
 		panic("kpage_free");
 
 	// Fill with junk to catch dangling refs.
@@ -139,7 +139,7 @@ typedef long Align;
 union header {
 	struct {
 		union header *ptr;
-		uint size;
+		uint32_t size;
 	} s;
 	Align x;
 };
@@ -173,7 +173,7 @@ kfree(void *ap)
 }
 
 static Header *
-morecore(uint nu)
+morecore(uint32_t nu)
 {
 	char *p;
 	Header *hp;
@@ -188,10 +188,10 @@ morecore(uint nu)
 }
 
 void *
-kmalloc(uint nbytes)
+kmalloc(size_t nbytes)
 {
 	Header *p, *prevp;
-	uint nunits;
+	uint32_t nunits;
 
 	if (nbytes > 4096) {
 		panic("kmalloc: requested more than allowed in a single allocation");

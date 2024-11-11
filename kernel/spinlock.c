@@ -1,6 +1,6 @@
 // Mutual exclusion spin locks.
 
-#include <types.h>
+#include <stdint.h>
 #include "drivers/memlayout.h"
 #include "drivers/mmu.h"
 #include "x86.h"
@@ -65,17 +65,21 @@ release(struct spinlock *lk)
 
 // Record the current call stack in pcs[] by following the %ebp chain.
 void
-getcallerpcs(void *v, uint pcs[])
+getcallerpcs(void *v, uintptr_t pcs[])
 {
-	uint *ebp;
+	uintptr_t *ebp;
 	int i;
 
-	ebp = (uint *)v - 2;
+	#if X64
+	asm volatile("mov %%rbp, %0" : "=r"(ebp));
+	#else
+	ebp = (uintptr_t *)v - 2;
+	#endif
 	for (i = 0; i < 10; i++) {
-		if (ebp == 0 || ebp < (uint *)KERNBASE || ebp == (uint *)0xffffffff)
+		if (ebp == 0 || ebp < (uintptr_t *)KERNBASE || ebp == (uintptr_t *)0xffffffff)
 			break;
 		pcs[i] = ebp[1]; // saved %eip
-		ebp = (uint *)ebp[0]; // saved %ebp
+		ebp = (uintptr_t *)ebp[0]; // saved %ebp
 	}
 	for (; i < 10; i++)
 		pcs[i] = 0;

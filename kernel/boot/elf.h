@@ -1,5 +1,4 @@
 #pragma once
-#include "../../include/types.h"
 #include <stdint.h>
 // Format of an ELF executable file
 
@@ -8,56 +7,55 @@
 // File header
 struct elfhdr {
 	uint32_t magic; // must equal ELF_MAGIC
-	uchar elf[12];
-	ushort type;
-	ushort machine;
+	uint8_t elf[12];
+	uint16_t type;
+	uint16_t machine;
 	uint32_t version;
-	uint32_t entry;
-	uint32_t phoff;
-	uint32_t shoff;
+	uintptr_t entry;
+	uintptr_t phoff;
+	uintptr_t shoff;
 	uint32_t flags;
-	ushort ehsize;
-	ushort phentsize;
-	ushort phnum;
-	ushort shentsize;
-	ushort shnum;
-	ushort shstrndx;
+	uint16_t ehsize;
+	uint16_t phentsize;
+	uint16_t phnum;
+	uint16_t shentsize;
+	uint16_t shnum;
+	uint16_t shstrndx;
 };
 
 // Program section header
 struct proghdr {
 	uint32_t type;
-	uint32_t off;
-	uint32_t vaddr;
-	uint32_t paddr;
-	uint32_t filesz;
-	uint32_t memsz;
 	uint32_t flags;
-	uint32_t align;
+	uintptr_t off;
+	uintptr_t vaddr;
+	uintptr_t paddr;
+	uintptr_t filesz;
+	uintptr_t memsz;
+	uintptr_t align;
 };
 
 struct elf32_shdr {
-uint32_t sh_name;
-uint32_t sh_type;
-uint32_t sh_flags;
-uint32_t sh_addr;
-uint32_t sh_offset;
-uint32_t sh_size;
-uint32_t sh_link;
-uint32_t sh_info;
-uint32_t sh_addralign;
-uint32_t sh_entsize;
+	uint32_t sh_name;
+	uint32_t sh_type;
+	uint32_t sh_flags;
+	uint32_t sh_addr;
+	uint32_t sh_offset;
+	uint32_t sh_size;
+	uint32_t sh_link;
+	uint32_t sh_info;
+	uint32_t sh_addralign;
+	uint32_t sh_entsize;
 };
 
 struct elf32_symhdr {
-	uint32_t	name;
-	uint32_t	value;
-	uint32_t	size;
-	uint8_t	  info;
-	uint8_t 	other;
-	uint16_t	st_shndx;
+	uint32_t name;
+	uint32_t value;
+	uint32_t size;
+	uint8_t info;
+	uint8_t other;
+	uint16_t st_shndx;
 };
-
 
 // Values for Proghdr type
 #define ELF_PROG_LOAD 1

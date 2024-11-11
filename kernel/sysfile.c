@@ -5,7 +5,7 @@
 //
 
 #include <defs.h>
-#include <types.h>
+#include <stdint.h>
 #include <stat.h>
 #include <stdlib.h>
 #include <dirent.h>
@@ -206,7 +206,7 @@ sys_unlink(void)
 	struct inode *ip, *dp;
 	struct dirent de;
 	char name[DIRSIZ], *path;
-	uint off;
+	uint32_t off;
 	int error = EINVAL;
 
 	if (argstr(0, &path) < 0)
@@ -396,7 +396,9 @@ get_fd:
 	return fd;
 }
 
-int sys_open(void) {
+int
+sys_open(void)
+{
 	char *path;
 	int omode;
 
@@ -477,16 +479,16 @@ sys_exec(void)
 {
 	char *path, *argv[MAXARG];
 	int i;
-	uint uargv, uarg;
+	uintptr_t uargv, uarg;
 
-	if (argstr(0, &path) < 0 || argint(1, (int *)&uargv) < 0) {
+	if (argstr(0, &path) < 0 || arguintptr(1, &uargv) < 0) {
 		return -EINVAL;
 	}
 	memset(argv, 0, sizeof(argv));
 	for (i = 0;; i++) {
 		if (i >= NELEM(argv))
 			return -ENOEXEC;
-		if (fetchint(uargv + 4 * i, (int *)&uarg) < 0)
+		if (fetchuintp(uargv + sizeof(uintptr_t) * i, &uarg) < 0)
 			return -ENOEXEC;
 		if (uarg == 0) {
 			argv[i] = 0;
@@ -562,7 +564,7 @@ sys_symlink(void)
 {
 	char *target, *linkpath;
 	char dir[DIRSIZ];
-	uint poff;
+	uint32_t poff;
 	struct inode *eexist, *ip;
 	if (argstr(0, &target) < 0 || argstr(1, &linkpath) < 0)
 		return -EINVAL;
@@ -631,7 +633,7 @@ sys_readlink(void)
 	if (readi(ip, ubuf, 0, bufsize) < 0)
 		panic("readlink readi");
 
-	if (copyout(myproc()->pgdir, (uint)ubuf, ubuf, bufsize) < 0)
+	if (copyout(myproc()->pgdir, (uintptr_t)ubuf, ubuf, bufsize) < 0)
 		panic("readlink copyout");
 
 	iunlock(ip);

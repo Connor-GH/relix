@@ -5,7 +5,7 @@
 // bootmain() loads an ELF kernel image from the disk starting at
 // sector 1 and then jumps to the kernel entry routine.
 
-#include <types.h>
+#include <stdint.h>
 #include "../drivers/memlayout.h"
 #include "x86.h"
 #include "elf.h"
@@ -13,7 +13,7 @@
 #define SECTSIZE 512
 
 void
-readseg(uchar *, uint, uint);
+readseg(uint8_t *, uint32_t, uint32_t);
 
 void
 bootmain(void)
@@ -26,17 +26,17 @@ bootmain(void)
 	elf = (struct elfhdr *)0x10000; // scratch space
 
 	// Read 1st page off disk
-	readseg((uchar *)elf, 4096, 0);
+	readseg((uint8_t *)elf, 4096, 0);
 
 	// Is this an ELF executable?
 	if (elf->magic != ELF_MAGIC)
 		return; // let bootasm.S handle error
 
 	// Load each program segment (ignores ph flags).
-	ph = (struct proghdr *)((uchar *)elf + elf->phoff);
+	ph = (struct proghdr *)((uint8_t *)elf + elf->phoff);
 	eph = ph + elf->phnum;
-	for (uchar *pa; ph < eph; ph++) {
-		pa = (uchar *)ph->paddr;
+	for (uint8_t *pa; ph < eph; ph++) {
+		pa = (uint8_t *)ph->paddr;
 		readseg(pa, ph->filesz, ph->off);
 		if (ph->memsz > ph->filesz)
 			stosb(pa + ph->filesz, 0, ph->memsz - ph->filesz);
@@ -58,7 +58,7 @@ waitdisk(void)
 
 // Read a single sector at offset into dst.
 void
-readsect(void *dst, uint offset)
+readsect(void *dst, uint32_t offset)
 {
 	// Issue command.
 	waitdisk();
@@ -77,7 +77,7 @@ readsect(void *dst, uint offset)
 // Read 'count' bytes at 'offset' from kernel into physical address 'pa'.
 // Might copy more than asked.
 void
-readseg(uchar *pa, uint count, uint offset)
+readseg(uint8_t *pa, uint32_t count, uint32_t offset)
 {
 	// Round down to sector boundary.
 	pa -= offset % SECTSIZE;
@@ -88,6 +88,6 @@ readseg(uchar *pa, uint count, uint offset)
 	// If this is too slow, we could read lots of sectors at a time.
 	// We'd write more to memory than asked, but it doesn't matter --
 	// we load in increasing order.
-	for (uchar *epa = pa + count; pa < epa; pa += SECTSIZE, offset++)
+	for (uint8_t *epa = pa + count; pa < epa; pa += SECTSIZE, offset++)
 		readsect(pa, offset);
 }

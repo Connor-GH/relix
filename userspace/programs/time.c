@@ -16,8 +16,8 @@ main(int argc, char **argv)
 	char *path = malloc(FILENAME_MAX);
 	sprintf(path, "/bin/%s", argv[1]);
 	if (fork() == 0)
-		exec(path, argv+1);
+		exec(path, argv + 1);
 	wait(NULL);
-	printf("wall time %dms\n", (uptime() - before) );
+	printf("wall time %dms\n", (uptime() - before));
 	return 0;
 }

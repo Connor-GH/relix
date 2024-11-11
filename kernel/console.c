@@ -2,8 +2,9 @@
 // Input is from the keyboard or serial port.
 // Output is written to the screen and serial port.
 
-#include <types.h>
 #include <stdint.h>
+#include <stdint.h>
+#include <stdarg.h>
 #include "proc.h"
 #include "x86.h"
 #include "traps.h"
@@ -26,6 +27,7 @@ int echo_out = 1;
 static uint8_t static_foreg = WHITE;
 static uint8_t static_backg = BLACK;
 static int alt_form = 0;
+static int long_form = 0;
 
 static struct {
 	struct spinlock lock;
@@ -41,12 +43,12 @@ set_term_color(uint8_t foreground, uint8_t background)
 }
 
 static void
-printint(int xx, int base, int sign)
+printint(uint64_t xx, int base, int sign)
 {
 	static char digits[] = "0123456789abcdef";
-	char buf[16];
+	char buf[32];
 	int i;
-	uint x;
+	uint64_t x;
 
 	// the second check prevents misusage of the function.
 	// we expect sign && xx < 0, but plan for the worst.
@@ -77,14 +79,15 @@ __attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *fmt,
 																																...)
 {
 	int i, c, locking;
-	uint *argp;
+	va_list argp;
 	char *s;
+
+	va_start(argp, fmt);
 
 	locking = cons.locking;
 	if (locking)
 		acquire(&cons.lock);
 
-	argp = (uint *)(void *)(&fmt + 1);
 	for (i = 0; (c = fmt[i] & 0xff) != 0; i++) {
 		if (c != '%') {
 			// \ef1 gives foreground color 1, which is blue.
@@ -130,23 +133,41 @@ do_again:
 			break;
 		switch (c) {
 		case 'u':
-			printint(*argp++, 10, 0);
+			if (long_form == 0)
+				printint(va_arg(argp, unsigned int), 10, 0);
+			else
+				printint(va_arg(argp, unsigned long), 10, 0);
 			break;
 		case 'd':
-			printint(*argp++, 10, 1);
+			if (long_form == 0)
+				printint(va_arg(argp, int), 10, 1);
+			else
+				printint(va_arg(argp, long), 10, 1);
 			break;
 		case '#':
 			alt_form = 1;
 			goto do_again;
+		case 'l':
+			long_form = 1;
+			goto do_again;
 		case 'x':
+			if (long_form == 0)
+				printint(va_arg(argp, unsigned int), 16, 0);
+			else
+				printint(va_arg(argp, unsigned long), 16, 0);
+			break;
 		case 'p':
-			printint(*argp++, 16, 0);
+			alt_form = 1;
+			printint((uintptr_t)va_arg(argp, void *), 16, 0);
 			break;
 		case 'o':
-			printint(*argp++, 8, 0);
+			if (long_form == 0)
+				printint(va_arg(argp, unsigned int), 8, 0);
+			else
+				printint(va_arg(argp, unsigned long), 8, 0);
 			break;
 		case 's':
-			if ((s = (char *)*argp++) == 0)
+			if ((s = va_arg(argp, char *)) == 0)
 				s = "(null)";
 			for (; *s; s++)
 				consputc(*s);
@@ -165,13 +186,14 @@ skip_printing:;
 
 	if (locking)
 		release(&cons.lock);
+	va_end(argp);
 }
 
 __noreturn __cold void
 panic(const char *s)
 {
 	int i;
-	uint pcs[10];
+	uintptr_t pcs[10];
 
 	cli();
 	cons.locking = 0;
@@ -181,7 +203,7 @@ panic(const char *s)
 	cprintf("\n");
 	getcallerpcs(&s, pcs);
 	for (i = 0; i < 10; i++)
-		cprintf(" %x", pcs[i]);
+		cprintf(" %#lx", pcs[i]);
 	panicked = 1; // freeze other CPU
 	for (;;)
 		;
@@ -189,7 +211,7 @@ panic(const char *s)
 
 #define BACKSPACE 0x100
 #define CRTPORT 0x3d4
-static ushort *crt = (ushort *)P2V(0xb8000); // CGA memory
+static uint16_t *crt = (uint16_t *)P2V(0xb8000); // CGA memory
 
 static void
 cgaputc(int c, uint8_t fore, uint8_t back)
@@ -256,9 +278,9 @@ consputc(int c)
 #define INPUT_BUF 128
 struct {
 	char buf[INPUT_BUF];
-	uint r; // Read index
-	uint w; // Write index
-	uint e; // Edit index
+	uint32_t r; // Read index
+	uint32_t w; // Write index
+	uint32_t e; // Edit index
 } input;
 
 #define C(x) ((x) - '@') // Control-x
@@ -312,7 +334,7 @@ consoleintr(int (*getc)(void))
 }
 __nonnull(1, 2) static int consoleread(struct inode *ip, char *dst, int n)
 {
-	uint target;
+	uint32_t target;
 	int c;
 
 	iunlock(ip);

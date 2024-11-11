@@ -1,4 +1,4 @@
-#include <types.h>
+#include <stdint.h>
 #include "proc.h"
 #include "spinlock.h"
 #include "file.h"
@@ -10,8 +10,8 @@
 struct pipe {
 	struct spinlock lock;
 	char data[PIPESIZE];
-	uint nread; // number of bytes read
-	uint nwrite; // number of bytes written
+	uint32_t nread; // number of bytes read
+	uint32_t nwrite; // number of bytes written
 	int readopen; // read fd is still open
 	int writeopen; // write fd is still open
 };

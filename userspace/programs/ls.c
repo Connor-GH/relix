@@ -1,5 +1,4 @@
 #include "stat.h"
-#include "types.h"
 #include <sys/stat.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -16,12 +15,12 @@
 #define GiB (1024 * MiB)
 #define TiB (1024 * GiB)
 struct ls_time {
-	uint sec;
-	uint min;
-	uint hr;
-	uint day;
-	uint mo;
-	uint yr;
+	uint32_t sec;
+	uint32_t min;
+	uint32_t hr;
+	uint32_t day;
+	uint32_t mo;
+	uint32_t yr;
 };
 
 enum {
@@ -34,7 +33,7 @@ enum {
 };
 
 static char *
-to_human_bytes(uint number, char human_name[static 7])
+to_human_bytes(uint32_t number, char human_name[static 7])
 {
 	char letter;
 	if (number > 1 * GiB) {
@@ -56,7 +55,7 @@ to_human_bytes(uint number, char human_name[static 7])
 }
 
 static struct ls_time
-unix_time_to_human_readable(uint unix_seconds)
+unix_time_to_human_readable(uint32_t unix_seconds)
 {
 	// Save the time in Human
 	// readable format
@@ -213,7 +212,7 @@ fmtname(char *path, int fmt_flag)
 }
 
 static char *
-mode_to_perm(uint mode, char ret[static 11])
+mode_to_perm(uint32_t mode, char ret[static 11])
 {
 	ret[0] = (mode & S_IFREG) ? '-' :
 					 S_ISDIR(mode)		? 'd' :
@@ -263,7 +262,6 @@ ls_format(char *buf, struct stat st, bool pflag, bool lflag, bool hflag,
 		struct ls_time lt = unix_time_to_human_readable(st.st_mtime);
 		fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
 						lt.hr, lt.min, lt.sec);
-
 
 		if (S_ISLNK(st.st_mode)) {
 			fprintf(stdout, "%s\n", fmtname(buf, true));

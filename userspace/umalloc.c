@@ -1,5 +1,4 @@
 #include "stdint.h"
-#include "types.h"
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -11,7 +10,7 @@ typedef long Align;
 union header {
 	struct {
 		union header *ptr;
-		uint size;
+		uint32_t size;
 	} s;
 	Align x;
 };
@@ -44,7 +43,7 @@ free(void *ap)
 }
 
 static Header *
-morecore(uint nu)
+morecore(uint32_t nu)
 {
 	char *p;
 	Header *hp;
@@ -61,10 +60,10 @@ morecore(uint nu)
 }
 
 __attribute__((malloc)) void *
-malloc(uint nbytes)
+malloc(uint32_t nbytes)
 {
 	Header *p, *prevp;
-	uint nunits;
+	uint32_t nunits;
 
 	nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
 	if ((prevp = freep) == 0) {
@@ -91,7 +90,8 @@ malloc(uint nbytes)
 __attribute__((malloc)) void *
 realloc(void *ptr, size_t size)
 {
-	if (ptr) free(ptr);
+	if (ptr)
+		free(ptr);
 	ptr = malloc(size);
 	return ptr;
 }

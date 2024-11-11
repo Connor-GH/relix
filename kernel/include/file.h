@@ -1,5 +1,5 @@
 #pragma once
-#include <types.h>
+#include <stdint.h>
 #include <stat.h>
 #include "fs.h"
 struct file {
@@ -9,7 +9,7 @@ struct file {
 	char writable;
 	struct pipe *pipe;
 	struct inode *ip;
-	uint off;
+	uint32_t off;
 };
 
 // table mapping major device number to

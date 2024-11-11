@@ -1,4 +1,3 @@
-#include "types.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -8,7 +7,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-static uint global_idx = 0;
+static uint32_t global_idx = 0;
 
 static void
 putc(int fd, char c, char *buf)
@@ -39,7 +38,7 @@ printint(void (*put_function)(int, char, char *), char *put_func_buf, int fd,
 	char buf[250];
 	int i = 0;
 	int neg = 0;
-	uint x;
+	uint32_t x;
 
 	if (sgn && xx < 0) {
 		neg = 1;
@@ -134,7 +133,7 @@ vprintf_internal(void (*put_function)(int fd, char c, char *buf), int fd,
 				break;
 			}
 			case 'u': {
-				uint u = va_arg(*argp, uint);
+				uint32_t u = va_arg(*argp, uint32_t);
 				printint(put_function, buf, fd, u, 10, false, flags, str_pad);
 				break;
 			}

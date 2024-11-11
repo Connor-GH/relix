@@ -1,9 +1,9 @@
 #pragma once
-#include <types.h>
+#include <stdint.h>
 
 void
 binit(void);
-struct buf *bread(uint, uint);
+struct buf *bread(uint32_t, uint32_t);
 void
 brelse(struct buf *);
 void

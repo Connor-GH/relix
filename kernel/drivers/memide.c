@@ -2,22 +2,22 @@
 // Useful for running kernel without scratch disk.
 
 #include "sleeplock.h"
-#include <types.h>
+#include <stdint.h>
 #include <buf.h>
 #include "fs.h"
 #include "console.h"
 #include "kernel_string.h"
 
-extern uchar _binary_fs_img_start[], _binary_fs_img_size[];
+extern uint8_t _binary_fs_img_start[], _binary_fs_img_size[];
 
 static int disksize;
-static uchar *memdisk;
+static uint8_t *memdisk;
 
 void
 ideinit(void)
 {
 	memdisk = _binary_fs_img_start;
-	disksize = (uint)_binary_fs_img_size / BSIZE;
+	disksize = (uint32_t)_binary_fs_img_size / BSIZE;
 }
 
 // Interrupt handler.
@@ -33,7 +33,7 @@ ideintr(void)
 void
 iderw(struct buf *b)
 {
-	uchar *p;
+	uint8_t *p;
 
 	if (!holdingsleep(&b->lock))
 		panic("iderw: buf not locked");

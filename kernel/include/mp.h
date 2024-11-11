@@ -1,59 +1,59 @@
 #pragma once
-#include <types.h>
+#include <stdint.h>
 // See MultiProcessor Specification Version 1.[14]
 
 extern int ismp; // SMP
 
 struct mp { // floating pointer
-	uchar signature[4]; // "_MP_"
+	uint8_t signature[4]; // "_MP_"
 	void *physaddr; // phys addr of MP config table
-	uchar length; // 1
-	uchar specrev; // [14]
-	uchar checksum; // all bytes must add up to 0
-	uchar type; // MP system config type. when zero, the MP table is present.
-	uchar imcrp; // [0-6] reserved; 7 is imcrp.
-	uchar reserved[3]; // must be zero.
+	uint8_t length; // 1
+	uint8_t specrev; // [14]
+	uint8_t checksum; // all bytes must add up to 0
+	uint8_t type; // MP system config type. when zero, the MP table is present.
+	uint8_t imcrp; // [0-6] reserved; 7 is imcrp.
+	uint8_t reserved[3]; // must be zero.
 };
 
 struct mpconf { // configuration table header
-	uchar signature[4]; // "PCMP"
-	ushort length; // total table length
-	uchar version; // [14]; actually just the revision
-	uchar checksum; // all bytes must add up to 0
-	uchar
+	uint8_t signature[4]; // "PCMP"
+	uint16_t length; // total table length
+	uint8_t version; // [14]; actually just the revision
+	uint8_t checksum; // all bytes must add up to 0
+	uint8_t
 		product[20]; // product id; first 4 is opem string; last 16 is product string
-	uint *oemtable; // OEM table pointer
-	ushort oemlength; // OEM table length
-	ushort entry; // entry count
-	uint *lapicaddr; // address of local APIC
-	ushort xlength; // extended table length
-	uchar xchecksum; // extended table checksum
-	uchar reserved;
+	uint32_t *oemtable; // OEM table pointer
+	uint16_t oemlength; // OEM table length
+	uint16_t entry; // entry count
+	uint32_t *lapicaddr; // address of local APIC
+	uint16_t xlength; // extended table length
+	uint8_t xchecksum; // extended table checksum
+	uint8_t reserved;
 };
 
 struct mpproc { // processor table entry
-	uchar type; // entry type (0)
-	uchar apicid; // local APIC id
-	uchar version; // local APIC version
-	uchar flags; // CPU flags; EN, BP, [2-7] reserved.
+	uint8_t type; // entry type (0)
+	uint8_t apicid; // local APIC id
+	uint8_t version; // local APIC version
+	uint8_t flags; // CPU flags; EN, BP, [2-7] reserved.
 #define MPBOOT 0x02 // This proc is the bootstrap processor.
-	uchar signature[4]; // CPU signature
-	uint feature; // feature flags from CPUID instruction
-	uchar reserved[8];
+	uint8_t signature[4]; // CPU signature
+	uint32_t feature; // feature flags from CPUID instruction
+	uint8_t reserved[8];
 };
 
 struct mpioapic { // I/O APIC table entry
-	uchar type; // entry type (2)
-	uchar apicno; // I/O APIC id
-	uchar version; // I/O APIC version
-	uchar flags; // I/O APIC flags; only bit 0 is defined.
-	uint *addr; // I/O APIC address
+	uint8_t type; // entry type (2)
+	uint8_t apicno; // I/O APIC id
+	uint8_t version; // I/O APIC version
+	uint8_t flags; // I/O APIC flags; only bit 0 is defined.
+	uint32_t *addr; // I/O APIC address
 };
 
 struct mpbus {
-	uchar type;
-	uchar busid;
-	uchar bus_string[6];
+	uint8_t type;
+	uint8_t busid;
+	uint8_t bus_string[6];
 };
 
 // Table entry types

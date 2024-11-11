@@ -16,6 +16,7 @@ but is implemented for a modern x86-based multiprocessor using ANSI C.
 - fixed general system ABIs and behaviors to make them align with POSIX.
 - doubly indirect block pointer inodes (max filesize 1MiB -> 512MiB)
 - ls(1) now has -h, -l, -i, and -p
+- 64-bit port, code pulled from swetland/xv6
 
 # dependencies
 - gcc/clang

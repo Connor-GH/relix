@@ -1,4 +1,4 @@
-#include <types.h>
+#include <stdint.h>
 #include <date.h>
 #include <errno.h>
 #include <sys/reboot.h>
@@ -55,10 +55,10 @@ sys_getpid(void)
 int
 sys_sbrk(void)
 {
-	int addr;
-	int n;
+	uintptr_t addr;
+	uintptr_t n;
 
-	if (argint(0, &n) < 0)
+	if (arguintptr(0, &n) < 0)
 		return -EINVAL;
 	addr = myproc()->sz;
 	if (growproc(n) < 0)
@@ -70,7 +70,7 @@ int
 sys_sleep(void)
 {
 	int n;
-	uint ticks0;
+	uint32_t ticks0;
 
 	if (argint(0, &n) < 0)
 		return -EINVAL;
@@ -92,7 +92,7 @@ sys_sleep(void)
 int
 sys_uptime(void)
 {
-	uint xticks;
+	uint32_t xticks;
 
 	acquire(&tickslock);
 	xticks = ticks;

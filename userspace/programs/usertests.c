@@ -1,4 +1,3 @@
-#include "types.h"
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <kernel/include/param.h>
@@ -774,7 +773,7 @@ concreate(void)
 	int i, pid, n, fd;
 	char fa[40];
 	struct {
-		ushort inum;
+		uint16_t inum;
 		char name[14];
 	} de;
 
@@ -1431,7 +1430,7 @@ sbrktest(void)
 {
 	int fds[2], pid, pids[10], ppid;
 	char *a, *b, *c, *lastaddr, *oldbrk, *p, scratch;
-	uint amt;
+	uint32_t amt;
 
 	fprintf(stdout, "sbrk test\n");
 	oldbrk = sbrk(0);
@@ -1466,7 +1465,7 @@ sbrktest(void)
 	// can one grow address space to something big?
 #define BIG (100 * 1024 * 1024)
 	a = sbrk(0);
-	amt = (BIG) - (uint)a;
+	amt = (BIG) - (uintptr_t)a;
 	p = sbrk(amt);
 	if (p != a) {
 		fprintf(stdout,
@@ -1535,7 +1534,7 @@ sbrktest(void)
 	for (i = 0; i < sizeof(pids) / sizeof(pids[0]); i++) {
 		if ((pids[i] = fork()) == 0) {
 			// allocate a lot of memory
-			sbrk(BIG - (uint)sbrk(0));
+			sbrk(BIG - (uintptr_t)sbrk(0));
 			write(fds[1], "x", 1);
 			// sit around until killed
 			for (;;)
@@ -1568,25 +1567,27 @@ void
 validateint(int *p)
 {
 	int res;
+	#ifndef X64
 	asm("mov %%esp, %%ebx\n\t"
-			"mov %3, %%esp\n\t"
+			"mov %3, %%rsp\n\t"
 			"int %2\n\t"
 			"mov %%ebx, %%esp"
 			: "=a"(res)
 			: "a"(SYS_sleep), "n"(T_SYSCALL), "c"(p)
 			: "ebx");
+#endif
 }
 
 void
 validatetest(void)
 {
 	int hi, pid;
-	uint p;
+	uintptr_t p;
 
 	fprintf(stdout, "validate test\n");
 	hi = 1100 * 1024;
 
-	for (p = 0; p <= (uint)hi; p += 4096) {
+	for (p = 0; p <= (uint32_t)hi; p += 4096) {
 		if ((pid = fork()) == 0) {
 			// try to crash the kernel by passing in a badly placed integer
 			validateint((int *)p);
@@ -1718,8 +1719,8 @@ uio(void)
 #define RTC_ADDR 0x70
 #define RTC_DATA 0x71
 
-	ushort port = 0;
-	uchar val = 0;
+	uint16_t port = 0;
+	uint8_t val = 0;
 	int pid;
 
 	fprintf(stdout, "uio test\n");

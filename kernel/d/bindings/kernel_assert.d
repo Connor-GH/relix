@@ -15,7 +15,6 @@ extern(C) void __assert_fail(const char *expression, const char *filename, int l
 @trusted noreturn
 kernel_assert_fail(const char *assertion, const char *file, int lineno,
 									const char *func);
-// the no-op here makes clang happy.
 
 // SAFETY: file, expression, and func are only null if the caller changes them.
 @trusted void kernel_assert(bool expr, string expression = "", string file = __FILE__,

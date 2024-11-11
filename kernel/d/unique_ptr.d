@@ -4,7 +4,6 @@ import traits;
 import kernel_string;
 import core.lifetime : forward;
 
-
 struct KUniquePtr(T) {
 	alias TPtr = toPointer!T;
 	private:

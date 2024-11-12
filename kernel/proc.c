@@ -167,7 +167,7 @@ userinit(void)
 	memset(p->tf, 0, sizeof(*p->tf));
 	p->tf->cs = (SEG_UCODE << 3) | DPL_USER;
 	p->tf->ds = (SEG_UDATA << 3) | DPL_USER;
-#ifndef X64
+#ifndef X86_64
 	p->tf->es = p->tf->ds;
 	p->tf->ss = p->tf->ds;
 #endif

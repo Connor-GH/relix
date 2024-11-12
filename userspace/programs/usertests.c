@@ -1567,7 +1567,7 @@ void
 validateint(int *p)
 {
 	int res;
-	#ifndef X64
+	#ifndef X86_64
 	asm("mov %%esp, %%ebx\n\t"
 			"mov %3, %%rsp\n\t"
 			"int %2\n\t"
@@ -1828,7 +1828,9 @@ main(int argc, char *argv[])
 	forktest();
 	bigdir(); // slow
 
+#ifndef X86_64
 	uio();
+#endif
 
 	exectest();
 	exit(0);

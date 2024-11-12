@@ -116,7 +116,7 @@ startothers(void)
 		// pgdir to use. We cannot use kpgdir yet, because the AP processor
 		// is running in low  memory, so we use entrypgdir for the APs too.
 		stack = kpage_alloc();
-	#if X64
+	#if X86_64
     *(uint32_t *)(code-4) = 0x8000; // just enough stack to get us to entry64mp
     *(uint32_t *)(code-8) = v2p(entry32mp);
     *(uint64_t *)(code-16) = (uint64_t) (stack + KSTACKSIZE);
@@ -138,7 +138,7 @@ startothers(void)
 // Page directories (and page tables) must start on page boundaries,
 // hence the __aligned__ attribute.
 // PTE_PS in a page directory entry enables 4Mbyte pages.
-#ifndef X64
+#ifndef X86_64
 __attribute__((__aligned__(PGSIZE))) uintptr_t entrypgdir[NPDENTRIES] = {
 	// Map VA's [0, 4MB) to PA's [0, 4MB)
 	[0] = (0) | PTE_P | PTE_W | PTE_PS,

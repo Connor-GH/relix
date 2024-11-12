@@ -145,7 +145,7 @@ ok:
 	ustack[2] = sp - (argv_size) * sizeof(uintptr_t); // argv pointer
 	// ustack[3 .. 3 + argv_size] is argv arguments
 	uint32_t total_mainargs_size = (3 + argv_size) * sizeof(uintptr_t);
-#ifdef X64
+#ifdef X86_64
 	myproc()->tf->rdi = argc;
 	myproc()->tf->rsi = sp - argv_size * sizeof(uintptr_t);
 #endif

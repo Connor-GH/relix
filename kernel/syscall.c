@@ -53,7 +53,7 @@ fetchstr(uintptr_t addr, char **pp)
 	}
 	return -1;
 }
-#if X64
+#if X86_64
 
 // arguments passed in registers on x64
 static uintptr_t

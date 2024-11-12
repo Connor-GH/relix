@@ -15,7 +15,7 @@
 
 #define CR4_PSE 0x00000010 // Page size extension
 
-#if X64
+#if X86_64
 #define SEG_KCODE 1  // kernel code
 #define SEG_KDATA 2  // kernel data+stack
 #define SEG_KCPU  3  // kernel per-cpu data
@@ -99,7 +99,7 @@ struct segdesc {
 // construct virtual address from indexes and offset
 #define PGADDR(d, t, o) ((uintptr_t)((d) << PDXSHIFT | (t) << PTXSHIFT | (o)))
 
-#if X64
+#if X86_64
 #define NPDENTRIES 512
 #define NPTENTRIES 512
 #define PGSIZE 4096

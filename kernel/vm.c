@@ -17,7 +17,7 @@ uintptr_t *kpgdir; // for use in scheduler()
 //struct segdesc gdt[NSEGS];
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
-#ifndef X64
+#ifndef X86_64
 void
 seginit(void)
 {
@@ -86,7 +86,7 @@ mappages(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm)
 	return 0;
 }
 
-#ifndef X64
+#ifndef X86_64
 // There is one page table per process, plus one that's used when
 // a CPU is not running any process (kpgdir). The kernel uses the
 // current process's page table during system calls and interrupts;

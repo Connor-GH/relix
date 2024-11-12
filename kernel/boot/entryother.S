@@ -55,7 +55,7 @@ start32:
   movw    %ax, %fs                # -> FS
   movw    %ax, %gs                # -> GS
 
-#if X64
+#if X86_64
 	mov $1, %ebx # defer paging till 64 bit
 #else
   # Turn on page size extension for 4Mbyte pages

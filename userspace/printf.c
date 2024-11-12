@@ -24,21 +24,22 @@ string_putc(int fd, char c, char *buf)
 enum {
 	FLAG_PADZERO = 0x10,
 	FLAG_ALTFORM = 0x20,
-	FLAG_RJUST = 0x30,
-	FLAG_BLANK = 0x40,
-	FLAG_SIGN = 0x50,
+	FLAG_RJUST = 0x40,
+	FLAG_BLANK = 0x80,
+	FLAG_SIGN = 0x100,
+	FLAG_LONG = 0x200,
 };
 #define IS_SET(x, flag) (bool)((x & flag) == flag)
 
 static void
 printint(void (*put_function)(int, char, char *), char *put_func_buf, int fd,
-				 int xx, int base, bool sgn, int flags, int padding)
+				 int64_t xx, int base, bool sgn, int flags, int padding)
 {
 	static const char digits[] = "0123456789ABCDEF";
-	char buf[250];
+	char buf[32];
 	int i = 0;
 	int neg = 0;
-	uint32_t x;
+	uint64_t x;
 
 	if (sgn && xx < 0) {
 		neg = 1;
@@ -126,15 +127,28 @@ vprintf_internal(void (*put_function)(int fd, char c, char *buf), int fd,
 			case '+':
 				flags |= FLAG_SIGN;
 				goto skip_state_reset;
+			case 'l':
+				flags |= FLAG_LONG;
+				goto skip_state_reset;
 			case 'i':
 			case 'd': {
-				int d = va_arg(*argp, int);
-				printint(put_function, buf, fd, d, 10, true, flags, str_pad);
+				if (IS_SET(flags, FLAG_LONG)) {
+					long ld = va_arg(*argp, long);
+					printint(put_function, buf, fd, ld, 10, true, flags, str_pad);
+				} else {
+					int d = va_arg(*argp, int);
+					printint(put_function, buf, fd, d, 10, true, flags, str_pad);
+				}
 				break;
 			}
 			case 'u': {
-				uint32_t u = va_arg(*argp, uint32_t);
-				printint(put_function, buf, fd, u, 10, false, flags, str_pad);
+				if (IS_SET(flags, FLAG_LONG)) {
+					long lu = va_arg(*argp, unsigned long);
+					printint(put_function, buf, fd, lu, 10, false, flags, str_pad);
+				} else {
+					unsigned int u = va_arg(*argp, unsigned int);
+					printint(put_function, buf, fd, u, 10, false, flags, str_pad);
+				}
 				break;
 			}
 			case 'x':

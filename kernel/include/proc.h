@@ -27,7 +27,7 @@ struct cpu {
 	struct taskstate ts; // Used by x86 to find stack for interrupt
 	union {
 		struct segdesc gdt[NSEGS]; // x86 global descriptor table
-#if X64
+#if X86_64
 		uint64_t gdt_bits[NSEGS];
 #endif
 	};
@@ -35,7 +35,7 @@ struct cpu {
 	int ncli; // Depth of pushcli nesting.
 	int intena; // Were interrupts enabled before pushcli?
 	struct proc *proc; // The process running on this cpu or null
-#if X64
+#if X86_64
 	void *local;
 #endif
 };
@@ -54,7 +54,7 @@ extern int ncpu;
 // at the "Switch stacks" comment. Switch doesn't save eip explicitly,
 // but it is on the stack and allocproc() manipulates it.
 struct context {
-#if X64
+#if X86_64
 	uintptr_t r15;
 	uintptr_t r14;
 	uintptr_t r13;

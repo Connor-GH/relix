@@ -19,7 +19,7 @@
 #define P2V_WO(x) ((x) + KERNBASE) // same as P2V, but without casts
 
 // Key addresses for address space layout (see kmap in vm.c for layout)
-#ifdef X64
+#ifdef X86_64
 #define KERNBASE 0xFFFFFFFF80000000ULL // First kernel virtual address
 #define DEVBASE 0xFFFFFFFF40000000ULL // First device virtual address
 #else

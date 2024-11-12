@@ -20,7 +20,7 @@ extern uintptr_t vectors[]; // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint32_t ticks;
 
-#ifndef X64
+#ifndef X86_64
 void
 tvinit(void)
 {

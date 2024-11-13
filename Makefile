@@ -226,6 +226,7 @@ endif
 # qemu-system-x86_64 -cdrom os.iso -m 2G -drive file=bin/fs.img,index=1,media=disk,format=raw,if=ide,aio=native,cache.direct=on  -smp 2,cores=1,threads=1,sockets=2
 ISO = xv6
 iso: default
+	cp $(BIN)/kernel iso/boot/
 	grub-mkrescue -o $(BIN)/$(ISO).iso iso/
 
 qemu-grub: iso

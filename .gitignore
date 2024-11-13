@@ -1,5 +1,6 @@
 *~
 /sysroot/bin/*
+/iso/boot/kernel
 *.o
 *.asm
 *.sym

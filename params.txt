@@ -1,1 +1,0 @@
--device nec-usb-xhci -device usb-kbd

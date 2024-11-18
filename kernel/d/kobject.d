@@ -150,10 +150,6 @@ enum NULL = cast(void *)0;
 extern(C) int example_kernel_binding() {
 	KDevice kd = KDevice("foo");
 	KArray!int ka = KArray!int(3, 4, 5);
-	// uncomment to allow NonNull container to give error
-	//Option!(KNonNull!(char *)) i_am_null = some(KNonNull!(char *)(cast(char *)null));
-
-	int myfunc(int a) => a * a;
 
 	auto c = KNonNull!(void *)(kmalloc(1));
 	scope(exit) kfree(c.release_ptr().unwrap());
@@ -166,7 +162,6 @@ extern(C) int example_kernel_binding() {
 	assert(ka.toString() == "KArray");
 	assert(ka[1].unwrap() == 4);
 	assert(kd.toString() == "KDevice");
-	kant!(myfunc)(9);
 	kwriteln(Diagnostic.Note, "Dlang kernel systems up and running.");
 	return 0;
 }

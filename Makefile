@@ -245,7 +245,7 @@ qemu-nox: default
 	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@
 
 qemu-gdb: default
-	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
+	$(QEMU) -kernel $(BIN)/kernel $(QEMUOPTS) -S $(QEMUGDB)
 	@echo "*** Now run 'gdb'." 1>&2
 
 qemu-nox-gdb: fs.img xv6.img .gdbinit

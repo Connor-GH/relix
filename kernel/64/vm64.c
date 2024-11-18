@@ -73,13 +73,6 @@ tss_set_rsp(uint32_t *tss, uint32_t n, uint64_t rsp)
 	tss[n * 2 + 2] = rsp >> 32;
 }
 
-static void
-tss_set_ist(uint32_t *tss, uint32_t n, uint64_t ist)
-{
-	tss[n * 2 + 7] = ist;
-	tss[n * 2 + 8] = ist >> 32;
-}
-
 extern void *vectors[];
 
 // Set up CPU's kernel segment descriptors.
@@ -87,7 +80,6 @@ extern void *vectors[];
 void
 seginit(void)
 {
-	uint64_t *gdt;
 	uint32_t *tss;
 	uint64_t addr;
 	void *local;
@@ -106,7 +98,6 @@ seginit(void)
 	local = kalloc();
 	memset(local, 0, PGSIZE);
 
-	gdt = (uint64_t *)local;
 	tss = (uint32_t *)(((char *)local) + 1024);
 	tss[16] = 0x0068 << 16 | 0x0000 /* reserved bits */; // IO Map Base = End of TSS
 
@@ -185,6 +176,8 @@ kvmalloc(void)
 	kpdpt[511] = v2p(kpgdir1) | PTE_P | PTE_W;
 	kpdpt[510] = v2p(kpgdir0) | PTE_P | PTE_W;
 	kpdpt[509] = v2p(iopgdir) | PTE_P | PTE_W;
+	// The boot page table used in entry64.S and entryother.S.
+	// PTE_PS in a page directory entry enables 4Mbyte pages.
 	for (n = 0; n < NPDENTRIES; n++) {
 		kpgdir0[n] = (n << PDXSHIFT) | PTE_PS | PTE_P | PTE_W;
 		kpgdir1[n] = ((n + 512) << PDXSHIFT) | PTE_PS | PTE_P | PTE_W;
@@ -207,12 +200,6 @@ switchuvm(struct proc *p)
 		panic("switchuvm: no pgdir");
 	tss = (uint32_t *) (((char *) mycpu()->local) + 1024);
 	tss_set_rsp(tss, 0, (uintptr_t)myproc()->kstack + KSTACKSIZE);
-	/*mycpu()->gdt[SEG_TSS] =
-		SEG16(STS_T32A, &mycpu()->ts, sizeof(mycpu()->ts) - 1, 0);
-	mycpu()->gdt[SEG_TSS].s = 0;
-	mycpu()->ts.ss0 = SEG_KDATA << 3;
-	mycpu()->ts.esp0 = (uintptr_t)p->kstack + KSTACKSIZE;
-	*/
 	pml4 = (void *)PTE_ADDR(p->pgdir[511]);
 	lcr3(v2p(pml4));
 	popcli();

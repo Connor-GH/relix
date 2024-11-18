@@ -1,0 +1,7 @@
+--indent_style=tab
+--max_line_length=80
+--space_after_cast=false
+--brace_style=knr
+--align_switch_statements=true
+--split_operator_at_line_end=true
+--keep_line_breaks=true 

@@ -106,7 +106,7 @@ struct KArray(T) {
 			panic("data is null");
 		if (size <= index)
 			panic("index too large");
-		return Some!T(data[index]);
+		return some!T(data[index]);
 	}
 
 	Option!T opIndex(size_t index) => get(index);
@@ -144,14 +144,14 @@ enum NULL = cast(void *)0;
 		assert(other != NULL);
  		this.ptr = other;
 	}
-	Option!T release_ptr() => ptr != NULL ? Some!T(ptr) : None!T;
+	Option!T release_ptr() => ptr != NULL ? some!T(ptr) : none!T;
 }
 
 extern(C) int example_kernel_binding() {
 	KDevice kd = KDevice("foo");
 	KArray!int ka = KArray!int(3, 4, 5);
 	// uncomment to allow NonNull container to give error
-	//Option!(KNonNull!(char *)) i_am_null = Some(KNonNull!(char *)(cast(char *)null));
+	//Option!(KNonNull!(char *)) i_am_null = some(KNonNull!(char *)(cast(char *)null));
 
 	int myfunc(int a) => a * a;
 

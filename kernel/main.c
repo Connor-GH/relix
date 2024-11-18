@@ -39,7 +39,7 @@ example_kernel_binding(void);
 int
 main(void)
 {
-	cprintf("xv6 (built with %s and linker %s)\n", XV6_COMPILER, XV6_LINKER);
+	cprintf("xv6_64 (built with %s and linker %s)\n", XV6_COMPILER, XV6_LINKER);
 	kinit1(end, P2V(4 * 1024 * 1024)); // phys page allocator
 	kvmalloc(); // kernel page table
 	if (acpiinit() != 0)
@@ -120,11 +120,6 @@ startothers(void)
     *(uint32_t *)(code-4) = 0x8000; // just enough stack to get us to entry64mp
     *(uint32_t *)(code-8) = v2p(entry32mp);
     *(uint64_t *)(code-16) = (uint64_t) (stack + KSTACKSIZE);
-
-	#else
-		*(void **)(code - 4) = stack + KSTACKSIZE;
-		*(void (**)(void))(code - 8) = mpenter;
-		*(int **)(code - 12) = (void *)V2P(entrypgdir);
 	#endif
 		lapicstartap(c->apicid, v2p(code));
 
@@ -133,17 +128,3 @@ startothers(void)
 			;
 	}
 }
-
-// The boot page table used in entry.S and entryother.S.
-// Page directories (and page tables) must start on page boundaries,
-// hence the __aligned__ attribute.
-// PTE_PS in a page directory entry enables 4Mbyte pages.
-#ifndef X86_64
-__attribute__((__aligned__(PGSIZE))) uintptr_t entrypgdir[NPDENTRIES] = {
-	// Map VA's [0, 4MB) to PA's [0, 4MB)
-	[0] = (0) | PTE_P | PTE_W | PTE_PS,
-	PTE_PS,
-	// Map VA's [KERNBASE, KERNBASE+4MB) to PA's [0, 4MB)
-	[KERNBASE >> PDXSHIFT] = (0) | PTE_P | PTE_W | PTE_PS,
-};
-#endif

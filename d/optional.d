@@ -17,11 +17,11 @@ struct Option(T) {
 	}
 }
 
-Option!T Some(T)(T value) {
+Option!T some(T)(T value) {
 	return Option!T(value);
 }
 
-Option!T None(T)() {
+Option!T none(T)() {
 	return Option!T(null);
 }
 

@@ -20,26 +20,6 @@ extern uintptr_t vectors[]; // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint32_t ticks;
 
-#ifndef X86_64
-void
-tvinit(void)
-{
-	int i;
-
-	for (i = 0; i < 256; i++)
-		SETGATE(idt[i], 0, SEG_KCODE << 3, vectors[i], 0);
-	SETGATE(idt[T_SYSCALL], 1, SEG_KCODE << 3, vectors[T_SYSCALL], DPL_USER);
-
-	initlock(&tickslock, "time");
-}
-
-void
-idtinit(void)
-{
-	lidt(idt, sizeof(idt));
-}
-#endif
-
 void
 trap(struct trapframe *tf)
 {

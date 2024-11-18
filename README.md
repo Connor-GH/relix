@@ -31,3 +31,7 @@ but is implemented for a modern x86-based multiprocessor using ANSI C.
 run "make qemu" with a compiler capable of producing ELF files.
 
 On linux-based systems and FreeBSD systems, this means the native compiler.
+
+# TODO
+- XHCI USB keyboard support
+- SATA drive support

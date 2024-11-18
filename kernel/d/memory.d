@@ -1,5 +1,4 @@
 module memory;
-import traits;
 import kalloc : kmalloc, kfree;
 
 T *d_new(T, Args...)(auto ref Args args) {

@@ -22,12 +22,12 @@ string_putc(int fd, char c, char *buf)
 }
 
 enum {
-	FLAG_PADZERO = 0x10,
-	FLAG_ALTFORM = 0x20,
-	FLAG_RJUST = 0x40,
-	FLAG_BLANK = 0x80,
-	FLAG_SIGN = 0x100,
-	FLAG_LONG = 0x200,
+	FLAG_PADZERO = 1 << 0,
+	FLAG_ALTFORM = 1 << 1,
+	FLAG_RJUST = 1 << 2,
+	FLAG_BLANK = 1 << 3,
+	FLAG_SIGN = 1 << 4,
+	FLAG_LONG = 1 << 5,
 };
 #define IS_SET(x, flag) (bool)((x & flag) == flag)
 
@@ -238,4 +238,9 @@ void
 perror(const char *s)
 {
 	printf("%s: %s\n", s, errno_codes[errno]);
+}
+
+const char *const
+strerror(int err_no) {
+	return errno_codes[err_no];
 }

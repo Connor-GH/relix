@@ -28,10 +28,10 @@ int
 fetchuintp(uintptr_t addr, uintptr_t *ip)
 {
 	struct proc *proc = myproc();
-  if(addr >= proc->sz || addr+sizeof(uintptr_t) > proc->sz)
-    return -1;
-  *ip = *(uintptr_t*)(addr);
-  return 0;
+	if (addr >= proc->sz || addr + sizeof(uintptr_t) > proc->sz)
+		return -1;
+	*ip = *(uintptr_t *)(addr);
+	return 0;
 }
 
 // Fetch the nul-terminated string at addr from the current process.
@@ -60,27 +60,33 @@ static uintptr_t
 fetcharg(int n)
 {
 	struct proc *proc = myproc();
-  switch (n) {
-  case 0: return proc->tf->rdi;
-  case 1: return proc->tf->rsi;
-  case 2: return proc->tf->rdx;
-  case 3: return proc->tf->rcx;
-  case 4: return proc->tf->r8;
-  case 5: return proc->tf->r9;
-  }
+	switch (n) {
+	case 0:
+		return proc->tf->rdi;
+	case 1:
+		return proc->tf->rsi;
+	case 2:
+		return proc->tf->rdx;
+	case 3:
+		return proc->tf->rcx;
+	case 4:
+		return proc->tf->r8;
+	case 5:
+		return proc->tf->r9;
+	}
 }
 
 int
 argint(int n, int *ip)
 {
-  *ip = fetcharg(n);
-  return 0;
+	*ip = fetcharg(n);
+	return 0;
 }
 int
 arguintptr(int n, uintptr_t *ip)
 {
-  *ip = fetcharg(n);
-  return 0;
+	*ip = fetcharg(n);
+	return 0;
 }
 
 #else
@@ -93,7 +99,8 @@ argint(int n, int *ip)
 int
 arguintptr(int n, uintptr_t *ip)
 {
-  return fetchuintp(myproc()->tf->esp + sizeof(uintptr_t) + sizeof(uintptr_t)*n, ip);
+	return fetchuintp(
+		myproc()->tf->esp + sizeof(uintptr_t) + sizeof(uintptr_t) * n, ip);
 }
 #endif
 
@@ -135,7 +142,7 @@ sys_close(void);
 extern int
 sys_dup(void);
 extern int
-sys_exec(void);
+sys_execve(void);
 extern int
 sys_exit(void);
 extern int
@@ -191,7 +198,7 @@ static int (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,				 [SYS_exit] = sys_exit,
 	[SYS_wait] = sys_wait,				 [SYS_pipe] = sys_pipe,
 	[SYS_read] = sys_read,				 [SYS_kill] = sys_kill,
-	[SYS_exec] = sys_exec,				 [SYS_fstat] = sys_fstat,
+	[SYS_execve] = sys_execve,		 [SYS_fstat] = sys_fstat,
 	[SYS_chdir] = sys_chdir,			 [SYS_dup] = sys_dup,
 	[SYS_getpid] = sys_getpid,		 [SYS_sbrk] = sys_sbrk,
 	[SYS_sleep] = sys_sleep,			 [SYS_uptime] = sys_uptime,

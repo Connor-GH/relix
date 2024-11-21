@@ -475,17 +475,19 @@ sys_chdir(void)
 }
 
 int
-sys_exec(void)
+sys_execve(void)
 {
-	char *path, *argv[MAXARG];
-	int i;
+	char *path, *argv[MAXARG], *envp[MAXENV];
 	uintptr_t uargv, uarg;
+	uintptr_t uenvp, uenv;
 
-	if (argstr(0, &path) < 0 || arguintptr(1, &uargv) < 0) {
+	if (argstr(0, &path) < 0 || arguintptr(1, &uargv) < 0 ||
+		arguintptr(2, &uenvp) < 0) {
 		return -EINVAL;
 	}
 	memset(argv, 0, sizeof(argv));
-	for (i = 0;; i++) {
+	memset(envp, 0, sizeof(envp));
+	for (int i = 0;; i++) {
 		if (i >= NELEM(argv))
 			return -ENOEXEC;
 		if (fetchuintp(uargv + sizeof(uintptr_t) * i, &uarg) < 0)
@@ -497,7 +499,19 @@ sys_exec(void)
 		if (fetchstr(uarg, &argv[i]) < 0)
 			return -EINVAL;
 	}
-	return exec(path, argv);
+	for (int i = 0;; i++) {
+		if (i >= NELEM(envp))
+			return -ENOEXEC;
+		if (fetchuintp(uenvp + sizeof(uintptr_t) * i, &uenv) < 0)
+			return -ENOEXEC;
+		if (uenv == 0) {
+			envp[i] = 0;
+			break;
+		}
+		if (fetchstr(uenv, &envp[i]) < 0)
+			return -EINVAL;
+	}
+	return execve(path, argv, envp);
 }
 
 int

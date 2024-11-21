@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stdint.h"
+#include <stddef.h>
 int
 fork(void) __attribute__((returns_twice));
 void
@@ -8,7 +9,12 @@ exit(int) __attribute__((noreturn));
 int
 pipe(int *);
 int
-exec(char *, char **);
+execve(char *, char **, char **);
+static inline int
+exec(char *prog, char **argv)
+{
+	return execve(prog, argv, (char *[]){"", NULL});
+}
 // our exec() is technically execv()
 static inline int
 execv(char *prog, char **argv)

@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include <stdint.h>
 #include <stat.h>
 #include "param.h"
 #include "proc.h"
@@ -8,6 +7,7 @@
 #include "fs.h"
 #include "console.h"
 #include "kernel_string.h"
+#include "kernel_assert.h"
 #include "vm.h"
 #include "boot/elf.h"
 #include "drivers/mmu.h"
@@ -37,10 +37,11 @@ push_user_stack(uintptr_t *count, char **vec, uintptr_t *ustack, uintptr_t *pgdi
 	return 0;
 }
 
-__nonnull(1, 2) int exec(char *path, char **argv)
+__nonnull(1, 2) int execve(char *path, char **argv, char **envp)
 {
 	char *s, *last;
 	int i, off;
+	uintptr_t envc = 0;
 	uintptr_t argc = 0, sz, sp, ustack[3 + MAXARG + MAXENV + 1] = {};
 	struct elfhdr elf;
 	struct inode *ip;
@@ -114,7 +115,6 @@ ok:
 	iunlockput(ip);
 	end_op();
 	ip = 0;
-
 	// Allocate two pages at the next page boundary.
 	// Make the first inaccessible.  Use the second as the user stack.
 	sz = PGROUNDUP(sz);
@@ -124,7 +124,9 @@ ok:
 	sp = sz;
 
 	// Push argument strings, prepare rest of stack in ustack.
-	if (push_user_stack(&argc, argv, ustack, pgdir, &sp, 3) < 0)
+	if (push_user_stack(&argc, argv, ustack, pgdir, &sp, 4) < 0)
+		goto bad;
+	if (push_user_stack(&envc, envp, ustack, pgdir, &sp, argc + 4 + 1) < 0)
 		goto bad;
 
 	/*
@@ -139,15 +141,19 @@ ok:
 	* 5 = envp_data ...
 	*/
 	const uint32_t argv_size = argc + 1;
+	const uint32_t envc_size = envc + 1;
 
 	ustack[0] = 0xffffffff; // fake return PC
 	ustack[1] = argc;
-	ustack[2] = sp - (argv_size) * sizeof(uintptr_t); // argv pointer
 	// ustack[3 .. 3 + argv_size] is argv arguments
-	uint32_t total_mainargs_size = (3 + argv_size) * sizeof(uintptr_t);
+	ustack[2] = sp - (argv_size + envc_size) * sizeof(uintptr_t); // argv pointer
+	// ustack[3 + argv_size + 1 .. 3 + argv_size + 1 + envp_size] is envp arguments
+	ustack[3] = sp - (envc_size) * sizeof(uintptr_t);
+	uint32_t total_mainargs_size = (4 + argv_size + envc_size) * sizeof(uintptr_t);
 #ifdef X86_64
-	myproc()->tf->rdi = argc;
-	myproc()->tf->rsi = sp - argv_size * sizeof(uintptr_t);
+	myproc()->tf->rdi = ustack[1];
+	myproc()->tf->rsi = ustack[2];
+	myproc()->tf->rdx = ustack[3];
 #endif
 	sp -= total_mainargs_size;
 	if (copyout(pgdir, sp, ustack, total_mainargs_size) < 0)

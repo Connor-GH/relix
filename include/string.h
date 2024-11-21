@@ -31,3 +31,5 @@ void *
 memmove(void *dst, const void *src, uint32_t n);
 void *
 memcpy(void *dst, const void *src, uint32_t n);
+const char *const
+strerror(int err_no);

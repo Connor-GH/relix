@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <errno.h>
+#include <string.h>
 
 void
 cat(int fd)
@@ -31,7 +33,9 @@ main(int argc, const char *argv[])
 
 	for (int fd, i = 1; i < argc; i++) {
 		if ((fd = open(argv[i], 0)) < 0) {
-			perror("cat: cannot open file");
+			int saved_errno = errno;
+			fprintf(stderr, "%s: cannot open file: %s\n", argv[0],
+					 strerror(saved_errno));
 			return 0;
 		}
 		cat(fd);

@@ -88,13 +88,13 @@ runcmd(struct cmd *cmd)
 		ecmd = (struct execcmd *)cmd;
 		if (ecmd->argv[0] == 0)
 			exit(1);
-		exec(ecmd->argv[0], ecmd->argv);
+		execve(ecmd->argv[0], ecmd->argv, (char *[]){"SHELL=v6sh", NULL});
 
 		// try PATH if local directory fails
 		for (int i = 0; i < 3; i++) {
 			strcpy(str, path[i]);
 			strcat(str, ecmd->argv[0]);
-			exec(str, ecmd->argv);
+			execve(str, ecmd->argv, (char *[]){"SHELL=v6sh", NULL});
 		}
 		fprintf(stderr, "exec %s failed\n", ecmd->argv[0]);
 		break;

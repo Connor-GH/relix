@@ -7,7 +7,7 @@
 #define SYS_pipe 4
 #define SYS_read 5
 #define SYS_kill 6
-#define SYS_exec 7
+#define SYS_execve 7
 #define SYS_fstat 8
 #define SYS_chdir 9
 #define SYS_dup 10
@@ -36,7 +36,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_fork] = "fork",				 [SYS_exit] = "exit",
 	[SYS_wait] = "wait",				 [SYS_pipe] = "pipe",
 	[SYS_read] = "read",				 [SYS_kill] = "kill",
-	[SYS_exec] = "exec",				 [SYS_fstat] = "fstat",
+	[SYS_execve] = "execve",				 [SYS_fstat] = "fstat",
 	[SYS_chdir] = "chdir",			 [SYS_dup] = "dup",
 	[SYS_getpid] = "getpid",		 [SYS_sbrk] = "sbrk",
 	[SYS_sleep] = "sleep",			 [SYS_uptime] = "uptime",

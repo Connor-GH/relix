@@ -15,6 +15,13 @@ exec(char *prog, char **argv)
 {
 	return execve(prog, argv, (char *[]){"", NULL});
 }
+// TODO our exec has hardcoded PATH
+// convert into environment variable.
+static inline int
+execvp(char *file, char **argv)
+{
+	return exec(file, argv);
+}
 // our exec() is technically execv()
 static inline int
 execv(char *prog, char **argv)

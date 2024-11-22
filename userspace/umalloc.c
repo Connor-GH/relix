@@ -95,3 +95,9 @@ realloc(void *ptr, size_t size)
 	ptr = malloc(size);
 	return ptr;
 }
+__attribute__((malloc))
+void *
+calloc(size_t nmemb, uint32_t sz)
+{
+	return malloc(sz);
+}

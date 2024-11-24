@@ -10,7 +10,7 @@ void
 free(void *);
 int
 atoi(const char *);
-uint64_t
+int
 atoi_base(const char *, uint32_t base);
 __attribute__((malloc)) void *
 realloc(void *ptr, size_t size);

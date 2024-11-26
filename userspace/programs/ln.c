@@ -21,7 +21,7 @@ main(int argc, char *const argv[])
 	argv += optind;
 
 	if (argc != 2) {
-		fprintf(stderr, "Usage: ln [-s] old new %d\n", argc);
+		fprintf(stderr, "Usage: ln [-s] old new\n");
 		return 1;
 	}
 	if (sflag) {

@@ -1,6 +1,7 @@
 #include "stdint.h"
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 
 // Memory allocator by Kernighan and Ritchie,
 // The C programming Language, 2nd ed.  Section 8.7.
@@ -99,5 +100,7 @@ __attribute__((malloc))
 void *
 calloc(size_t nmemb, uint32_t sz)
 {
-	return malloc(sz);
+	void *ptr = malloc(nmemb * sz);
+	memset(ptr, 0, nmemb * sz);
+	return ptr;
 }

@@ -23,26 +23,28 @@
  *
  */
 
-#define mboot_magic 0x1badb002
-#define mboot_flags 0x00010000
-
+#include <multiboot2.h>
 .code32
 .global mboot_header
 .global mboot_entry
 
+.code32
+
+.align 8
+
 mboot_header:
-  .long mboot_magic
-  .long mboot_flags
-  .long (-mboot_magic -mboot_flags)	# checksum
-  .long mboot_load_addr			# header_addr
-  .long mboot_load_addr
-  .long mboot_load_end
-  .long mboot_bss_end
-  .long mboot_entry_addr
+.long MULTIBOOT2_HEADER_MAGIC
+.long MULTIBOOT_ARCHITECTURE_I386
+.long mboot_header_end - mboot_header
+.long -(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT_ARCHITECTURE_I386 + (mboot_header_end - mboot_header))
+.short MULTIBOOT_HEADER_TAG_END
+.short 0
+.long 8
+mboot_header_end:
+
 
 mboot_entry:
-
-# zero 4 pages for our bootstrap page tables
+	# zero 4 pages for our bootstrap page tables
   xor %eax, %eax
   mov $0x1000, %edi
   mov $0x5000, %ecx

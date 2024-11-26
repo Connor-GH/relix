@@ -13,14 +13,10 @@ struct acpi_rsdp {
 	uint8_t oem_id[6];
 	uint8_t revision;
 	uint32_t rsdt_addr_phys;
-#if ACPI_VERSION_2_0
 	uint32_t length;
-#if x86_64_BIT_FULLY_READY
 	uint64_t xsdt_addr_phys;
-#endif
 	uint8_t xchecksum;
 	uint8_t reserved[3];
-#endif
 } __attribute__((__packed__));
 
 // 5.2.6
@@ -40,6 +36,12 @@ struct acpi_desc_header {
 struct acpi_rsdt {
 	struct acpi_desc_header header;
 	uint32_t entry[];
+} __attribute__((__packed__));
+
+// 5.2.8
+struct acpi_xsdt {
+	struct acpi_desc_header header;
+	uint64_t entry[];
 } __attribute__((__packed__));
 
 #define TYPE_LAPIC 0

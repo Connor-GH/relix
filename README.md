@@ -17,6 +17,7 @@ but is implemented for a modern x86-based multiprocessor using ANSI C.
 - doubly indirect block pointer inodes (max filesize 1MiB -> 512MiB)
 - ls(1) now has -h, -l, -i, and -p
 - 64-bit port, code pulled from swetland/xv6
+- multiboot2 support
 
 # dependencies
 - gcc/clang
@@ -25,6 +26,8 @@ but is implemented for a modern x86-based multiprocessor using ANSI C.
 - dmd/ldc2/gdc
 - qemu
 - gmake
+- grub-mkrescue
+- xorriso
 
 # BUILDING AND RUNNING XV6
 

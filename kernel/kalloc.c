@@ -15,7 +15,6 @@
 #include "proc.h"
 #include "macros.h"
 #include <stddef.h>
-#include "kernel_string.h"
 
 void
 freerange(void *vstart, void *vend);
@@ -74,8 +73,6 @@ __nonnull(1) void kpage_free(char *v)
 	if ((uintptr_t)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
 		panic("kpage_free");
 
-	// Fill with junk to catch dangling refs.
-	memset(v, 1, PGSIZE);
 
 	//if (kmem.use_lock)
 	acquire(&kmem.lock[id]);
@@ -118,8 +115,6 @@ kpage_alloc(void)
 		}
 	}
 
-	if (r)
-		memset((char *)r, 5, PGSIZE);
 	popcli();
 	return (char *)r;
 }

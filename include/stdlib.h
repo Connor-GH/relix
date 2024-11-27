@@ -1,5 +1,6 @@
 #pragma once
-
+#define EXIT_SUCCESS 0
+#define EXIT_FAILURE !EXIT_SUCCESS
 #ifndef __KERNEL__
 #include <stdint.h>
 __attribute__((malloc)) void *malloc(uint32_t);

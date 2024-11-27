@@ -24,6 +24,7 @@
  */
 
 #include <multiboot2.h>
+#include <vga.h>
 .code32
 .global mboot_header
 .global mboot_entry
@@ -37,6 +38,24 @@ mboot_header:
 .long MULTIBOOT_ARCHITECTURE_I386
 .long mboot_header_end - mboot_header
 .long -(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT_ARCHITECTURE_I386 + (mboot_header_end - mboot_header))
+mboot_info_request_start:
+.short MULTIBOOT_HEADER_TAG_INFORMATION_REQUEST
+.short 0
+.long mboot_info_request_end - mboot_info_request_start
+.long MULTIBOOT_TAG_TYPE_MMAP
+.long MULTIBOOT_TAG_TYPE_FRAMEBUFFER
+.short MULTIBOOT_HEADER_TAG_END
+mboot_info_request_end:
+#if FRAMEBUFFER
+mboot_info_framebuffer_tag_start:
+.short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
+.short 0 # flags
+.long mboot_info_framebuffer_tag_end - mboot_info_framebuffer_tag_start # size = 20
+.long WIDTH # width
+.long HEIGHT # height
+.long 0 # bpp - no preference
+mboot_info_framebuffer_tag_end:
+#endif
 .short MULTIBOOT_HEADER_TAG_END
 .short 0
 .long 8
@@ -68,20 +87,20 @@ mboot_entry:
 
 # PD[0..511] -> 0..1022MB
   mov $0x83, %eax
-  mov $0x4000, %ebx
+  mov $0x4000, %edx
   mov $512, %ecx
 ptbl_loop:
-  mov %eax, (%ebx)
+  mov %eax, (%edx)
   add $0x200000, %eax
-  add $0x8, %ebx
+  add $0x8, %edx
   dec %ecx
   jnz ptbl_loop
 
-# Clear ebx for initial processor boot.
+# Clear edi for initial processor boot.
 # When secondary processors boot, they'll call through
 # entry32mp (from entryother), but with a nonzero ebx.
 # We'll reuse these bootstrap pagetables and GDT.
-  xor %ebx, %ebx
+  xor %edi, %edi
 
 .global entry32mp
 entry32mp:
@@ -144,7 +163,7 @@ entry64high:
   mov %ax, %gs
 
 # check to see if we're booting a secondary core
-  test %ebx, %ebx
+  test %edi, %edi
   jnz entry64mp
 
 # setup initial stack
@@ -152,7 +171,9 @@ entry64high:
   mov %rax, %rsp
 
 # enter main()
-  jmp main
+	# mboot2 structure
+	mov %rbx, %rdi
+	jmp main
 
 .global __deadloop
 __deadloop:

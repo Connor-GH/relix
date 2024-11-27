@@ -6,7 +6,6 @@
 // sector 1 and then jumps to the kernel entry routine.
 
 #include <stdint.h>
-#include "../drivers/memlayout.h"
 #include "x86.h"
 #include "elf.h"
 

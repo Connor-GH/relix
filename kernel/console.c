@@ -28,6 +28,7 @@ static uint8_t static_foreg = WHITE;
 static uint8_t static_backg = BLACK;
 static int alt_form = 0;
 static int long_form = 0;
+static int zero_form = 0;
 
 static struct {
 	struct spinlock lock;
@@ -43,7 +44,7 @@ set_term_color(uint8_t foreground, uint8_t background)
 }
 
 static void
-printint(uint64_t xx, int base, int sign)
+printint(uint64_t xx, int base, int sign, int *padding)
 {
 	static char digits[] = "0123456789abcdef";
 	char buf[32];
@@ -61,6 +62,10 @@ printint(uint64_t xx, int base, int sign)
 	do {
 		buf[i++] = digits[x % base];
 	} while ((x /= base) != 0);
+	while (i < *padding) {
+		buf[i++] = '0';
+	}
+	*padding = 0;
 
 	if (sign)
 		buf[i++] = '-';
@@ -81,6 +86,7 @@ __attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *fmt,
 	int i, c, locking;
 	va_list argp;
 	char *s;
+	int padding = 0;
 
 	va_start(argp, fmt);
 
@@ -133,17 +139,23 @@ do_again:
 			break;
 		switch (c) {
 		case 'u':
-			if (long_form == 0)
-				printint(va_arg(argp, unsigned int), 10, 0);
-			else
-				printint(va_arg(argp, unsigned long), 10, 0);
+			if (long_form == 0) {
+				printint(va_arg(argp, unsigned int), 10, 0, &padding);
+			} else {
+				printint(va_arg(argp, unsigned long), 10, 0, &padding);
+			}
 			break;
 		case 'd':
-			if (long_form == 0)
-				printint(va_arg(argp, int), 10, 1);
-			else
-				printint(va_arg(argp, long), 10, 1);
+			if (long_form == 0) {
+				printint(va_arg(argp, int), 10, 1, &padding);
+			} else {
+				printint(va_arg(argp, long), 10, 1, &padding);
+			}
 			break;
+		case '0':
+			zero_form = 1;
+			padding = 18; // TODO make dynamic
+			goto do_again;
 		case '#':
 			alt_form = 1;
 			goto do_again;
@@ -152,19 +164,19 @@ do_again:
 			goto do_again;
 		case 'x':
 			if (long_form == 0)
-				printint(va_arg(argp, unsigned int), 16, 0);
+				printint(va_arg(argp, unsigned int), 16, 0, &padding);
 			else
-				printint(va_arg(argp, unsigned long), 16, 0);
+				printint(va_arg(argp, unsigned long), 16, 0, &padding);
 			break;
 		case 'p':
 			alt_form = 1;
-			printint((uintptr_t)va_arg(argp, void *), 16, 0);
+			printint((uintptr_t)va_arg(argp, void *), 16, 0, &padding);
 			break;
 		case 'o':
 			if (long_form == 0)
-				printint(va_arg(argp, unsigned int), 8, 0);
+				printint(va_arg(argp, unsigned int), 8, 0, &padding);
 			else
-				printint(va_arg(argp, unsigned long), 8, 0);
+				printint(va_arg(argp, unsigned long), 8, 0, &padding);
 			break;
 		case 's':
 			if ((s = va_arg(argp, char *)) == 0)

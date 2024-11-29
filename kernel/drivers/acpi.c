@@ -34,11 +34,6 @@
 #include "kernel_assert.h"
 #include "console.h"
 #include "lapic.h"
-#ifdef X86_64
-#define PHYSLIMIT 0x80000000
-#else
-#define PHYSLIMIT 0x0E000000
-#endif
 
 extern struct cpu cpus[NCPU];
 extern int ncpu;

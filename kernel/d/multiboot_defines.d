@@ -200,6 +200,22 @@ struct multiboot_tag_framebuffer_common
 struct multiboot_tag_framebuffer
 {
     multiboot_tag_framebuffer_common common;
+	union {
+		struct Palette {
+			multiboot_uint16_t     framebuffer_palette_num_colors;
+			multiboot_color[0] framebuffer_palette;
+		}
+		Palette palette;
+		struct Rgb {
+			multiboot_uint8_t framebuffer_red_field_position;
+			multiboot_uint8_t framebuffer_red_mask_size;
+			multiboot_uint8_t framebuffer_green_field_position;
+			multiboot_uint8_t framebuffer_green_mask_size;
+			multiboot_uint8_t framebuffer_blue_field_position;
+			multiboot_uint8_t framebuffer_blue_mask_size;
+		}
+		Rgb rgb;
+	}
 }
 
 struct multiboot_tag_elf_sections

@@ -40,24 +40,22 @@ mboot_header:
 .long -(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT_ARCHITECTURE_I386 + (mboot_header_end - mboot_header))
 mboot_info_request_start:
 .short MULTIBOOT_HEADER_TAG_INFORMATION_REQUEST
-.short 0
+.short 0 # flags
 .long mboot_info_request_end - mboot_info_request_start
 .long MULTIBOOT_TAG_TYPE_MMAP
 .long MULTIBOOT_TAG_TYPE_FRAMEBUFFER
-.short MULTIBOOT_HEADER_TAG_END
 mboot_info_request_end:
-#if FRAMEBUFFER
+#ifdef FRAMEBUFFER
 mboot_info_framebuffer_tag_start:
 .short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
 .short 0 # flags
 .long mboot_info_framebuffer_tag_end - mboot_info_framebuffer_tag_start # size = 20
 .long WIDTH # width
 .long HEIGHT # height
-.long 0 # bpp - no preference
+.long 24 # depth
 mboot_info_framebuffer_tag_end:
 #endif
 .short MULTIBOOT_HEADER_TAG_END
-.short 0
 .long 8
 mboot_header_end:
 

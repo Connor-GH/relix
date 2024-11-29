@@ -1,6 +1,7 @@
 module multiboot;
 import kernel.d.multiboot_defines;
 import kernel.d.kobject;
+import kernel.d.bindings.memlayout;
 import console;
 
 extern (C):
@@ -29,6 +30,12 @@ string multiboot_mmap_type(int type) {
 	default:
 		return "unknown";
 	}
+}
+extern(C) struct color_24bpp {
+	align(1):
+	ubyte red;
+	ubyte green;
+	ubyte blue;
 }
 void parse_multiboot(multiboot_info *mbinfo)
 {
@@ -70,10 +77,25 @@ void parse_multiboot(multiboot_info *mbinfo)
 			}
 			break;
 		case MULTIBOOT_TAG_TYPE_FRAMEBUFFER: {
-				multiboot_tag_framebuffer_common *fb = (cast(multiboot_tag_framebuffer_common *)tag);
-				kwriteln("Fb addr: ", cast(void *)fb.framebuffer_addr, " pitch: ",
-					fb.framebuffer_pitch, " ", fb.framebuffer_width, "x", fb.framebuffer_height,
-					" ", fb.framebuffer_bpp, "bpp type ", fb.framebuffer_type);
+				multiboot_tag_framebuffer *fb = (cast(multiboot_tag_framebuffer *)tag);
+				multiboot_tag_framebuffer_common fbtag = fb.common;
+				kwriteln("Fb addr: ", cast(void *)fbtag.framebuffer_addr, " pitch: ",
+					fbtag.framebuffer_pitch, " ", fbtag.framebuffer_width, "x", fbtag.framebuffer_height,
+					" ", fbtag.framebuffer_bpp, "bpp type ", fbtag.framebuffer_type);
+				kwriteln("Virtual address: ", p2v(fbtag.framebuffer_addr));
+
+				// direct RGB color.
+					if (fbtag.framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB) {
+						auto color = fb.rgb;
+						cprintf("%d %d %d %d %d %d\n",
+						color.framebuffer_red_field_position,
+						color.framebuffer_red_mask_size,
+						color.framebuffer_green_field_position,
+						color.framebuffer_green_mask_size,
+						color.framebuffer_blue_field_position,
+						color.framebuffer_blue_mask_size);
+						cprintf("%#lx %#lx %#lx\n", KERNBASE, cast(uintptr_t)(KERNBASE + fbtag.framebuffer_addr), fbtag.framebuffer_addr);
+					}
 				break;
 			}
 

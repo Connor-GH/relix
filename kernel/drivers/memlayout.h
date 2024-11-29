@@ -1,4 +1,5 @@
 #pragma once
+#include <limits.h>
 #include <stdint.h>
 // Memory layout
 #define kiB (1024ULL)
@@ -22,13 +23,13 @@ extern uint64_t available_memory;
 #define V2P_WO(x) ((x) - KERNBASE) // same as V2P, but without casts
 #define P2V_WO(x) ((x) + KERNBASE) // same as P2V, but without casts
 
+#ifdef X86_64
+#define PHYSLIMIT 0x80000000ULL
+#endif
 // Key addresses for address space layout (see kmap in vm.c for layout)
 #ifdef X86_64
-#define KERNBASE 0xFFFFFFFF80000000ULL // First kernel virtual address
-#define DEVBASE 0xFFFFFFFF40000000ULL // First device virtual address
-#else
-#define KERNBASE 0x80000000UL // First kernel virtual address
-#define DEVBASE 0xFE000000UL // First device virtual address
+#define KERNBASE (ULONG_MAX - PHYSLIMIT + 1) // 0xFFFFFFFF80000000ULL // First kernel virtual address
+#define DEVBASE (KERNBASE - 1*GiB) // 0xFFFFFFFF40000000ULL // First device virtual address
 #endif
 
 #ifndef __ASSEMBLER__

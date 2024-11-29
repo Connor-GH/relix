@@ -52,8 +52,8 @@ example_kernel_binding(void);
 int
 main(struct multiboot_info *mbinfo)
 {
+	uartinit(); // serial port
 	cprintf("xv6_64 (built with %s and linker %s)\n", XV6_COMPILER, XV6_LINKER);
-	cprintf("%p: size: %u reserved: %u\n", (void *)mbinfo, mbinfo->total_size, mbinfo->reserved);
 	parse_multiboot(mbinfo);
 	kernel_assert(available_memory != 0);
 	kinit1(end, P2V(4 * 1024 * 1024)); // phys page allocator
@@ -67,7 +67,6 @@ main(struct multiboot_info *mbinfo)
 	// /dev/console, not to be confused with VGA memory
 	consoleinit(); // console hardware
 	nulldrvinit();
-	uartinit(); // serial port
 	pinit(); // process table
 	tvinit(); // trap vectors
 	binit(); // buffer cache

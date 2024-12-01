@@ -188,10 +188,6 @@ kmalloc(size_t nbytes)
 	Header *p, *prevp;
 	uint32_t nunits;
 
-	if (nbytes > 4096) {
-		panic("kmalloc: requested more than allowed in a single allocation");
-	}
-
 	nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
 	if ((prevp = freep) == 0) {
 		base.s.ptr = freep = prevp = &base;

@@ -52,7 +52,7 @@ mboot_info_framebuffer_tag_start:
 .long mboot_info_framebuffer_tag_end - mboot_info_framebuffer_tag_start # size = 20
 .long WIDTH # width
 .long HEIGHT # height
-.long 24 # depth
+.long BPP_DEPTH
 mboot_info_framebuffer_tag_end:
 #endif
 .short MULTIBOOT_HEADER_TAG_END

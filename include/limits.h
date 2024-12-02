@@ -1,0 +1,2 @@
+#pragma once
+#define ULONG_MAX 18446744073709551615UL

@@ -1,27 +1,29 @@
-module test;
-import bindings.stdio;
-import bindings.stdlib;
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <string.h>
 
-extern(C) {
-	int getopt(int argc, char **argv, const char *optstring);
-	extern __gshared char *optarg;
-	extern __gshared int optind, opterr, optopt;
-	noreturn exit(int status);
-	size_t strcmp(const char *s, const char *c);
+extern char *optarg;
+extern int optind, opterr, optopt;
+
+static bool test_zero(char *s) {
+	return s == NULL || s[0] == '\0';
 }
 
-static bool test_zero(char *s) => s is null || s[0] == '\0';
+static bool test_not_zero(char *s) {
+	return !test_zero(s);
+}
 
-static bool test_not_zero(char *s) => !test_zero(s);
-
-static noreturn
-usage()
+static __attribute__((noreturn)) void
+usage(void)
 {
 	fprintf(stderr, "usage: [ (-z string | -n string) ]\n");
 	exit(1);
 }
 
-extern(C) int main(int argc, char **argv) {
+int main(int argc, char **argv) {
 	bool zflag, nflag;
 	zflag = nflag = false;
 	int c;
@@ -46,8 +48,7 @@ extern(C) int main(int argc, char **argv) {
 	if (argc < 1)
 		usage();
 
-	// flags are mutally exclusive
-	if (zflag * nflag)
+	if (zflag && nflag)
 		usage();
 
 	if (strcmp(argv[0], "]") == 0) {

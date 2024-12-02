@@ -15,6 +15,7 @@
 #include "proc.h"
 #include "macros.h"
 #include <stddef.h>
+#include "boot/multiboot2.h"
 
 void
 freerange(void *vstart, void *vend);

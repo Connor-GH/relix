@@ -67,25 +67,6 @@ ifneq ($(LLVM),)
 	RANLIB = llvm-ranlib
 	LINKER_FLAGS = -fuse-ld=lld
 endif
-# Dlang toolchain
-DC ?= dmd
-D_PREVIEWS = -preview=systemVariables,in,dip1000,dip1021,nosharedaccess,fixImmutableConv
-DFLAGS ?= -betterC -O $(EXTRA_DFLAGS)
-
-ifeq ($(shell $(DC) --version | sed -n 1p | awk '{print $$1}'),DMD64)
-	DC_type = dmd
-else
-	DC_type = ldc2
-endif
-ifneq ($(DC_type),dmd)
-	DFLAGS += -defaultlib -mattr=-avx,-sse
-	D_ARCHFLAG32 = -mcpu=i686
-	D_ARCHFLAG64 = -mcpu=x86-64
-else
-	DFLAGS += -defaultlib=none
-	D_ARCHFLAG32 =
-	D_ARCHFLAG64 = -mcpu=baseline
-endif
 # we will support dmd-style D compilers only.
 
 WFLAGS = -Wnonnull -Werror=pointer-to-int-cast -Werror=int-to-pointer-cast # -Werror=format
@@ -94,18 +75,19 @@ CFLAGS = -std=gnu11 -pipe -pedantic -fno-pic -static -fno-builtin -ffreestanding
 				 -fno-strict-aliasing -nostdlib -O0 -Wall -ggdb -Wno-error -fno-omit-frame-pointer \
 				 -nostdinc -fno-builtin $(ARCHNOFLAGS) $(WNOFLAGS) $(WFLAGS)
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
+RUSTFLAGS = -Copt-level=0 -Ccode-model=kernel -Cno-redzone -Cincremental=true -Zthreads=4
 ifneq ($(RELEASE),)
 	CFLAGS += -O2
+	CARGO_RELEASE = --release
+	RUSTFLAGS += -C opt-level=2
 endif
 ASFLAGS = -gdwarf-2 -Wa,-divide --mx86-used-note=no
 ifeq ($(BITS),64)
 	CFLAGS += -m64 -march=x86-64 -mcmodel=kernel -mtls-direct-seg-refs -DX86_64=1
 	ASFLAGS += -m64 -march=x86-64 -mcmodel=kernel -mtls-direct-seg-refs -DX86_64=1
-	DFLAGS += -m64 $(D_ARCHFLAG64)
 else
 	CFLAGS += -m32 -march=i386
 	ASFLAGS += -m32
-	DFLAGS += -m32 $(D_ARCHFLAG32)
 endif
 # FreeBSD ld wants ``elf_i386_fbsd''
 ifeq ($(HOST_OS),FreeBSD)
@@ -151,7 +133,6 @@ images: $(BIN)/fs.img $(BIN)/kernel
 $(DIRECTORIES):
 	mkdir -p $@
 
-include d/Makefile
 include userspace/Makefile
 include kernel/Makefile
 

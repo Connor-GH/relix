@@ -23,7 +23,7 @@ KERNEL_INC = $(IVARS) \
 
 
 include $(KERNELDIR)/boot/Makefile
-include $(KERNELDIR)/d/Makefile
+include $(KERNELDIR)/rust/Makefile
 
 $(BIN)/xv6.img: $(BIN)/kernel
 	dd if=/dev/zero of=$@ count=10000
@@ -35,8 +35,8 @@ $(BIN)/xv6memfs.img: bootblock kernelmemfs
 	dd if=$(BIN)/bootblock of=$@ conv=notrunc
 	dd if=$(BIN)/kernelmemfs of=$@ seek=1 conv=notrunc
 
-$(BIN)/kernel: $(KERNELDIR)/kernel64.ld $(KERNEL_OBJS) $(KERNEL_D_OBJ) $(K_D_BINDINGS_OBJ) $(D_OBJ) $(BIN)/entry.o $(BIN)/entryother.o $(BIN)/initcode.o $(BIN)/bootblock $(BIN)/sign
-	$(LD) $(LDFLAGS) -T $(KERNELDIR)/kernel$(BITS).ld -o $@ $(BIN)/entry.o $(KERNEL_OBJS) $(KERNEL_D_OBJ) $(K_D_BINDINGS_OBJ) $(D_OBJ) \
+$(BIN)/kernel: $(KERNELDIR)/kernel64.ld $(KERNEL_OBJS) $(BIN)/entry.o $(BIN)/entryother.o $(BIN)/initcode.o $(BIN)/bootblock $(BIN)/sign $(KERNEL_RUST_MODULES)
+	$(LD) $(LDFLAGS) -T $(KERNELDIR)/kernel$(BITS).ld -o $@ $(BIN)/entry.o $(KERNEL_OBJS) $(KERNEL_D_OBJ) $(K_D_BINDINGS_OBJ) $(RUST_OBJ)\
 		-b binary $(BIN)/initcode $(BIN)/entryother
 
 $(BIN)/%.o: $(KERNELDIR)/%.c

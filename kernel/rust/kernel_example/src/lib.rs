@@ -1,9 +1,6 @@
 #![no_std]
-use bindings::console::cprintf;
-
+use rust_kernel::*;
 #[no_mangle]
 pub extern "C" fn rust_hello_world() {
-    unsafe {
-        cprintf(c"Hello world\n".as_ptr());
-    }
+    println!("hello {} {}", "world", "from rust!");
 }

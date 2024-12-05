@@ -8,3 +8,4 @@ crate-type = ["staticlib"]
 [dependencies]
 
 bindings = { path = "../bindings", version = "0.1.0" }
+rust_kernel = { path = "../rust_kernel", version = "0.1.0" }

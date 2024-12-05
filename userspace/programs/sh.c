@@ -1,6 +1,7 @@
 // Shell.
 
 #include <sys/wait.h>
+#include <sys/param.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +17,6 @@
 #define LIST 4
 #define BACK 5
 
-#define MAXARGS 10
 
 struct cmd {
 	int type;
@@ -24,8 +24,8 @@ struct cmd {
 
 struct execcmd {
 	int type;
-	char *argv[MAXARGS];
-	char *eargv[MAXARGS];
+	char *argv[MAXARG];
+	char *eargv[MAXARG];
 };
 
 struct redircmd {
@@ -65,6 +65,8 @@ struct cmd *
 parsecmd(char *);
 
 char *path[3] = { "/bin/", "/usr/bin/", "/" };
+static char *pwd = "/";
+static char *env[] = { "SHELL=/bin/sh", "PATH=/bin:/usr/bin:/", NULL};
 // Execute cmd.  Never returns.
 void
 runcmd(struct cmd *cmd)
@@ -88,13 +90,13 @@ runcmd(struct cmd *cmd)
 		ecmd = (struct execcmd *)cmd;
 		if (ecmd->argv[0] == 0)
 			exit(1);
-		execve(ecmd->argv[0], ecmd->argv, (char *[]){"SHELL=v6sh", NULL});
+		execve(ecmd->argv[0], ecmd->argv, env);
 
 		// try PATH if local directory fails
 		for (int i = 0; i < 3; i++) {
 			strcpy(str, path[i]);
 			strcat(str, ecmd->argv[0]);
-			execve(str, ecmd->argv, (char *[]){"SHELL=v6sh", NULL});
+			execve(str, ecmd->argv, env);
 		}
 		fprintf(stderr, "exec %s failed\n", ecmd->argv[0]);
 		break;
@@ -186,6 +188,8 @@ main(int argc, char **argv)
 			buf[strlen(buf) - 1] = 0; // chop \n
 			if (chdir(buf + 3) < 0)
 				fprintf(stderr, "cannot cd %s\n", buf + 3);
+			else
+				strcpy(pwd, buf);
 			continue;
 		}
 		int status;
@@ -468,7 +472,7 @@ parseexec(char **ps, char *es)
 		cmd->argv[argc] = q;
 		cmd->eargv[argc] = eq;
 		argc++;
-		if (argc >= MAXARGS)
+		if (argc >= MAXARG)
 			panic("too many args");
 		ret = parseredirs(ret, ps, es);
 	}

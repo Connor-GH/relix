@@ -19,8 +19,6 @@
 #include "drivers/lapic.h"
 #include "compiler_attributes.h"
 
-static void
-consputc(int);
 
 static int panicked = 0;
 int echo_out = 1;
@@ -50,6 +48,7 @@ printint(uint64_t xx, int base, int sign, int *padding)
 	char buf[32];
 	int i;
 	uint64_t x;
+	long_form = 0;
 
 	// the second check prevents misusage of the function.
 	// we expect sign && xx < 0, but plan for the worst.

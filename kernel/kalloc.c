@@ -16,6 +16,7 @@
 #include "macros.h"
 #include <stddef.h>
 #include "boot/multiboot2.h"
+#include <string.h>
 
 void
 freerange(void *vstart, void *vend);
@@ -119,11 +120,17 @@ kpage_alloc(void)
 	popcli();
 	return (char *)r;
 }
-__attribute__((malloc)) __nonnull(1) void *krealloc(char *ptr, size_t size)
+__attribute__((malloc)) __nonnull(1) void *krealloc(void *ptr, size_t size)
 {
 	if (ptr)
-		kpage_free(ptr);
-	ptr = kpage_alloc();
+		kfree(ptr);
+	ptr = kmalloc(size);
+	return ptr;
+}
+
+__attribute__((malloc)) void *kcalloc(size_t size) {
+	void *ptr = kmalloc(size);
+	memset(ptr, '\0', size);
 	return ptr;
 }
 

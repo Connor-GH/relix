@@ -120,19 +120,6 @@ kpage_alloc(void)
 	popcli();
 	return (char *)r;
 }
-__attribute__((malloc)) __nonnull(1) void *krealloc(void *ptr, size_t size)
-{
-	if (ptr)
-		kfree(ptr);
-	ptr = kmalloc(size);
-	return ptr;
-}
-
-__attribute__((malloc)) void *kcalloc(size_t size) {
-	void *ptr = kmalloc(size);
-	memset(ptr, '\0', size);
-	return ptr;
-}
 
 // Memory allocator by Kernighan and Ritchie,
 // The C programming Language, 2nd ed.  Section 8.7.
@@ -217,4 +204,21 @@ kmalloc(size_t nbytes)
 			if ((p = morecore(nunits)) == 0)
 				return 0;
 	}
+}
+__attribute__((malloc)) __nonnull(1) void *krealloc(void *ptr, size_t size)
+{
+	void *newptr = kmalloc(size);
+	if (!newptr)
+		return NULL;
+	Header *hdr = (Header *)ptr - 1;
+	memcpy(newptr, ptr, min(hdr->s.size, size));
+	kfree(ptr);
+
+	return newptr;
+}
+
+__attribute__((malloc)) void *kcalloc(size_t size) {
+	void *ptr = kmalloc(size);
+	memset(ptr, '\0', size);
+	return ptr;
 }

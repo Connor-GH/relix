@@ -35,26 +35,49 @@ struct proghdr {
 	uintptr_t align;
 };
 
-struct elf32_shdr {
+#ifdef X86_64
+// ELF 1.2 figure 1-8.
+struct elf64_shdr {
 	uint32_t sh_name;
 	uint32_t sh_type;
-	uint32_t sh_flags;
-	uint32_t sh_addr;
-	uint32_t sh_offset;
-	uint32_t sh_size;
+	uint64_t sh_flags;
+	uintptr_t sh_addr;
+	uintptr_t sh_offset;
+	uint64_t sh_size;
 	uint32_t sh_link;
 	uint32_t sh_info;
-	uint32_t sh_addralign;
-	uint32_t sh_entsize;
+	uint64_t sh_addralign;
+	uint64_t sh_entsize;
 };
 
-struct elf32_symhdr {
+struct elf64_symhdr {
 	uint32_t name;
-	uint32_t value;
-	uint32_t size;
 	uint8_t info;
 	uint8_t other;
 	uint16_t st_shndx;
+	uint64_t value;
+	uint64_t size;
+};
+#endif
+
+enum {
+	STT_NOTYPE = 0,
+	STT_OBJECT = 1,
+	STT_FUNC = 2,
+	STT_SECTION = 3,
+	STT_FILE = 4,
+	STT_LOPROC = 13,
+	STT_HIPROC = 15,
+};
+
+// 1-16
+enum {
+	STB_LOCAL = 0,
+	STB_GLOBAL = 1,
+	STB_WEAK = 2,
+	STB_LOPROC = 13,
+	STB_HIPROC = 15,
+
 };
 
 // Values for Proghdr type
@@ -79,4 +102,27 @@ enum {
 	SHT_DYNSYM = 11,
 	SHT_LOPROC = 0x70000000,
 	SHT_HIPROC = 0x7fffffff,
+};
+enum {
+	SHF_WRITE = 1,
+	SHF_ALLOC = 2,
+	SHF_EXECINSTR = 4,
+#define SHF_MASKPROC 0xf0000000
+};
+
+// TIS ELF spec 1.2
+enum {
+	ET_NONE = 0,
+	ET_REL = 1,
+	ET_EXEC = 2,
+	ET_DYN = 3,
+	ET_CORE = 4,
+	ET_LOPROC = 0xff00,
+	ET_HIPROC = 0xffff,
+};
+
+enum {
+	ELFCLASSNONE = 0,
+	ELFCLASS32 = 1,
+	ELFCLASS64 = 2,
 };

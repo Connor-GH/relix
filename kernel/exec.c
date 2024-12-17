@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stat.h>
+#include <elf.h>
 #include "param.h"
 #include "proc.h"
 #include "x86.h"
@@ -9,7 +10,6 @@
 #include "kernel_string.h"
 #include "kernel_assert.h"
 #include "vm.h"
-#include "boot/elf.h"
 #include "drivers/mmu.h"
 #include "compiler_attributes.h"
 
@@ -43,9 +43,9 @@ __nonnull(1, 2) int execve(char *path, char **argv, char **envp)
 	int i, off;
 	uintptr_t envc = 0;
 	uintptr_t argc = 0, sz, sp, ustack[3 + MAXARG + MAXENV + 1] = {};
-	struct elfhdr elf;
+	struct Elf64_Ehdr elf;
 	struct inode *ip;
-	struct proghdr ph;
+	struct Elf64_Phdr ph;
 	uintptr_t *pgdir, *oldpgdir;
 	struct proc *curproc = myproc();
 
@@ -88,7 +88,7 @@ ok:
 	// Check ELF header
 	if (readi(ip, (char *)&elf, 0, sizeof(elf)) != sizeof(elf))
 		goto bad;
-	if (elf.magic != ELF_MAGIC)
+	if (elf.magic != ELF_MAGIC_NUMBER)
 		goto bad;
 
 	if ((pgdir = setupkvm()) == 0)
@@ -96,20 +96,20 @@ ok:
 
 	// Load program into memory.
 	sz = 0;
-	for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph)) {
+	for (i = 0, off = elf.e_phoff; i < elf.e_phnum; i++, off += sizeof(ph)) {
 		if (readi(ip, (char *)&ph, off, sizeof(ph)) != sizeof(ph))
 			goto bad;
-		if (ph.type != ELF_PROG_LOAD)
+		if (ph.p_type != PT_LOAD)
 			continue;
-		if (ph.memsz < ph.filesz)
+		if (ph.p_memsz < ph.p_filesz)
 			goto bad;
-		if (ph.vaddr + ph.memsz < ph.vaddr)
+		if (ph.p_vaddr + ph.p_memsz < ph.p_vaddr)
 			goto bad;
-		if ((sz = allocuvm(pgdir, sz, ph.vaddr + ph.memsz)) == 0)
+		if ((sz = allocuvm(pgdir, sz, ph.p_vaddr + ph.p_memsz)) == 0)
 			goto bad;
-		if (ph.vaddr % PGSIZE != 0)
+		if (ph.p_vaddr % PGSIZE != 0)
 			goto bad;
-		if (loaduvm(pgdir, (char *)ph.vaddr, ip, ph.off, ph.filesz) < 0)
+		if (loaduvm(pgdir, (char *)ph.p_vaddr, ip, ph.p_offset, ph.p_filesz) < 0)
 			goto bad;
 	}
 	iunlockput(ip);
@@ -169,7 +169,7 @@ ok:
 	oldpgdir = curproc->pgdir;
 	curproc->pgdir = pgdir;
 	curproc->sz = sz;
-	curproc->tf->eip = elf.entry; // main
+	curproc->tf->eip = elf.e_entry; // main
 	curproc->tf->esp = sp;
 	curproc->cred = curproc->parent->cred;
 	switchuvm(curproc);

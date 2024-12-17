@@ -6,8 +6,8 @@
 // sector 1 and then jumps to the kernel entry routine.
 
 #include <stdint.h>
+#include <elf.h>
 #include "x86.h"
-#include "elf.h"
 
 #define SECTSIZE 512
 
@@ -17,33 +17,33 @@ readseg(uint8_t *, uint32_t, uint32_t);
 void
 bootmain(void)
 {
-	struct elfhdr *elf;
-	struct proghdr *ph;
-	const struct proghdr *eph;
+	struct Elf32_Ehdr *elf;
+	struct Elf32_Phdr *ph;
+	const struct Elf32_Phdr *eph;
 	void (*entry)(void);
 
-	elf = (struct elfhdr *)0x10000; // scratch space
+	elf = (struct Elf32_Ehdr *)0x10000; // scratch space
 
 	// Read 1st page off disk
 	readseg((uint8_t *)elf, 4096, 0);
 
 	// Is this an ELF executable?
-	if (elf->magic != ELF_MAGIC)
+	if (elf->magic != ELF_MAGIC_NUMBER)
 		return; // let bootasm.S handle error
 
 	// Load each program segment (ignores ph flags).
-	ph = (struct proghdr *)((uint8_t *)elf + elf->phoff);
-	eph = ph + elf->phnum;
+	ph = (struct Elf32_Phdr *)((uint8_t *)elf + elf->e_phoff);
+	eph = ph + elf->e_phnum;
 	for (uint8_t *pa; ph < eph; ph++) {
-		pa = (uint8_t *)ph->paddr;
-		readseg(pa, ph->filesz, ph->off);
-		if (ph->memsz > ph->filesz)
-			stosb(pa + ph->filesz, 0, ph->memsz - ph->filesz);
+		pa = (uint8_t *)ph->p_paddr;
+		readseg(pa, ph->p_filesz, ph->p_offset);
+		if (ph->p_memsz > ph->p_filesz)
+			stosb(pa + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);
 	}
 
 	// Call the entry point from the ELF header.
 	// Does not return!
-	entry = (void (*)(void))(elf->entry);
+	entry = (void (*)(void))(elf->e_entry);
 	entry();
 }
 

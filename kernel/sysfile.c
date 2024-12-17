@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stat.h>
 #include <stdlib.h>
+#include <sys/types.h>
 #include <dirent.h>
 #include <date.h>
 #include <time.h>
@@ -679,4 +680,20 @@ link_dereference(struct inode *ip, char *buff)
 bad:
 	iunlock(new_ip);
 	return 0;
+}
+
+int
+sys_lseek(void)
+{
+	int fd;
+	off_t offset;
+	int whence;
+	struct file *file;
+
+	if (argfd(0, &fd, &file) < 0 || arguintptr(1, &offset) < 0 || argint(2, &whence) < 0)
+		return -EINVAL;
+	if (S_ISFIFO(file->ip->mode) || S_ISSOCK(file->ip->mode))
+		return -ESPIPE;
+
+	return fileseek(file, offset, whence);
 }

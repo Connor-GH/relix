@@ -10,6 +10,7 @@
 #include "console.h"
 #include "pipe.h"
 #include "log.h"
+#include <unistd.h>
 
 struct devsw devsw[NDEV];
 struct {
@@ -111,6 +112,22 @@ fileread(struct file *f, char *addr, int n)
 		return r;
 	}
 	panic("fileread");
+}
+
+int
+fileseek(struct file *f, int n, int whence) {
+	int offset = 0;
+	if (whence == SEEK_CUR) {
+		offset = f->off + n;
+	} else if (whence == SEEK_SET) {
+		offset = n;
+	} else if (whence == SEEK_END) {
+		panic("SEEK_END unimplemented!");
+	} else {
+		return -EINVAL;
+	}
+	f->off = offset;
+	return 0;
 }
 
 // Write to file f.

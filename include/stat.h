@@ -41,9 +41,10 @@
 #define S_ISREG(mode) S_ISTYPE((mode), S_IFREG)
 #define S_ISFIFO(mode) S_ISTYPE((mode), S_IFIFO)
 #define S_ISLNK(mode) S_ISTYPE((mode), S_IFLNK)
+#define S_ISSOCK(mode) S_ISTYPE((mode), S_IFSOCK)
 #define S_ISANY(mode)                                                         \
 	(_Bool)(S_ISDIR(mode) || S_ISCHR(mode) || S_ISBLK(mode) || S_ISREG(mode) || \
-					S_ISFIFO(mode) || S_ISLNK(mode))
+					S_ISFIFO(mode) || S_ISLNK(mode) || S_ISSOCK(mode))
 
 #define S_IRUSR 00400
 #define S_IWUSR 00200

@@ -2,6 +2,7 @@
 
 #include "stdint.h"
 #include <stddef.h>
+#include <sys/types.h>
 int
 fork(void) __attribute__((returns_twice));
 void
@@ -61,3 +62,12 @@ extern char *optarg;
 extern int optind, opterr, optopt;
 int
 getopt(int argc, char *const argv[], const char *optstring);
+
+enum {
+	SEEK_SET,
+	SEEK_CUR,
+	SEEK_END,
+};
+
+off_t
+lseek(int fd, off_t offset, int whence);

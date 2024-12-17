@@ -48,7 +48,7 @@ to_human_bytes(uint32_t number, char human_name[static 7])
 	} else {
 		letter = 'B';
 	}
-	sprintf(human_name, "% 5u", number);
+	sprintf(human_name, "%5u", number);
 	human_name[5] = letter;
 	human_name[6] = '\0';
 	return human_name;
@@ -204,7 +204,7 @@ fmtname(char *path, int fmt_flag)
 			perror("readlink");
 			exit(1);
 		}
-		sprintf(sprintf_buf, "%s%c -> %s", p, indicator, readlink_buf);
+		sprintf(sprintf_buf, "%s -> %s", p, readlink_buf);
 		memcpy(buf, sprintf_buf, DIRSIZ);
 	}
 
@@ -251,14 +251,14 @@ ls_format(char *buf, struct stat st, bool pflag, bool lflag, bool hflag,
 	if (lflag) {
 		// inodes
 		if (iflag)
-			fprintf(stdout, "% 9d ", st.st_ino);
+			fprintf(stdout, "%9d ", st.st_ino);
 		char ret[11];
 		fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
 		if (hflag)
-			fprintf(stdout, "% 4d % 4d %s ", st.st_uid, st.st_gid,
+			fprintf(stdout, "%4d %4d %s ", st.st_uid, st.st_gid,
 							to_human_bytes(st.st_size, human_bytes_buf));
 		else
-			fprintf(stdout, "% 4d % 4d % 6d ", st.st_uid, st.st_gid, st.st_size);
+			fprintf(stdout, "%4d %4d %6d ", st.st_uid, st.st_gid, st.st_size);
 		struct ls_time lt = unix_time_to_human_readable(st.st_mtime);
 		fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
 						lt.hr, lt.min, lt.sec);

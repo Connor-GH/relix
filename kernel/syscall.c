@@ -193,6 +193,8 @@ extern int
 sys_symlink(void);
 extern int
 sys_readlink(void);
+extern int
+sys_lseek(void);
 
 static int (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,				 [SYS_exit] = sys_exit,
@@ -209,7 +211,7 @@ static int (*syscalls[])(void) = {
 	[SYS_chmod] = sys_chmod,			 [SYS_reboot] = sys_reboot,
 	[SYS_echoout] = sys_echoout,	 [SYS_setuid] = sys_setuid,
 	[SYS_strace] = sys_strace,		 [SYS_symlink] = sys_symlink,
-	[SYS_readlink] = sys_readlink,
+	[SYS_readlink] = sys_readlink, [SYS_lseek] = sys_lseek,
 };
 
 void

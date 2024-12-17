@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdint.h>
 
 static uint32_t global_idx = 0;
 
@@ -24,7 +25,7 @@ string_putc(int fd, char c, char *buf)
 enum {
 	FLAG_PADZERO = 1 << 0,
 	FLAG_ALTFORM = 1 << 1,
-	FLAG_RJUST = 1 << 2,
+	FLAG_LJUST = 1 << 2,
 	FLAG_BLANK = 1 << 3,
 	FLAG_SIGN = 1 << 4,
 	FLAG_LONG = 1 << 5,
@@ -36,7 +37,7 @@ printint(void (*put_function)(int, char, char *), char *put_func_buf, int fd,
 				 int64_t xx, int base, bool sgn, int flags, int padding)
 {
 	static const char digits[] = "0123456789ABCDEF";
-	char buf[32];
+	char buf[64];
 	int i = 0;
 	int neg = 0;
 	uint64_t x;
@@ -47,7 +48,18 @@ printint(void (*put_function)(int, char, char *), char *put_func_buf, int fd,
 	} else {
 		x = xx;
 	}
+	int numlen = 1;
+	int x_copy = x;
+	while ((x_copy /= base) != 0)
+		numlen++;
 
+	if (IS_SET(flags, FLAG_LJUST)) {
+		if (base == 16 && IS_SET(flags, FLAG_ALTFORM))
+			padding -= 2;
+		while (i < padding - numlen) {
+			buf[i++] = ' ';
+		}
+	}
 	do {
 		buf[i++] = digits[x % base];
 	} while ((x /= base) != 0);
@@ -55,11 +67,6 @@ printint(void (*put_function)(int, char, char *), char *put_func_buf, int fd,
 	if (IS_SET(flags, FLAG_PADZERO)) {
 		while (i < padding) {
 			buf[i++] = '0';
-		}
-	}
-	if (IS_SET(flags, FLAG_BLANK)) {
-		while (i < padding) {
-			buf[i++] = ' ';
 		}
 	}
 	if (base == 16 && IS_SET(flags, FLAG_ALTFORM)) {
@@ -71,6 +78,15 @@ printint(void (*put_function)(int, char, char *), char *put_func_buf, int fd,
 		buf[i++] = '-';
 	else if (IS_SET(flags, FLAG_SIGN))
 		buf[i++] = '+';
+	if (IS_SET(flags, FLAG_BLANK))
+		buf[i++] = ' ';
+
+	if (!IS_SET(flags, FLAG_LJUST) && !IS_SET(flags, FLAG_PADZERO) &&
+			padding != 0) {
+		while (i < padding) {
+			buf[i++] = ' ';
+		}
+	}
 
 	while (--i >= 0)
 		put_function(fd, buf[i], put_func_buf);
@@ -85,7 +101,7 @@ vprintf_internal(void (*put_function)(int fd, char c, char *buf), int fd,
 	char *s;
 	int c, i, state;
 	int flags = 0;
-	int str_pad = 16;
+	int str_pad = 0;
 
 	state = 0;
 	for (i = 0; fmt[i]; i++) {
@@ -99,11 +115,20 @@ vprintf_internal(void (*put_function)(int fd, char c, char *buf), int fd,
 			}
 		} else if (state == '%') {
 			switch (c) {
-			case '0':
-				flags |= FLAG_PADZERO;
-				if (fmt[i + 1] && (fmt[i + 1] - '0' >= 0)) {
-					str_pad = fmt[++i] - '0';
+			case '0': {
+				if (str_pad == 0) {
+					flags |= FLAG_PADZERO;
+					goto skip_state_reset;
+				} else {
+					goto numerical_padding;
 				}
+			}
+			case '1' ... '9':
+numerical_padding:
+				str_pad = str_pad * 10 + (c - '0');
+				// soon...
+				//if (IS_SET(flags, FLAG_PADZERO)) {}
+				// str_pad = c - '0';
 				goto skip_state_reset;
 				break;
 			case '#':
@@ -111,7 +136,9 @@ vprintf_internal(void (*put_function)(int fd, char c, char *buf), int fd,
 				goto skip_state_reset;
 				break;
 			case '-':
-				flags |= FLAG_RJUST;
+				flags |= FLAG_LJUST;
+				if (IS_SET(flags, FLAG_PADZERO))
+					flags ^= FLAG_PADZERO;
 				if (fmt[i + 1] && (fmt[i + 1] - '0' >= 0)) {
 					str_pad = fmt[++i] - '0';
 				}
@@ -119,9 +146,6 @@ vprintf_internal(void (*put_function)(int fd, char c, char *buf), int fd,
 				break;
 			case ' ':
 				flags |= FLAG_BLANK;
-				if (fmt[i + 1] && (fmt[i + 1] - '0' >= 0)) {
-					str_pad = fmt[++i] - '0';
-				}
 				goto skip_state_reset;
 				break;
 			case '+':
@@ -135,9 +159,11 @@ vprintf_internal(void (*put_function)(int fd, char c, char *buf), int fd,
 				if (IS_SET(flags, FLAG_LONG)) {
 					long ld = va_arg(*argp, long);
 					printint(put_function, buf, fd, ld, 10, true, flags, str_pad);
+					str_pad = 0;
 				} else {
 					int d = va_arg(*argp, int);
 					printint(put_function, buf, fd, d, 10, true, flags, str_pad);
+					str_pad = 0;
 				}
 				break;
 			}
@@ -145,9 +171,11 @@ vprintf_internal(void (*put_function)(int fd, char c, char *buf), int fd,
 				if (IS_SET(flags, FLAG_LONG)) {
 					long lu = va_arg(*argp, unsigned long);
 					printint(put_function, buf, fd, lu, 10, false, flags, str_pad);
+					str_pad = 0;
 				} else {
 					unsigned int u = va_arg(*argp, unsigned int);
 					printint(put_function, buf, fd, u, 10, false, flags, str_pad);
+					str_pad = 0;
 				}
 				break;
 			}
@@ -155,25 +183,29 @@ vprintf_internal(void (*put_function)(int fd, char c, char *buf), int fd,
 			case 'p': {
 				int x = va_arg(*argp, int);
 				printint(put_function, buf, fd, x, 16, false, flags, str_pad);
+					str_pad = 0;
 				break;
 			}
 			case 'o': {
 				int x = va_arg(*argp, int);
 				printint(put_function, buf, fd, x, 8, false, flags, str_pad);
+					str_pad = 0;
 				break;
 			}
 			case 's': {
 				s = va_arg(*argp, char *);
 				if (s == 0)
 					s = "(null)";
-				if (IS_SET(flags, FLAG_RJUST) && strlen(s) < str_pad) {
-					for (int _ = 0; _ < str_pad - strlen(s); _++)
-						put_function(fd, ' ', buf);
-				}
+				size_t len = strlen(s);
 				while (*s != 0) {
 					put_function(fd, *s, buf);
 					s++;
 				}
+				if (IS_SET(flags, FLAG_LJUST) && len < str_pad) {
+					for (int _ = 0; _ < str_pad - len; _++)
+						put_function(fd, ' ', buf);
+				}
+				str_pad = 0;
 				break;
 			}
 			case 'c': {
@@ -241,6 +273,7 @@ perror(const char *s)
 }
 
 const char *const
-strerror(int err_no) {
+strerror(int err_no)
+{
 	return errno_codes[err_no];
 }

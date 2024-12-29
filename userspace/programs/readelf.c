@@ -5,12 +5,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-void
-qsort(void *base, size_t nmemb, size_t size,
-			int (*compar)(const void *, const void *))
-{
-	/* TODO no implementation for now */
-}
 
 void
 print_section_headers(int fd, struct Elf64_Ehdr *header,
@@ -90,7 +84,6 @@ print_symbol_table(int fd, struct Elf64_Ehdr *header,
 			}
 
 			printf("%-30s %-10s %-10s\n", "Function Name", "Addr", "Size");
-
 			qsort(symbols, symbol_table_header->sh_size / sizeof(struct Elf64_Sym),
 						sizeof(struct Elf64_Sym), compare);
 			// Iterate through the symbols

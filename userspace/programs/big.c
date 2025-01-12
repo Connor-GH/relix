@@ -7,7 +7,7 @@
 int
 main(void)
 {
-	char buf[BSIZE];
+	char buf[__BSIZE];
 	int fd, i, sectors;
 
 	fd = open("big.file", O_CREATE | O_WRONLY);
@@ -17,7 +17,7 @@ main(void)
 	}
 
 	sectors = 0;
-	while (sectors <= (NDIRECT + NINDIRECT)) {
+	while (sectors <= (__NDIRECT + __NINDIRECT)) {
 		*(int *)buf = sectors;
 		int cc = write(fd, buf, sizeof(buf));
 		if (cc <= 0) {

@@ -1,13 +1,13 @@
 #pragma once
 
 #include <stdarg.h>
+#include "kernel/include/fs.h"
 #if defined(FILE_STRUCT_DONE) && FILE_STRUCT_DONE
 struct _IO_FILE {
 	/* TODO */
 };
 #endif
 
-#define DIRSIZ 254
 // mkfs defines this when building.
 #ifndef USE_HOST_TOOLS
 
@@ -19,7 +19,7 @@ typedef int FILE;
 #define stderr ((FILE *)&(FILE){ 2 })
 
 #define EOF (-1)
-#define FILENAME_MAX DIRSIZ
+#define FILENAME_MAX __DIRSIZ
 
 void
 vfprintf(FILE *restrict, const char *, va_list *argp);

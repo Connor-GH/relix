@@ -200,7 +200,7 @@ void
 writetest1(void)
 {
 	int i, fd, n;
-	const int writetest_max = NDIRECT + NINDIRECT + 1;
+	const int writetest_max = __NDIRECT + __NINDIRECT + 1;
 
 	fprintf(stdout, "big files test\n");
 
@@ -212,7 +212,7 @@ writetest1(void)
 
 	for (i = 0; i < writetest_max; i++) {
 		((int *)buf)[0] = i;
-		if (write(fd, buf, BSIZE) != BSIZE) {
+		if (write(fd, buf, __BSIZE) != __BSIZE) {
 			fprintf(stdout, "error: write big file failed %d\n", i);
 			exit(0);
 		}
@@ -228,14 +228,14 @@ writetest1(void)
 
 	n = 0;
 	for (;;) {
-		i = read(fd, buf, BSIZE);
+		i = read(fd, buf, __BSIZE);
 		if (i == 0) {
 			if (n == writetest_max - 1) {
 				fprintf(stdout, "read only %d blocks from big", n);
 				exit(0);
 			}
 			break;
-		} else if (i != BSIZE) {
+		} else if (i != __BSIZE) {
 			fprintf(stdout, "read failed %d\n", i);
 			exit(0);
 		}
@@ -1234,7 +1234,7 @@ dirsiz(void)
 {
 	int fd;
 
-	// DIRSIZ is 14.
+	// __DIRSIZ is 14.
 	fprintf(stdout, "dirsiz test\n");
 
 	if (mkdir("12345678901234") != 0) {

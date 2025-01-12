@@ -158,7 +158,7 @@ unix_time_to_human_readable(uint32_t unix_seconds)
 static char *
 fmtname(char *path, int fmt_flag)
 {
-	static char buf[DIRSIZ + 1];
+	static char buf[__DIRSIZ + 1];
 	char *p;
 	char indicator;
 	bool skip_fmt = false;
@@ -171,7 +171,7 @@ fmtname(char *path, int fmt_flag)
 	p++;
 
 	// Return blank-padded name.
-	if (strlen(p) >= DIRSIZ)
+	if (strlen(p) >= __DIRSIZ)
 		return p;
 	memmove(buf, p, strlen(p));
 	switch (fmt_flag) {
@@ -198,14 +198,14 @@ fmtname(char *path, int fmt_flag)
 	if (!skip_fmt)
 		memset(buf + strlen(p), indicator, 1);
 	if (fmt_flag == FMT_LINK) {
-		char sprintf_buf[DIRSIZ];
-		char readlink_buf[DIRSIZ];
-		if (readlink(buf, readlink_buf, DIRSIZ) < 0) {
+		char sprintf_buf[__DIRSIZ];
+		char readlink_buf[__DIRSIZ];
+		if (readlink(buf, readlink_buf, __DIRSIZ) < 0) {
 			perror("readlink");
 			exit(1);
 		}
 		sprintf(sprintf_buf, "%s -> %s", p, readlink_buf);
-		memcpy(buf, sprintf_buf, DIRSIZ);
+		memcpy(buf, sprintf_buf, __DIRSIZ);
 	}
 
 	return buf;
@@ -299,7 +299,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag, bool hflag)
 	case S_IFREG:
 		ls_format(path, st, pflag, lflag, hflag, iflag);
 	case S_IFDIR: {
-		if (strlen(path) + 1 + DIRSIZ + 1 > sizeof buf) {
+		if (strlen(path) + 1 + __DIRSIZ + 1 > sizeof buf) {
 			fprintf(stderr, "ls: path too long\n");
 			break;
 		}

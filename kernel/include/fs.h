@@ -8,7 +8,23 @@
 #include <../../include/stdint.h>
 #include <../../kernel/include/sleeplock.h>
 #endif
-
+// Constants that userspace testers might be interested in.
+// To not pollute the namespace, they have double underscores.
+#define __DIRSIZ 254U
+#define __NDIRECT 6U
+#define __NINDIRECT (__BSIZE / sizeof(uint32_t))
+#define __MAXFILE (__NDIRECT + __NINDIRECT + (__NINDIRECT * __NINDIRECT))
+#define __NDINDIRECT_PER_ENTRY __NDIRECT
+#define __NDINDIRECT_ENTRY __NDIRECT
+#define __BSIZE 2048U // block size
+#if !defined(__USER__) || defined(USE_HOST_TOOLS)
+#define NDIRECT __NDIRECT
+#define NINDIRECT __NINDIRECT
+#define MAXFILE __MAXFILE
+#define NDINDIRECT_PER_ENTRY __NDINDIRECT_PER_ENTRY
+#define NDINDIRECT_ENTRY __NDIRECT
+#define BSIZE __BSIZE
+#define DIRSIZ __DIRSIZ
 // Disk layout:
 // [ boot block | super block | log | inode blocks |
 //                                          free bit map | data blocks]
@@ -24,11 +40,6 @@ struct superblock {
 	uint32_t inodestart; // Block number of first inode block
 	uint32_t bmapstart; // Block number of first free map block
 };
-#define NDIRECT 6U
-#define NINDIRECT (BSIZE / sizeof(uint32_t))
-#define MAXFILE (NDIRECT + NINDIRECT + (NINDIRECT * NINDIRECT))
-#define NDINDIRECT_PER_ENTRY NDIRECT
-#define NDINDIRECT_ENTRY NDIRECT
 // in-memory copy of an inode
 struct inode {
 	uint32_t dev; // Device number
@@ -78,10 +89,8 @@ struct dinode {
 
 // Directory is a file containing a sequence of dirent structures.
 #define ROOTINO 1U // root i-number
-#define BSIZE 2048U // block size
 
 #ifndef USE_HOST_TOOLS
-#define DIRSIZ 254U
 #include "stat.h"
 void
 readsb(int dev, struct superblock *sb);
@@ -117,4 +126,5 @@ void
 stati(struct inode *, struct stat *);
 int
 writei(struct inode *, char *, uint32_t, uint32_t);
+#endif
 #endif

@@ -3,7 +3,7 @@
 #include "stdio.h"
 struct dirent {
 	uint16_t inum;
-	char name[DIRSIZ];
+	char name[__DIRSIZ];
 };
 struct __DIR {
 	int fd;

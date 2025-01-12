@@ -66,7 +66,7 @@ panic(char *);
 struct cmd *
 parsecmd(char *);
 
-static char pwd[DIRSIZ] = "/";
+static char pwd[__DIRSIZ] = "/";
 // Execute cmd.  Never returns.
 void
 runcmd(struct cmd *cmd)
@@ -86,7 +86,7 @@ runcmd(struct cmd *cmd)
 		panic("runcmd");
 
 	case EXEC:
-		str = malloc(DIRSIZ);
+		str = malloc(__DIRSIZ);
 		ecmd = (struct execcmd *)cmd;
 		if (ecmd->argv[0] == 0)
 			exit(1);
@@ -98,7 +98,7 @@ runcmd(struct cmd *cmd)
 		sprintf(str, "%s/%s", pwd, ecmd->argv[0]);
 		execve(str, ecmd->argv, environ);
 		// Clear buffer for other attempts.
-		memset(str, '\0', DIRSIZ);
+		memset(str, '\0', __DIRSIZ);
 
 		char *path = strdup(getenv("PATH"));
 		if (path != NULL) {
@@ -109,7 +109,6 @@ runcmd(struct cmd *cmd)
 				s = strtok(NULL, ":");
 			}
 		} else {
-			// If resolving it in PATH fails,
 			fprintf(stderr, "$PATH is empty or not set.\n");
 		}
 		fprintf(stderr, "exec %s failed\n", ecmd->argv[0]);

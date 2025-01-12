@@ -41,8 +41,6 @@ QEMU = $(shell if which qemu > /dev/null; \
 	echo "***" 1>&2; exit 1)
 endif
 
-# TODO get rid of this
-WNOFLAGS = -Wno-error=infinite-recursion
 ARCHNOFLAGS = -mno-sse -mno-red-zone -mno-avx -mno-avx2
 
 CC = $(TOOLPREFIX)gcc
@@ -69,11 +67,13 @@ ifneq ($(LLVM),)
 endif
 # we will support dmd-style D compilers only.
 
-WFLAGS = -Wnonnull -Werror=pointer-to-int-cast -Werror=int-to-pointer-cast # -Werror=format
+WFLAGS = -Wall -Wextra -Wformat -Wnull-dereference -Warray-bounds -Wswitch -Wshadow
+# TODO get rid of this
+WNOFLAGS = -Wno-infinite-recursion -Wno-pointer-arith -Wno-unused -Wno-pedantic -Wno-sign-compare
 
-CFLAGS = -std=gnu11 -pipe -pedantic -fno-pic -static -fno-builtin -ffreestanding \
-				 -fno-strict-aliasing -nostdlib -O0 -Wall -ggdb -Wno-error -fno-omit-frame-pointer \
-				 -nostdinc -fno-builtin $(ARCHNOFLAGS) $(WNOFLAGS) $(WFLAGS)
+CFLAGS = -std=gnu11 -pipe -fno-pic -static -fno-builtin -ffreestanding \
+				 -fno-strict-aliasing -nostdlib -O0 -ggdb -fno-omit-frame-pointer \
+				 -nostdinc -fno-builtin $(ARCHNOFLAGS) $(WFLAGS) $(WNOFLAGS)
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 RUSTFLAGS = -Ctarget-feature=-avx,-sse -Crelocation-model=static -Cpanic=abort -Copt-level=0 -Ccode-model=kernel -Cno-redzone -Cincremental=true -Zthreads=4
 ifneq ($(RELEASE),)

@@ -58,6 +58,8 @@ int
 reboot(int cmd);
 int
 setuid(int);
+int
+fsync(int fd);
 extern char *optarg;
 extern int optind, opterr, optopt;
 int

@@ -31,7 +31,7 @@ void *
 memmove(void *dst, const void *src, uint32_t n);
 void *
 memcpy(void *dst, const void *src, uint32_t n);
-const char *const
+const char *
 strerror(int err_no);
 char *
 strtok(char *restrict str, const char *restrict delim);

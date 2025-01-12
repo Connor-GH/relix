@@ -697,3 +697,21 @@ sys_lseek(void)
 
 	return fileseek(file, offset, whence);
 }
+
+int
+sys_fsync(void)
+{
+	int fd;
+	struct file *file;
+	if (argfd(0, &fd, &file) < 0)
+		return -EINVAL;
+
+	if (fd == 0 || fd == 1 || fd == 2) {
+		if (fd == 0)
+			return -EINVAL;
+		console_flush();
+		return 0;
+	}
+	/* Unimplemented outside of stdio */
+	return 0;
+}

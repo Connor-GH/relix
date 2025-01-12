@@ -1,10 +1,16 @@
 #pragma once
+
 #include <stdarg.h>
 #if defined(FILE_STRUCT_DONE) && FILE_STRUCT_DONE
 struct _IO_FILE {
 	/* TODO */
 };
 #endif
+
+#define DIRSIZ 254
+// mkfs defines this when building.
+#ifndef USE_HOST_TOOLS
+
 
 typedef int FILE;
 
@@ -15,7 +21,6 @@ typedef int FILE;
 #define stderr ((FILE *)&(FILE){2})
 
 #define EOF (-1)
-#define DIRSIZ 254
 #define FILENAME_MAX DIRSIZ
 
 void
@@ -36,3 +41,4 @@ int
 fileno(FILE *stream);
 void
 perror(const char *s);
+#endif /* USE_HOST_TOOLS */

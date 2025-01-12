@@ -26,6 +26,36 @@ struct color_24bpp {
 	uint8_t blue;
 } __attribute__((packed));
 
+static int console_width = 0;
+static int console_height = 0;
+// Hardcoded for now until we get pixel buffer support
+static int font_width = 1;
+static int font_height = 1;
+
+int
+__multiboot_console_width_pixels(void)
+{
+	return console_width;
+}
+
+int
+__multiboot_console_height_pixels(void)
+{
+	return console_height;
+}
+
+int
+__multiboot_console_width_text(void)
+{
+	return console_width / font_width;
+}
+
+int
+__multiboot_console_height_text(void)
+{
+	return console_height / font_height;
+}
+
 void parse_multiboot(struct multiboot_info *mbinfo)
 {
 	if (mbinfo->reserved != 0)
@@ -72,6 +102,8 @@ void parse_multiboot(struct multiboot_info *mbinfo)
 				(void *)fbtag.framebuffer_addr,
 				fbtag.framebuffer_pitch,fbtag.framebuffer_width, fbtag.framebuffer_height,
 				fbtag.framebuffer_bpp,  fbtag.framebuffer_type);
+				console_width = fbtag.framebuffer_width;
+				console_height = fbtag.framebuffer_height;
 
 				// direct RGB color.
 				if (fbtag.framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB) {

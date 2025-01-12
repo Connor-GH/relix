@@ -5,15 +5,17 @@
 #include <stdint.h>
 #include <stdint.h>
 #include <stdarg.h>
-#include "proc.h"
-#include "x86.h"
-#include "traps.h"
-#include "spinlock.h"
 #include "console.h"
 #include "file.h"
-#include "kernel_string.h"
-#include "uart.h"
 #include "ioapic.h"
+#include "kalloc.h"
+#include "kernel_string.h"
+#include "boot/multiboot2.h"
+#include "proc.h"
+#include "spinlock.h"
+#include "traps.h"
+#include "uart.h"
+#include "x86.h"
 #include "drivers/memlayout.h"
 #include "drivers/conscolor.h"
 #include "drivers/lapic.h"
@@ -28,6 +30,12 @@ static int alt_form = 0;
 static int long_form = 0;
 static int zero_form = 0;
 
+/*
+ * This resource protects any static variable in this file, but mainly:
+ * - console_buffer
+ * - buffer_position
+ * - crt
+ */
 static struct {
 	struct spinlock lock;
 	int locking;
@@ -224,16 +232,23 @@ panic(const char *s)
 #define CRTPORT 0x3d4
 static uint16_t *crt = (uint16_t *)P2V(0xb8000); // CGA memory
 
-static void
-cgaputc(int c, uint8_t fore, uint8_t back)
+// Cursor position: col + 80*row.
+static int
+cursor_position(void)
 {
 	int pos;
-
-	// Cursor position: col + 80*row.
 	outb(CRTPORT, 14);
 	pos = inb(CRTPORT + 1) << 8;
 	outb(CRTPORT, 15);
 	pos |= inb(CRTPORT + 1);
+	return pos;
+}
+
+
+static void
+cgaputc(int c, uint8_t fore, uint8_t back)
+{
+	int pos = cursor_position();
 
 	if (c == '\n') {
 		if (pos % 80 != 0)
@@ -379,13 +394,58 @@ __nonnull(1, 2) static int consoleread(struct inode *ip, char *dst, int n)
 
 	return target - n;
 }
+/*
+ * INVARIANT: None of the console_{height,width}_{text,pixels} functions should be
+ * called before parse_multiboot(struct multiboot_info *).
+ */
+int
+console_width_pixels(void)
+{
+	return __multiboot_console_width_pixels();
+}
 
+int
+console_height_pixels(void)
+{
+	return __multiboot_console_height_pixels();
+}
+
+int
+console_width_text(void)
+{
+	return __multiboot_console_width_text();
+}
+
+int
+console_height_text(void)
+{
+	return __multiboot_console_height_text();
+}
+
+/*
+ * This buffer is different from the `crt' buffer because it
+ * collects characters and is only written to when an
+ * fsync syscall or other flush syscalls happen.
+ */
+static char *console_buffer = NULL;
+static int buffer_position = 0;
+void
+console_flush(void)
+{
+	for (int j = 0; j < buffer_position; j++) {
+		consputc(console_buffer[j] & 0xff);
+	}
+	buffer_position = 0;
+}
 __nonnull(1, 2) static int consolewrite(struct inode *ip, char *buf, int n)
 {
 	iunlock(ip);
 	acquire(&cons.lock);
-	for (int i = 0; i < n; i++)
-		consputc(buf[i] & 0xff);
+
+	for (int i = 0; i < n; i++) {
+		console_buffer[buffer_position] = buf[i];
+		buffer_position++;
+	}
 	release(&cons.lock);
 	ilock(ip);
 
@@ -400,6 +460,7 @@ consoleinit(void)
 	devsw[CONSOLE].write = consolewrite;
 	devsw[CONSOLE].read = consoleread;
 	cons.locking = 1;
+	console_buffer = kmalloc(console_width_text() * console_height_text());
 
 	ioapicenable(IRQ_KBD, 0);
 }

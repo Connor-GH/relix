@@ -15,13 +15,14 @@ int
 main(void)
 {
 	mkdir("/dev");
-	if (open("/dev/console", O_RDWR) < 0) {
+	int fd;
+	if ((fd = open("/dev/console", O_RDWR)) < 0) {
 		mknod("/dev/console", 1, 1);
-		open("/dev/console", O_RDWR);
+		fd = open("/dev/console", O_RDWR);
 	}
 	// TODO: find a way of throwing an error if we cannot dup(0) ?
-	(void)dup(0); // stdout
-	(void)dup(0); // stderr
+	(void)dup(fd); // stdout
+	(void)dup(fd); // stderr
 	fprintf(stdout, "/dev/console created\n");
 	if (open("/dev/null", O_RDWR) < 0) {
 		mknod("/dev/null", 2, 2);

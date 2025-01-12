@@ -1,6 +1,6 @@
 #pragma once
 #include "stdint.h"
-#include "kernel/include/fs.h"
+#include "stdio.h"
 struct dirent {
 	uint16_t inum;
 	char name[DIRSIZ];

@@ -1,5 +1,6 @@
 #include "spinlock.h"
 #include "trap.h"
+#include <fcntl.h>
 #include <stdint.h>
 #include <defs.h>
 #include "proc.h"
@@ -195,6 +196,8 @@ extern int
 sys_readlink(void);
 extern int
 sys_lseek(void);
+extern int
+sys_fsync(void);
 
 static int (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,				 [SYS_exit] = sys_exit,
@@ -212,6 +215,7 @@ static int (*syscalls[])(void) = {
 	[SYS_echoout] = sys_echoout,	 [SYS_setuid] = sys_setuid,
 	[SYS_strace] = sys_strace,		 [SYS_symlink] = sys_symlink,
 	[SYS_readlink] = sys_readlink, [SYS_lseek] = sys_lseek,
+	[SYS_fsync] = sys_fsync,
 };
 
 void

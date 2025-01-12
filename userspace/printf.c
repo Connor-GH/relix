@@ -232,6 +232,7 @@ void
 vfprintf(FILE *restrict stream, const char *fmt, va_list *argp)
 {
 	vprintf_internal(putc, fileno(stream), NULL, fmt, argp);
+	fsync(fileno(stream));
 }
 
 void
@@ -272,7 +273,7 @@ perror(const char *s)
 	printf("%s: %s\n", s, errno_codes[errno]);
 }
 
-const char *const
+const char *
 strerror(int err_no)
 {
 	return errno_codes[err_no];

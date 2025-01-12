@@ -8,7 +8,8 @@
 #include <unistd.h>
 #include <stddef.h>
 
-char *argv[] = { "/bin/sh", 0 };
+char *argv[] = { "/bin/sh", NULL };
+char *envp[] = { "PATH=/bin:/usr/bin:/", "SHELL=/bin/sh", "HOME=/", NULL };
 
 int
 main(void)
@@ -34,7 +35,7 @@ main(void)
 			return 1;
 		}
 		if (pid == 0) {
-			exec("/bin/sh", argv);
+			execve("/bin/sh", argv, envp);
 			fprintf(stderr, "init: exec() sh failed\n");
 			return 1;
 		}

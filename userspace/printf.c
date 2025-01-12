@@ -229,9 +229,9 @@ skip_state_reset:; // state = '%' if set
 }
 
 void
-vfprintf(int fd, const char *fmt, va_list *argp)
+vfprintf(FILE *restrict stream, const char *fmt, va_list *argp)
 {
-	vprintf_internal(putc, fd, NULL, fmt, argp);
+	vprintf_internal(putc, fileno(stream), NULL, fmt, argp);
 }
 
 void
@@ -249,11 +249,11 @@ sprintf(char *restrict str, const char *restrict fmt, ...)
 }
 
 __attribute__((format(printf, 2, 3))) void
-fprintf(int fd, const char *fmt, ...)
+fprintf(FILE *restrict stream, const char *fmt, ...)
 {
 	va_list listp;
 	va_start(listp, fmt);
-	vfprintf(fd, fmt, &listp);
+	vfprintf(stream, fmt, &listp);
 	va_end(listp);
 }
 

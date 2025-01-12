@@ -9,6 +9,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stddef.h>
+#include <ctype.h>
 
 // Parsed command representation
 #define EXEC 1
@@ -17,6 +18,7 @@
 #define LIST 4
 #define BACK 5
 
+extern char **environ;
 
 struct cmd {
 	int type;
@@ -64,9 +66,7 @@ panic(char *);
 struct cmd *
 parsecmd(char *);
 
-char *path[3] = { "/bin/", "/usr/bin/", "/" };
-static char *pwd = "/";
-static char *env[] = { "SHELL=/bin/sh", "PATH=/bin:/usr/bin:/", NULL};
+static char pwd[DIRSIZ] = "/";
 // Execute cmd.  Never returns.
 void
 runcmd(struct cmd *cmd)
@@ -90,13 +90,27 @@ runcmd(struct cmd *cmd)
 		ecmd = (struct execcmd *)cmd;
 		if (ecmd->argv[0] == 0)
 			exit(1);
-		execve(ecmd->argv[0], ecmd->argv, env);
 
-		// try PATH if local directory fails
-		for (int i = 0; i < 3; i++) {
-			strcpy(str, path[i]);
-			strcat(str, ecmd->argv[0]);
-			execve(str, ecmd->argv, env);
+		// The pwd should be checked first.
+		// If pwd = "/", this defines, for example,
+		// running "foo" without prepending "./".
+		// the total string would then be "/./foo".
+		sprintf(str, "%s/%s", pwd, ecmd->argv[0]);
+		execve(str, ecmd->argv, environ);
+		// Clear buffer for other attempts.
+		memset(str, '\0', DIRSIZ);
+
+		char *path = strdup(getenv("PATH"));
+		if (path != NULL) {
+			char *s = strtok(path, ":");
+			while (s != NULL) {
+				sprintf(str, "%s/%s", s, ecmd->argv[0]);
+				execve(str, ecmd->argv, environ);
+				s = strtok(NULL, ":");
+			}
+		} else {
+			// If resolving it in PATH fails,
+			fprintf(stderr, "$PATH is empty or not set.\n");
 		}
 		fprintf(stderr, "exec %s failed\n", ecmd->argv[0]);
 		break;
@@ -159,7 +173,10 @@ getcmd(char *buf, int nbuf)
 {
 	fprintf(stdout, "$ ");
 	memset(buf, 0, nbuf);
-	gets(buf, nbuf);
+	if (fgets(buf, nbuf, stdin) != buf) {
+		perror("fgets");
+		exit(1);
+	}
 	if (buf[0] == 0) // EOF
 		return -1;
 	return 0;
@@ -181,16 +198,32 @@ main(int argc, char **argv)
 		}
 	}
 
+	// TODO make more general builtin parser.
 	// Read and run input commands.
 	while (getcmd(buf, sizeof(buf)) >= 0) {
-		if (buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' ') {
+		if (buf[0] == 'c' && buf[1] == 'd' && isspace(buf[2])) {
 			// Chdir must be called by the parent, not the child.
 			buf[strlen(buf) - 1] = 0; // chop \n
-			if (chdir(buf + 3) < 0)
-				fprintf(stderr, "cannot cd %s\n", buf + 3);
-			else
-				strcpy(pwd, buf);
-			continue;
+			if (strlen(buf) >= 3) {
+				if (chdir(buf + 3) < 0)
+					fprintf(stderr, "cannot cd %s\n", buf + 3);
+				else
+					strcpy(pwd, buf);
+				continue;
+			} else {
+				char *home = getenv("HOME");
+				if (home == NULL) {
+					fprintf(stderr, "$HOME is not set. It is needed for `cd'"
+						 " without arguments.\n");
+					exit(1);
+				}
+				// `cd' with no arguments.`
+				if (chdir(home) < 0)
+					fprintf(stderr, "cannot cd %s\n", buf + 3);
+				else
+					strcpy(pwd, buf);
+				continue;
+			}
 		}
 		int status;
 		int pid = fork1();

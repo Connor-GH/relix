@@ -33,3 +33,7 @@ void *
 memcpy(void *dst, const void *src, uint32_t n);
 const char *const
 strerror(int err_no);
+char *
+strtok(char *restrict str, const char *restrict delim);
+char *
+strdup(const char *s);

@@ -13,6 +13,7 @@
 #include <stddef.h>
 
 int errno;
+extern char **environ;
 
 char *
 strcpy(char *s, const char *t)
@@ -89,21 +90,35 @@ strrchr(const char *s, char c)
 }
 
 int
-getc(FILE fd)
+fileno(FILE *stream)
+{
+	// TODO make actual FILE * structure
+	if (stream != NULL)
+		return *stream;
+	errno = EBADF;
+	return -1;
+}
+
+int
+getc(FILE *stream)
 {
 	int c;
-	read(fd, &c, 1);
+	if (read(fileno(stream), &c, 1) != 1) {
+		return EOF;
+	}
 	return c;
 }
 
 char *
-gets(char *buf, int max)
+fgets(char *buf, int max, FILE *restrict stream)
 {
 	int i;
 	char c;
 
 	for (i = 0; i + 1 < max;) {
-		c = getc(stdin);
+		c = getc(stream);
+		if (c == EOF)
+			return NULL;
 		buf[i++] = c;
 		if (c == '\n' || c == '\r')
 			break;
@@ -244,4 +259,79 @@ int
 isdigit(int c)
 {
 	return '0' <= c && c <= '9';
+}
+
+int
+isspace(int c)
+{
+	return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' ||
+				 c == '\v';
+}
+static char *restrict __strtok_token = NULL;
+/*
+ * Break a string into a sequence of zero or more nonempty tokens.
+ * If the same string is being parsed as the previous invocation, str must be NULL.
+ */
+char *
+strtok(char *restrict str, const char *restrict delimeter)
+{
+	if (str == NULL && __strtok_token)
+		return NULL;
+
+	if (str != NULL) {
+		__strtok_token = str;
+	}
+
+	if (__strtok_token == NULL) {
+		return NULL;
+	}
+
+	while (*__strtok_token && strchr(delimeter, *__strtok_token) != NULL) {
+		__strtok_token++;
+	}
+
+	if (*__strtok_token == '\0') {
+		return NULL;
+	}
+
+	char *start = __strtok_token;
+	while (*__strtok_token && strchr(delimeter, *__strtok_token) == NULL) {
+		__strtok_token++;
+	}
+
+	// The input string gets consumed from the input, so we modify it here.
+	if (*__strtok_token) {
+		*__strtok_token++ = '\0';
+	}
+
+	return start;
+}
+
+// Fun fact: setenv sets errno, but getenv does not :^)
+char *
+getenv(const char *name)
+{
+	for (size_t i = 0; environ[i] != NULL; i++) {
+		char *equals = strchr(environ[i], '=');
+		if (equals == NULL)
+			continue; // Resilient. (Is this in the spec?)
+		size_t this_env_length = equals - environ[i];
+		// If it's not the same length, we don't even bother comparing.
+		if (strlen(name) != this_env_length)
+			continue;
+		if (strncmp(name, environ[i], this_env_length) == 0) {
+			return equals + 1;
+		}
+	}
+	return NULL;
+}
+
+// Duplicate a string
+// Caller frees the string.
+char *
+strdup(const char *s)
+{
+	char *new_s = malloc(strlen(s) + 1);
+	strncpy(new_s, s, strlen(s));
+	return new_s;
 }

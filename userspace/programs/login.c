@@ -20,12 +20,18 @@ try_again:
 	memset(username, 0, MAX_USERNAME);
 	memset(passwd, 0, MAX_PASSWD);
 	printf("username: ");
-	(void)gets(username, MAX_USERNAME);
+	if (fgets(username, MAX_USERNAME, stdin) != username) {
+		perror("fgets");
+		exit(1);
+	}
 	username[strlen(username) - 1] = '\0';
 
 	printf("password for %s: ", username);
 	echoout(0);
-	(void)gets(passwd, MAX_PASSWD);
+	if (fgets(passwd, MAX_PASSWD, stdin) != passwd) {
+		perror("fgets");
+		exit(1);
+	}
 	passwd[strlen(passwd) - 1] = '\0';
 	echoout(1);
 	if (uid == -1) {

@@ -69,5 +69,8 @@ enum {
 	SEEK_END,
 };
 
+#define STDIN_FILENO 0
+#define STDOUT_FILENO 1
+#define STDERR_FILENO 2
 off_t
 lseek(int fd, off_t offset, int whence);

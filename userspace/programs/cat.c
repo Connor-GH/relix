@@ -27,7 +27,7 @@ int
 main(int argc, const char *argv[])
 {
 	if (argc <= 1) {
-		cat(stdin);
+		cat(STDIN_FILENO);
 		return 0;
 	}
 

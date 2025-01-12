@@ -8,23 +8,20 @@ struct _IO_FILE {
 
 typedef int FILE;
 
-#define __file_stdin 0
-#define __file_stdout 1
-#define __file_stderr 2
 
 /* TODO turn this into FILE * when we get proper stdio */
-#define stdin ((FILE)__file_stdin)
-#define stdout ((FILE)__file_stdout)
-#define stderr ((FILE)__file_stderr)
+#define stdin ((FILE *)&(FILE){0})
+#define stdout ((FILE *)&(FILE){1})
+#define stderr ((FILE *)&(FILE){2})
 
 #define EOF (-1)
 #define DIRSIZ 254
 #define FILENAME_MAX DIRSIZ
 
 void
-vfprintf(int, const char *, va_list *argp);
+vfprintf(FILE *restrict, const char *, va_list *argp);
 __attribute__((format(printf, 2, 3))) void
-fprintf(int, const char *, ...);
+fprintf(FILE *restrict, const char *, ...);
 __attribute__((format(printf, 1, 2))) void
 printf(const char *, ...);
 void
@@ -32,8 +29,10 @@ vsprintf(char *restrict str, const char *restrict fmt, va_list *argp);
 void
 sprintf(char *restrict str, const char *restrict fmt, ...);
 char *
-gets(char *, int max);
+fgets(char *buf, int max, FILE *restrict steam);
 int
-getc(FILE fd);
+getc(FILE *stream);
+int
+fileno(FILE *stream);
 void
 perror(const char *s);

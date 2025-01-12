@@ -589,7 +589,6 @@ struct Elf64_Rela {
 	Elf64_Sxword r_addend;
 };
 
-
 struct Elf64_Sym {
 	uint32_t st_name;
 	uint8_t st_info;

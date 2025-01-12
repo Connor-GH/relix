@@ -29,8 +29,10 @@ extern uint64_t available_memory;
 #endif
 // Key addresses for address space layout (see kmap in vm.c for layout)
 #ifdef X86_64
-#define KERNBASE (ULONG_MAX - PHYSLIMIT + 1) // 0xFFFFFFFF80000000ULL // First kernel virtual address
-#define DEVBASE (KERNBASE - 1*GiB) // 0xFFFFFFFF40000000ULL // First device virtual address
+// First kernel virtual address
+#define KERNBASE (ULONG_MAX - PHYSLIMIT + 1) // 0xFFFFFFFF80000000ULL
+// First device virtual address
+#define DEVBASE (KERNBASE - 1 * GiB) // 0xFFFFFFFF40000000ULL
 #endif
 
 #ifndef __ASSEMBLER__

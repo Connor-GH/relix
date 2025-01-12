@@ -77,11 +77,11 @@ struct dinode {
 #define BBLOCK(b, sb) (b / BPB + sb.bmapstart)
 
 // Directory is a file containing a sequence of dirent structures.
-#define DIRSIZ 254U
 #define ROOTINO 1U // root i-number
 #define BSIZE 2048U // block size
 
 #ifndef USE_HOST_TOOLS
+#define DIRSIZ 254U
 #include "stat.h"
 void
 readsb(int dev, struct superblock *sb);

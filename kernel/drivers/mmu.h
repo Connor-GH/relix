@@ -16,12 +16,12 @@
 #define CR4_PSE 0x00000010 // Page size extension
 
 #if X86_64
-#define SEG_KCODE 1  // kernel code
-#define SEG_KDATA 2  // kernel data+stack
-#define SEG_KCPU  3  // kernel per-cpu data
-#define SEG_UCODE 4  // user code
-#define SEG_UDATA 5  // user data+stack
-#define SEG_TSS   6  // this process's task state
+#define SEG_KCODE 1 // kernel code
+#define SEG_KDATA 2 // kernel data+stack
+#define SEG_KCPU 3 // kernel per-cpu data
+#define SEG_UCODE 4 // user code
+#define SEG_UDATA 5 // user data+stack
+#define SEG_TSS 6 // this process's task state
 #define NSEGS 8
 #else
 // various segment selectors.
@@ -54,20 +54,34 @@ struct segdesc {
 };
 
 // Normal segment
-#define SEG(type, base, lim, dpl)                                              \
-	(struct segdesc)                                                             \
-	{                                                                            \
-		((lim) >> 12) & 0xffff, (uint32_t)(base) & 0xffff,                         \
-			((uintptr_t)(base) >> 16) & 0xff, type, 1, dpl, 1, (uintptr_t)(lim) >> 28, \
-			0, 0, 1, 1, (uintptr_t)(base) >> 24                                       \
-	}
-#define SEG16(type, base, lim, dpl)                                            \
-	(struct segdesc)                                                             \
-	{                                                                            \
-		(lim) & 0xffff, (uint32_t)(base) & 0xffff,                                 \
-			((uintptr_t)(base) >> 16) & 0xff, type, 1, dpl, 1, (uintptr_t)(lim) >> 16, \
-			0, 0, 1, 0, (uintptr_t)(base) >> 24                                       \
-	}
+#define SEG(type, base, lim, dpl)                     \
+	(struct segdesc){ ((lim) >> 12) & 0xffff,           \
+										(uint32_t)(base) & 0xffff,        \
+										((uintptr_t)(base) >> 16) & 0xff, \
+										type,                             \
+										1,                                \
+										dpl,                              \
+										1,                                \
+										(uintptr_t)(lim) >> 28,           \
+										0,                                \
+										0,                                \
+										1,                                \
+										1,                                \
+										(uintptr_t)(base) >> 24 }
+#define SEG16(type, base, lim, dpl)                   \
+	(struct segdesc){ (lim) & 0xffff,                   \
+										(uint32_t)(base) & 0xffff,        \
+										((uintptr_t)(base) >> 16) & 0xff, \
+										type,                             \
+										1,                                \
+										dpl,                              \
+										1,                                \
+										(uintptr_t)(lim) >> 16,           \
+										0,                                \
+										0,                                \
+										1,                                \
+										0,                                \
+										(uintptr_t)(base) >> 24 }
 #endif
 
 #define DPL_USER 0x3 // User DPL

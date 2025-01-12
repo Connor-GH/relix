@@ -28,7 +28,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
+/* clang-format off */
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,17 +37,17 @@
 #define __predict_false(x) (__builtin_expect(!!(x), 0))
 
 #if defined(I_AM_QSORT_R)
-typedef int		 cmp_t(const void *, const void *, void *);
+typedef int cmp_t(const void *, const void *, void *);
 #elif defined(I_AM_QSORT_R_COMPAT)
-typedef int		 cmp_t(void *, const void *, const void *);
+typedef int cmp_t(void *, const void *, const void *);
 #elif defined(I_AM_QSORT_S)
-typedef int		 cmp_t(const void *, const void *, void *);
+typedef int cmp_t(const void *, const void *, void *);
 #else
-typedef int		 cmp_t(const void *, const void *);
+typedef int cmp_t(const void *, const void *);
 #endif
-static inline char	*med3(char *, char *, char *, cmp_t *, void *);
+static inline char *med3(char *, char *, char *, cmp_t *, void *);
 
-#define	MIN(a, b)	((a) < (b) ? a : b)
+#define MIN(a, b) ((a) < (b) ? a : b)
 
 /*
  * Qsort routine from Bentley & McIlroy's "Engineering a Sort Function".
@@ -65,29 +65,32 @@ swapfunc(char *a, char *b, size_t es)
 	} while (--es > 0);
 }
 
-#define	vecswap(a, b, n)				\
-	if ((n) > 0) swapfunc(a, b, n)
+#define vecswap(a, b, n) \
+	if ((n) > 0)           \
+	swapfunc(a, b, n)
 
 #if defined(I_AM_QSORT_R)
-#define	CMP(t, x, y) (cmp((x), (y), (t)))
+#define CMP(t, x, y) (cmp((x), (y), (t)))
 #elif defined(I_AM_QSORT_R_COMPAT)
-#define	CMP(t, x, y) (cmp((t), (x), (y)))
+#define CMP(t, x, y) (cmp((t), (x), (y)))
 #elif defined(I_AM_QSORT_S)
-#define	CMP(t, x, y) (cmp((x), (y), (t)))
+#define CMP(t, x, y) (cmp((x), (y), (t)))
 #else
-#define	CMP(t, x, y) (cmp((x), (y)))
+#define CMP(t, x, y) (cmp((x), (y)))
 #endif
 
 static inline char *
-med3(char *a, char *b, char *c, cmp_t *cmp, void *thunk
-#if !defined(I_AM_QSORT_R) && !defined(I_AM_QSORT_R_COMPAT) && !defined(I_AM_QSORT_S)
-__unused
+med3(char *a, char *b, char *c, cmp_t *cmp,
+		 void *thunk
+#if !defined(I_AM_QSORT_R) && !defined(I_AM_QSORT_R_COMPAT) && \
+	!defined(I_AM_QSORT_S)
+			 __unused
 #endif
 )
 {
 	return CMP(thunk, a, b) < 0 ?
-	       (CMP(thunk, b, c) < 0 ? b : (CMP(thunk, a, c) < 0 ? c : a ))
-	      :(CMP(thunk, b, c) > 0 ? b : (CMP(thunk, a, c) < 0 ? a : c ));
+					 (CMP(thunk, b, c) < 0 ? b : (CMP(thunk, a, c) < 0 ? c : a)) :
+					 (CMP(thunk, b, c) > 0 ? b : (CMP(thunk, a, c) < 0 ? a : c));
 }
 
 /*
@@ -116,9 +119,7 @@ loop:
 	swap_cnt = 0;
 	if (n < 7) {
 		for (pm = (char *)a + es; pm < (char *)a + n * es; pm += es)
-			for (pl = pm;
-			     pl > (char *)a && CMP(thunk, pl - es, pl) > 0;
-			     pl -= es)
+			for (pl = pm; pl > (char *)a && CMP(thunk, pl - es, pl) > 0; pl -= es)
 				swapfunc(pl, pl - es, es);
 		return;
 	}
@@ -163,11 +164,9 @@ loop:
 		pb += es;
 		pc -= es;
 	}
-	if (swap_cnt == 0) {  /* Switch to insertion sort */
+	if (swap_cnt == 0) { /* Switch to insertion sort */
 		for (pm = (char *)a + es; pm < (char *)a + n * es; pm += es)
-			for (pl = pm;
-			     pl > (char *)a && CMP(thunk, pl - es, pl) > 0;
-			     pl -= es)
+			for (pl = pm; pl > (char *)a && CMP(thunk, pl - es, pl) > 0; pl -= es)
 				swapfunc(pl, pl - es, es);
 		return;
 	}
@@ -212,8 +211,7 @@ loop:
 }
 
 #if defined(I_AM_QSORT_R)
-void
-(qsort_r)(void *a, size_t n, size_t es, cmp_t *cmp, void *thunk)
+void(qsort_r)(void *a, size_t n, size_t es, cmp_t *cmp, void *thunk)
 {
 	local_qsort_r(a, n, es, cmp, thunk);
 }
@@ -256,3 +254,4 @@ qsort(void *a, size_t n, size_t es, cmp_t *cmp)
 	local_qsort(a, n, es, cmp, NULL);
 }
 #endif
+/* clang-format on */

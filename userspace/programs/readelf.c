@@ -13,7 +13,7 @@ print_section_headers(int fd, struct Elf64_Ehdr *header,
 	printf("%-30s %-10s %-10s\n", "Section Name", "Type", "Addr");
 	for (size_t i = 0; i < header->e_shnum; i++) {
 		printf("%-30s %-10d %-10lx\n",
-			&strtab[section_headers[i].sh_name], // Section Name from string table
+			&strtab[section_headers[i].sh_name],
 			section_headers[i].sh_type, section_headers[i].sh_addr);
 	}
 }
@@ -30,7 +30,6 @@ print_symbol_table(int fd, struct Elf64_Ehdr *header,
 									 struct Elf64_Shdr *section_headers, const char *strtab)
 {
 	for (size_t i = 0; i < header->e_shnum; i++) {
-		// Look for symbol table sections
 		if (section_headers[i].sh_type == SHT_SYMTAB ||
 				section_headers[i].sh_type == SHT_DYNSYM) {
 			printf("Symbol Table (%s):\n", &strtab[section_headers[i].sh_name]);
@@ -42,7 +41,7 @@ print_symbol_table(int fd, struct Elf64_Ehdr *header,
 				continue;
 			}
 
-			// Read the symbol table
+			// Read the symbol table.
 			if (lseek(fd, symbol_table_header->sh_offset, SEEK_SET) == -1) {
 				perror("lseek");
 				free(symbols);
@@ -56,7 +55,7 @@ print_symbol_table(int fd, struct Elf64_Ehdr *header,
 				continue;
 			}
 
-			// Get the associated string table index
+			// Get the associated string table index.
 			int strtab_index = symbol_table_header->sh_link;
 			struct Elf64_Shdr *strtab_header = &section_headers[strtab_index];
 			char *symbol_strtab = malloc(strtab_header->sh_size);
@@ -66,7 +65,7 @@ print_symbol_table(int fd, struct Elf64_Ehdr *header,
 				continue;
 			}
 
-			// Read the symbol string table
+			// Read the symbol string table.
 			if (lseek(fd, strtab_header->sh_offset, SEEK_SET) == -1) {
 				perror("lseek");
 				free(symbols);
@@ -85,15 +84,14 @@ print_symbol_table(int fd, struct Elf64_Ehdr *header,
 			printf("%-30s %-10s %-10s\n", "Function Name", "Addr", "Size");
 			qsort(symbols, symbol_table_header->sh_size / sizeof(struct Elf64_Sym),
 						sizeof(struct Elf64_Sym), compare);
-			// Iterate through the symbols
 			for (size_t j = 0;
 					 j < symbol_table_header->sh_size / sizeof(struct Elf64_Sym); j++) {
 				// Only print function symbols (function type: STT_FUNC)
 				if (ELF64_ST_TYPE(symbols[j].st_info) == STT_FUNC) {
 					printf("%-30s %#-10lx %#-10lx\n",
-								 &symbol_strtab[symbols[j].st_name], // Function Name
-								 symbols[j].st_value, // Value (address)
-								 symbols[j].st_size); // Size
+								 &symbol_strtab[symbols[j].st_name],
+								 symbols[j].st_value,
+								 symbols[j].st_size);
 				}
 			}
 
@@ -154,7 +152,7 @@ main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	// Locate the string table section
+	// Locate the string table section.
 	const char *strtab = NULL;
 	if (header.e_shstrndx != SHN_UNDEF && header.e_shstrndx < header.e_shnum) {
 		struct Elf64_Shdr *strtab_header = &section_headers[header.e_shstrndx];
@@ -166,7 +164,6 @@ main(int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 
-		// Seek to the string table
 		if (lseek(fd, strtab_header->sh_offset, SEEK_SET) == -1) {
 			perror("lseek");
 			free(section_headers);
@@ -175,7 +172,6 @@ main(int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 
-		// Read string table
 		if (read(fd, (void *)strtab, strtab_header->sh_size) !=
 				strtab_header->sh_size) {
 			perror("read");

@@ -16,8 +16,8 @@
 // count is argc/envc
 // vec is argv/envp
 static int
-push_user_stack(uintptr_t *count, char **vec, uintptr_t *ustack, uintptr_t *pgdir,
-								uintptr_t *sp, uint32_t idx)
+push_user_stack(uintptr_t *count, char **vec, uintptr_t *ustack,
+								uintptr_t *pgdir, uintptr_t *sp, uint32_t idx)
 {
 	for (*count = 0; vec[*count]; (*count)++) {
 		if (*count >= MAXARG)

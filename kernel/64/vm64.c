@@ -99,7 +99,8 @@ seginit(void)
 	memset(local, 0, PGSIZE);
 
 	tss = (uint32_t *)(((char *)local) + 1024);
-	tss[16] = 0x0068 << 16 | 0x0000 /* reserved bits */; // IO Map Base = End of TSS
+	// IO Map Base = End of TSS
+	tss[16] = 0x0068 << 16 | 0x0000 /* reserved bits */;
 
 	// point FS smack in the middle of our local storage page
 	wrmsr(0xC0000100, ((uint64_t)local) + (PGSIZE / 2));
@@ -116,8 +117,8 @@ seginit(void)
 	c->gdt_bits[SEG_KDATA] = 0x0000920000000000; // Data, DPL=0, W
 	c->gdt_bits[SEG_KCPU] = 0;
 	c->gdt_bits[SEG_UDATA] = 0x0000F20000000000; // Data, DPL=3, W
-	c->gdt_bits[SEG_TSS + 0] = (0x0067) | ((addr & 0xFFFFFF) << 16) | (0x00E9LL << 40) |
-										 (((addr >> 24) & 0xFF) << 56);
+	c->gdt_bits[SEG_TSS + 0] = (0x0067) | ((addr & 0xFFFFFF) << 16) |
+														 (0x00E9LL << 40) | (((addr >> 24) & 0xFF) << 56);
 	c->gdt_bits[SEG_TSS + 1] = (addr >> 32);
 
 	lgdt((void *)c->gdt, sizeof(c->gdt));

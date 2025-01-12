@@ -214,7 +214,7 @@ main(int argc, char **argv)
 				char *home = getenv("HOME");
 				if (home == NULL) {
 					fprintf(stderr, "$HOME is not set. It is needed for `cd'"
-						 " without arguments.\n");
+													" without arguments.\n");
 					exit(1);
 				}
 				// `cd' with no arguments.`

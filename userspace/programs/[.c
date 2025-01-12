@@ -8,11 +8,15 @@
 extern char *optarg;
 extern int optind, opterr, optopt;
 
-static bool test_zero(char *s) {
+static bool
+test_zero(char *s)
+{
 	return s == NULL || s[0] == '\0';
 }
 
-static bool test_not_zero(char *s) {
+static bool
+test_not_zero(char *s)
+{
 	return !test_zero(s);
 }
 
@@ -23,7 +27,9 @@ usage(void)
 	exit(1);
 }
 
-int main(int argc, char **argv) {
+int
+main(int argc, char **argv)
+{
 	bool zflag, nflag;
 	zflag = nflag = false;
 	int c;

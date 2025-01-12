@@ -176,30 +176,30 @@ cpuid(uint32_t id, uint32_t count, uint32_t *a, uint32_t *b, uint32_t *c,
 // hardware and by trapasm.S, and passed to trap().
 #ifdef X86_64
 struct trapframe {
-  uint64_t eax;      // rax
-  uint64_t rbx;
-  uint64_t rcx;
-  uint64_t rdx;
-  uint64_t rbp;
-  uint64_t rsi;
-  uint64_t rdi;
-  uint64_t r8;
-  uint64_t r9;
-  uint64_t r10;
-  uint64_t r11;
-  uint64_t r12;
-  uint64_t r13;
-  uint64_t r14;
-  uint64_t r15;
+	uint64_t eax; // rax
+	uint64_t rbx;
+	uint64_t rcx;
+	uint64_t rdx;
+	uint64_t rbp;
+	uint64_t rsi;
+	uint64_t rdi;
+	uint64_t r8;
+	uint64_t r9;
+	uint64_t r10;
+	uint64_t r11;
+	uint64_t r12;
+	uint64_t r13;
+	uint64_t r14;
+	uint64_t r15;
 
-  uint64_t trapno;
-  uint64_t err;
+	uint64_t trapno;
+	uint64_t err;
 
-  uint64_t eip;     // rip
-  uint64_t cs;
-  uint64_t eflags;  // rflags
-  uint64_t esp;     // rsp
-  uint64_t ds;      // ss
+	uint64_t eip; // rip
+	uint64_t cs;
+	uint64_t eflags; // rflags
+	uint64_t esp; // rsp
+	uint64_t ds; // ss
 };
 #else
 struct trapframe {

@@ -11,14 +11,12 @@ struct _IO_FILE {
 // mkfs defines this when building.
 #ifndef USE_HOST_TOOLS
 
-
 typedef int FILE;
 
-
 /* TODO turn this into FILE * when we get proper stdio */
-#define stdin ((FILE *)&(FILE){0})
-#define stdout ((FILE *)&(FILE){1})
-#define stderr ((FILE *)&(FILE){2})
+#define stdin ((FILE *)&(FILE){ 0 })
+#define stdout ((FILE *)&(FILE){ 1 })
+#define stderr ((FILE *)&(FILE){ 2 })
 
 #define EOF (-1)
 #define FILENAME_MAX DIRSIZ

@@ -14,7 +14,7 @@ execve(char *, char **, char **);
 static inline int
 exec(char *prog, char **argv)
 {
-	return execve(prog, argv, (char *[]){"", NULL});
+	return execve(prog, argv, (char *[]){ "", NULL });
 }
 // TODO our exec has hardcoded PATH
 // convert into environment variable.

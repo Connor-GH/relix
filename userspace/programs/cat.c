@@ -35,7 +35,7 @@ main(int argc, const char *argv[])
 		if ((fd = open(argv[i], 0)) < 0) {
 			int saved_errno = errno;
 			fprintf(stderr, "%s: cannot open file: %s\n", argv[0],
-					 strerror(saved_errno));
+							strerror(saved_errno));
 			return 0;
 		}
 		cat(fd);

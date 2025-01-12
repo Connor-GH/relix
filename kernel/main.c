@@ -37,8 +37,8 @@ uint64_t top_memory;
 // Allocate a real stack and switch to it, first
 // doing some setup required for memory allocator to work.
 
-
-extern void rust_hello_world(void);
+extern void
+rust_hello_world(void);
 
 int
 main(struct multiboot_info *mbinfo)
@@ -47,7 +47,7 @@ main(struct multiboot_info *mbinfo)
 	cprintf("xv6_64 (built with %s and linker %s)\n", XV6_COMPILER, XV6_LINKER);
 	parse_multiboot(mbinfo);
 	//rust_hello_world();
-	available_memory = 224*MiB;
+	available_memory = 224 * MiB;
 	kernel_assert(available_memory != 0);
 	kinit1(end, P2V(4 * 1024 * 1024)); // phys page allocator
 	kvmalloc(); // kernel page table
@@ -94,7 +94,8 @@ mpmain(void)
 }
 
 uintptr_t entrypgdir[]; // For entry.S
-void entry32mp(void);
+void
+entry32mp(void);
 
 // Start the non-boot (AP) processors.
 static void
@@ -124,11 +125,12 @@ startothers(void)
 		// pgdir to use. We cannot use kpgdir yet, because the AP processor
 		// is running in low  memory, so we use entrypgdir for the APs too.
 		stack = kpage_alloc();
-	#if X86_64
-    *(uint32_t *)(code-4) = 0x8000; // just enough stack to get us to entry64mp
-    *(uint32_t *)(code-8) = v2p(entry32mp);
-    *(uint64_t *)(code-16) = (uint64_t) (stack + KSTACKSIZE);
-	#endif
+#if X86_64
+		*(uint32_t *)(code - 4) =
+			0x8000; // just enough stack to get us to entry64mp
+		*(uint32_t *)(code - 8) = v2p(entry32mp);
+		*(uint64_t *)(code - 16) = (uint64_t)(stack + KSTACKSIZE);
+#endif
 		lapicstartap(c->apicid, v2p(code));
 
 		// wait for cpu to finish mpmain()

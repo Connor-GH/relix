@@ -155,7 +155,7 @@ deallocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 		pte = walkpgdir(pgdir, (char *)a, 0);
 		if (!pte)
 			//a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
-      a += (NPTENTRIES - 1) * PGSIZE;
+			a += (NPTENTRIES - 1) * PGSIZE;
 		else if ((*pte & PTE_P) != 0) {
 			pa = PTE_ADDR(*pte);
 			if (pa == 0)
@@ -177,8 +177,8 @@ freevm(uintptr_t *pgdir)
 
 	if (pgdir == 0)
 		panic("freevm: no pgdir");
-	deallocuvm(pgdir, /*KERNBASE*/0x3fa00000, 0);
-	for (i = 0; i < NPDENTRIES-2; i++) {
+	deallocuvm(pgdir, /*KERNBASE*/ 0x3fa00000, 0);
+	for (i = 0; i < NPDENTRIES - 2; i++) {
 		if (pgdir[i] & PTE_P) {
 			char *v = P2V(PTE_ADDR(pgdir[i]));
 			kpage_free(v);

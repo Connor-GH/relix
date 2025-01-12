@@ -188,8 +188,6 @@ kvmalloc(void)
 	switchkvm();
 }
 
-
-
 void
 switchuvm(struct proc *p)
 {
@@ -198,7 +196,7 @@ switchuvm(struct proc *p)
 	pushcli();
 	if (p->pgdir == 0)
 		panic("switchuvm: no pgdir");
-	tss = (uint32_t *) (((char *) mycpu()->local) + 1024);
+	tss = (uint32_t *)(((char *)mycpu()->local) + 1024);
 	tss_set_rsp(tss, 0, (uintptr_t)myproc()->kstack + KSTACKSIZE);
 	pml4 = (void *)PTE_ADDR(p->pgdir[511]);
 	lcr3(v2p(pml4));

@@ -434,7 +434,9 @@ typedef uint32_t Elf32_Word;
 
 struct Elf32_Ehdr {
 	union {
-		struct { unsigned char e_ident[EI_NIDENT]; } __attribute__((packed));
+		struct {
+			unsigned char e_ident[EI_NIDENT];
+		} __attribute__((packed));
 		uint32_t magic;
 		uint8_t elf[12];
 	};
@@ -526,7 +528,9 @@ typedef uint64_t Elf64_Xword;
 
 struct Elf64_Ehdr {
 	union {
-		struct { unsigned char e_ident[EI_NIDENT]; } __attribute__((packed));
+		struct {
+			unsigned char e_ident[EI_NIDENT];
+		} __attribute__((packed));
 		uint32_t magic;
 		uint8_t elf[12];
 	};

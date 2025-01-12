@@ -177,7 +177,8 @@ try_setup_headers_xsdt(struct acpi_xsdt *xsdt)
 {
 	struct acpi_madt *madt = NULL;
 	struct acpi_fadt *fadt;
-	int count = (xsdt->header.length - sizeof(struct acpi_desc_header)) / sizeof(*xsdt->entry);
+	int count = (xsdt->header.length - sizeof(struct acpi_desc_header)) /
+							sizeof(*xsdt->entry);
 	for (int n = 0; n < count; n++) {
 		struct acpi_desc_header *hdr = p2v(xsdt->entry[n]);
 		if (xsdt->entry[n] > PHYSLIMIT)
@@ -214,7 +215,8 @@ try_setup_headers_rsdt(struct acpi_rsdt *rsdt)
 {
 	struct acpi_madt *madt = NULL;
 	struct acpi_fadt *fadt;
-	int count = (rsdt->header.length - sizeof(struct acpi_desc_header)) / sizeof(*rsdt->entry);
+	int count = (rsdt->header.length - sizeof(struct acpi_desc_header)) /
+							sizeof(*rsdt->entry);
 	for (int n = 0; n < count; n++) {
 		struct acpi_desc_header *hdr = p2v(rsdt->entry[n]);
 		if (rsdt->entry[n] > PHYSLIMIT)

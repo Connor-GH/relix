@@ -3,9 +3,9 @@
 #define EXIT_FAILURE !EXIT_SUCCESS
 #ifndef __KERNEL__
 #include <stdint.h>
-__attribute__((malloc)) void *malloc(uint32_t);
-__attribute__((malloc))
-void *
+__attribute__((malloc)) void *
+malloc(uint32_t);
+__attribute__((malloc)) void *
 calloc(size_t nmemb, uint32_t sz);
 void
 free(void *);

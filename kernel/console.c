@@ -21,7 +21,6 @@
 #include "drivers/lapic.h"
 #include "compiler_attributes.h"
 
-
 static int panicked = 0;
 int echo_out = 1;
 static uint8_t static_foreg = WHITE;
@@ -243,7 +242,6 @@ cursor_position(void)
 	pos |= inb(CRTPORT + 1);
 	return pos;
 }
-
 
 static void
 cgaputc(int c, uint8_t fore, uint8_t back)

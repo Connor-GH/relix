@@ -483,7 +483,7 @@ sys_execve(void)
 	uintptr_t uenvp, uenv;
 
 	if (argstr(0, &path) < 0 || arguintptr(1, &uargv) < 0 ||
-		arguintptr(2, &uenvp) < 0) {
+			arguintptr(2, &uenvp) < 0) {
 		return -EINVAL;
 	}
 	memset(argv, 0, sizeof(argv));
@@ -690,7 +690,8 @@ sys_lseek(void)
 	int whence;
 	struct file *file;
 
-	if (argfd(0, &fd, &file) < 0 || arguintptr(1, &offset) < 0 || argint(2, &whence) < 0)
+	if (argfd(0, &fd, &file) < 0 || arguintptr(1, &offset) < 0 ||
+			argint(2, &whence) < 0)
 		return -EINVAL;
 	if (S_ISFIFO(file->ip->mode) || S_ISSOCK(file->ip->mode))
 		return -ESPIPE;

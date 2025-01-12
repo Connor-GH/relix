@@ -119,7 +119,8 @@ struct segdesc {
 #define PXMASK 0x3FF
 
 #endif
-#define PGROUNDUP(sz) (((sz) + (uintptr_t)PGSIZE - 1) & ~((uintptr_t)PGSIZE - 1))
+#define PGROUNDUP(sz) \
+	(((sz) + (uintptr_t)PGSIZE - 1) & ~((uintptr_t)PGSIZE - 1))
 #define PGROUNDDOWN(a) (((a)) & ~((uintptr_t)PGSIZE - 1))
 
 // Page table/directory entry flags.

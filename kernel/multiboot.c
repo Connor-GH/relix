@@ -3,8 +3,9 @@
 #include <stdint.h>
 #include "console.h"
 
-
-const char *multiboot_mmap_type(int type) {
+const char *
+multiboot_mmap_type(int type)
+{
 	switch (type) {
 	case MULTIBOOT_MEMORY_AVAILABLE:
 		return "available";

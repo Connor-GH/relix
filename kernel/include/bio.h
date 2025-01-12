@@ -3,7 +3,8 @@
 
 void
 binit(void);
-struct buf *bread(uint32_t, uint32_t);
+struct buf *
+bread(uint32_t, uint32_t);
 void
 brelse(struct buf *);
 void

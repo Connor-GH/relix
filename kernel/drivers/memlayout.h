@@ -10,7 +10,8 @@
 
 #ifndef __ASSEMBLER__
 extern uint64_t available_memory;
-#define PHYSTOP available_memory //(256 * MiB - (32 * MiB)) //0xE000000 // Top physical memory
+#define PHYSTOP \
+	available_memory //(256 * MiB - (32 * MiB)) //0xE000000 // Top physical memory
 #endif
 #define DEVSPACE 0xFE000000 // Other devices are at high addresses
 

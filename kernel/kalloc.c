@@ -75,7 +75,6 @@ __nonnull(1) void kpage_free(char *v)
 	if ((uintptr_t)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
 		panic("kpage_free");
 
-
 	//if (kmem.use_lock)
 	acquire(&kmem.lock[id]);
 	r = (struct run *)v;
@@ -217,7 +216,9 @@ __attribute__((malloc)) __nonnull(1) void *krealloc(void *ptr, size_t size)
 	return newptr;
 }
 
-__attribute__((malloc)) void *kcalloc(size_t size) {
+__attribute__((malloc)) void *
+kcalloc(size_t size)
+{
 	void *ptr = kmalloc(size);
 	memset(ptr, '\0', size);
 	return ptr;

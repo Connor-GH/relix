@@ -89,7 +89,8 @@ int
 dirlink(struct inode *, const char *, uint32_t);
 struct inode *
 dirlookup(struct inode *, const char *, uint32_t *);
-struct inode *ialloc(uint32_t, int32_t);
+struct inode *
+ialloc(uint32_t, int32_t);
 struct inode *
 idup(struct inode *);
 void

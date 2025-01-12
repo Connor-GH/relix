@@ -115,7 +115,8 @@ fileread(struct file *f, char *addr, int n)
 }
 
 int
-fileseek(struct file *f, int n, int whence) {
+fileseek(struct file *f, int n, int whence)
+{
 	int offset = 0;
 	if (whence == SEEK_CUR) {
 		offset = f->off + n;

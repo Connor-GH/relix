@@ -183,13 +183,13 @@ numerical_padding:
 			case 'p': {
 				int x = va_arg(*argp, int);
 				printint(put_function, buf, fd, x, 16, false, flags, str_pad);
-					str_pad = 0;
+				str_pad = 0;
 				break;
 			}
 			case 'o': {
 				int x = va_arg(*argp, int);
 				printint(put_function, buf, fd, x, 8, false, flags, str_pad);
-					str_pad = 0;
+				str_pad = 0;
 				break;
 			}
 			case 's': {

@@ -437,7 +437,9 @@ exitwait(void)
 	fprintf(stdout, "exitwait ok\n");
 }
 
-void largemem(void) {
+void
+largemem(void)
+{
 	// 200MiB
 	fprintf(stderr, "largemem test\n");
 	char *ptr = malloc(200 * 1024 * 1024);
@@ -1590,7 +1592,7 @@ void
 validateint(int *p)
 {
 	int res;
-	#ifndef X86_64
+#ifndef X86_64
 	asm("mov %%esp, %%ebx\n\t"
 			"mov %3, %%rsp\n\t"
 			"int %2\n\t"
@@ -1778,7 +1780,6 @@ argptest(void)
 	close(fd);
 	fprintf(stdout, "arg test passed\n");
 }
-
 
 int
 main(int argc, char *argv[])

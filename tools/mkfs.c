@@ -41,7 +41,8 @@ static char zeroes[BSIZE];
 static uint32_t freeinode = 1;
 static uint32_t freeblock;
 
-static void balloc(int32_t);
+static void
+balloc(int32_t);
 static void
 wsect(uint32_t, void *);
 static void

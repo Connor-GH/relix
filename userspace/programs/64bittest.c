@@ -4,7 +4,9 @@
 #include <string.h>
 #include <assert.h>
 
-int main(int argc, char **argv) {
+int
+main(int argc, char **argv)
+{
 	uint64_t x = 18000000000000000000UL;
 	int64_t sig_x = 9000000000000000000L;
 	char *s = malloc(2 + 18 + 1);
@@ -17,5 +19,4 @@ int main(int argc, char **argv) {
 	free(su);
 	printf("ALL TESTS PASSED\n");
 	return 0;
-
 }

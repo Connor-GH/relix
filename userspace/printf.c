@@ -7,19 +7,50 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/uio.h>
 
 static uint32_t global_idx = 0;
 
-static void
-putc(int fd, char c, char *buf)
+#define WRITE_BUFFER_SIZE 512
+static char *write_buffer = NULL;
+static size_t write_buffer_position = 0;
+void
+__init_stdio(void)
 {
-	write(fd, &c, 1);
+	write_buffer = malloc(WRITE_BUFFER_SIZE);
+}
+static void
+flush(int fd)
+{
+	writev(fd, &(const struct iovec){write_buffer, write_buffer_position}, 1);
+	write_buffer_position = 0;
+}
+/* We don't care about what's passed in buf */
+static void
+fd_putc(int fd, char c, char *buf)
+{
+	if (write_buffer_position >= 127) {
+		flush(fd);
+	} else {
+		write_buffer[write_buffer_position++] = c;
+	}
 }
 static void
 string_putc(int fd, char c, char *buf)
 {
 	buf[global_idx] = c;
 	global_idx++;
+}
+int
+fputc(int c, FILE *stream)
+{
+	fd_putc(fileno(stream), c, NULL);
+	return c;
+}
+int
+putchar(int c)
+{
+	return putc(c, stdout);
 }
 
 enum {
@@ -231,8 +262,8 @@ skip_state_reset:; // state = '%' if set
 void
 vfprintf(FILE *restrict stream, const char *fmt, va_list *argp)
 {
-	vprintf_internal(putc, fileno(stream), NULL, fmt, argp);
-	fsync(fileno(stream));
+	vprintf_internal(fd_putc, fileno(stream), NULL, fmt, argp);
+	flush(fileno(stream));
 }
 
 void

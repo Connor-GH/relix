@@ -198,6 +198,8 @@ extern int
 sys_lseek(void);
 extern int
 sys_fsync(void);
+extern int
+sys_writev(void);
 
 static int (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,				 [SYS_exit] = sys_exit,
@@ -215,7 +217,7 @@ static int (*syscalls[])(void) = {
 	[SYS_echoout] = sys_echoout,	 [SYS_setuid] = sys_setuid,
 	[SYS_strace] = sys_strace,		 [SYS_symlink] = sys_symlink,
 	[SYS_readlink] = sys_readlink, [SYS_lseek] = sys_lseek,
-	[SYS_fsync] = sys_fsync,
+	[SYS_fsync] = sys_fsync,			 [SYS_writev] = sys_writev,
 };
 
 void

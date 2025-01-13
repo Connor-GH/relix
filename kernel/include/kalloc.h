@@ -1,5 +1,5 @@
 #pragma once
-#include <stdint.h>
+#include <stddef.h>
 #include "compiler_attributes.h"
 char *
 kpage_alloc(void);

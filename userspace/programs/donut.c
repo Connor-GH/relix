@@ -1,9 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 #include <unistd.h>
-#define puts(x) printf("%s", x)
-#define putchar(x) printf("%c", x)
+#define puts(x) printf("%s\n", x)
 
 #define USE_MULTIPLIER 1
 
@@ -63,7 +61,7 @@ main()
 	int16_t sAsB = 0, cAsB = 0;
 	int16_t sAcB = 11583, cAcB = 11583;
 
-	for (;;) {
+	for (int _foo = 0; _foo < 10; _foo++) {
 		// yes this is a multiply but dz is 5 so it's (sb + (sb<<2)) >> 6 effectively
 		int p0x = dz * sB >> 6;
 		int p0y = dz * sAcB >> 6;

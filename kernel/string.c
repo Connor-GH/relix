@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stddef.h>
 #include "kernel_string.h"
 #include "x86.h"
 #include "compiler_attributes.h"

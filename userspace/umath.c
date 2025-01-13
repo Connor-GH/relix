@@ -1,5 +1,5 @@
 #include <umath.h>
-#include <stdint.h>
+#include <stddef.h>
 
 unsigned int
 ui_pow(unsigned int base, unsigned int power)

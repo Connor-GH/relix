@@ -32,7 +32,8 @@
 #define SYS_readlink 29
 #define SYS_lseek 30
 #define SYS_fsync 31
-#define SYSCALL_AMT 31
+#define SYS_writev 32
+#define SYSCALL_AMT 32
 #ifndef __ASSEMBLER__
 __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_fork] = "fork",				 [SYS_exit] = "exit",
@@ -50,7 +51,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_echoout] = "echoout",	 [SYS_setuid] = "setuid",
 	[SYS_strace] = "strace",		 [SYS_symlink] = "symlink",
 	[SYS_readlink] = "readlink", [SYS_lseek] = "lseek",
-	[SYS_fsync] = "fsync",
+	[SYS_fsync] = "fsync",			 [SYS_writev] = "writev",
 };
 #endif
 #if defined(__KERNEL__) && !defined(__ASSEMBLER__)

@@ -420,32 +420,13 @@ console_height_text(void)
 	return __multiboot_console_height_text();
 }
 
-/*
- * This buffer is different from the `crt' buffer because it
- * collects characters and is only written to when an
- * fsync syscall or other flush syscalls happen.
- */
-static char *console_buffer = NULL;
-static int buffer_position = 0;
-void
-console_flush(void)
-{
-	for (int j = 0; j < buffer_position; j++) {
-		consputc(console_buffer[j] & 0xff);
-	}
-	buffer_position = 0;
-}
+// This is asynchronous.
 __nonnull(1, 2) static int consolewrite(struct inode *ip, char *buf, int n)
 {
-	iunlock(ip);
-	acquire(&cons.lock);
 
 	for (int i = 0; i < n; i++) {
-		console_buffer[buffer_position] = buf[i];
-		buffer_position++;
+		consputc(buf[i] & 0xff);
 	}
-	release(&cons.lock);
-	ilock(ip);
 
 	return n;
 }
@@ -458,7 +439,6 @@ consoleinit(void)
 	devsw[CONSOLE].write = consolewrite;
 	devsw[CONSOLE].read = consoleread;
 	cons.locking = 1;
-	console_buffer = kmalloc(console_width_text() * console_height_text());
 
 	ioapicenable(IRQ_KBD, 0);
 }

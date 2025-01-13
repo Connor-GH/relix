@@ -14,6 +14,10 @@ main(int argc, char **argv)
 	}
 	int before = uptime();
 	char *path = malloc(FILENAME_MAX);
+	if (path == NULL) {
+		perror("malloc");
+		exit(1);
+	}
 	sprintf(path, "/bin/%s", argv[1]);
 	if (fork() == 0)
 		exec(path, argv + 1);

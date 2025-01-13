@@ -1,5 +1,7 @@
 #pragma once
+#ifndef USE_HOST_TOOLS
 #include "stdint.h"
+#endif
 #include "stdio.h"
 struct dirent {
 	uint16_t inum;

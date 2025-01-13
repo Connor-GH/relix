@@ -39,4 +39,9 @@ int
 fileno(FILE *stream);
 void
 perror(const char *s);
+int
+fputc(int c, FILE *stream);
+int
+putchar(int c);
+#define putc(c, stream) fputc(c, stream)
 #endif /* USE_HOST_TOOLS */

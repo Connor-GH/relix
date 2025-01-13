@@ -9,6 +9,7 @@
 #include <stat.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/uio.h>
 #include <dirent.h>
 #include <date.h>
 #include <time.h>
@@ -105,6 +106,27 @@ sys_write(void)
 	return filewrite(f, p, n);
 }
 
+int
+sys_writev(void)
+{
+	struct iovec *iovecs;
+	int iovcnt;
+	int fd;
+	struct file *file;
+	ssize_t accumulated_bytes = 0;
+	if (argfd(0, &fd, &file) < 0 ||
+			argptr(1, (void *)&iovecs, sizeof(*iovecs)) < 0 ||
+			argint(2, &iovcnt) < 0) {
+		return -EINVAL;
+	}
+	for (int i = 0; i < iovcnt; i++) {
+		ssize_t ret = filewrite(file, iovecs->iov_base, iovecs->iov_len);
+		if (ret < 0)
+			return ret;
+		accumulated_bytes += ret;
+	}
+	return accumulated_bytes;
+}
 int
 sys_close(void)
 {
@@ -699,6 +721,7 @@ sys_lseek(void)
 	return fileseek(file, offset, whence);
 }
 
+/* Unimplemented */
 int
 sys_fsync(void)
 {
@@ -710,9 +733,7 @@ sys_fsync(void)
 	if (fd == 0 || fd == 1 || fd == 2) {
 		if (fd == 0)
 			return -EINVAL;
-		console_flush();
 		return 0;
 	}
-	/* Unimplemented outside of stdio */
 	return 0;
 }

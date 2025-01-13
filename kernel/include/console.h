@@ -13,5 +13,3 @@ void
 consoleintr(int (*)(void));
 __noreturn void
 panic(const char *);
-void
-console_flush(void);

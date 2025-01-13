@@ -1,11 +1,10 @@
 #pragma once
 // On-disk file system format.
 // Both the kernel and user programs use this header file.
-#ifndef USE_HOST_TOOLS
 #include <stdint.h>
+#ifndef USE_HOST_TOOLS
 #include "sleeplock.h"
 #else
-#include <../../include/stdint.h>
 #include <../../kernel/include/sleeplock.h>
 #endif
 // Constants that userspace testers might be interested in.

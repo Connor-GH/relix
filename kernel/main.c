@@ -93,7 +93,6 @@ mpmain(void)
 	scheduler(); // start running processes
 }
 
-uintptr_t entrypgdir[]; // For entry.S
 void
 entry32mp(void);
 

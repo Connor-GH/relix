@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdint.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include "console.h"
 #include "file.h"
 #include "ioapic.h"
@@ -49,20 +50,12 @@ set_term_color(uint8_t foreground, uint8_t background)
 }
 
 static void
-printint(uint64_t xx, int base, int sign, int *padding)
+printint(uint64_t x, int64_t xs, int base, bool is_unsigned, int *padding)
 {
 	static char digits[] = "0123456789abcdef";
 	char buf[32];
 	int i;
-	uint64_t x;
 	long_form = 0;
-
-	// the second check prevents misusage of the function.
-	// we expect sign && xx < 0, but plan for the worst.
-	if (sign && (sign = (xx < 0)))
-		x = -xx;
-	else
-		x = xx;
 
 	i = 0;
 	do {
@@ -73,7 +66,7 @@ printint(uint64_t xx, int base, int sign, int *padding)
 	}
 	*padding = 0;
 
-	if (sign)
+	if (is_unsigned == false && (xs < 0))
 		buf[i++] = '-';
 
 	if (alt_form && base == 16) {
@@ -146,16 +139,20 @@ do_again:
 		switch (c) {
 		case 'u':
 			if (long_form == 0) {
-				printint(va_arg(argp, unsigned int), 10, 0, &padding);
+				unsigned int ud = va_arg(argp, unsigned int);
+				printint(ud, ud, 10, 0, &padding);
 			} else {
-				printint(va_arg(argp, unsigned long), 10, 0, &padding);
+				unsigned long ul = va_arg(argp, unsigned long);
+				printint(ul, ul, 10, 0, &padding);
 			}
 			break;
 		case 'd':
 			if (long_form == 0) {
-				printint(va_arg(argp, int), 10, 1, &padding);
+				int d = va_arg(argp, int);
+				printint(d, d, 10, 1, &padding);
 			} else {
-				printint(va_arg(argp, long), 10, 1, &padding);
+				long ld = va_arg(argp, long);
+				printint(ld, ld, 10, 1, &padding);
 			}
 			break;
 		case '0':
@@ -169,20 +166,27 @@ do_again:
 			long_form = 1;
 			goto do_again;
 		case 'x':
-			if (long_form == 0)
-				printint(va_arg(argp, unsigned int), 16, 0, &padding);
-			else
-				printint(va_arg(argp, unsigned long), 16, 0, &padding);
+			if (long_form == 0) {
+				unsigned int x = va_arg(argp, unsigned int);
+				printint(x, x, 16, 0, &padding);
+			} else {
+				unsigned long lx = va_arg(argp, unsigned long);
+				printint(lx, lx, 16, 0, &padding);
+			}
 			break;
 		case 'p':
 			alt_form = 1;
-			printint((uintptr_t)va_arg(argp, void *), 16, 0, &padding);
+			uintptr_t p = (uintptr_t)va_arg(argp, void *);
+			printint(p, p, 16, 0, &padding);
 			break;
 		case 'o':
-			if (long_form == 0)
-				printint(va_arg(argp, unsigned int), 8, 0, &padding);
-			else
-				printint(va_arg(argp, unsigned long), 8, 0, &padding);
+			if (long_form == 0) {
+				unsigned int o = va_arg(argp, unsigned int);
+				printint(o, o, 8, 0, &padding);
+			} else {
+				unsigned int lo = va_arg(argp, unsigned int);
+				printint(lo, lo, 8, 0, &padding);
+			}
 			break;
 		case 's':
 			if ((s = va_arg(argp, char *)) == 0)
@@ -421,7 +425,8 @@ console_height_text(void)
 }
 
 // This is asynchronous.
-__nonnull(1, 2) static int consolewrite(struct inode *ip, char *buf, int n)
+__nonnull(1, 2) static int consolewrite(
+	__attribute__((unused)) struct inode *ip, char *buf, int n)
 {
 
 	for (int i = 0; i < n; i++) {

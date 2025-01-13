@@ -95,8 +95,8 @@ main()
 				int16_t py = p0y + (vyi14 >> 5);
 				int16_t pz = p0z + (vzi14 >> 5);
 				int16_t lx0 = sB >> 2;
-				int16_t ly0 = sAcB - cA >> 2;
-				int16_t lz0 = -cAcB - sA >> 2;
+				int16_t ly0 = (sAcB - cA) >> 2;
+				int16_t lz0 = (-cAcB - sA) >> 2;
 				for (;;) {
 					int t0, t1, t2, d;
 					int16_t lx = lx0, ly = ly0, lz = lz0;

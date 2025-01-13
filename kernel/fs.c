@@ -34,7 +34,7 @@ static void
 itrunc(struct inode *);
 // there should be one superblock per disk device, but we run with
 // only one device
-struct superblock sb;
+struct superblock global_sb;
 
 // Read the super block.
 void
@@ -69,9 +69,9 @@ balloc(uint32_t dev)
 	struct buf *bp;
 
 	bp = 0;
-	for (b = 0; b < sb.size; b += BPB) {
-		bp = bread(dev, BBLOCK(b, sb));
-		for (bi = 0; bi < BPB && b + bi < sb.size; bi++) {
+	for (b = 0; b < global_sb.size; b += BPB) {
+		bp = bread(dev, BBLOCK(b, global_sb));
+		for (bi = 0; bi < BPB && b + bi < global_sb.size; bi++) {
 			m = 1 << (bi % 8);
 			if ((bp->data[bi / 8] & m) == 0) { // Is block free?
 				bp->data[bi / 8] |= m; // Mark block in use.
@@ -93,7 +93,7 @@ bfree(int dev, uint32_t b)
 	struct buf *bp;
 	int bi, m;
 
-	bp = bread(dev, BBLOCK(b, sb));
+	bp = bread(dev, BBLOCK(b, global_sb));
 	bi = b % BPB;
 	m = 1 << (bi % 8);
 	if ((bp->data[bi / 8] & m) == 0)
@@ -111,7 +111,7 @@ bfree(int dev, uint32_t b)
 // list of blocks holding the file's content.
 //
 // The inodes are laid out sequentially on disk at
-// sb.startinode. Each inode has a number, indicating its
+// global_sb.startinode. Each inode has a number, indicating its
 // position on the disk.
 //
 // The kernel keeps a cache of in-use inodes in memory
@@ -191,11 +191,11 @@ iinit(int dev)
 		}
 	}
 
-	readsb(dev, &sb);
+	readsb(dev, &global_sb);
 	cprintf("sb: size %d nblocks %d ninodes %d nlog %d logstart %d\
  inodestart %d bmap start %d\n",
-					sb.size, sb.nblocks, sb.ninodes, sb.nlog, sb.logstart, sb.inodestart,
-					sb.bmapstart);
+					global_sb.size, global_sb.nblocks, global_sb.ninodes, global_sb.nlog,
+				  global_sb.logstart, global_sb.inodestart, global_sb.bmapstart);
 }
 
 static struct inode *
@@ -211,8 +211,8 @@ ialloc(uint32_t dev, int mode)
 	struct buf *bp;
 	struct dinode *dip;
 
-	for (inum = 1; inum < sb.ninodes; inum++) {
-		bp = bread(dev, IBLOCK(inum, sb));
+	for (inum = 1; inum < global_sb.ninodes; inum++) {
+		bp = bread(dev, IBLOCK(inum, global_sb));
 		dip = (struct dinode *)bp->data + inum % IPB;
 		if (!S_ISANY(dip->mode)) { // a free inode
 			memset(dip, 0, sizeof(*dip));
@@ -243,7 +243,7 @@ iupdate(struct inode *ip)
 	struct buf *bp;
 	struct dinode *dip;
 
-	bp = bread(ip->dev, IBLOCK(ip->inum, sb));
+	bp = bread(ip->dev, IBLOCK(ip->inum, global_sb));
 	dip = (struct dinode *)bp->data + ip->inum % IPB;
 	dip->major = ip->major;
 	dip->minor = ip->minor;
@@ -274,7 +274,7 @@ iget(uint32_t dev, uint32_t inum)
 
 	// Is the inode already cached?
 	empty = 0;
-	for (ip = &icache.inode[0][hash]; ip < &icache.inode[NINODE][hash]; ip++) {
+	for (ip = &icache.inode[0][hash]; ip < &icache.inode[NINODE-1][hash]; ip++) {
 		if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {
 			ip->ref++;
 			release(&icache.lock[hash]);
@@ -287,7 +287,7 @@ iget(uint32_t dev, uint32_t inum)
 		release(&icache.lock[hash]);
 		for (int i = 0; i < min(NBUCKET, ncpu); i++) {
 			acquire(&icache.lock[i]);
-			for (ip = &icache.inode[0][i]; ip < &icache.inode[NINODE][i]; ip++) {
+			for (ip = &icache.inode[0][i]; ip < &icache.inode[NINODE-1][i]; ip++) {
 				if (i == hash)
 					continue;
 				if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {
@@ -342,7 +342,7 @@ ilock(struct inode *ip)
 	acquiresleep(&ip->lock);
 
 	if (ip->valid == 0) {
-		bp = bread(ip->dev, IBLOCK(ip->inum, sb));
+		bp = bread(ip->dev, IBLOCK(ip->inum, global_sb));
 		dip = (struct dinode *)bp->data + ip->inum % IPB;
 		ip->major = dip->major;
 		ip->minor = dip->minor;

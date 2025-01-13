@@ -2,8 +2,6 @@
 #include <stdint.h>
 // See MultiProcessor Specification Version 1.[14]
 
-extern int ismp; // SMP
-
 struct mp { // floating pointer
 	uint8_t signature[4]; // "_MP_"
 	void *physaddr; // phys addr of MP config table
@@ -63,6 +61,5 @@ struct mpbus {
 #define MPIOINTR 0x03 // One per bus interrupt source
 #define MPLINTR 0x04 // One per system interrupt source
 
-extern int ismp;
 void
 mpinit(void);

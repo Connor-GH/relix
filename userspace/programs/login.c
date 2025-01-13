@@ -9,7 +9,7 @@
 #include <stddef.h>
 
 int
-main(int argc, char **argv)
+main(void)
 {
 	struct cred cred;
 	(void)cred;

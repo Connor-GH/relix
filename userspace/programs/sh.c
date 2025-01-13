@@ -17,7 +17,6 @@
 #define PIPE 3
 #define LIST 4
 #define BACK 5
-
 extern char **environ;
 
 struct cmd {
@@ -61,7 +60,7 @@ execcmd(void);
 
 int
 fork1(void); // Fork but panics on failure.
-void
+void __attribute__((noreturn))
 panic(char *);
 struct cmd *
 parsecmd(char *);
@@ -186,7 +185,7 @@ getcmd(char *buf, int nbuf)
 #define MIN(a, b) (((a) > (b)) ? (b) : (a))
 
 int
-main(int argc, char **argv)
+main(void)
 {
 	static char buf[100];
 	int fd;
@@ -238,7 +237,7 @@ main(int argc, char **argv)
 	return 0;
 }
 
-void
+void __attribute__((noreturn))
 panic(char *s)
 {
 	fprintf(stderr, "%s\n", s);

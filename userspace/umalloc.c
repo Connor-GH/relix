@@ -100,6 +100,8 @@ __attribute__((malloc)) void *
 calloc(size_t nmemb, uint32_t sz)
 {
 	void *ptr = malloc(nmemb * sz);
+	if (ptr == NULL)
+		return NULL;
 	memset(ptr, 0, nmemb * sz);
 	return ptr;
 }

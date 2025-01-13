@@ -16,7 +16,7 @@
 #include <stddef.h>
 
 int
-main(int argc, char *argv[])
+main(void)
 {
 	int fd, i;
 	char path[] = "stressfs0";

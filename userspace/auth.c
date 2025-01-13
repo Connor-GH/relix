@@ -8,7 +8,7 @@
 #include <stddef.h>
 
 int
-usertouid(const char *user)
+usertouid(const char *__attribute__((unused)) user)
 {
 	int fd;
 	if ((fd = open("/etc/passwd", 0)) < 0) {
@@ -42,7 +42,7 @@ usertouid(const char *user)
 }
 
 char *
-userto_allocated_passwd(const char *user)
+userto_allocated_passwd(const char *__attribute__((unused)) user)
 {
 	int fd;
 	char *put_in = malloc(512);

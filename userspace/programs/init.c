@@ -20,6 +20,10 @@ main(void)
 		mknod("/dev/console", 1, 1);
 		fd = open("/dev/console", O_RDWR);
 	}
+	if (fd == -1) {
+		perror("open");
+		exit(1);
+	}
 	// TODO: find a way of throwing an error if we cannot dup ?
 	(void)dup(fd); // stdout
 	(void)dup(fd); // stderr

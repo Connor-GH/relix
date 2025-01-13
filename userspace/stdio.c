@@ -1,3 +1,4 @@
+#include "kernel/include/param.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -7,23 +8,53 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <fcntl.h>
 #include <sys/uio.h>
+#include <sys/param.h>
+
+FILE *stdin;
+FILE *stdout;
+FILE *stderr;
+
+static FILE *open_files[NFILE];
+static size_t open_files_index = 0;
 
 static uint32_t global_idx = 0;
 
 #define WRITE_BUFFER_SIZE 256
-static char *write_buffer = NULL;
-static size_t write_buffer_position = 0;
 void
 __init_stdio(void)
 {
-	write_buffer = malloc(WRITE_BUFFER_SIZE);
+	FILE *file_stdin = fdopen(0, "r");
+	FILE *file_stdout = fdopen(1, "w"); // maybe should be a+?
+	FILE *file_stderr = fdopen(2, "w"); // maybe should be a+?
+	open_files[0] = file_stdin;
+	open_files[1] = file_stdout;
+	open_files[2] = file_stderr;
+	stdin = file_stdin;
+	stdout = file_stdout;
+	stderr = file_stderr;
 }
-static void
-flush(int fd)
+void
+__fini_stdio(void)
 {
-	writev(fd, &(const struct iovec){write_buffer, write_buffer_position}, 1);
-	write_buffer_position = 0;
+	for (size_t i = 0; i < open_files_index; i++) {
+		if (open_files[i] != NULL) {
+			fclose(open_files[i]);
+			open_files[i] = NULL;
+		}
+	}
+}
+static int
+flush(FILE *stream)
+{
+	if (stream == NULL) {
+		errno = EBADF;
+		return -1;
+	}
+	writev(stream->fd, &(const struct iovec){stream->write_buffer, stream->write_buffer_index}, 1);
+	stream->write_buffer_index = 0;
+	return 0;
 }
 
 int
@@ -33,22 +64,153 @@ fflush(FILE *stream)
 		fflush(stdout);
 		fflush(stderr);
 	}
-	int fd = fileno(stream);
-	if (fd < 0) {
-		return EOF;
-	}
-	flush(fd);
-	return 0;
+	return flush(stream);
 }
 
 int
 fileno(FILE *stream)
 {
-	// TODO make actual FILE * structure
 	if (stream != NULL)
-		return *stream;
+		return stream->fd;
 	errno = EBADF;
 	return -1;
+}
+
+static int
+string_to_mode(const char *restrict mode)
+{
+	if (mode == NULL) {
+		goto bad_mode;
+	}
+	int mode_val = -1;
+	switch (mode[0]) {
+
+		case 'w': {
+			if (mode[1] != '\0') {
+				if (mode[1] == '+') {
+					mode_val = O_RDWR | O_CREATE /*| O_TRUNC*/;
+					break;
+				}
+			}
+			mode_val = O_WRONLY | O_CREATE /*| O_TRUNC*/;
+			break;
+		}
+		case 'r': {
+			if (mode[1] != '\0') {
+				if (mode[1] == '+') {
+					mode_val = O_RDWR;
+					break;
+				}
+			}
+			mode_val = O_RDONLY;
+			break;
+		}
+		case 'a': {
+			if (mode[1] != '\0') {
+				if (mode[1] == '+') {
+					mode_val = O_RDWR | O_CREATE /*| O_APPEND*/;
+					break;
+				}
+			}
+			mode_val = O_WRONLY | O_CREATE /*| O_APPEND*/;
+			break;
+		}
+		default: goto bad_mode;
+	}
+	return mode_val;
+bad_mode:
+	errno = EINVAL;
+	return -1;
+
+}
+
+FILE *
+fopen(const char *restrict pathname, const char *restrict mode)
+{
+	FILE *fp = malloc(sizeof(*fp));
+	if (fp == NULL)
+		return NULL;
+	fp->mode = string_to_mode(mode);
+	if (fp->mode == -1)
+		return NULL;
+	fp->fd = open(pathname, fp->mode);
+	if (fp->fd == -1)
+		return NULL;
+	fp->eof = false;
+	fp->error = false;
+	fp->write_buffer = malloc(WRITE_BUFFER_SIZE);
+	if (fp->write_buffer == NULL)
+		return NULL;
+	fp->write_buffer_size = WRITE_BUFFER_SIZE;
+	fp->write_buffer_index = 0;
+	if (open_files_index < NFILE) {
+		fp->static_table_index = open_files_index;
+		open_files[open_files_index++] = fp;
+	} else {
+		for (size_t i = 0; i < NFILE; i++) {
+			if (open_files[i] == NULL) {
+				fp->static_table_index = i;
+				open_files[i] = fp;
+			}
+		}
+		return NULL;
+	}
+	return fp;
+}
+
+// Mandated by POSIX
+FILE *
+fdopen(int fd, const char *restrict mode)
+{
+	if (fd == -1) {
+		errno = EBADF;
+		return NULL;
+	}
+	FILE *fp = malloc(sizeof(*fp));
+	if (fp == NULL)
+		return NULL;
+	fp->mode = string_to_mode(mode);
+	if (fp->mode == -1)
+		return NULL;
+	fp->fd = fd;
+	fp->eof = false;
+	fp->error = false;
+	fp->write_buffer = malloc(WRITE_BUFFER_SIZE);
+	if (fp->write_buffer == NULL)
+		return NULL;
+	fp->write_buffer_size = WRITE_BUFFER_SIZE;
+	fp->write_buffer_index = 0;
+	if (open_files_index < NFILE) {
+		fp->static_table_index = open_files_index;
+		open_files[open_files_index++] = fp;
+	} else {
+		for (size_t i = 0; i < NFILE; i++) {
+			if (open_files[i] == NULL) {
+				fp->static_table_index = i;
+				open_files[i] = fp;
+			}
+		}
+		return NULL;
+	}
+	return fp;
+}
+
+int
+fclose(FILE *stream)
+{
+	if (stream == NULL) {
+		errno = EBADF;
+		return EOF;
+	}
+	fflush(stream);
+	if (stream->write_buffer != NULL)
+		free(stream->write_buffer);
+	if (close(stream->fd) < 0)
+		return EOF;
+	open_files[stream->static_table_index] = NULL;
+	free(stream);
+
+	return 0;
 }
 
 int
@@ -82,16 +244,16 @@ fgets(char *buf, int max, FILE *restrict stream)
 
 /* We don't care about what's passed in buf */
 static void
-fd_putc(int fd, char c, char *buf)
+fd_putc(FILE *fp, char c, char *__attribute__((unused)) buf)
 {
-	if (write_buffer_position >= WRITE_BUFFER_SIZE-1) {
-		flush(fd);
+	if (fp && fp->write_buffer_index >= fp->write_buffer_size-1) {
+		flush(fp);
 	} else {
-		write_buffer[write_buffer_position++] = c;
+		fp->write_buffer[fp->write_buffer_index++] = c;
 	}
 }
 static void
-string_putc(int fd, char c, char *buf)
+string_putc(FILE *__attribute__((unused)) fp, char c, char *buf)
 {
 	buf[global_idx] = c;
 	global_idx++;
@@ -99,7 +261,7 @@ string_putc(int fd, char c, char *buf)
 int
 fputc(int c, FILE *stream)
 {
-	fd_putc(fileno(stream), c, NULL);
+	fd_putc(stream, c, NULL);
 	return c;
 }
 int
@@ -119,7 +281,7 @@ enum {
 #define IS_SET(x, flag) (bool)((x & flag) == flag)
 
 static void
-printint(void (*put_function)(int, char, char *), char *put_func_buf, int fd,
+printint(void (*put_function)(FILE *, char, char *), char *put_func_buf, FILE *fp,
 				 int64_t xx, int base, bool sgn, int flags, int padding)
 {
 	static const char digits[] = "0123456789ABCDEF";
@@ -175,12 +337,12 @@ printint(void (*put_function)(int, char, char *), char *put_func_buf, int fd,
 	}
 
 	while (--i >= 0)
-		put_function(fd, buf[i], put_func_buf);
+		put_function(fp, buf[i], put_func_buf);
 }
 
 // Print to the given fd. Only understands %d, %x, %p, %s.
 static void
-vprintf_internal(void (*put_function)(int fd, char c, char *buf), int fd,
+vprintf_internal(void (*put_function)(FILE *fp, char c, char *buf), FILE *fp,
 								 char *restrict buf, const char *fmt, va_list *argp)
 {
 	global_idx = 0;
@@ -197,7 +359,7 @@ vprintf_internal(void (*put_function)(int fd, char c, char *buf), int fd,
 			if (c == '%') {
 				state = '%';
 			} else {
-				put_function(fd, c, buf);
+				put_function(fp, c, buf);
 			}
 		} else if (state == '%') {
 			switch (c) {
@@ -244,11 +406,11 @@ numerical_padding:
 			case 'd': {
 				if (IS_SET(flags, FLAG_LONG)) {
 					long ld = va_arg(*argp, long);
-					printint(put_function, buf, fd, ld, 10, true, flags, str_pad);
+					printint(put_function, buf, fp, ld, 10, true, flags, str_pad);
 					str_pad = 0;
 				} else {
 					int d = va_arg(*argp, int);
-					printint(put_function, buf, fd, d, 10, true, flags, str_pad);
+					printint(put_function, buf, fp, d, 10, true, flags, str_pad);
 					str_pad = 0;
 				}
 				break;
@@ -256,25 +418,36 @@ numerical_padding:
 			case 'u': {
 				if (IS_SET(flags, FLAG_LONG)) {
 					long lu = va_arg(*argp, unsigned long);
-					printint(put_function, buf, fd, lu, 10, false, flags, str_pad);
+					printint(put_function, buf, fp, lu, 10, false, flags, str_pad);
 					str_pad = 0;
 				} else {
 					unsigned int u = va_arg(*argp, unsigned int);
-					printint(put_function, buf, fd, u, 10, false, flags, str_pad);
+					printint(put_function, buf, fp, u, 10, false, flags, str_pad);
 					str_pad = 0;
 				}
 				break;
 			}
-			case 'x':
+			case 'x': {
+				if (IS_SET(flags, FLAG_LONG)) {
+					unsigned long lx = va_arg(*argp, unsigned long);
+					printint(put_function, buf, fp, lx, 16, true, flags, str_pad);
+					str_pad = 0;
+				} else {
+					unsigned int x = va_arg(*argp, unsigned int);
+					printint(put_function, buf, fp, x, 16, true, flags, str_pad);
+					str_pad = 0;
+				}
+				break;
+			}
 			case 'p': {
-				int x = va_arg(*argp, int);
-				printint(put_function, buf, fd, x, 16, false, flags, str_pad);
+				uintptr_t x = (uintptr_t)va_arg(*argp, void *);
+				printint(put_function, buf, fp, x, 16, false, flags, str_pad);
 				str_pad = 0;
 				break;
 			}
 			case 'o': {
 				int x = va_arg(*argp, int);
-				printint(put_function, buf, fd, x, 8, false, flags, str_pad);
+				printint(put_function, buf, fp, x, 8, false, flags, str_pad);
 				str_pad = 0;
 				break;
 			}
@@ -284,28 +457,28 @@ numerical_padding:
 					s = "(null)";
 				size_t len = strlen(s);
 				while (*s != 0) {
-					put_function(fd, *s, buf);
+					put_function(fp, *s, buf);
 					s++;
 				}
 				if (IS_SET(flags, FLAG_LJUST) && len < str_pad) {
 					for (int _ = 0; _ < str_pad - len; _++)
-						put_function(fd, ' ', buf);
+						put_function(fp, ' ', buf);
 				}
 				str_pad = 0;
 				break;
 			}
 			case 'c': {
 				int c_ = va_arg(*argp, int);
-				put_function(fd, c_, buf);
+				put_function(fp, c_, buf);
 				break;
 			}
 			case '%':
-				put_function(fd, c, buf);
+				put_function(fp, c, buf);
 				break;
 			// Unknown % sequence.  Print it to draw attention.
 			default:
-				put_function(fd, '%', buf);
-				put_function(fd, c, buf);
+				put_function(fp, '%', buf);
+				put_function(fp, c, buf);
 				break;
 			}
 			state = 0;
@@ -317,8 +490,8 @@ skip_state_reset:; // state = '%' if set
 void
 vfprintf(FILE *restrict stream, const char *fmt, va_list *argp)
 {
-	vprintf_internal(fd_putc, fileno(stream), NULL, fmt, argp);
-	flush(fileno(stream));
+	vprintf_internal(fd_putc, stream, NULL, fmt, argp);
+	flush(stream);
 }
 
 void

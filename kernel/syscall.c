@@ -74,6 +74,8 @@ fetcharg(int n)
 		return proc->tf->r8;
 	case 5:
 		return proc->tf->r9;
+	default:
+		__builtin_unreachable();
 	}
 }
 

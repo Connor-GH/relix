@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 void
-print_section_headers(int fd, struct Elf64_Ehdr *header,
+print_section_headers(__attribute__((unused)) int fd, struct Elf64_Ehdr *header,
 											struct Elf64_Shdr *section_headers, const char *strtab)
 {
 	printf("Section Headers:\n");

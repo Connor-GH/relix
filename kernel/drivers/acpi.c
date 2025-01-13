@@ -128,13 +128,13 @@ acpi_config_smp(struct acpi_madt *madt)
 			break;
 		switch (p[0]) {
 		case TYPE_LAPIC: {
-			struct madt_lapic *lapic = (void *)p;
-			if (len < sizeof(*lapic))
+			struct madt_lapic *madt_lapic = (void *)p;
+			if (len < sizeof(*madt_lapic))
 				break;
-			if (!(lapic->flags & APIC_LAPIC_ENABLED))
+			if (!(madt_lapic->flags & APIC_LAPIC_ENABLED))
 				break;
-			acpi_cprintf("cpu#%d apicid %d\n", ncpu, lapic->apic_id);
-			cpus[ncpu].apicid = lapic->apic_id;
+			acpi_cprintf("cpu#%d apicid %d\n", ncpu, madt_lapic->apic_id);
+			cpus[ncpu].apicid = madt_lapic->apic_id;
 			ncpu++;
 			break;
 		}
@@ -206,7 +206,7 @@ try_setup_headers_xsdt(struct acpi_xsdt *xsdt)
 	return acpi_config_smp(madt);
 
 notmapped:
-	acpi_cprintf("rsdt entry pointer above %#lx\n", PHYSLIMIT);
+	acpi_cprintf("rsdt entry pointer above %#llx\n", PHYSLIMIT);
 	return -1;
 }
 
@@ -244,7 +244,7 @@ try_setup_headers_rsdt(struct acpi_rsdt *rsdt)
 	return acpi_config_smp(madt);
 
 notmapped:
-	acpi_cprintf("rsdt entry pointer above %#lx\n", PHYSLIMIT);
+	acpi_cprintf("rsdt entry pointer above %#llx\n", PHYSLIMIT);
 	return -1;
 }
 
@@ -278,9 +278,9 @@ acpiinit(void)
 	}
 
 notmapped_rsdt:
-	acpi_cprintf("rsdt_addr_phs %#x > %#lx\n", rsdp->rsdt_addr_phys, PHYSLIMIT);
+	acpi_cprintf("rsdt_addr_phs %#x > %#llx\n", rsdp->rsdt_addr_phys, PHYSLIMIT);
 	return -1;
 notmapped_xsdt:
-	acpi_cprintf("xsdt_addr_phs %#lx > %#lx\n", rsdp->xsdt_addr_phys, PHYSLIMIT);
+	acpi_cprintf("xsdt_addr_phs %#lx > %#llx\n", rsdp->xsdt_addr_phys, PHYSLIMIT);
 	return -1;
 }

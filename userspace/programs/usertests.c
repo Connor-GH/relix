@@ -14,6 +14,8 @@
 #include <signal.h>
 #include <stddef.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
 char buf[8192];
 char name[3];
 char *echoargv[] = { "/bin/echo", "ALL", "TESTS", "PASSED", 0 };
@@ -1589,7 +1591,7 @@ sbrktest(void)
 }
 
 void
-validateint(int *p)
+validateint(__attribute__((unused)) int *p)
 {
 	int res;
 #ifndef X86_64
@@ -1858,3 +1860,4 @@ main(int argc, char *argv[])
 	exectest();
 	exit(0);
 }
+#pragma GCC diagnostic pop

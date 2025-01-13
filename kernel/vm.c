@@ -241,6 +241,8 @@ uva2ka(uintptr_t *pgdir, char *uva)
 	pte_t *pte;
 
 	pte = walkpgdir(pgdir, uva, 0);
+	if (pte == NULL)
+		return NULL;
 	if ((*pte & PTE_P) == 0)
 		return 0;
 	if ((*pte & PTE_U) == 0)

@@ -111,6 +111,10 @@ fopendir(int fd)
 	if (fd == -1)
 		return NULL;
 	DIR *dirp = (DIR *)malloc(sizeof(DIR));
+	if (dirp == NULL) {
+		close(fd);
+		return NULL;
+	}
 	dirp->fd = fd;
 	dirp->buffer = NULL;
 	dirp->buffer_size = 0;
@@ -327,8 +331,9 @@ __attribute__((noreturn)) void
 exit(int status)
 {
 	for (int i = ATEXIT_MAX-1; i >= 0; i--) {
-		if (atexit_handlers[i] != NULL)
+		if (atexit_handlers[i] != NULL) {
 			atexit_handlers[i]();
+		}
 	}
 	_exit(status);
 }

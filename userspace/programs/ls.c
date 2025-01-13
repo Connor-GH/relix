@@ -298,6 +298,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag, bool hflag)
 	switch (st.st_mode & S_IFMT) {
 	case S_IFREG:
 		ls_format(path, st, pflag, lflag, hflag, iflag);
+		break;
 	case S_IFDIR: {
 		if (strlen(path) + 1 + __DIRSIZ + 1 > sizeof buf) {
 			fprintf(stderr, "ls: path too long\n");

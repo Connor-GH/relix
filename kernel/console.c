@@ -168,10 +168,10 @@ do_again:
 		case 'x':
 			if (long_form == 0) {
 				unsigned int x = va_arg(argp, unsigned int);
-				printint(x, x, 16, 0, &padding);
+				printint(x, x, 16, 1, &padding);
 			} else {
 				unsigned long lx = va_arg(argp, unsigned long);
-				printint(lx, lx, 16, 0, &padding);
+				printint(lx, lx, 16, 1, &padding);
 			}
 			break;
 		case 'p':

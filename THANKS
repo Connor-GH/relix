@@ -27,4 +27,5 @@ Toomey, Stephen Tu, Pablo Ventura, Xi Wang, Keiichi Watanabe, Nicolas
 Wolovick, wxdao, Grant Wu, Jindong Zhang, Icenowy Zheng, and Zou Chang Wei.
 
 The code in the files that constitute xv6 is
-Copyright 2006-2024 Frans Kaashoek, Robert Morris, Russ Cox, and Connor-GH.
+Copyright 2006-2020 Frans Kaashoek, Robert Morris, Russ Cox
+Copyright 2024-2025 Connor-GH

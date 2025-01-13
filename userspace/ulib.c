@@ -331,7 +331,13 @@ getenv(const char *name)
 char *
 strdup(const char *s)
 {
+	if (s == NULL)
+		return NULL;
 	char *new_s = malloc(strlen(s) + 1);
+	if (new_s == NULL) {
+		errno = ENOMEM;
+		return NULL;
+	}
 	strncpy(new_s, s, strlen(s));
 	return new_s;
 }

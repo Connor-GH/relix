@@ -100,7 +100,11 @@ runcmd(struct cmd *cmd)
 		// Clear buffer for other attempts.
 		memset(str, '\0', __DIRSIZ);
 
-		char *path = strdup(getenv("PATH"));
+		char *path_env = getenv("PATH");
+		if (path_env == NULL) {
+			fprintf(stderr, "$PATH is empty or not set.\n");
+		}
+		char *path = strdup(path_env);
 		if (path != NULL) {
 			char *s = strtok(path, ":");
 			while (s != NULL) {
@@ -108,8 +112,6 @@ runcmd(struct cmd *cmd)
 				execve(str, ecmd->argv, environ);
 				s = strtok(NULL, ":");
 			}
-		} else {
-			fprintf(stderr, "$PATH is empty or not set.\n");
 		}
 		fprintf(stderr, "exec %s failed\n", ecmd->argv[0]);
 		break;

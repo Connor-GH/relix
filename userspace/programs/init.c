@@ -8,8 +8,8 @@
 #include <unistd.h>
 #include <stddef.h>
 
+extern char **environ;
 char *argv[] = { "/bin/sh", NULL };
-char *envp[] = { "PATH=/bin:/usr/bin:/", "SHELL=/bin/sh", "HOME=/", NULL };
 
 int
 main(void)
@@ -20,7 +20,7 @@ main(void)
 		mknod("/dev/console", 1, 1);
 		fd = open("/dev/console", O_RDWR);
 	}
-	// TODO: find a way of throwing an error if we cannot dup(0) ?
+	// TODO: find a way of throwing an error if we cannot dup ?
 	(void)dup(fd); // stdout
 	(void)dup(fd); // stderr
 	fprintf(stdout, "/dev/console created\n");
@@ -36,7 +36,7 @@ main(void)
 			return 1;
 		}
 		if (pid == 0) {
-			execve("/bin/sh", argv, envp);
+			execve("/bin/sh", argv, environ);
 			fprintf(stderr, "init: exec() sh failed\n");
 			return 1;
 		}

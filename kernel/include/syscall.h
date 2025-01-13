@@ -2,7 +2,7 @@
 // System call numbers
 // cannot be enums because they communicate with assembly.
 #define SYS_fork 1
-#define SYS_exit 2
+#define SYS__exit 2
 #define SYS_wait 3
 #define SYS_pipe 4
 #define SYS_read 5
@@ -36,7 +36,7 @@
 #define SYSCALL_AMT 32
 #ifndef __ASSEMBLER__
 __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
-	[SYS_fork] = "fork",				 [SYS_exit] = "exit",
+	[SYS_fork] = "fork",				 [SYS__exit] = "_exit",
 	[SYS_wait] = "wait",				 [SYS_pipe] = "pipe",
 	[SYS_read] = "read",				 [SYS_kill] = "kill",
 	[SYS_execve] = "execve",		 [SYS_fstat] = "fstat",

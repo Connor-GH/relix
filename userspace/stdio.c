@@ -11,7 +11,7 @@
 
 static uint32_t global_idx = 0;
 
-#define WRITE_BUFFER_SIZE 512
+#define WRITE_BUFFER_SIZE 256
 static char *write_buffer = NULL;
 static size_t write_buffer_position = 0;
 void
@@ -25,11 +25,66 @@ flush(int fd)
 	writev(fd, &(const struct iovec){write_buffer, write_buffer_position}, 1);
 	write_buffer_position = 0;
 }
+
+int
+fflush(FILE *stream)
+{
+	if (stream == NULL) {
+		fflush(stdout);
+		fflush(stderr);
+	}
+	int fd = fileno(stream);
+	if (fd < 0) {
+		return EOF;
+	}
+	flush(fd);
+	return 0;
+}
+
+int
+fileno(FILE *stream)
+{
+	// TODO make actual FILE * structure
+	if (stream != NULL)
+		return *stream;
+	errno = EBADF;
+	return -1;
+}
+
+int
+getc(FILE *stream)
+{
+	int c;
+	if (read(fileno(stream), &c, 1) != 1) {
+		return EOF;
+	}
+	fflush(stream);
+	return c;
+}
+
+char *
+fgets(char *buf, int max, FILE *restrict stream)
+{
+	int i;
+	char c;
+
+	for (i = 0; i + 1 < max;) {
+		c = getc(stream);
+		if (c == EOF)
+			return NULL;
+		buf[i++] = c;
+		if (c == '\n' || c == '\r')
+			break;
+	}
+	buf[i] = '\0';
+	return buf;
+}
+
 /* We don't care about what's passed in buf */
 static void
 fd_putc(int fd, char c, char *buf)
 {
-	if (write_buffer_position >= 127) {
+	if (write_buffer_position >= WRITE_BUFFER_SIZE-1) {
 		flush(fd);
 	} else {
 		write_buffer[write_buffer_position++] = c;

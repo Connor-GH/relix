@@ -89,43 +89,6 @@ strrchr(const char *s, char c)
 	return 0;
 }
 
-int
-fileno(FILE *stream)
-{
-	// TODO make actual FILE * structure
-	if (stream != NULL)
-		return *stream;
-	errno = EBADF;
-	return -1;
-}
-
-int
-getc(FILE *stream)
-{
-	int c;
-	if (read(fileno(stream), &c, 1) != 1) {
-		return EOF;
-	}
-	return c;
-}
-
-char *
-fgets(char *buf, int max, FILE *restrict stream)
-{
-	int i;
-	char c;
-
-	for (i = 0; i + 1 < max;) {
-		c = getc(stream);
-		if (c == EOF)
-			return NULL;
-		buf[i++] = c;
-		if (c == '\n' || c == '\r')
-			break;
-	}
-	buf[i] = '\0';
-	return buf;
-}
 
 // fill in st from pathname n
 __attribute__((nonnull(2))) int
@@ -340,4 +303,32 @@ strdup(const char *s)
 	}
 	strncpy(new_s, s, strlen(s));
 	return new_s;
+}
+
+typedef void (*atexit_handler)(void);
+static atexit_handler atexit_handlers[ATEXIT_MAX] = {NULL};
+
+int
+atexit(void (*function)(void))
+{
+	for (int i = 0; i < ATEXIT_MAX; i++) {
+		if (atexit_handlers[i] == NULL) {
+			atexit_handlers[i] = function;
+			return 0;
+		}
+	}
+	// IEEE Std 1003.1-2024 (POSIX.1-2024):
+	// "Upon successful completion, atexit() shall return 0;"
+	// "otherwise, it shall return a non-zero value."
+	return -1;
+}
+
+__attribute__((noreturn)) void
+exit(int status)
+{
+	for (int i = ATEXIT_MAX-1; i >= 0; i--) {
+		if (atexit_handlers[i] != NULL)
+			atexit_handlers[i]();
+	}
+	_exit(status);
 }

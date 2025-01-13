@@ -6,7 +6,7 @@
 int
 fork(void) __attribute__((returns_twice));
 void
-exit(int) __attribute__((noreturn));
+_exit(int) __attribute__((noreturn));
 int
 pipe(int *);
 int

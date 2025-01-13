@@ -4,6 +4,8 @@
 #ifndef __KERNEL__
 #include <stddef.h>
 #include <stdint.h>
+__attribute__((noreturn)) void
+exit(int status);
 __attribute__((malloc)) void *
 malloc(uint32_t);
 __attribute__((malloc)) void *
@@ -21,4 +23,8 @@ qsort(void *base, size_t nmemb, size_t size,
 			int (*compar)(const void *, const void *));
 char *
 getenv(const char *name);
+// POSIX.1 requires at least 32 atexit handlers.
+#define ATEXIT_MAX 32
+int
+atexit(void (*function)(void));
 #endif

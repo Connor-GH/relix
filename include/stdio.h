@@ -43,5 +43,7 @@ int
 fputc(int c, FILE *stream);
 int
 putchar(int c);
+int
+fflush (FILE *stream);
 #define putc(c, stream) fputc(c, stream)
 #endif /* USE_HOST_TOOLS */

@@ -13,9 +13,10 @@ start:
   mov $SYS_execve, %rax
   int $T_SYSCALL
 
-# for(;;) exit();
+# for(;;) _exit(1);
 exit:
-  mov $SYS_exit, %rax
+  mov $1, %rdi
+  mov $SYS__exit, %rax
   int $T_SYSCALL
   jmp exit
 

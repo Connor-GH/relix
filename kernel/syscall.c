@@ -145,7 +145,7 @@ sys_dup(void);
 extern int
 sys_execve(void);
 extern int
-sys_exit(void);
+sys__exit(void);
 extern int
 sys_fork(void);
 extern int
@@ -202,7 +202,7 @@ extern int
 sys_writev(void);
 
 static int (*syscalls[])(void) = {
-	[SYS_fork] = sys_fork,				 [SYS_exit] = sys_exit,
+	[SYS_fork] = sys_fork,				 [SYS__exit] = sys__exit,
 	[SYS_wait] = sys_wait,				 [SYS_pipe] = sys_pipe,
 	[SYS_read] = sys_read,				 [SYS_kill] = sys_kill,
 	[SYS_execve] = sys_execve,		 [SYS_fstat] = sys_fstat,

@@ -17,7 +17,7 @@ sys_fork(void)
 }
 
 int
-sys_exit(void)
+sys__exit(void)
 {
 	int status;
 	if (argint(0, &status) < 0)

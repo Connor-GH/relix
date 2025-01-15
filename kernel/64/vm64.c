@@ -141,8 +141,14 @@ setupkvm(void)
 	memset(pml4, 0, PGSIZE);
 	memset(pdpt, 0, PGSIZE);
 	memset(pgdir, 0, PGSIZE);
-	pml4[511] = v2p(kpdpt) | PTE_P | PTE_W | PTE_U;
+	/*
+	 * This code syncs with the setup code in entry64.S
+	 */
+	// "P4ML -> PDPT-A"
 	pml4[0] = v2p(pdpt) | PTE_P | PTE_W | PTE_U;
+	// "P4ML -> PDPT-B"
+	pml4[511] = v2p(kpdpt) | PTE_P | PTE_W | PTE_U;
+	// "PDPT-A -> PD"
 	pdpt[0] = v2p(pgdir) | PTE_P | PTE_W | PTE_U;
 
 	// virtual backpointers

@@ -84,7 +84,7 @@ mboot_entry:
   mov %eax, 0x3FF0
 
 # PD[0..511] -> 0..1022MB
-  mov $0x83, %eax
+  mov $(0x80 | 3), %eax
   mov $0x4000, %edx
   mov $512, %ecx
 ptbl_loop:

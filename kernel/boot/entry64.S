@@ -45,7 +45,6 @@ mboot_info_request_start:
 .long MULTIBOOT_TAG_TYPE_MMAP
 .long MULTIBOOT_TAG_TYPE_FRAMEBUFFER
 mboot_info_request_end:
-#ifdef FRAMEBUFFER
 mboot_info_framebuffer_tag_start:
 .short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
 .short 0 # flags
@@ -54,7 +53,6 @@ mboot_info_framebuffer_tag_start:
 .long HEIGHT # height
 .long BPP_DEPTH
 mboot_info_framebuffer_tag_end:
-#endif
 .short MULTIBOOT_HEADER_TAG_END
 .long 8
 mboot_header_end:
@@ -69,19 +67,19 @@ mboot_entry:
 
 # P4ML[0] -> 0x2000 (PDPT-A)
   mov $(0x2000 | 3), %eax
-  mov %eax, 0x1000
+  mov %eax, (0x1000 + 0*8) # base + 0*8
 
 # P4ML[511] -> 0x3000 (PDPT-B)
   mov $(0x3000 | 3), %eax
-  mov %eax, 0x1FF8
+  mov %eax, (0x1000 + 511*8) # base + 511*8
 
 # PDPT-A[0] -> 0x4000 (PD)
   mov $(0x4000 | 3), %eax
-  mov %eax, 0x2000
+  mov %eax, (0x2000 + 0*8) # base + 0*8
 
 # PDPT-B[510] -> 0x4000 (PD)
   mov $(0x4000 | 3), %eax
-  mov %eax, 0x3FF0
+  mov %eax, (0x3000 + 510*8) # base + 510*8
 
 # PD[0..511] -> 0..1022MB
   mov $(0x80 | 3), %eax

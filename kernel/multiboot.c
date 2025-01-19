@@ -1,5 +1,8 @@
 #include "boot/multiboot2.h"
+#include "kalloc.h"
 #include "memlayout.h"
+#include "vga.h"
+#include "vm.h"
 #include <stdint.h>
 #include "console.h"
 
@@ -64,7 +67,7 @@ void
 parse_multiboot(struct multiboot_info *mbinfo)
 {
 	if (mbinfo->reserved != 0)
-		cprintf("multiboot reserved is not zero like it should be");
+		uart_cprintf("multiboot reserved is not zero like it should be");
 
 	for (struct multiboot_tag *tag = (struct multiboot_tag *)((uint64_t)mbinfo + MULTIBOOT_TAG_ALIGN);
 			 tag->type != MULTIBOOT_TAG_TYPE_END;
@@ -73,7 +76,7 @@ parse_multiboot(struct multiboot_info *mbinfo)
 		case MULTIBOOT_TAG_TYPE_CMDLINE:
 			break;
 		case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
-			cprintf("Bootloader is %s\n", ((struct multiboot_tag_string *)tag)->string);
+			uart_cprintf("Bootloader is %s\n", ((struct multiboot_tag_string *)tag)->string);
 			break;
 		case MULTIBOOT_TAG_TYPE_MMAP: {
 			multiboot_memory_map_t *memmap = ((struct multiboot_tag_mmap *)tag)->entries;
@@ -82,7 +85,7 @@ parse_multiboot(struct multiboot_info *mbinfo)
 			for (; (multiboot_uint8_t *)memmap < (multiboot_uint8_t *)tag + tag->size;
 					 memmap = (multiboot_memory_map_t *)((uint64_t)memmap +
 						((struct multiboot_tag_mmap *)tag)->entry_size)) {
-				cprintf("%#0llx-%#0llx %s\n", memmap->addr,
+				uart_cprintf("%#0llx-%#0llx %s\n", memmap->addr,
 								memmap->addr + memmap->len - 1,
 								multiboot_mmap_type(memmap->type));
 				if (memmap->type == MULTIBOOT_MEMORY_AVAILABLE) {
@@ -91,13 +94,13 @@ parse_multiboot(struct multiboot_info *mbinfo)
 				}
 			}
 			available_memory = total_mem_bytes;
-			cprintf("%ld MiB available\n", total_mem_bytes / 1024 / 1024);
+			uart_cprintf("%ld MiB available\n", total_mem_bytes / 1024 / 1024);
 			break;
 		}
 		case MULTIBOOT_TAG_TYPE_FRAMEBUFFER: {
 			struct multiboot_tag_framebuffer *fb = ((struct multiboot_tag_framebuffer *)tag);
 			struct multiboot_tag_framebuffer_common fbtag = fb->common;
-			cprintf("Fb addr: %p pitch: %d %dx%d bpp %d type %d\n",
+			uart_cprintf("Fb addr: %p pitch: %d %dx%d bpp %d type %d\n",
 							(void *)fbtag.framebuffer_addr, fbtag.framebuffer_pitch,
 							fbtag.framebuffer_width, fbtag.framebuffer_height,
 							fbtag.framebuffer_bpp, fbtag.framebuffer_type);
@@ -107,14 +110,13 @@ parse_multiboot(struct multiboot_info *mbinfo)
 			// direct RGB color.
 			if (fbtag.framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB) {
 				struct fb_rgb color = fb->rgb;
-				cprintf("%d %d %d %d %d %d\n", color.framebuffer_red_field_position,
+				uart_cprintf("%d %d %d %d %d %d\n", color.framebuffer_red_field_position,
 								color.framebuffer_red_mask_size,
 								color.framebuffer_green_field_position,
 								color.framebuffer_green_mask_size,
 								color.framebuffer_blue_field_position,
 								color.framebuffer_blue_mask_size);
-				cprintf("%#llx %#llx %#llx\n", KERNBASE,
-								(KERNBASE + fbtag.framebuffer_addr), fbtag.framebuffer_addr);
+				vga_init(fb, fb->rgb, fb->common);
 			}
 			break;
 		}

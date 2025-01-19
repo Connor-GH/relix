@@ -3,3 +3,4 @@
 /* clang-format off */
 #define is_same_type(type1, type2) (1 == _Generic((type2)0, type1: 1, default: 0))
 /* clang-format on */
+#define UNREACHABLE() kernel_assert(!"UNREACHABLE")

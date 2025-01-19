@@ -62,6 +62,10 @@ ifneq ($(RELEASE),)
 	CFLAGS += -O2
 	CARGO_RELEASE = --release
 	RUSTFLAGS += -C opt-level=2
+	KCFLAGS += -D__KERNEL_DEBUG__=0
+else
+	CFLAGS += -Werror
+	KCFLAGS += -D__KERNEL_DEBUG__=1
 endif
 ASFLAGS = -gdwarf-2 -Wa,-divide --mx86-used-note=no
 ifeq ($(BITS),64)
@@ -141,7 +145,7 @@ $(BIN)/mkfs: $(TOOLSDIR)/mkfs.c
 
 
 $(BIN)/fs.img: $(BIN)/mkfs $(UPROGS) $(D_PROGS)
-	./$(BIN)/mkfs $@ README.md sysroot/test.sh sysroot/etc/passwd $(UPROGS) $(D_PROGS)
+	./$(BIN)/mkfs $@ README.md sysroot/test.sh $(wildcard sysroot/etc/*) $(UPROGS) $(D_PROGS)
 
 clean: cargo_clean
 	@if [ -z "$(BIN)" ]; then exit 1; fi
@@ -181,7 +185,7 @@ ifndef MEM
 MEM := 224M
 endif
 QEMUOPTS = -drive file=$(BIN)/fs.img,index=1,media=disk,format=raw,if=ide,aio=native,cache.direct=on \
-					 -smp cpus=$(CPUS),cores=1,threads=1,sockets=$(CPUS) -m $(MEM) $(QEMUEXTRA)
+					 -enable-kvm -smp cpus=$(CPUS),cores=1,threads=1,sockets=$(CPUS) -m $(MEM) $(QEMUEXTRA)
 
 ifdef CONSOLE_LOG
 	QEMUOPTS += -serial mon:stdio

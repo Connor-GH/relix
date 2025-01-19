@@ -57,6 +57,8 @@ freerange(void *vstart, void *vend)
 	pushcli();
 	char *p;
 	p = (char *)PGROUNDUP((uintptr_t)vstart);
+	// If this fails, this will cause a page fault
+	// instead of a panic due to the memory for the VGA not being mapped.
 	for (; p + PGSIZE <= (char *)vend; p += PGSIZE)
 		kpage_free(p);
 	popcli();

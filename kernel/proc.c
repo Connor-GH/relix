@@ -560,12 +560,12 @@ procdump(void)
 			state = states[p->state];
 		else
 			state = "???";
-		cprintf("%d %s %s", p->pid, state, p->name);
+		vga_cprintf("%d %s %s", p->pid, state, p->name);
 		if (p->state == SLEEPING) {
 			getcallerpcs((uintptr_t *)p->context->ebp, pc);
 			for (i = 0; i < 10 && pc[i] != 0; i++)
-				cprintf(" %lx", pc[i]);
+				vga_cprintf(" %lx", pc[i]);
 		}
-		cprintf("\n");
+		vga_cprintf("\n");
 	}
 }

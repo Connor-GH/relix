@@ -40,13 +40,13 @@ $(BIN)/kernel: $(KERNELDIR)/kernel64.ld $(KERNEL_OBJS) $(BIN)/entry.o $(BIN)/ent
 		-b binary $(BIN)/initcode $(BIN)/entryother
 
 $(BIN)/%.o: $(KERNELDIR)/%.c
-	$(CC) $(CFLAGS) $(KERNEL_INC) -c $^ -o $@
+	$(CC) $(CFLAGS) $(KCFLAGS) $(KERNEL_INC) -c $^ -o $@
 
 $(BIN)/%.o: $(KERNELDIR)/drivers/%.c
-	$(CC) $(CFLAGS) $(KERNEL_INC) -c $^ -o $@
+	$(CC) $(CFLAGS) $(KCFLAGS) $(KERNEL_INC) -c $^ -o $@
 
 $(BIN)/%.o: $(KERNELDIR)/%.S
-	$(CC) $(CFLAGS) $(KERNEL_INC) -c $^ -o $@
+	$(CC) $(CFLAGS) $(KCFLAGS) $(KERNEL_INC) -c $^ -o $@
 # kernelmemfs is a copy of kernel that maintains the
 # disk image in memory instead of writing to a disk.
 # This is not so useful for testing persistent storage or

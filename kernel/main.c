@@ -17,6 +17,7 @@
 #include "bio.h"
 #include "file.h"
 #include "ide.h"
+#include "vga.h"
 #include "vm.h"
 #include "picirq.h"
 #include "trap.h"
@@ -44,13 +45,15 @@ int
 main(struct multiboot_info *mbinfo)
 {
 	uartinit(); // serial port
-	cprintf("xv6_64 (built with %s and linker %s)\n", XV6_COMPILER, XV6_LINKER);
 	parse_multiboot(mbinfo);
-	//rust_hello_world();
 	available_memory = 224 * MiB;
 	kernel_assert(available_memory != 0);
 	kinit1(end, P2V(4 * 1024 * 1024)); // phys page allocator
+
+	// We can start printing to the screen here.
+	// Any printing before this MUST be uart.
 	kvmalloc(); // kernel page table
+	uart_cprintf("xv6_64 (built with %s and linker %s)\n", XV6_COMPILER, XV6_LINKER);
 	if (acpiinit() != 0)
 		mpinit(); // detect other processors
 	lapicinit(); // interrupt controller

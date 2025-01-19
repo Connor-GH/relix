@@ -13,7 +13,7 @@ extern uint64_t available_memory;
 #define PHYSTOP \
 	available_memory //(256 * MiB - (32 * MiB)) //0xE000000 // Top physical memory
 #endif
-#define DEVSPACE 0xFE000000 // Other devices are at high addresses
+#define DEVSPACE 0xFD000000 // Other devices are at high addresses
 
 // Key addresses for address space layout (see kmap in vm.c for layout)
 #define KERNLINK (KERNBASE + EXTMEM) // Address where kernel is linked

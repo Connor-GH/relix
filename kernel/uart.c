@@ -1,6 +1,7 @@
 // Intel 8250 serial port (UART).
 
 #include "traps.h"
+#include "vga.h"
 #include "x86.h"
 #include "uart.h"
 #include "ioapic.h"

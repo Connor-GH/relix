@@ -5,4 +5,4 @@ edition = "2024"
 
 [dependencies]
 bindings = { path = "../bindings", version = "0.1.0" }
-spin = "0.9"
+spin = "0.9.8"

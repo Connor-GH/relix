@@ -315,7 +315,7 @@ const uint8_t ctlmap[256] = { NO,
 int
 kbdgetc(void)
 {
-	uint32_t shift = 0;
+	static uint32_t shift;
 	const uint8_t *charcode[4] = { normalmap, shiftmap, ctlmap, ctlmap };
 	uint32_t st, data, c;
 

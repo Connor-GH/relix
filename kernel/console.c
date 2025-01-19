@@ -2,6 +2,7 @@
 // Input is from the keyboard or serial port.
 // Output is written to the screen and serial port.
 
+#include "vga.h"
 #include <stdint.h>
 #include <stdint.h>
 #include <stdarg.h>
@@ -30,6 +31,8 @@ static int alt_form = 0;
 static int long_form = 0;
 static int zero_form = 0;
 
+__nonnull(1) static void
+vcprintf(void (*putfunc)(int), const char *fmt, va_list argp);
 /*
  * This resource protects any static variable in this file, but mainly:
  * - console_buffer
@@ -50,7 +53,7 @@ set_term_color(uint8_t foreground, uint8_t background)
 }
 
 static void
-printint(uint64_t x, int64_t xs, int base, bool is_unsigned, int *padding)
+printint(void (*putfunc)(int), uint64_t x, int64_t xs, int base, bool is_unsigned, int *padding)
 {
 	static char digits[] = "0123456789abcdef";
 	char buf[32];
@@ -70,24 +73,51 @@ printint(uint64_t x, int64_t xs, int base, bool is_unsigned, int *padding)
 		buf[i++] = '-';
 
 	if (alt_form && base == 16) {
-		consputc('0');
-		consputc('x');
+		putfunc('0');
+		putfunc('x');
 		alt_form = 0;
 	}
 	while (--i >= 0)
-		consputc(buf[i]);
+		putfunc(buf[i]);
 }
 
+__attribute__((format(printf, 1, 2))) __nonnull(1) void
+uart_cprintf(const char *fmt, ...)
+{
+	cons.locking = 0;
+	va_list argp;
+	va_start(argp, fmt);
+	vcprintf(uartputc, fmt, argp);
+	va_end(argp);
+	cons.locking = 1;
+}
+
+__attribute__((format(printf, 1, 2))) __nonnull(1) void
+cprintf(const char *fmt, ...)
+{
+	va_list argp;
+	va_start(argp, fmt);
+	vcprintf(vga_write_char, fmt, argp);
+	va_end(argp);
+
+}
+__attribute__((format(printf, 1, 2))) __nonnull(1) void
+vga_cprintf(const char *fmt, ...)
+{
+	va_list argp;
+	va_start(argp, fmt);
+	vcprintf(vga_write_char, fmt, argp);
+	va_end(argp);
+
+}
 // Print to the console. only understands %d, %x, %p, %s.
-__attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *fmt,
-																																...)
+__nonnull(1) static void
+vcprintf(void (*putfunc)(int), const char *fmt, va_list argp)
 {
 	int i, c, locking;
-	va_list argp;
 	char *s;
 	int padding = 0;
 
-	va_start(argp, fmt);
 
 	locking = cons.locking;
 	if (locking)
@@ -129,7 +159,7 @@ __attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *fmt,
 				}
 				}
 			}
-			consputc(c);
+			putfunc(c);
 			continue;
 		}
 do_again:
@@ -140,19 +170,19 @@ do_again:
 		case 'u':
 			if (long_form == 0) {
 				unsigned int ud = va_arg(argp, unsigned int);
-				printint(ud, ud, 10, 0, &padding);
+				printint(putfunc, ud, ud, 10, 0, &padding);
 			} else {
 				unsigned long ul = va_arg(argp, unsigned long);
-				printint(ul, ul, 10, 0, &padding);
+				printint(putfunc, ul, ul, 10, 0, &padding);
 			}
 			break;
 		case 'd':
 			if (long_form == 0) {
 				int d = va_arg(argp, int);
-				printint(d, d, 10, 1, &padding);
+				printint(putfunc, d, d, 10, 1, &padding);
 			} else {
 				long ld = va_arg(argp, long);
-				printint(ld, ld, 10, 1, &padding);
+				printint(putfunc, ld, ld, 10, 1, &padding);
 			}
 			break;
 		case '0':
@@ -168,39 +198,39 @@ do_again:
 		case 'x':
 			if (long_form == 0) {
 				unsigned int x = va_arg(argp, unsigned int);
-				printint(x, x, 16, 1, &padding);
+				printint(putfunc, x, x, 16, 1, &padding);
 			} else {
 				unsigned long lx = va_arg(argp, unsigned long);
-				printint(lx, lx, 16, 1, &padding);
+				printint(putfunc, lx, lx, 16, 1, &padding);
 			}
 			break;
 		case 'p':
 			alt_form = 1;
 			uintptr_t p = (uintptr_t)va_arg(argp, void *);
-			printint(p, p, 16, 0, &padding);
+			printint(putfunc, p, p, 16, 1, &padding);
 			break;
 		case 'o':
 			if (long_form == 0) {
 				unsigned int o = va_arg(argp, unsigned int);
-				printint(o, o, 8, 0, &padding);
+				printint(putfunc, o, o, 8, 0, &padding);
 			} else {
 				unsigned int lo = va_arg(argp, unsigned int);
-				printint(lo, lo, 8, 0, &padding);
+				printint(putfunc, lo, lo, 8, 0, &padding);
 			}
 			break;
 		case 's':
 			if ((s = va_arg(argp, char *)) == 0)
 				s = "(null)";
 			for (; *s; s++)
-				consputc(*s);
+				putfunc(*s);
 			break;
 		case '%':
-			consputc('%');
+			putfunc('%');
 			break;
 		default:
 			// Print unknown % sequence to draw attention.
-			consputc('%');
-			consputc(c);
+			putfunc('%');
+			putfunc(c);
 			break;
 		}
 skip_printing:;
@@ -208,7 +238,6 @@ skip_printing:;
 
 	if (locking)
 		release(&cons.lock);
-	va_end(argp);
 }
 
 __noreturn __cold void
@@ -329,14 +358,14 @@ consoleintr(int (*getc)(void))
 			while (input.e != input.w &&
 						 input.buf[(input.e - 1) % INPUT_BUF] != '\n') {
 				input.e--;
-				consputc(BACKSPACE);
+				vga_write_char(BACKSPACE);
 			}
 			break;
 		case C('H'):
 		case '\x7f': // Backspace
 			if (input.e != input.w) {
 				input.e--;
-				consputc(BACKSPACE);
+				vga_write_char(BACKSPACE);
 			}
 			break;
 		default:
@@ -344,10 +373,10 @@ consoleintr(int (*getc)(void))
 				c = (c == '\r') ? '\n' : c;
 				input.buf[input.e++ % INPUT_BUF] = c;
 				if (c != C('D'))
-					consputc(c);
+					vga_write_char(c);
 				if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF) {
 					if (c == C('D'))
-						consputc('\n');
+						vga_write_char('\n');
 					input.w = input.e;
 					wakeup(&input.r);
 				}
@@ -430,7 +459,7 @@ __nonnull(1, 2) static int consolewrite(
 {
 
 	for (int i = 0; i < n; i++) {
-		consputc(buf[i] & 0xff);
+		vga_write_char(buf[i] & 0xff);
 	}
 
 	return n;

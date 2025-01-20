@@ -70,16 +70,17 @@ vga_horizontal_fill_rect(struct vga_rectangle rect, enum vga_color color)
 }
 
 static void
-render_font_glyph(uint8_t character, uint32_t x, uint32_t y, uint8_t width, uint8_t height, const uint8_t font[static 256][width * height])
+render_font_glyph(uint8_t character, uint32_t x, uint32_t y, uint8_t width, uint8_t height, const uint8_t font[static 256][width * height],
+									uint32_t foreground, uint32_t background)
 {
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
 			uint32_t adjusted_x = x + j;
 			uint32_t adjusted_y = y + i;
 			if (font[character][i*width + j] == 1)
-				vga_write(adjusted_x, adjusted_y, INTERNAL_COLOR_WHITE);
+				vga_write(adjusted_x, adjusted_y, foreground);
 			else
-				vga_write(adjusted_x, adjusted_y, INTERNAL_COLOR_BLACK);
+				vga_write(adjusted_x, adjusted_y, background);
 
 		}
 	}
@@ -126,7 +127,7 @@ static void
 vga_backspace(uint8_t font_width)
 {
 	fb_char_index -= font_width;
-	vga_write_char(' ');
+	vga_write_char(' ', VGA_COLOR_WHITE, VGA_COLOR_BLACK);
 	fb_char_index -= font_width;
 }
 
@@ -158,7 +159,7 @@ vga_scroll(uint32_t fb_width, uint32_t fb_height, uint8_t font_width, uint8_t fo
 #define BACKSPACE 0x100
 
 void
-vga_write_char(int c) {
+vga_write_char(int c, uint32_t foreground, uint32_t background) {
 	struct font_data_8x16 data = {8, 16, &font_default };
 	if (fb_char_index >= WIDTH * height_chars(data.height) ||
 		((fb_char_index >= (WIDTH * (height_chars(data.height)-1))) && (c == '\n' || c == '\r'))) {
@@ -171,8 +172,10 @@ vga_write_char(int c) {
 		vga_backspace(data.width);
 	} else {
 		render_font_glyph(c, pixel_count_to_x_coord(data.width) * data.width,
-									pixel_count_to_y_coord(data.width) * data.height,
-									data.width, data.height, *data.font);
+										pixel_count_to_y_coord(data.width) * data.height,
+										data.width, data.height, *data.font,
+										vga_color_to_internal_color(foreground),
+										vga_color_to_internal_color(background));
 		fb_char_index += data.width;
 	}
 	if (c == BACKSPACE) {

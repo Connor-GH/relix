@@ -25,14 +25,17 @@
 
 static int panicked = 0;
 int echo_out = 1;
-static uint8_t static_foreg = WHITE;
-static uint8_t static_backg = BLACK;
+static uint32_t static_foreg = VGA_COLOR_WHITE;
+static uint32_t static_backg = VGA_COLOR_BLACK;
 static int alt_form = 0;
 static int long_form = 0;
 static int zero_form = 0;
 
+typedef void (*putfunc_t)(int, uint32_t, uint32_t);
 __nonnull(1) static void
-vcprintf(void (*putfunc)(int), const char *fmt, va_list argp);
+vcprintf(putfunc_t putfunc, const char *fmt, va_list argp);
+static void
+consputc3(int c, uint32_t foreg, uint32_t backg);
 /*
  * This resource protects any static variable in this file, but mainly:
  * - console_buffer
@@ -44,16 +47,29 @@ static struct {
 	int locking;
 } cons;
 
+static uint8_t
+term_color_to_vga_color(uint8_t termcolor)
+{
+	switch (termcolor) {
+	case BLACK: return VGA_COLOR_BLACK;
+	case BLUE: return VGA_COLOR_BLUE;
+	case RED: return VGA_COLOR_RED;
+	case GREEN: return VGA_COLOR_GREEN;
+	case MAGENTA: return VGA_COLOR_PURPLE;
+	case WHITE:
+	default: return VGA_COLOR_WHITE;
+	}
+}
 // color is default if it is set to 0xff
 static void
 set_term_color(uint8_t foreground, uint8_t background)
 {
-	static_foreg = (foreground == 0xff) ? static_foreg : foreground;
-	static_backg = (background == 0xff) ? static_backg : background;
+	static_foreg = (foreground == 0xff) ? static_foreg : term_color_to_vga_color(foreground);
+	static_backg = (background == 0xff) ? static_backg : term_color_to_vga_color(background);
 }
 
 static void
-printint(void (*putfunc)(int), uint64_t x, int64_t xs, int base, bool is_unsigned, int *padding)
+printint(putfunc_t putfunc, uint64_t x, int64_t xs, int base, bool is_unsigned, int *padding)
 {
 	static char digits[] = "0123456789abcdef";
 	char buf[32];
@@ -73,12 +89,18 @@ printint(void (*putfunc)(int), uint64_t x, int64_t xs, int base, bool is_unsigne
 		buf[i++] = '-';
 
 	if (alt_form && base == 16) {
-		putfunc('0');
-		putfunc('x');
+		putfunc('0', static_foreg, static_backg);
+		putfunc('x', static_foreg, static_backg);
 		alt_form = 0;
 	}
 	while (--i >= 0)
-		putfunc(buf[i]);
+		putfunc(buf[i], static_foreg, static_backg);
+}
+
+static void
+uartputc3(int c, uint32_t unused, uint32_t unused2)
+{
+	uartputc(c);
 }
 
 __attribute__((format(printf, 1, 2))) __nonnull(1) void
@@ -87,7 +109,7 @@ uart_cprintf(const char *fmt, ...)
 	cons.locking = 0;
 	va_list argp;
 	va_start(argp, fmt);
-	vcprintf(uartputc, fmt, argp);
+	vcprintf(uartputc3, fmt, argp);
 	va_end(argp);
 	cons.locking = 1;
 }
@@ -112,7 +134,7 @@ vga_cprintf(const char *fmt, ...)
 }
 // Print to the console. only understands %d, %x, %p, %s.
 __nonnull(1) static void
-vcprintf(void (*putfunc)(int), const char *fmt, va_list argp)
+vcprintf(putfunc_t putfunc, const char *fmt, va_list argp)
 {
 	int i, c, locking;
 	char *s;
@@ -159,7 +181,7 @@ vcprintf(void (*putfunc)(int), const char *fmt, va_list argp)
 				}
 				}
 			}
-			putfunc(c);
+			putfunc(c, static_foreg, static_backg);
 			continue;
 		}
 do_again:
@@ -222,15 +244,15 @@ do_again:
 			if ((s = va_arg(argp, char *)) == 0)
 				s = "(null)";
 			for (; *s; s++)
-				putfunc(*s);
+				putfunc(*s, static_foreg, static_backg);
 			break;
 		case '%':
-			putfunc('%');
+			putfunc('%', static_foreg, static_backg);
 			break;
 		default:
 			// Print unknown % sequence to draw attention.
-			putfunc('%');
-			putfunc(c);
+			putfunc('%', static_foreg, static_backg);
+			putfunc(c, static_foreg, static_backg);
 			break;
 		}
 skip_printing:;
@@ -317,6 +339,12 @@ cgaputc(int c, uint8_t fore, uint8_t back)
 void
 consputc(int c)
 {
+	consputc3(c, static_foreg, static_backg);
+}
+static void
+consputc3(int c, uint32_t foreg, uint32_t backg)
+{
+
 	if (panicked) {
 		cli();
 		for (;;)
@@ -358,14 +386,14 @@ consoleintr(int (*getc)(void))
 			while (input.e != input.w &&
 						 input.buf[(input.e - 1) % INPUT_BUF] != '\n') {
 				input.e--;
-				vga_write_char(BACKSPACE);
+				vga_write_char(BACKSPACE, static_foreg, static_backg);
 			}
 			break;
 		case C('H'):
 		case '\x7f': // Backspace
 			if (input.e != input.w) {
 				input.e--;
-				vga_write_char(BACKSPACE);
+				vga_write_char(BACKSPACE, static_foreg, static_backg);
 			}
 			break;
 		default:
@@ -373,10 +401,10 @@ consoleintr(int (*getc)(void))
 				c = (c == '\r') ? '\n' : c;
 				input.buf[input.e++ % INPUT_BUF] = c;
 				if (c != C('D'))
-					vga_write_char(c);
+					vga_write_char(c, static_foreg, static_backg);
 				if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF) {
 					if (c == C('D'))
-						vga_write_char('\n');
+						vga_write_char('\n', static_foreg, static_backg);
 					input.w = input.e;
 					wakeup(&input.r);
 				}
@@ -459,7 +487,7 @@ __nonnull(1, 2) static int consolewrite(
 {
 
 	for (int i = 0; i < n; i++) {
-		vga_write_char(buf[i] & 0xff);
+		vga_write_char(buf[i] & 0xff, static_foreg, static_backg);
 	}
 
 	return n;

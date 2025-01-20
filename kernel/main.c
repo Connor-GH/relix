@@ -53,7 +53,7 @@ main(struct multiboot_info *mbinfo)
 	// We can start printing to the screen here.
 	// Any printing before this MUST be uart.
 	kvmalloc(); // kernel page table
-	uart_cprintf("xv6_64 (built with %s and linker %s)\n", XV6_COMPILER, XV6_LINKER);
+	cprintf("xv6_64 (built with %s and linker %s)\n", XV6_COMPILER, XV6_LINKER);
 	if (acpiinit() != 0)
 		mpinit(); // detect other processors
 	lapicinit(); // interrupt controller

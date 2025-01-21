@@ -271,12 +271,12 @@ panic(const char *s)
 	cli();
 	cons.locking = 0;
 	// use lapiccpunum so that we can call panic from mycpu()
-	cprintf("lapicid %d: panic: ", lapicid());
-	cprintf("%s", s);
-	cprintf("\n");
+	uart_cprintf("lapicid %d: panic: ", lapicid());
+	uart_cprintf("%s", s);
+	uart_cprintf("\n");
 	getcallerpcs(&s, pcs);
 	for (i = 0; i < 10; i++)
-		cprintf(" %#lx", pcs[i]);
+		uart_cprintf(" %#lx", pcs[i]);
 	panicked = 1; // freeze other CPU
 	for (;;)
 		;

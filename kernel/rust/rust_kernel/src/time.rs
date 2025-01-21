@@ -1,11 +1,11 @@
 #[repr(C)]
 pub struct RtcDate {
-  second: u64,
-  minute: u64,
-  hour: u64,
-  day: u64,
-  month: u64,
-  year: u64,
+    second: u64,
+    minute: u64,
+    hour: u64,
+    day: u64,
+    month: u64,
+    year: u64,
 }
 
 const fn is_leap_year(year: u64) -> bool {
@@ -41,12 +41,12 @@ const fn years_to_days_since_epoch(year: u64) -> u64 {
     let end_year: u64;
     let leap_sign: i64;
     if year < 1970 {
-        begin_year = year as u64;
+        begin_year = year;
         end_year = 1970;
         leap_sign = -1;
     } else {
         begin_year = 1970;
-        end_year = year as u64;
+        end_year = year;
         leap_sign = 1;
     }
     let days: u64 = 365 * (year - 1970);
@@ -58,7 +58,7 @@ const fn years_to_days_since_epoch(year: u64) -> u64 {
 }
 
 const fn days_since_epoch(year: u64, month: u64, day: u64) -> u64 {
-    years_to_days_since_epoch(year) + day_of_year(year, month, day) as u64
+    years_to_days_since_epoch(year) + day_of_year(year, month, day)
 }
 const fn round_down(value: f64) -> u64 {
     value as u64
@@ -72,5 +72,5 @@ const fn seconds_since_epoch_to_year(seconds: u64) -> u64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rtc_to_epoch(rtc: RtcDate) -> u64 {
     let days = days_since_epoch(rtc.year, rtc.month, rtc.day);
-    (((days as u64) * 24 + (rtc.hour as u64)) * 60 + (rtc.minute as u64)) * 60 + (rtc.second as u64)
+    ((days * 24 + rtc.hour ) * 60 + rtc.minute ) * 60 + rtc.second
 }

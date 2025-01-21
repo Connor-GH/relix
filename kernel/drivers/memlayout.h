@@ -50,4 +50,4 @@ p2v(uintptr_t a)
 
 #endif
 
-#define IO2V(a) (((void *)(a)) + DEVBASE - DEVSPACE)
+#define IO2V(a) (((void *)(a)) + (DEVBASE - DEVSPACE))

@@ -104,7 +104,7 @@ trap(struct trapframe *tf)
 		break;
 	// TODO handle pagefaults in a way that allows copy-on-write
 	case T_PGFLT:
-		cprintf("Page fault at %#lx\n", rcr2());
+		uart_cprintf("Page fault at %#lx\n", rcr2());
 		decipher_page_fault_error_code(tf->err);
 		myproc()->killed = 1;
 		break;

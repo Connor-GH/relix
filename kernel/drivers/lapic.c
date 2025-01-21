@@ -8,6 +8,7 @@
 #include "x86.h"
 #include "memlayout.h"
 #include "stdbool.h"
+#include "compiler_attributes.h"
 #include "kernel_string.h"
 #include "console.h"
 
@@ -138,6 +139,7 @@ microdelay(int us)
 
 // Start additional processor running entry code at addr.
 // See Appendix B of MultiProcessor Specification.
+__suppress_sanitizer("alignment")
 void
 lapicstartap(uint8_t apicid, uint32_t addr)
 {

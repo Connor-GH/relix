@@ -12,13 +12,14 @@ pub struct ConsoleWriter {}
 impl core::fmt::Write for ConsoleWriter {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         for c in s.as_bytes() {
-            unsafe { consputc(*c as c_int); }
+            unsafe {
+                consputc(*c as c_int);
+            }
         }
         Ok(())
     }
 }
 pub static CONSOLE_WRITER: Mutex<ConsoleWriter> = Mutex::new(ConsoleWriter {});
-
 
 pub use core::fmt::Write;
 
@@ -33,5 +34,5 @@ macro_rules! print {
 macro_rules! println {
     ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)))
 }
-pub use super::println;
 pub use super::print;
+pub use super::println;

@@ -2,6 +2,7 @@
 pub mod allocator;
 pub mod printing;
 pub mod time;
+pub mod ubsanitizer;
 
 extern crate alloc;
 use alloc::ffi::CString;
@@ -19,4 +20,3 @@ fn rs_panic(info: &core::panic::PanicInfo) -> ! {
         panic(info_cstr.as_c_str().as_ptr());
     }
 }
-

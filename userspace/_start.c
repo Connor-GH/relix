@@ -5,14 +5,6 @@
 #include <string.h>
 #include <sys/param.h>
 
-/* Possible parameters:
- * - int argc, char **argv, char **envp
- * - int argc, char **argv
- * - void
- */
-extern int
-main();
-
 void
 __fini_stdio(void);
 void
@@ -35,5 +27,14 @@ _start(int argc, char **argv, char **envp)
 	__init_stdio();
 	atexit(cleanup);
 skip_init_and_atexit:
+// Standard says that main can't have a prototype.
+#pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
+#pragma GCC diagnostic push
+/* Possible parameters:
+ * - int argc, char **argv, char **envp
+ * - int argc, char **argv
+ * - void
+ */
 	exit(main(argc, argv));
+#pragma GCC diagnostic pop
 }

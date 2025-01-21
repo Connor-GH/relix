@@ -60,6 +60,14 @@ stosl(void *addr, int data, int cnt)
 											 : "0"(addr), "1"(cnt), "a"(data)
 											 : "memory", "cc");
 }
+static __always_inline uint64_t
+rdtsc(void)
+{
+	uint32_t msw, lsw;
+	__asm__ __volatile__("rdtsc"
+			: "=d" (msw), "=a" (lsw));
+	return ((uint64_t)msw << 32) | lsw;
+}
 
 struct segdesc;
 

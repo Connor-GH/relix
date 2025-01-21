@@ -1,6 +1,7 @@
 #![no_std]
 pub mod allocator;
 pub mod printing;
+pub mod time;
 
 extern crate alloc;
 use alloc::ffi::CString;

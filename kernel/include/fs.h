@@ -10,7 +10,7 @@
 // Constants that userspace testers might be interested in.
 // To not pollute the namespace, they have double underscores.
 #define __DIRSIZ 254U
-#define __NDIRECT 6U
+#define __NDIRECT 8U
 #define __NINDIRECT (__BSIZE / sizeof(uint32_t))
 #define __MAXFILE (__NDIRECT + __NINDIRECT + (__NINDIRECT * __NINDIRECT))
 #define __NDINDIRECT_PER_ENTRY __NDIRECT
@@ -47,31 +47,33 @@ struct inode {
 	struct sleeplock lock; // protects everything below here
 	int valid; // inode has been read from disk?
 
-	short major;
-	short minor;
-	short nlink;
-	uint32_t size;
-	uint32_t mode; // copy of disk inode
-	uint16_t gid;
-	uint16_t uid;
-	uint32_t ctime; // change
-	uint32_t atime; // access
-	uint32_t mtime; // modification
-	uint32_t addrs[NDIRECT + 1 + 1];
-};
-// On-disk inode structure
-struct dinode {
-	short major; // Major device number (T_DEV only)
-	short minor; // Minor device number (T_DEV only)
-	short nlink; // Number of links to inode in file system
-	uint32_t size; // Size of file (bytes)
+	uint64_t ctime; // change
+	uint64_t atime; // access
+	uint64_t mtime; // modification
+	uint64_t size; // Size of file (bytes)
 	uint32_t mode; // File type and permissions
 	uint16_t gid;
 	uint16_t uid;
-	uint32_t ctime; // change
-	uint32_t atime; // access
-	uint32_t mtime; // modification
-	uint32_t addrs[NDIRECT + 1 + 1]; // Data block addresses
+	uint64_t addrs[NDIRECT + 1 + 1]; // Data block addresses
+	short major; // Major device number (T_DEV only)
+	short minor; // Minor device number (T_DEV only)
+	short nlink; // Number of links to inode in file system
+	/* 2 bytes of padding */
+};
+// On-disk inode structure
+struct dinode {
+	uint64_t ctime; // change
+	uint64_t atime; // access
+	uint64_t mtime; // modification
+	uint64_t size; // Size of file (bytes)
+	uint32_t mode; // File type and permissions
+	uint16_t gid;
+	uint16_t uid;
+	uint64_t addrs[NDIRECT + 1 + 1]; // Data block addresses
+	short major; // Major device number (T_DEV only)
+	short minor; // Minor device number (T_DEV only)
+	short nlink; // Number of links to inode in file system
+	/* 2 bytes of padding */
 };
 
 // Inodes per block.

@@ -59,13 +59,13 @@ struct stat {
 	int st_dev; /* u32 or u64 */ // File system's disk device
 	uint32_t st_ino; /* u32 or u64 */ // Inode number
 	short st_nlink; /* u32 or u64 */ // Number of links to file
-	uint32_t st_size; /* u32 or u64 */ // Size of file in bytes
-	uint32_t st_mode; /* u32 */
+	uint64_t st_size; // Size of file in bytes
+	uint32_t st_mode;
 	uint16_t st_uid; /* u32 */
 	uint16_t st_gid; /* u32 */
-	uint32_t st_ctime; /* u32 or u64 */ // change
-	uint32_t st_atime; /* u32 or u64 */ // access
-	uint32_t st_mtime; /* u32 or u64 */ // modification
+	uint64_t st_ctime; // change
+	uint64_t st_atime; // access
+	uint64_t st_mtime; // modification
 };
 #endif
 // 0700

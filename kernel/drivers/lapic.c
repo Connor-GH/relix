@@ -129,8 +129,8 @@ lapiceoi(void)
 void
 microdelay(int us)
 {
-	volatile int d = 0;
-	d = 1;
+	for (int i = 0; i < us; i++)
+		inb(0x80);
 }
 
 #define CMOS_PORT 0x70
@@ -238,8 +238,8 @@ cmostime(struct rtcdate *r)
 	}
 	if (!update_in_progress_ended_successfully) {
 		t1.year = 1970;
-		t1.month = 0;
-		t1.day = 0;
+		t1.month = 1;
+		t1.day = 1;
 		t1.hour = 0;
 		t1.minute = 0;
 		t1.second = 0;
@@ -263,10 +263,6 @@ cmostime(struct rtcdate *r)
 			t1.hour += 12;
 	}
 	t1.year += 2000;
-
-	if (t1.year <= 69)
-		t1.year += 100;
-	t1.month--;
 
 	*r = t1;
 }

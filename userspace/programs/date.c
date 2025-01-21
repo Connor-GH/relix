@@ -11,7 +11,7 @@ main(void)
 	if (date(&r) != 0) {
 		perror("date");
 	}
-	printf("%04d-%02d-%02d %02d:%02d:%02d\n", r.year, r.month, r.day, r.hour,
+	printf("%04lu-%02lu-%02lu %02lu:%02lu:%02lu\n", r.year, r.month, r.day, r.hour,
 				 r.minute, r.second);
 	return 0;
 }

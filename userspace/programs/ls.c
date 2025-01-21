@@ -15,12 +15,12 @@
 #define GiB (1024 * MiB)
 #define TiB (1024 * GiB)
 struct ls_time {
-	uint32_t sec;
-	uint32_t min;
-	uint32_t hr;
-	uint32_t day;
-	uint32_t mo;
-	uint32_t yr;
+	uint64_t sec;
+	uint64_t min;
+	uint64_t hr;
+	uint64_t day;
+	uint64_t mo;
+	uint64_t yr;
 };
 
 enum {
@@ -55,7 +55,7 @@ to_human_bytes(uint32_t number, char human_name[static 7])
 }
 
 static struct ls_time
-unix_time_to_human_readable(uint32_t unix_seconds)
+unix_time_to_human_readable(uint64_t unix_seconds)
 {
 	// Save the time in Human
 	// readable format
@@ -151,7 +151,6 @@ unix_time_to_human_readable(uint32_t unix_seconds)
 	lt.min = minutes;
 	lt.sec = seconds;
 
-	// Return the time
 	return lt;
 }
 
@@ -258,9 +257,9 @@ ls_format(char *buf, struct stat st, bool pflag, bool lflag, bool hflag,
 			fprintf(stdout, "%4d %4d %s ", st.st_uid, st.st_gid,
 							to_human_bytes(st.st_size, human_bytes_buf));
 		else
-			fprintf(stdout, "%4d %4d %6d ", st.st_uid, st.st_gid, st.st_size);
+			fprintf(stdout, "%4d %4d %6lu ", st.st_uid, st.st_gid, st.st_size);
 		struct ls_time lt = unix_time_to_human_readable(st.st_mtime);
-		fprintf(stdout, "%04d-%02d-%02d %02d:%02d:%02d ", lt.yr, lt.mo, lt.day,
+		fprintf(stdout, "%04lu-%02lu-%02lu %02lu:%02lu:%02lu ", lt.yr, lt.mo, lt.day,
 						lt.hr, lt.min, lt.sec);
 
 		if (S_ISLNK(st.st_mode)) {

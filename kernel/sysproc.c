@@ -103,7 +103,10 @@ sys_uptime(void)
 int
 sys_date(void)
 {
-	struct rtcdate *r = (struct rtcdate *)(myproc()->tf->esp + 8 + 8 * 6);
+
+	struct rtcdate *r;
+	if (argptr(0, (char **)&r, sizeof(*r)) < 0)
+		return -EINVAL;
 	cmostime(r);
 	return 0;
 }

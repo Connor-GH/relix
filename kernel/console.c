@@ -47,7 +47,7 @@ static struct {
 	int locking;
 } cons;
 
-static uint8_t
+static uint32_t
 term_color_to_vga_color(uint8_t termcolor)
 {
 	switch (termcolor) {

@@ -36,7 +36,8 @@ vga_init(struct multiboot_tag_framebuffer *tag, struct fb_rgb rgb, struct multib
 	fb_common = common;
 }
 
-static void
+// The color is in hex: 0xRRGGBB
+void
 vga_write(uint32_t x, uint32_t y, uint32_t color)
 {
 	kernel_assert(fb_data != NULL);
@@ -45,28 +46,16 @@ vga_write(uint32_t x, uint32_t y, uint32_t color)
 	multiboot_uint32_t *pixel = fb + fb_common.framebuffer_pitch * y + (fb_common.framebuffer_bpp / 8) * x;
 	*pixel = color;
 }
-static uint32_t
-vga_color_to_internal_color(enum vga_color color)
-{
-	switch (color) {
-	case VGA_COLOR_RED: return INTERNAL_COLOR_RED;
-	case VGA_COLOR_BLUE: return INTERNAL_COLOR_BLUE;
-	case VGA_COLOR_GREEN: return INTERNAL_COLOR_GREEN;
-	case VGA_COLOR_PURPLE: return INTERNAL_COLOR_BLUE | INTERNAL_COLOR_RED;
-	case VGA_COLOR_WHITE: return INTERNAL_COLOR_WHITE;
-	case VGA_COLOR_BLACK: return INTERNAL_COLOR_BLACK;
-	default: UNREACHABLE();
-	}
-}
 
 void
-vga_horizontal_fill_rect(struct vga_rectangle rect, enum vga_color color)
+vga_fill_rect(struct vga_rectangle rect, uint32_t hex_color)
 {
 	for (uint32_t x = 0; x < rect.xlen; x++) {
 		for (uint32_t y = 0; y < rect.ylen; y++) {
-			vga_write(x+rect.x, y+rect.y, vga_color_to_internal_color(color));
+			vga_write(x+rect.x, y+rect.y, hex_color);
 		}
 	}
+
 }
 
 static void
@@ -174,8 +163,7 @@ vga_write_char(int c, uint32_t foreground, uint32_t background) {
 		render_font_glyph(c, pixel_count_to_x_coord(data.width) * data.width,
 										pixel_count_to_y_coord(data.width) * data.height,
 										data.width, data.height, *data.font,
-										vga_color_to_internal_color(foreground),
-										vga_color_to_internal_color(background));
+										foreground, background);
 		fb_char_index += data.width;
 	}
 	if (c == BACKSPACE) {

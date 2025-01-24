@@ -8,8 +8,8 @@
 #include <unistd.h>
 #include <stddef.h>
 
-extern char **environ;
-char *argv[] = { "/bin/sh", NULL };
+extern char *const *environ;
+char *const argv[] = { "/bin/sh", NULL };
 
 int
 main(void)

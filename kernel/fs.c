@@ -26,7 +26,9 @@
 #include "bio.h"
 #include "log.h"
 #include "console.h"
+#include "kalloc.h"
 #include "stdbool.h"
+#include "compiler_attributes.h"
 #include "drivers/lapic.h"
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -717,10 +719,10 @@ dirlink(struct inode *dp, const char *name, uint32_t inum)
 //	 skipelem("a", name) = "", setting name = "a"
 //	 skipelem("", name) = skipelem("////", name) = 0
 //
-static char *
-skipelem(char *path, char *name)
+static const char *
+skipelem(const char *path, char *name)
 {
-	char *s;
+	const char *s;
 	int len;
 
 	while (*path == '/')
@@ -748,7 +750,7 @@ skipelem(char *path, char *name)
 // Must be called inside a transaction since it calls iput().
 // iow, path -> inode.
 static struct inode *
-namex(char *path, int nameiparent, char *name)
+namex(const char *path, int nameiparent, char *name)
 {
 	struct inode *ip, *next;
 
@@ -783,14 +785,14 @@ namex(char *path, int nameiparent, char *name)
 }
 
 struct inode *
-namei(char *path)
+namei(const char *path)
 {
 	char name[DIRSIZ];
 	return namex(path, 0, name);
 }
 
 struct inode *
-nameiparent(char *path, char *name)
+nameiparent(const char *path, char *name)
 {
 	return namex(path, 1, name);
 }

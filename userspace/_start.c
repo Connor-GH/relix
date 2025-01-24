@@ -14,9 +14,9 @@ cleanup(void)
 }
 void
 __init_stdio(void);
-char **environ;
+char *const *environ;
 void
-_start(int argc, char **argv, char **envp)
+_start(int argc, char *const *argv, char *const *envp)
 {
 	environ = envp;
 	assert(environ != NULL);

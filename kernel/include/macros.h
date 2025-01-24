@@ -13,3 +13,5 @@
 			ret = x - y;                \
 		ret;                          \
 	})
+#define _S(x) #x
+#define STRINGIFY(x) _S(x)

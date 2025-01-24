@@ -10,22 +10,20 @@ _exit(int) __attribute__((noreturn));
 int
 pipe(int *);
 int
-execve(char *, char **, char **);
+execve(const char *, char *const *, char *const *);
 static inline int
-exec(char *prog, char **argv)
+exec(const char *prog, char *const *argv)
 {
-	return execve(prog, argv, (char *[]){ "", NULL });
+	return execve(prog, argv, (char *const []){ "", NULL });
 }
-// TODO our exec has hardcoded PATH
-// convert into environment variable.
 static inline int
-execvp(char *file, char **argv)
+execvp(const char *file, char *const *argv)
 {
 	return exec(file, argv);
 }
 // our exec() is technically execv()
 static inline int
-execv(char *prog, char **argv)
+execv(const char *prog, char *const *argv)
 {
 	return exec(prog, argv);
 }

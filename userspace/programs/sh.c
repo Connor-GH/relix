@@ -17,7 +17,7 @@
 #define PIPE 3
 #define LIST 4
 #define BACK 5
-extern char **environ;
+extern char *const *environ;
 
 struct cmd {
 	int type;

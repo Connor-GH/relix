@@ -53,7 +53,7 @@ try_again:
 		cred.uid = uid;
 		cred.gid = uid;
 		setuid(uid);
-		char *sh_argv[] = { "/bin/sh", 0 };
+		char *const sh_argv[] = { "/bin/sh", 0 };
 		execv("/bin/sh", sh_argv);
 		printf("execv sh failed\n");
 		return 1;

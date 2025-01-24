@@ -118,9 +118,9 @@ iupdate(struct inode *);
 int
 namecmp(const char *, const char *);
 struct inode *
-namei(char *);
+namei(const char *);
 struct inode *
-nameiparent(char *, char *);
+nameiparent(const char *, char *);
 int
 readi(struct inode *, char *, uint32_t, uint32_t);
 void

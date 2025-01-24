@@ -1,4 +1,5 @@
-# Initial process execs /init.
+# Initial process execs /bin/init.
+# This code runs in user space, but the kernel needs to know about it.
 
 #include "syscall.h"
 #include "traps.h"
@@ -20,7 +21,7 @@ exit:
   int $T_SYSCALL
   jmp exit
 
-# char init[] = "/init\0";
+# char init[] = "/bin/init\0";
 init:
   .string "/bin/init\0"
 
@@ -28,6 +29,8 @@ init:
 env0: .string "PATH=/bin:/usr/bin:/\0"
 env1: .string "HOME=/\0"
 env2: .string "SHELL=/bin/sh\0"
+# We don't support all of xterm, but let's pretend we do.
+env3: .string "TERM=xterm\0"
 
 # char *argv[] = { init, 0 };
 .p2align 2
@@ -39,4 +42,5 @@ envp:
 	.quad env0
 	.quad env1
 	.quad env2
+	.quad env3
 	.quad 0

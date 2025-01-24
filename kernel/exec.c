@@ -16,7 +16,7 @@
 // count is argc/envc
 // vec is argv/envp
 static int
-push_user_stack(uintptr_t *count, char **vec, uintptr_t *ustack,
+push_user_stack(uintptr_t *count, char *const *vec, uintptr_t *ustack,
 								uintptr_t *pgdir, uintptr_t *sp, uint32_t idx)
 {
 	for (*count = 0; vec[*count]; (*count)++) {
@@ -37,9 +37,9 @@ push_user_stack(uintptr_t *count, char **vec, uintptr_t *ustack,
 	return 0;
 }
 
-__nonnull(1, 2) int execve(char *path, char **argv, char **envp)
+__nonnull(1, 2) int execve(const char *path, char *const *argv, char *const *envp)
 {
-	char *s, *last;
+	const char *s, *last;
 	int i, off;
 	uintptr_t envc = 0;
 	uintptr_t argc = 0, sz, sp, ustack[3 + MAXARG + MAXENV + 1] = {};

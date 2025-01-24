@@ -259,8 +259,8 @@ ls_format(char *buf, struct stat st, bool pflag, bool lflag, bool hflag,
 		else
 			fprintf(stdout, "%4d %4d %6lu ", st.st_uid, st.st_gid, st.st_size);
 		struct ls_time lt = unix_time_to_human_readable(st.st_mtime);
-		fprintf(stdout, "%04lu-%02lu-%02lu %02lu:%02lu:%02lu ", lt.yr, lt.mo, lt.day,
-						lt.hr, lt.min, lt.sec);
+		fprintf(stdout, "%04lu-%02lu-%02lu %02lu:%02lu:%02lu ", lt.yr, lt.mo,
+						lt.day, lt.hr, lt.min, lt.sec);
 
 		if (S_ISLNK(st.st_mode)) {
 			fprintf(stdout, "%s\n", fmtname(buf, true));

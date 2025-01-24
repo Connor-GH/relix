@@ -7,21 +7,22 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include "console.h"
 #include "file.h"
 #include "ioapic.h"
-#include "kalloc.h"
-#include "kernel_string.h"
 #include "boot/multiboot2.h"
 #include "proc.h"
 #include "spinlock.h"
 #include "traps.h"
 #include "uart.h"
 #include "x86.h"
-#include "drivers/memlayout.h"
-#include "drivers/conscolor.h"
 #include "drivers/lapic.h"
 #include "compiler_attributes.h"
+#include "macros.h"
+
+extern size_t
+let_rust_handle_it(const char *fmt);
 
 static int panicked = 0;
 int echo_out = 1;
@@ -32,8 +33,8 @@ static int long_form = 0;
 static int zero_form = 0;
 
 typedef void (*putfunc_t)(int, uint32_t, uint32_t);
-__nonnull(1) static void
-vcprintf(putfunc_t putfunc, const char *fmt, va_list argp);
+__nonnull(1) static void vcprintf(putfunc_t putfunc, const char *fmt,
+																	va_list argp);
 static void
 consputc3(int c, uint32_t foreg, uint32_t backg);
 /*
@@ -47,29 +48,23 @@ static struct {
 	int locking;
 } cons;
 
-static uint32_t
-term_color_to_vga_color(uint8_t termcolor)
-{
-	switch (termcolor) {
-	case BLACK: return VGA_COLOR_BLACK;
-	case BLUE: return VGA_COLOR_BLUE;
-	case RED: return VGA_COLOR_RED;
-	case GREEN: return VGA_COLOR_GREEN;
-	case MAGENTA: return VGA_COLOR_PURPLE;
-	case WHITE:
-	default: return VGA_COLOR_WHITE;
-	}
-}
 // color is default if it is set to 0xff
 static void
-set_term_color(uint8_t foreground, uint8_t background)
+set_term_color(uint32_t foreground, uint32_t background, bool changed_fg,
+							 bool changed_bg)
 {
-	static_foreg = (foreground == 0xff) ? static_foreg : term_color_to_vga_color(foreground);
-	static_backg = (background == 0xff) ? static_backg : term_color_to_vga_color(background);
+	if (foreground == 0 && background == 0) {
+		static_foreg = VGA_COLOR_WHITE;
+		static_backg = VGA_COLOR_BLACK;
+	} else {
+		static_foreg = (!changed_fg) ? static_foreg : foreground;
+		static_backg = (!changed_bg) ? static_backg : background;
+	}
 }
 
 static void
-printint(putfunc_t putfunc, uint64_t x, int64_t xs, int base, bool is_unsigned, int *padding)
+printint(putfunc_t putfunc, uint64_t x, int64_t xs, int base, bool is_unsigned,
+				 int *padding)
 {
 	static char digits[] = "0123456789abcdef";
 	char buf[32];
@@ -103,8 +98,68 @@ uartputc3(int c, uint32_t unused, uint32_t unused2)
 	uartputc(c);
 }
 
-__attribute__((format(printf, 1, 2))) __nonnull(1) void
-uart_cprintf(const char *fmt, ...)
+uint32_t
+ansi_4bit_to_hex_color(uint16_t color, bool is_background)
+{
+	if (is_background) {
+		// Background colors start at 40 instead of 30.
+		color = saturating_sub(color, 10, 0);
+	}
+	switch (color) {
+	case 0: {
+		static_foreg = VGA_COLOR_WHITE;
+		static_backg = VGA_COLOR_BLACK;
+		return 0;
+	}
+	case 30:
+		return VGA_COLOR_BLACK;
+	case 31:
+		return VGA_COLOR_RED;
+	case 32:
+		return VGA_COLOR_GREEN;
+	case 33:
+		return VGA_COLOR_YELLOW;
+	case 34:
+		return VGA_COLOR_BLUE;
+	case 35:
+		return VGA_COLOR_MAGENTA;
+	case 36:
+		return VGA_COLOR_CYAN;
+	case 37:
+		return VGA_COLOR_WHITE;
+	case 90:
+		return VGA_COLOR_BRIGHT_BLACK;
+	case 91:
+		return VGA_COLOR_BRIGHT_RED;
+	case 92:
+		return VGA_COLOR_BRIGHT_GREEN;
+	case 93:
+		return VGA_COLOR_BRIGHT_YELLOW;
+	case 94:
+		return VGA_COLOR_BRIGHT_BLUE;
+	case 95:
+		return VGA_COLOR_BRIGHT_MAGENTA;
+	case 96:
+		return VGA_COLOR_BRIGHT_CYAN;
+	case 97:
+		return VGA_COLOR_BRIGHT_WHITE;
+	default:
+		return VGA_COLOR_WHITE;
+	}
+}
+void
+ansi_change_color(bool bold, uint32_t color, uint8_t c, bool fg)
+{
+	// All attributes, [0, 29].
+	if (color <= 29)
+		return;
+	if (fg)
+		set_term_color(color, 0, true, false);
+	else
+		set_term_color(0, color, false, true);
+}
+__attribute__((format(printf, 1, 2)))
+__nonnull(1) void uart_cprintf(const char *fmt, ...)
 {
 	cons.locking = 0;
 	va_list argp;
@@ -114,32 +169,30 @@ uart_cprintf(const char *fmt, ...)
 	cons.locking = 1;
 }
 
-__attribute__((format(printf, 1, 2))) __nonnull(1) void
-cprintf(const char *fmt, ...)
+__attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *fmt,
+																																...)
 {
 	va_list argp;
 	va_start(argp, fmt);
 	vcprintf(vga_write_char, fmt, argp);
 	va_end(argp);
-
 }
-__attribute__((format(printf, 1, 2))) __nonnull(1) void
-vga_cprintf(const char *fmt, ...)
+__attribute__((format(printf, 1, 2)))
+__nonnull(1) void vga_cprintf(const char *fmt, ...)
 {
 	va_list argp;
 	va_start(argp, fmt);
 	vcprintf(vga_write_char, fmt, argp);
 	va_end(argp);
-
 }
 // Print to the console. only understands %d, %x, %p, %s.
-__nonnull(1) static void
-vcprintf(putfunc_t putfunc, const char *fmt, va_list argp)
+__nonnull(1) static void vcprintf(putfunc_t putfunc, const char *fmt,
+																	va_list argp)
 {
-	int i, c, locking;
+	int c, locking;
+	size_t i;
 	char *s;
 	int padding = 0;
-
 
 	locking = cons.locking;
 	if (locking)
@@ -147,39 +200,15 @@ vcprintf(putfunc_t putfunc, const char *fmt, va_list argp)
 
 	for (i = 0; (c = fmt[i] & 0xff) != 0; i++) {
 		if (c != '%') {
-			// \ef1 gives foreground color 1, which is blue.
-			if (c == '\e') {
-				c = fmt[++i] & 0xff;
-				if (c == 0)
-					break;
-				switch (c) {
-				case 'f': {
-					c = fmt[++i] & 0xff;
-					if (c == 0)
-						break;
-					// if [0..10), use color_below10. else, try for hex to int.
-					// TODO make this easier to read with atoi or similar.
-					_Bool color_below10 = c - 0x30 <= 0xf;
-					if (color_below10 ||
-							(((c - 0x61) + 10) >= 0xa && ((c - 0x61) + 0xa) <= 0xf)) {
-						set_term_color(c - (color_below10 ? 30 : 60), 0xff);
-						goto skip_printing;
-					}
-					break;
-				}
-				case 'b': {
-					c = fmt[++i] & 0xff;
-					if (c == 0)
-						break;
-					_Bool color_below10 = c - 0x30 <= 0xf;
-					if (color_below10 ||
-							(((c - 0x61) + 0xa) >= 0xa && ((c - 0x61) + 0xa) <= 0xf)) {
-						set_term_color(0xff, c - (color_below10 ? 0x30 : 60));
-						goto skip_printing;
-					}
-					break;
-				}
-				}
+			// ANSI color escape sequences.
+			// All three of these equal each other, but
+			// they are there for documentation and grepping purposes.
+			if (c == '\033' || c == '\x1b' || c == '\e') {
+				// Rust has a crate for doing this sort of stuff.
+				// It acts as a 'mini parser' that sends us various
+				// types, and we have to make sense of them.
+				i += let_rust_handle_it(fmt + i);
+				continue;
 			}
 			putfunc(c, static_foreg, static_backg);
 			continue;
@@ -284,9 +313,9 @@ panic(const char *s)
 
 #define BACKSPACE 0x100
 #define CRTPORT 0x3d4
-static uint16_t *crt = (uint16_t *)P2V(0xb8000); // CGA memory
 
 // Cursor position: col + 80*row.
+// TODO: cursor_position currently does nothing. We should change that soon.
 static int
 cursor_position(void)
 {
@@ -298,44 +327,6 @@ cursor_position(void)
 	return pos;
 }
 
-static void
-cgaputc(int c, uint8_t fore, uint8_t back)
-{
-	int pos = cursor_position();
-
-	if (c == '\n') {
-		if (pos % 80 != 0)
-			pos += 80 - pos % 80;
-	} else if (c == BACKSPACE && echo_out == 1) {
-		if (pos > 0)
-			--pos;
-	} else if (echo_out == 1) {
-		uint8_t higher = back;
-		uint16_t together = 0; /* vga memory */
-		higher <<= 4;
-		higher |= fore;
-		together = higher;
-		together <<= 8;
-		crt[pos++] = (c & 0xff) | together;
-	}
-
-	// silently ignore possible out of bounds for pos
-	if (pos < 0 || pos > 25 * 80)
-		pos = 0;
-
-	if ((pos / 80) >= 24) { // Scroll up.
-		memmove(crt, crt + 80, sizeof(crt[0]) * 23 * 80);
-		pos -= 80;
-		memset(crt + pos, 0, sizeof(crt[0]) * (24 * 80 - pos));
-	}
-
-	outb(CRTPORT, 14);
-	outb(CRTPORT + 1, pos >> 8);
-	outb(CRTPORT, 15);
-	outb(CRTPORT + 1, pos);
-	crt[pos] = ' ' | 0x0700;
-}
-
 void
 consputc(int c)
 {
@@ -344,7 +335,6 @@ consputc(int c)
 static void
 consputc3(int c, uint32_t foreg, uint32_t backg)
 {
-
 	if (panicked) {
 		cli();
 		for (;;)
@@ -357,7 +347,7 @@ consputc3(int c, uint32_t foreg, uint32_t backg)
 		uartputc('\b');
 	} else
 		uartputc(c);
-	cgaputc(c, static_foreg, static_backg);
+	vga_write(c, static_foreg, static_backg);
 }
 
 #define INPUT_BUF 128
@@ -480,18 +470,19 @@ console_height_text(void)
 {
 	return __multiboot_console_height_text();
 }
-
+/* clang-format off */
 // This is asynchronous.
-__nonnull(1, 2) static int consolewrite(
-	__attribute__((unused)) struct inode *ip, char *buf, int n)
+__nonnull(1, 2) static int
+consolewrite(__attribute__((unused)) struct inode *ip,
+																		 char *buf, int n)
 {
-
 	for (int i = 0; i < n; i++) {
 		vga_write_char(buf[i] & 0xff, static_foreg, static_backg);
 	}
 
 	return n;
 }
+/* clang-format on */
 
 void
 consoleinit(void)

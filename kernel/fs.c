@@ -195,7 +195,7 @@ iinit(int dev)
 	cprintf("sb: size %d nblocks %d ninodes %d nlog %d logstart %d\
  inodestart %d bmap start %d\n",
 					global_sb.size, global_sb.nblocks, global_sb.ninodes, global_sb.nlog,
-				  global_sb.logstart, global_sb.inodestart, global_sb.bmapstart);
+					global_sb.logstart, global_sb.inodestart, global_sb.bmapstart);
 }
 
 static struct inode *
@@ -274,7 +274,8 @@ iget(uint32_t dev, uint32_t inum)
 
 	// Is the inode already cached?
 	empty = 0;
-	for (ip = &icache.inode[0][hash]; ip < &icache.inode[NINODE-1][hash]; ip++) {
+	for (ip = &icache.inode[0][hash]; ip < &icache.inode[NINODE - 1][hash];
+			 ip++) {
 		if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {
 			ip->ref++;
 			release(&icache.lock[hash]);
@@ -287,7 +288,7 @@ iget(uint32_t dev, uint32_t inum)
 		release(&icache.lock[hash]);
 		for (int i = 0; i < min(NBUCKET, ncpu); i++) {
 			acquire(&icache.lock[i]);
-			for (ip = &icache.inode[0][i]; ip < &icache.inode[NINODE-1][i]; ip++) {
+			for (ip = &icache.inode[0][i]; ip < &icache.inode[NINODE - 1][i]; ip++) {
 				if (i == hash)
 					continue;
 				if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {

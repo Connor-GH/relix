@@ -40,7 +40,6 @@ uint64_t top_memory;
 
 extern void
 rust_hello_world(void);
-
 int
 main(struct multiboot_info *mbinfo)
 {
@@ -90,7 +89,7 @@ mpenter(void)
 static void
 mpmain(void)
 {
-	cprintf("\eb1cpu%d: starting\eb0\n", my_cpu_id());
+	cprintf("\033[97;44mcpu%d: starting\033[0m\n", my_cpu_id());
 	idtinit(); // load idt register
 	xchg(&(mycpu()->started), 1); // tell startothers() we're up
 	scheduler(); // start running processes

@@ -52,7 +52,7 @@ fputc(int c, FILE *stream);
 int
 putchar(int c);
 int
-fflush (FILE *stream);
+fflush(FILE *stream);
 FILE *
 fdopen(int fd, const char *restrict mode);
 FILE *

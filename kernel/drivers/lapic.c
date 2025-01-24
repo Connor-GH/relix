@@ -139,9 +139,8 @@ microdelay(int us)
 
 // Start additional processor running entry code at addr.
 // See Appendix B of MultiProcessor Specification.
-__suppress_sanitizer("alignment")
-void
-lapicstartap(uint8_t apicid, uint32_t addr)
+__suppress_sanitizer("alignment") void lapicstartap(uint8_t apicid,
+																										uint32_t addr)
 {
 	int i;
 	uint16_t *wrv;

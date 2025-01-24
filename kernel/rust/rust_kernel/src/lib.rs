@@ -1,5 +1,8 @@
 #![no_std]
+#![feature(string_remove_matches)]
+#![feature(ascii_char)]
 pub mod allocator;
+pub mod ansi_escape;
 pub mod printing;
 pub mod time;
 pub mod ubsanitizer;

@@ -72,5 +72,5 @@ const fn seconds_since_epoch_to_year(seconds: u64) -> u64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn rtc_to_epoch(rtc: RtcDate) -> u64 {
     let days = days_since_epoch(rtc.year, rtc.month, rtc.day);
-    ((days * 24 + rtc.hour ) * 60 + rtc.minute ) * 60 + rtc.second
+    ((days * 24 + rtc.hour) * 60 + rtc.minute) * 60 + rtc.second
 }

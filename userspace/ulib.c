@@ -89,7 +89,6 @@ strrchr(const char *s, char c)
 	return 0;
 }
 
-
 // fill in st from pathname n
 __attribute__((nonnull(2))) int
 stat(const char *n, struct stat *st)
@@ -310,7 +309,7 @@ strdup(const char *s)
 }
 
 typedef void (*atexit_handler)(void);
-static atexit_handler atexit_handlers[ATEXIT_MAX] = {NULL};
+static atexit_handler atexit_handlers[ATEXIT_MAX] = { NULL };
 
 int
 atexit(void (*function)(void))
@@ -330,7 +329,7 @@ atexit(void (*function)(void))
 __attribute__((noreturn)) void
 exit(int status)
 {
-	for (int i = ATEXIT_MAX-1; i >= 0; i--) {
+	for (int i = ATEXIT_MAX - 1; i >= 0; i--) {
 		if (atexit_handlers[i] != NULL) {
 			atexit_handlers[i]();
 		}

@@ -12,9 +12,8 @@ print_section_headers(__attribute__((unused)) int fd, struct Elf64_Ehdr *header,
 	printf("Section Headers:\n");
 	printf("%-30s %-10s %-10s\n", "Section Name", "Type", "Addr");
 	for (size_t i = 0; i < header->e_shnum; i++) {
-		printf("%-30s %-10d %-10lx\n",
-			&strtab[section_headers[i].sh_name],
-			section_headers[i].sh_type, section_headers[i].sh_addr);
+		printf("%-30s %-10d %-10lx\n", &strtab[section_headers[i].sh_name],
+					 section_headers[i].sh_type, section_headers[i].sh_addr);
 	}
 }
 
@@ -88,10 +87,8 @@ print_symbol_table(int fd, struct Elf64_Ehdr *header,
 					 j < symbol_table_header->sh_size / sizeof(struct Elf64_Sym); j++) {
 				// Only print function symbols (function type: STT_FUNC)
 				if (ELF64_ST_TYPE(symbols[j].st_info) == STT_FUNC) {
-					printf("%-30s %#-10lx %#-10lx\n",
-								 &symbol_strtab[symbols[j].st_name],
-								 symbols[j].st_value,
-								 symbols[j].st_size);
+					printf("%-30s %#-10lx %#-10lx\n", &symbol_strtab[symbols[j].st_name],
+								 symbols[j].st_value, symbols[j].st_size);
 				}
 			}
 

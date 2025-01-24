@@ -12,8 +12,6 @@ void
 lapiceoi(void);
 void
 lapicinit(void);
-__suppress_sanitizer("alignment")
-void
-lapicstartap(uint8_t a, uint32_t b);
+__suppress_sanitizer("alignment") void lapicstartap(uint8_t a, uint32_t b);
 void
 microdelay(int);

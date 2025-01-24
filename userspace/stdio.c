@@ -52,7 +52,10 @@ flush(FILE *stream)
 		errno = EBADF;
 		return -1;
 	}
-	writev(stream->fd, &(const struct iovec){stream->write_buffer, stream->write_buffer_index}, 1);
+	writev(stream->fd,
+				 &(const struct iovec){ stream->write_buffer,
+																stream->write_buffer_index },
+				 1);
 	stream->write_buffer_index = 0;
 	return 0;
 }
@@ -84,44 +87,43 @@ string_to_mode(const char *restrict mode)
 	}
 	int mode_val = -1;
 	switch (mode[0]) {
-
-		case 'w': {
-			if (mode[1] != '\0') {
-				if (mode[1] == '+') {
-					mode_val = O_RDWR | O_CREATE /*| O_TRUNC*/;
-					break;
-				}
+	case 'w': {
+		if (mode[1] != '\0') {
+			if (mode[1] == '+') {
+				mode_val = O_RDWR | O_CREATE /*| O_TRUNC*/;
+				break;
 			}
-			mode_val = O_WRONLY | O_CREATE /*| O_TRUNC*/;
-			break;
 		}
-		case 'r': {
-			if (mode[1] != '\0') {
-				if (mode[1] == '+') {
-					mode_val = O_RDWR;
-					break;
-				}
+		mode_val = O_WRONLY | O_CREATE /*| O_TRUNC*/;
+		break;
+	}
+	case 'r': {
+		if (mode[1] != '\0') {
+			if (mode[1] == '+') {
+				mode_val = O_RDWR;
+				break;
 			}
-			mode_val = O_RDONLY;
-			break;
 		}
-		case 'a': {
-			if (mode[1] != '\0') {
-				if (mode[1] == '+') {
-					mode_val = O_RDWR | O_CREATE /*| O_APPEND*/;
-					break;
-				}
+		mode_val = O_RDONLY;
+		break;
+	}
+	case 'a': {
+		if (mode[1] != '\0') {
+			if (mode[1] == '+') {
+				mode_val = O_RDWR | O_CREATE /*| O_APPEND*/;
+				break;
 			}
-			mode_val = O_WRONLY | O_CREATE /*| O_APPEND*/;
-			break;
 		}
-		default: goto bad_mode;
+		mode_val = O_WRONLY | O_CREATE /*| O_APPEND*/;
+		break;
+	}
+	default:
+		goto bad_mode;
 	}
 	return mode_val;
 bad_mode:
 	errno = EINVAL;
 	return -1;
-
 }
 
 FILE *
@@ -246,7 +248,7 @@ fgets(char *buf, int max, FILE *restrict stream)
 static void
 fd_putc(FILE *fp, char c, char *__attribute__((unused)) buf)
 {
-	if (fp && fp->write_buffer_index >= fp->write_buffer_size-1) {
+	if (fp && fp->write_buffer_index >= fp->write_buffer_size - 1) {
 		flush(fp);
 	} else {
 		fp->write_buffer[fp->write_buffer_index++] = c;
@@ -281,8 +283,8 @@ enum {
 #define IS_SET(x, flag) (bool)((x & flag) == flag)
 
 static void
-printint(void (*put_function)(FILE *, char, char *), char *put_func_buf, FILE *fp,
-				 int64_t xx, int base, bool sgn, int flags, int padding)
+printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
+				 FILE *fp, int64_t xx, int base, bool sgn, int flags, int padding)
 {
 	static const char digits[] = "0123456789ABCDEF";
 	char buf[64];

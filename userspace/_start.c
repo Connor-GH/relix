@@ -30,7 +30,7 @@ skip_init_and_atexit:
 // Standard says that main can't have a prototype.
 #pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
 #pragma GCC diagnostic push
-/* Possible parameters:
+	/* Possible parameters:
  * - int argc, char **argv, char **envp
  * - int argc, char **argv
  * - void

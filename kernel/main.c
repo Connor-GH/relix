@@ -89,7 +89,7 @@ mpenter(void)
 static void
 mpmain(void)
 {
-	cprintf("\033[97;44mcpu%d: starting\033[0m\n", my_cpu_id());
+	cprintf("\033[97;44mcpu%d: starting\033[m\n", my_cpu_id());
 	idtinit(); // load idt register
 	xchg(&(mycpu()->started), 1); // tell startothers() we're up
 	scheduler(); // start running processes

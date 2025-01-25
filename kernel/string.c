@@ -16,14 +16,14 @@ __nonnull(1) void *memset(void *dst, int c, uint32_t n)
 
 __nonnull(1, 2) int memcmp(const void *v1, const void *v2, uint32_t n)
 {
-	const uint8_t *s1, *s2;
+	const uint8_t *dst, *s2;
 
-	s1 = v1;
+	dst = v1;
 	s2 = v2;
 	while (n-- > 0) {
-		if (*s1 != *s2)
-			return *s1 - *s2;
-		s1++, s2++;
+		if (*dst != *s2)
+			return *dst - *s2;
+		dst++, s2++;
 	}
 
 	return 0;
@@ -34,29 +34,31 @@ __deprecated("Removed in POSIX.1-2008")
 	return memcmp(v1, v2, n);
 }
 
+// Based on code from https://libc11.org/string/memmove.html (public domain)
 __nonnull(1, 2) void *memmove(void *dst, const void *src, uint32_t n)
 {
-	const char *s;
-	char *d;
-
-	s = src;
-	d = dst;
-	if (s < d && s + n > d) {
-		s += n;
-		d += n;
-		while (n-- > 0)
-			*--d = *--s;
-	} else
-		while (n-- > 0)
-			*d++ = *s++;
-
+	char *dest = (char *)dst;
+	const char *source = (const char *)src;
+	// If source is lower than dest in memory,
+	// we don't have to worry about clobbering it going forwards.
+	if (dest <= source) {
+		while (n--) {
+			*dest++ = *source++;
+		}
+	} else {
+	// We may clobber going forwards, so let's go backwards.
+		source += n;
+		dest += n;
+		while (n--) {
+			*--dest = *--source;
+		}
+	}
 	return dst;
 }
 
-// memcpy exists to placate GCC.  Use memmove.
 __nonnull(1, 2) void *memcpy(void *dst, const void *src, uint32_t n)
 {
-	return memmove(dst, src, n);
+	return movsq((uint64_t *)dst, (uint64_t *)src, n / sizeof(uint64_t));
 }
 
 __nonnull(1, 2) char *strcat(char *dst, const char *src)

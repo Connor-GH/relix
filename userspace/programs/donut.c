@@ -1,3 +1,4 @@
+// https://www.a1k0n.net/code/donutbitops.c.html
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -162,5 +163,6 @@ main()
 		R(6, sAcB, sAsB);
 
 		sleep(15);
+		printf("\x1b[23A");
 	}
 }

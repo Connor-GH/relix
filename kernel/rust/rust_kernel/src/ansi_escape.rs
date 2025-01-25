@@ -1,10 +1,11 @@
 use crate::printing::*;
 use alloc::vec::Vec;
-use core::ffi::c_char;
 use anstyle_parse::{DefaultCharAccumulator, Params, Parser, Perform};
+use core::ffi::c_char;
 
 unsafe extern "C" {
     fn ansi_change_color(bold: bool, color: u32, c: c_char, fg: bool);
+    fn ansi_set_cursor_location(x: u16, y: u16);
     safe fn ansi_4bit_to_hex_color(color: u16, is_bg: bool) -> u32;
 }
 /// A type implementing Perform that just logs actions
@@ -42,30 +43,60 @@ impl Perform for Log {
     }
 
     fn csi_dispatch(&mut self, params: &Params, intermediates: &[u8], ignore: bool, c: u8) {
+        println!(
+            "[hook] params={:?}, intermediates={:?}, ignore={:?}, char={:?}",
+            params,
+            intermediates,
+            ignore,
+            c.as_ascii().unwrap()
+        );
         let param_vec: Vec<&u16> = params.iter().flatten().collect();
-        let mut bold = false;
-        let mut color: u32 = 0;
-        let mut changing_fg = false;
-        for param in param_vec {
-            match *param {
-                0 => {
-                    color = ansi_4bit_to_hex_color(0, false);
+        match c {
+            // color parsing.
+            b'm' => {
+                let mut bold = false;
+                let mut color: u32 = 0;
+                let mut changing_fg = false;
+                for param in param_vec {
+                    match *param {
+                        0 => {
+                            color = ansi_4bit_to_hex_color(0, false);
+                        }
+                        1 => {
+                            bold = true;
+                        }
+                        n if n >= 30 && n <= 37 => {
+                            color = ansi_4bit_to_hex_color(n + (bold as u16 * 60), false);
+                            changing_fg = true;
+                        }
+                        n if n >= 40 && n <= 47 => {
+                            color = ansi_4bit_to_hex_color(n + (bold as u16 * 60), true);
+                            changing_fg = false;
+                        }
+                        _ => {}
+                    }
                 }
-                1 => {
-                    bold = true;
-                }
-                n if n >= 30 && n <= 37 => {
-                    color = ansi_4bit_to_hex_color(n + (bold as u16 * 60), false);
-                    changing_fg = true;
-                }
-                n if n >= 40 && n <= 47 => {
-                    color = ansi_4bit_to_hex_color(n + (bold as u16 * 60), true);
-                    changing_fg = false;
-                }
-                _ => {}
+                unsafe { ansi_change_color(bold, color, c as c_char, changing_fg) };
             }
+            // Cursor position.
+            b'H' => {
+                if param_vec.len() != 2 {
+                    return;
+                }
+                unsafe { ansi_set_cursor_location(*param_vec[0], *param_vec[1]); }
+            },
+            b'K' => {
+                let n: u16 = **param_vec.get(0).unwrap_or(&&0u16);
+                match n {
+                    0 => {},
+                    1 => {},
+                    2 => {},
+                    _ => {},
+                }
+
+            }
+            _ => {}
         }
-        unsafe { ansi_change_color(bold, color, c as c_char, changing_fg) };
     }
 
     fn esc_dispatch(&mut self, intermediates: &[u8], ignore: bool, byte: u8) {
@@ -82,11 +113,10 @@ pub extern "C" fn let_rust_handle_it(fmt: *const c_char) -> usize {
     let index = fmt
         .find(|arg0: char| char::is_ascii_alphabetic(&arg0))
         .unwrap_or(0);
-    parse_ansi(&fmt[0..index+1]);
+    parse_ansi(&fmt[0..index + 1]);
     index
 }
 fn parse_ansi(code: &str) {
-
     let mut statemachine = Parser::<DefaultCharAccumulator>::new();
     let mut performer = Log;
     for c in code.as_bytes() {

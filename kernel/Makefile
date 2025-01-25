@@ -36,8 +36,7 @@ $(BIN)/xv6memfs.img: bootblock kernelmemfs
 	dd if=$(BIN)/kernelmemfs of=$@ seek=1 conv=notrunc
 
 $(BIN)/kernel: $(KERNELDIR)/kernel64.ld $(KERNEL_OBJS) $(BIN)/entry.o $(BIN)/entryother.o $(BIN)/initcode.o $(BIN)/bootblock $(BIN)/sign $(KERNEL_RUST_MODULES)
-	$(LD) $(LDFLAGS) -T $(KERNELDIR)/kernel$(BITS).ld -o $@ $(BIN)/entry.o $(KERNEL_OBJS) $(KERNEL_D_OBJ) $(K_D_BINDINGS_OBJ) $(RUST_OBJ)\
-		-b binary $(BIN)/initcode $(BIN)/entryother
+	$(CC) $(CFLAGS) -Wl,-melf_x86_64,-z,noexecstack,-O1 -Wl,-T,$(KERNELDIR)/kernel$(BITS).ld -o $@ $(BIN)/entry.o $(KERNEL_OBJS) $(RUST_OBJ) -Wl,-b,binary $(BIN)/initcode $(BIN)/entryother
 
 $(BIN)/%.o: $(KERNELDIR)/%.c
 	$(CC) $(CFLAGS) $(KCFLAGS) $(KERNEL_INC) -c $^ -o $@

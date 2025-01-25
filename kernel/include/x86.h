@@ -64,7 +64,7 @@ static __always_inline void *
 movsq(uint64_t *dst, uint64_t *src, size_t size)
 {
 	__asm__ __volatile__("rep movsq"
-											 : "=D"(dst), "=S"(src), "+c"(size)
+											 : "+D"(dst), "+S"(src), "+c"(size)
 											 : : "memory");
 	return dst;
 }
@@ -72,7 +72,7 @@ static __always_inline void *
 movsb(uint8_t *dst, uint8_t *src, size_t size)
 {
 	__asm__ __volatile__("rep movsb"
-											 : "=D"(dst), "=S"(src), "+c"(size)
+											 : "+D"(dst), "+S"(src), "+c"(size)
 											 : : "memory");
 	return dst;
 }

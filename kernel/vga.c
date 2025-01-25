@@ -201,6 +201,7 @@ vga_scroll(uint32_t fb_width, uint32_t fb_height, uint8_t font_width,
 		damage_tracking_data.bg[i][height-1] = VGA_COLOR_BLACK;
 		render_font_glyph(' ', i * font_width, (height-1) * font_height,
 										font_width, font_height,
+										// Black and white are our default colors.
 										font, VGA_COLOR_WHITE, VGA_COLOR_BLACK);
 	}
 

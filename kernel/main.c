@@ -4,7 +4,6 @@
 #include "drivers/memlayout.h"
 #include "drivers/acpi.h"
 #include "drivers/lapic.h"
-#include "kernel_string.h"
 #include "param.h"
 #include "proc.h"
 #include "x86.h"
@@ -17,7 +16,6 @@
 #include "bio.h"
 #include "file.h"
 #include "ide.h"
-#include "vga.h"
 #include "vm.h"
 #include "picirq.h"
 #include "trap.h"
@@ -45,7 +43,6 @@ main(struct multiboot_info *mbinfo)
 {
 	uartinit(); // serial port
 	parse_multiboot(mbinfo);
-	available_memory = 224 * MiB;
 	kernel_assert(available_memory != 0);
 	kinit1(end, P2V(4 * 1024 * 1024)); // phys page allocator
 

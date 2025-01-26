@@ -34,7 +34,7 @@ static int zero_form = 0;
 
 typedef void (*putfunc_t)(int, uint32_t, uint32_t);
 __nonnull(1) static void vcprintf(putfunc_t putfunc, const char *fmt,
-																	va_list argp);
+																	va_list argp, int locking);
 static void
 consputc3(int c, uint32_t foreg, uint32_t backg);
 /*
@@ -161,12 +161,10 @@ ansi_change_color(bool bold, uint32_t color, uint8_t c, bool fg)
 __attribute__((format(printf, 1, 2)))
 __nonnull(1) void uart_cprintf(const char *fmt, ...)
 {
-	cons.locking = 0;
 	va_list argp;
 	va_start(argp, fmt);
-	vcprintf(uartputc3, fmt, argp);
+	vcprintf(uartputc3, fmt, argp, cons.locking);
 	va_end(argp);
-	cons.locking = 1;
 }
 
 __attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *fmt,
@@ -174,7 +172,7 @@ __attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *fmt,
 {
 	va_list argp;
 	va_start(argp, fmt);
-	vcprintf(vga_write_char, fmt, argp);
+	vcprintf(vga_write_char, fmt, argp, cons.locking);
 	va_end(argp);
 }
 __attribute__((format(printf, 1, 2)))
@@ -182,19 +180,18 @@ __nonnull(1) void vga_cprintf(const char *fmt, ...)
 {
 	va_list argp;
 	va_start(argp, fmt);
-	vcprintf(vga_write_char, fmt, argp);
+	vcprintf(vga_write_char, fmt, argp, cons.locking);
 	va_end(argp);
 }
 // Print to the console. only understands %d, %x, %p, %s.
 __nonnull(1) static void vcprintf(putfunc_t putfunc, const char *fmt,
-																	va_list argp)
+																	va_list argp, int locking)
 {
-	int c, locking;
+	int c;
 	size_t i;
 	char *s;
 	int padding = 0;
 
-	locking = cons.locking;
 	if (locking)
 		acquire(&cons.lock);
 
@@ -253,6 +250,15 @@ do_again:
 			} else {
 				unsigned long lx = va_arg(argp, unsigned long);
 				printint(putfunc, lx, lx, 16, 1, &padding);
+			}
+			break;
+		case 'b':
+			if (long_form == 0) {
+				unsigned int b = va_arg(argp, unsigned int);
+				printint(putfunc, b, b, 2, 1, &padding);
+			} else {
+				unsigned long lb = va_arg(argp, unsigned long);
+				printint(putfunc, lb, lb, 2, 1, &padding);
 			}
 			break;
 		case 'p':
@@ -342,8 +348,6 @@ consputc3(int c, uint32_t foreg, uint32_t backg)
 	}
 
 	if (c == BACKSPACE) {
-		uartputc('\b');
-		uartputc(' ');
 		uartputc('\b');
 	} else
 		uartputc(c);
@@ -476,9 +480,11 @@ __nonnull(1, 2) static int
 consolewrite(__attribute__((unused)) struct inode *ip,
 																		 char *buf, int n)
 {
+	acquire(&cons.lock);
 	for (int i = 0; i < n; i++) {
 		vga_write_char(buf[i] & 0xff, static_foreg, static_backg);
 	}
+	release(&cons.lock);
 
 	return n;
 }

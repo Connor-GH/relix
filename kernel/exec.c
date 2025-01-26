@@ -133,7 +133,7 @@ ok:
 	* 0 = fake address
 	* ^ this is what gets popped off the stack when we try to return.
 	* 1 = argc
-	* & this is where main starts popping arguments off the stack
+	* ^ this is where main starts popping arguments off the stack
 	* 2 = argv
 	* 3 = envp
 	* 4 = argv_data ...
@@ -172,7 +172,9 @@ ok:
 	curproc->sz = sz;
 	curproc->tf->eip = elf.e_entry; // main
 	curproc->tf->esp = sp;
-	curproc->cred = curproc->parent->cred;
+	// If parent is NULL, it's also possible we are init.
+	if (curproc->parent != NULL)
+		curproc->cred = curproc->parent->cred;
 	switchuvm(curproc);
 	freevm(oldpgdir);
 	return 0;

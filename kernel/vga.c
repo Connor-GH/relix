@@ -21,7 +21,13 @@ struct DamageTracking {
 	uint32_t bg[WIDTH / 8][HEIGHT / 16];
 	char data[WIDTH / 8][HEIGHT / 16];
 };
+
+struct CursorPosition {
+	uint32_t x;
+	uint32_t y;
+};
 static struct DamageTracking damage_tracking_data = {0};
+static struct CursorPosition cursor_position = {0, 0};
 const uint32_t COLOR_RED;
 #define INTERNAL_COLOR_RED                       \
 	(((1 << fb_rgb.framebuffer_red_mask_size) - 1) \
@@ -138,11 +144,13 @@ ansi_set_cursor_location(uint16_t x, uint16_t y)
 	// Also, we should probably move some of this to userspace.
 	struct font_data_8x16 font_data = { 8, 16, &font_default };
 	fb_char_index = x_y_to_fb_char_index(x, y, font_data.width);
+	cursor_position = (struct CursorPosition){x, y};
 }
 static void
-vga_write_carriage_return(uint32_t fb_width)
+vga_write_carriage_return(uint32_t fb_width, uint8_t font_width)
 {
 	fb_char_index = ROUND_UP(fb_char_index, fb_width) - fb_width;
+	cursor_position = (struct CursorPosition){fb_char_index, font_width};
 }
 
 static void
@@ -167,7 +175,7 @@ vga_backspace(uint8_t font_width, uint8_t font_height, uint32_t background)
 
 // This scrolling algorithm is *way* more complex than it should've been.
 // The good news is that when using damage tracking for every char,
-// the speedup is aroud 2x.
+// the speedup is around 2x.
 static void
 vga_scroll(uint32_t fb_width, uint32_t fb_height, uint8_t font_width,
 					 uint8_t font_height, const uint8_t (*font)[])
@@ -199,13 +207,29 @@ vga_scroll(uint32_t fb_width, uint32_t fb_height, uint8_t font_width,
 		damage_tracking_data.data[i][height-1] = ' ';
 		damage_tracking_data.fg[i][height-1] = VGA_COLOR_WHITE;
 		damage_tracking_data.bg[i][height-1] = VGA_COLOR_BLACK;
-		render_font_glyph(' ', i * font_width, (height-1) * font_height,
-										font_width, font_height,
-										// Black and white are our default colors.
-										font, VGA_COLOR_WHITE, VGA_COLOR_BLACK);
+
+		clear_cells(i, height-1, 1, 1,
+							font_width, font_height, VGA_COLOR_WHITE, VGA_COLOR_BLACK, font);
 	}
 
-	vga_write_carriage_return(fb_width);
+	vga_write_carriage_return(fb_width, font_width);
+}
+
+void
+clear_cells(uint32_t x, uint32_t y, uint32_t x_len, uint32_t y_len,
+						uint8_t font_width, uint8_t font_height, uint32_t foreground,
+						uint32_t background, const uint8_t (*font)[])
+{
+	const uint32_t height = height_chars(font_height);
+	const uint32_t width = width_chars(font_width);
+	if (x > width || y > height)
+		return;
+	for (uint32_t i = 0; i < x_len; i++) {
+		for (uint32_t j = 0; j < y_len; j++) {
+			render_font_glyph(' ', (i+x)*font_width, (j+y)*font_height, font_width,
+										 font_height, font, foreground, background);
+		}
+	}
 }
 
 // Consistent with the define found in console.c.
@@ -224,7 +248,7 @@ vga_write_char(int c, uint32_t foreground, uint32_t background)
 	} else if (c == '\n') {
 		vga_write_newline(WIDTH, font_data.width, HEIGHT);
 	} else if (c == '\r') {
-		vga_write_carriage_return(WIDTH);
+		vga_write_carriage_return(WIDTH, font_data.width);
 	} else if (c == '\t') {
 		vga_write_tab(WIDTH, font_data.width, HEIGHT);
 	} else if (c == '\b' || c == BACKSPACE) {
@@ -242,6 +266,7 @@ vga_write_char(int c, uint32_t foreground, uint32_t background)
 		damage_tracking_data.data[x][y] = (char)c;
 		damage_tracking_data.fg[x][y] = foreground;
 		damage_tracking_data.bg[x][y] = background;
+		cursor_position = (struct CursorPosition){x, y};
 		fb_char_index += font_data.width;
 	}
 	if (c == BACKSPACE) {

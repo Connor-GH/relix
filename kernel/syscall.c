@@ -49,7 +49,7 @@ fetchstr(uintptr_t addr, char **pp)
 	*pp = (char *)addr;
 	ep = (char *)curproc->sz;
 	for (s = *pp; s < ep; s++) {
-		if (*s == 0)
+		if (s != NULL && *s == 0)
 			return s - *pp;
 	}
 	return -1;

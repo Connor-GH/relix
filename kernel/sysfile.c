@@ -285,6 +285,7 @@ bad:
 	return -error;
 }
 
+// Holds lock on ip when released.
 static struct inode *
 create(char *path, mode_t mode, short major, short minor)
 {
@@ -321,9 +322,7 @@ create(char *path, mode_t mode, short major, short minor)
 	ip->mode = mode;
 	ip->gid = DEFAULT_GID;
 	ip->uid = DEFAULT_UID;
-	struct rtcdate rtc;
-	cmostime(&rtc);
-	ip->mtime = ip->atime = ip->ctime = RTC_TO_UNIX(rtc);
+	// atime, mtime, etc. get handled in iupdate()
 	iupdate(ip);
 	// Create . and .. entries.
 	// because every directory goes as follows:
@@ -375,6 +374,8 @@ fileopen(char *path, mode_t omode)
 			end_op();
 			return -ENOTBLK;
 		}
+		// create() holds a lock on this inode pointer,
+		// but only if it succeeds.
 		ip = create(path, S_IFREG | S_IAUSR, 0, 0);
 		if (ip == 0) {
 			end_op();
@@ -389,6 +390,7 @@ fileopen(char *path, mode_t omode)
 
 		if (S_ISLNK(ip->mode)) {
 			if ((ip = link_dereference(ip, path)) == 0) {
+				iunlockput(ip);
 				end_op();
 				return -EINVAL;
 			}
@@ -399,6 +401,8 @@ fileopen(char *path, mode_t omode)
 			return -EISDIR;
 		}
 	}
+	// By this line, both branches above are holding a lock to ip.
+	// That is why it is released down here.
 get_fd:
 
 	if ((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0) {
@@ -616,10 +620,11 @@ sys_symlink(void)
 		return -EEXIST;
 	}
 
+	// Dirlookup's first arg needs a lock.
 	ilock(eexist);
 
 	if ((ip = dirlookup(eexist, dir, &poff)) != 0) {
-		iunlock(eexist);
+		iunlockput(eexist);
 		end_op();
 		return -EEXIST;
 	}

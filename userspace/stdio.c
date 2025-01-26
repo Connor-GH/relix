@@ -531,7 +531,7 @@ printf(const char *fmt, ...)
 void
 perror(const char *s)
 {
-	printf("%s: %s\n", s, errno_codes[errno]);
+	fprintf(stderr, "%s: %s\n", s, errno_codes[errno]);
 }
 
 const char *

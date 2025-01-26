@@ -23,6 +23,7 @@
 #include "buf.h"
 #include "file.h"
 #include "kernel_string.h"
+#include "kernel_assert.h"
 #include "bio.h"
 #include "log.h"
 #include "console.h"
@@ -287,12 +288,14 @@ iget(uint32_t dev, uint32_t inum)
 			empty = ip;
 	}
 	if (empty == 0) {
-		release(&icache.lock[hash]);
 		for (int i = 0; i < min(NBUCKET, ncpu); i++) {
+			// Skip over the node that we already checked.
+			// This also avoids a deadlock.
+			if (i == hash)
+				continue;
 			acquire(&icache.lock[i]);
 			for (ip = &icache.inode[0][i]; ip < &icache.inode[NINODE - 1][i]; ip++) {
-				if (i == hash)
-					continue;
+
 				if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {
 					ip->ref++;
 					release(&icache.lock[i]);
@@ -341,6 +344,8 @@ ilock(struct inode *ip)
 
 	if (ip == 0 || ip->ref < 1)
 		panic("ilock");
+	if (holdingsleep(&ip->lock))
+		panic("ilock: already locking");
 
 	acquiresleep(&ip->lock);
 
@@ -370,8 +375,10 @@ ilock(struct inode *ip)
 void
 iunlock(struct inode *ip)
 {
-	if (ip == 0 || !holdingsleep(&ip->lock) || ip->ref < 1)
+	if (ip == 0 || ip->ref < 1)
 		panic("iunlock");
+ if (!holdingsleep(&ip->lock))
+		panic("iunlock: inode was not locking");
 
 	releasesleep(&ip->lock);
 }
@@ -430,6 +437,7 @@ bmap(struct inode *ip, uint32_t bn)
 	uint32_t addr, *a;
 	struct buf *bp;
 
+	kernel_assert(holdingsleep(&ip->lock));
 	if (bn < NDIRECT) {
 		if ((addr = ip->addrs[bn]) == 0)
 			ip->addrs[bn] = addr = balloc(ip->dev);
@@ -554,6 +562,7 @@ itrunc(struct inode *ip)
 void
 stati(struct inode *ip, struct stat *st)
 {
+	kernel_assert(holdingsleep(&ip->lock));
 	st->st_dev = ip->dev;
 	st->st_ino = ip->inum;
 	st->st_nlink = ip->nlink;
@@ -571,6 +580,7 @@ stati(struct inode *ip, struct stat *st)
 int
 readi(struct inode *ip, char *dst, uint32_t off, uint32_t n)
 {
+	kernel_assert(holdingsleep(&ip->lock));
 	uint32_t tot, m;
 	struct buf *bp;
 
@@ -599,6 +609,7 @@ readi(struct inode *ip, char *dst, uint32_t off, uint32_t n)
 int
 writei(struct inode *ip, char *src, uint32_t off, uint32_t n)
 {
+	kernel_assert(holdingsleep(&ip->lock));
 	uint32_t tot, m;
 	struct buf *bp;
 

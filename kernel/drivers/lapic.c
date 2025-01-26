@@ -11,6 +11,7 @@
 #include "compiler_attributes.h"
 #include "kernel_string.h"
 #include "console.h"
+#include "spinlock.h"
 
 // Local APIC registers, divided by 4 for use as uint[] indices.
 #define ID (0x0020 / 4) // ID
@@ -47,6 +48,8 @@
 #define TDCR (0x03E0 / 4) // Timer Divide Configuration
 
 volatile uint32_t *lapic; // Initialized in mp.c
+
+struct spinlock rtc_lock;
 
 static void
 lapicw(int index, int value)
@@ -107,6 +110,7 @@ lapicinit(void)
 
 	// Enable interrupts on the APIC (but not on the processor).
 	lapicw(TPR, 0);
+	initlock(&rtc_lock, "rtc");
 }
 
 int
@@ -237,6 +241,7 @@ cmostime(struct rtcdate *r)
 		microdelay(1000);
 		time_passed_in_ms++;
 	}
+	acquire(&rtc_lock);
 	if (!update_in_progress_ended_successfully) {
 		t1.year = 1970;
 		t1.month = 1;
@@ -244,6 +249,7 @@ cmostime(struct rtcdate *r)
 		t1.hour = 0;
 		t1.minute = 0;
 		t1.second = 0;
+		release(&rtc_lock);
 		return;
 	}
 	fill_rtcdate(&t1);
@@ -264,6 +270,7 @@ cmostime(struct rtcdate *r)
 			t1.hour += 12;
 	}
 	t1.year += 2000;
+	release(&rtc_lock);
 
 	*r = t1;
 }

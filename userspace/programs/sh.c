@@ -121,6 +121,7 @@ runcmd(struct cmd *cmd)
 		int rcmd_fd;
 		if ((rcmd_fd = open(rcmd->file, rcmd->mode)) < 0) {
 			fprintf(stderr, "open %s failed\n", rcmd->file);
+			perror("open");
 			exit(1);
 		}
 		runcmd(rcmd->cmd);

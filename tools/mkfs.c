@@ -4,6 +4,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <assert.h>
+#define USE_HOST_TOOLS
 #include <time.h>
 #include <stdint.h>
 #define SYSROOT "sysroot/"

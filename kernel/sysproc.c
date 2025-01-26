@@ -9,14 +9,15 @@
 #include "kernel_string.h"
 #include "drivers/lapic.h"
 #include "console.h"
+#include "time.h"
 
-int
+size_t
 sys_fork(void)
 {
 	return fork();
 }
 
-int
+size_t
 sys__exit(void)
 {
 	int status;
@@ -26,7 +27,7 @@ sys__exit(void)
 	return 0; // not reached
 }
 
-int
+size_t
 sys_wait(void)
 {
 	// very strange: is this correct behavior?
@@ -36,7 +37,7 @@ sys_wait(void)
 	return wait(status);
 }
 
-int
+size_t
 sys_kill(void)
 {
 	int pid;
@@ -46,13 +47,13 @@ sys_kill(void)
 	return kill(pid);
 }
 
-int
+size_t
 sys_getpid(void)
 {
 	return myproc()->pid;
 }
 
-int
+size_t
 sys_sbrk(void)
 {
 	uintptr_t addr;
@@ -66,11 +67,11 @@ sys_sbrk(void)
 	return addr;
 }
 
-int
+size_t
 sys_sleep(void)
 {
 	int n;
-	uint32_t ticks0;
+	time_t ticks0;
 
 	if (argint(0, &n) < 0)
 		return -EINVAL;
@@ -89,10 +90,10 @@ sys_sleep(void)
 
 // return how many clock tick interrupts have occurred
 // since start.
-int
+size_t
 sys_uptime(void)
 {
-	uint32_t xticks;
+	time_t xticks;
 
 	acquire(&tickslock);
 	xticks = ticks;
@@ -100,7 +101,7 @@ sys_uptime(void)
 	return xticks;
 }
 
-int
+size_t
 sys_date(void)
 {
 	struct rtcdate *r;
@@ -114,15 +115,15 @@ static void __attribute__((noreturn))
 poweroff(void)
 {
 	// get rid of init
-	// sh is technically pid 0
 	kill(0);
 	kill(1);
 	// shut down qemu through magic acpi numbers
 	outw(0xB004, 0x0 | 0x2000);
 	outw(0x604, 0x0 | 0x2000);
-	exit(0); // get rid of "noreturn" warning
+	// get rid of "noreturn" warning
+	panic("Unreachable.");
 }
-int
+size_t
 sys_reboot(void)
 {
 	int cmd;
@@ -151,13 +152,13 @@ sys_reboot(void)
 	}
 }
 
-int
+size_t
 sys_setuid(void)
 {
 	// cannot setuid if not root
 	if (myproc()->cred.uid != 0)
 		return -EPERM;
-	int uid;
+	uid_t uid;
 	if (argint(0, &uid) < 0)
 		return -EINVAL;
 	struct cred cred;
@@ -166,7 +167,7 @@ sys_setuid(void)
 	return 0;
 }
 
-int
+size_t
 sys_strace(void)
 {
 	char *trace_ptr;

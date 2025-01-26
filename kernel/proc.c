@@ -19,6 +19,7 @@
 #include "file.h"
 #include "fs.h"
 #include "compiler_attributes.h"
+#include "types.h"
 
 #define W_EXITCODE(ret, signal) ((ret) << 8 | (signal))
 
@@ -210,7 +211,8 @@ growproc(int n)
 // Create a new process copying p as the parent.
 // Sets up stack to return as if from system call.
 // Caller must set state of returned proc to RUNNABLE.
-int
+// POSIX.1-2008: fork is a "signed integer type".
+pid_t
 fork(void)
 {
 	int i, pid;

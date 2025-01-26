@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <stat.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <sys/uio.h>
 #include <dirent.h>
 #include <date.h>
@@ -17,6 +16,7 @@
 #include <errno.h>
 #include <stddef.h>
 #include "param.h"
+#include "types.h"
 #include "proc.h"
 #include "fs.h"
 #include "file.h"
@@ -67,7 +67,7 @@ fdalloc(struct file *f)
 	return -1;
 }
 
-int
+size_t
 sys_dup(void)
 {
 	struct file *f;
@@ -81,7 +81,7 @@ sys_dup(void)
 	return fd;
 }
 
-int
+size_t
 sys_read(void)
 {
 	struct file *f;
@@ -94,7 +94,7 @@ sys_read(void)
 	return fileread(f, p, n);
 }
 
-int
+size_t
 sys_write(void)
 {
 	struct file *f;
@@ -106,7 +106,7 @@ sys_write(void)
 	return filewrite(f, p, n);
 }
 
-int
+size_t
 sys_writev(void)
 {
 	struct iovec *iovecs;
@@ -127,7 +127,7 @@ sys_writev(void)
 	}
 	return accumulated_bytes;
 }
-int
+size_t
 sys_close(void)
 {
 	int fd;
@@ -140,7 +140,7 @@ sys_close(void)
 	return 0;
 }
 
-int
+size_t
 sys_fstat(void)
 {
 	struct file *f;
@@ -154,7 +154,7 @@ sys_fstat(void)
 }
 
 // Create the path new as a link to the same inode as old.
-int
+size_t
 sys_link(void)
 {
 	char name[DIRSIZ], *new, *old;
@@ -223,7 +223,7 @@ isdirempty(struct inode *dp)
 	return 1;
 }
 
-int
+size_t
 sys_unlink(void)
 {
 	struct inode *ip, *dp;
@@ -286,7 +286,7 @@ bad:
 }
 
 static struct inode *
-create(char *path, int mode, short major, short minor)
+create(char *path, mode_t mode, short major, short minor)
 {
 	struct inode *ip, *dp;
 	char name[DIRSIZ];
@@ -352,7 +352,7 @@ create(char *path, int mode, short major, short minor)
 }
 
 int
-fileopen(char *path, int omode)
+fileopen(char *path, mode_t omode)
 {
 	int fd;
 	struct file *f;
@@ -419,18 +419,18 @@ get_fd:
 	return fd;
 }
 
-int
+size_t
 sys_open(void)
 {
 	char *path;
-	int omode;
+	mode_t omode;
 
 	if (argstr(0, &path) < 0 || argint(1, &omode) < 0)
 		return -EINVAL;
 	return fileopen(path, omode);
 }
 
-int
+size_t
 sys_mkdir(void)
 {
 	char *path;
@@ -447,7 +447,7 @@ sys_mkdir(void)
 	return 0;
 }
 
-int
+size_t
 sys_mknod(void)
 {
 	struct inode *ip;
@@ -466,7 +466,7 @@ sys_mknod(void)
 	return 0;
 }
 
-int
+size_t
 sys_chdir(void)
 {
 	char *path;
@@ -497,7 +497,7 @@ sys_chdir(void)
 	return 0;
 }
 
-int
+size_t
 sys_execve(void)
 {
 	char *path, *argv[MAXARG], *envp[MAXENV];
@@ -537,7 +537,7 @@ sys_execve(void)
 	return execve(path, argv, envp);
 }
 
-int
+size_t
 sys_pipe(void)
 {
 	int *fd;
@@ -561,14 +561,14 @@ sys_pipe(void)
 	return 0;
 }
 
-int
+size_t
 sys_chmod(void)
 {
 	char *path;
-	int mode;
+	mode_t mode;
 	struct inode *ip;
 	begin_op();
-	if (argstr(0, &path) < 0 || argint(1, (int *)&mode) < 0 ||
+	if (argstr(0, &path) < 0 || argint(1, (mode_t *)&mode) < 0 ||
 			(ip = namei(path)) == 0) {
 		end_op();
 		return -EINVAL;
@@ -581,7 +581,7 @@ sys_chmod(void)
 	return 0;
 }
 
-int
+size_t
 sys_echoout(void)
 {
 	int answer;
@@ -596,7 +596,7 @@ sys_echoout(void)
 }
 
 // target, linkpath
-int
+size_t
 sys_symlink(void)
 {
 	char *target, *linkpath;
@@ -638,7 +638,7 @@ sys_symlink(void)
 	return 0;
 }
 
-int
+size_t
 sys_readlink(void)
 {
 	char *target, *ubuf;
@@ -704,7 +704,7 @@ bad:
 	return 0;
 }
 
-int
+size_t
 sys_lseek(void)
 {
 	int fd;
@@ -712,7 +712,7 @@ sys_lseek(void)
 	int whence;
 	struct file *file;
 
-	if (argfd(0, &fd, &file) < 0 || arguintptr(1, &offset) < 0 ||
+	if (argfd(0, &fd, &file) < 0 || argssize(1, &offset) < 0 ||
 			argint(2, &whence) < 0)
 		return -EINVAL;
 	if (S_ISFIFO(file->ip->mode) || S_ISSOCK(file->ip->mode))
@@ -722,7 +722,7 @@ sys_lseek(void)
 }
 
 /* Unimplemented */
-int
+size_t
 sys_fsync(void)
 {
 	int fd;

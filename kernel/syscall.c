@@ -38,7 +38,7 @@ fetchuintp(uintptr_t addr, uintptr_t *ip)
 // Fetch the nul-terminated string at addr from the current process.
 // Doesn't actually copy the string - just sets *pp to point at it.
 // Returns length of string, not including nul.
-int
+ssize_t
 fetchstr(uintptr_t addr, char **pp)
 {
 	char *s, *ep;
@@ -54,7 +54,6 @@ fetchstr(uintptr_t addr, char **pp)
 	}
 	return -1;
 }
-#if X86_64
 
 // arguments passed in registers on x64
 static uintptr_t
@@ -92,20 +91,13 @@ arguintptr(int n, uintptr_t *ip)
 	return 0;
 }
 
-#else
-// Fetch the nth 32-bit system call argument.
 int
-argint(int n, int *ip)
+argssize(int n, ssize_t *sp)
 {
-	return fetchint((myproc()->tf->esp) + 4 + 4 * n, ip);
+	*sp = fetcharg(n);
+	return 0;
 }
-int
-arguintptr(int n, uintptr_t *ip)
-{
-	return fetchuintp(
-		myproc()->tf->esp + sizeof(uintptr_t) + sizeof(uintptr_t) * n, ip);
-}
-#endif
+
 
 // Fetch the nth word-sized system call argument as a pointer
 // to a block of memory of size bytes.  Check that the pointer
@@ -129,7 +121,7 @@ argptr(int n, char **pp, int size)
 // Check that the pointer is valid and the string is nul-terminated.
 // (There is no shared writable memory, so the string can't change
 // between this check and being used by the kernel.)
-int
+ssize_t
 argstr(int n, char **pp)
 {
 	uintptr_t addr;
@@ -138,72 +130,72 @@ argstr(int n, char **pp)
 	return fetchstr(addr, pp);
 }
 
-extern int
+extern size_t
 sys_chdir(void);
-extern int
+extern size_t
 sys_close(void);
-extern int
+extern size_t
 sys_dup(void);
-extern int
+extern size_t
 sys_execve(void);
-extern int
+extern size_t
 sys__exit(void);
-extern int
+extern size_t
 sys_fork(void);
-extern int
+extern size_t
 sys_fstat(void);
-extern int
+extern size_t
 sys_getpid(void);
-extern int
+extern size_t
 sys_kill(void);
-extern int
+extern size_t
 sys_link(void);
-extern int
+extern size_t
 sys_mkdir(void);
-extern int
+extern size_t
 sys_mknod(void);
-extern int
+extern size_t
 sys_open(void);
-extern int
+extern size_t
 sys_pipe(void);
-extern int
+extern size_t
 sys_read(void);
-extern int
+extern size_t
 sys_sbrk(void);
-extern int
+extern size_t
 sys_sleep(void);
-extern int
+extern size_t
 sys_unlink(void);
-extern int
+extern size_t
 sys_wait(void);
-extern int
+extern size_t
 sys_write(void);
-extern int
+extern size_t
 sys_uptime(void);
-extern int
+extern size_t
 sys_date(void);
-extern int
+extern size_t
 sys_chmod(void);
-extern int
+extern size_t
 sys_reboot(void);
-extern int
+extern size_t
 sys_echoout(void);
-extern int
+extern size_t
 sys_setuid(void);
-extern int
+extern size_t
 sys_strace(void);
-extern int
+extern size_t
 sys_symlink(void);
-extern int
+extern size_t
 sys_readlink(void);
-extern int
+extern size_t
 sys_lseek(void);
-extern int
+extern size_t
 sys_fsync(void);
-extern int
+extern size_t
 sys_writev(void);
 
-static int (*syscalls[])(void) = {
+static size_t (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,				 [SYS__exit] = sys__exit,
 	[SYS_wait] = sys_wait,				 [SYS_pipe] = sys_pipe,
 	[SYS_read] = sys_read,				 [SYS_kill] = sys_kill,
@@ -231,7 +223,7 @@ syscall(void)
 	num = curproc->tf->eax;
 	if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
 		if (curproc->strace_mask_ptr[num] == 1) {
-			int xticks, yticks;
+			size_t xticks, yticks;
 			acquire(&tickslock);
 			xticks = ticks;
 			release(&tickslock);
@@ -240,7 +232,7 @@ syscall(void)
 			yticks = ticks;
 			release(&tickslock);
 
-			cprintf("pid %d: syscall %s => %ld (%d ticks)\n", curproc->pid,
+			cprintf("pid %d: syscall %s => %ld (%lu ticks)\n", curproc->pid,
 							syscall_names[num], curproc->tf->eax, yticks - xticks);
 		} else {
 			curproc->tf->eax = syscalls[num]();

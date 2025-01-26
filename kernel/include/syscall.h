@@ -35,6 +35,8 @@
 #define SYS_writev 32
 #define SYSCALL_AMT 32
 #ifndef __ASSEMBLER__
+#include <stddef.h>
+#include "types.h"
 __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_fork] = "fork",				 [SYS__exit] = "_exit",
 	[SYS_wait] = "wait",				 [SYS_pipe] = "pipe",
@@ -63,12 +65,14 @@ argptr(int, char **, int);
 int
 arguintptr(int n, uintptr_t *ip);
 int
+argssize(int n, ssize_t *sp);
+ssize_t
 argstr(int, char **);
 int
 fetchint(uintptr_t, int *);
 int
 fetchuintp(uintptr_t addr, uintptr_t *ip);
-int
+ssize_t
 fetchstr(uintptr_t, char **);
 void
 syscall(void);

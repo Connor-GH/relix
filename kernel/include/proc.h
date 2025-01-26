@@ -4,6 +4,7 @@
 #include "param.h"
 #include "spinlock.h"
 #include "syscall.h"
+#include "types.h"
 #include <stdint.h>
 #include "../drivers/mmu.h"
 #include "../include/file.h"
@@ -11,13 +12,13 @@
 struct groups {
 	char *gr_name;
 	char *gr_passwd;
-	uint32_t gr_gid;
+	gid_t gr_gid;
 	char **gr_mem;
 };
 
 struct cred {
-	uint32_t uid;
-	uint32_t gid;
+	uid_t uid;
+	gid_t gid;
 	struct groups groups[MAXGROUPS];
 };
 
@@ -80,7 +81,7 @@ struct proc {
 	uintptr_t *pgdir; // Page table
 	char *kstack; // Bottom of kernel stack for this process
 	enum procstate state; // Process state
-	int pid; // Process ID
+	pid_t pid; // Process ID
 	int status;
 	struct proc *parent; // Parent process
 	struct trapframe *tf; // Trap frame for current syscall
@@ -104,7 +105,7 @@ int
 my_cpu_id(void);
 void
 exit(int) __attribute__((noreturn));
-int
+pid_t
 fork(void);
 int
 growproc(int);

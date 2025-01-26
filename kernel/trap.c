@@ -13,6 +13,7 @@
 #include "uart.h"
 #include "console.h"
 #include <stdint.h>
+#include "time.h"
 enum {
 	PAGE_FAULT_PRESENT = 1 << 0,
 	PAGE_FAULT_WRITE = 1 << 1,
@@ -27,7 +28,7 @@ enum {
 struct gatedesc idt[256];
 extern uintptr_t vectors[]; // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
-uint32_t ticks;
+time_t ticks;
 static void
 decipher_page_fault_error_code(uint64_t error_code)
 {

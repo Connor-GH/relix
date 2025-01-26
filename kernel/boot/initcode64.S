@@ -21,10 +21,12 @@ exit:
   int $T_SYSCALL
   jmp exit
 
+.align 8
 # char init[] = "/bin/init\0";
 init:
   .string "/bin/init\0"
 
+.align 8
 # This is where system-wide default environment variables are set.
 env0: .string "PATH=/bin:/usr/bin:/\0"
 env1: .string "HOME=/\0"
@@ -33,11 +35,12 @@ env2: .string "SHELL=/bin/sh\0"
 env3: .string "TERM=xterm\0"
 
 # char *argv[] = { init, 0 };
-.p2align 2
+.align 8
 argv:
   .quad init
   .quad 0
 
+.align 8
 envp:
 	.quad env0
 	.quad env1

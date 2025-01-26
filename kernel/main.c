@@ -41,7 +41,7 @@ rust_hello_world(void);
 int
 main(struct multiboot_info *mbinfo)
 {
-	uartinit(); // serial port
+	uartinit1(); // serial port
 	parse_multiboot(mbinfo);
 	kernel_assert(available_memory != 0);
 	kinit1(end, P2V(4 * 1024 * 1024)); // phys page allocator
@@ -49,13 +49,14 @@ main(struct multiboot_info *mbinfo)
 	// We can start printing to the screen here.
 	// Any printing before this MUST be uart.
 	kvmalloc(); // kernel page table
+	ioapicinit(); // another interrupt controller
+	uartinit2();
 	cprintf("xv6_64 (built with %s and linker %s)\n", XV6_COMPILER, XV6_LINKER);
 	if (acpiinit() != 0)
 		mpinit(); // detect other processors
 	lapicinit(); // interrupt controller
 	seginit(); // segment descriptors
 	picinit(); // disable pic
-	ioapicinit(); // another interrupt controller
 	// /dev/console, not to be confused with VGA memory
 	consoleinit(); // console hardware
 	nulldrvinit();

@@ -5,7 +5,7 @@
 #ifndef USE_HOST_TOOLS
 #include "sleeplock.h"
 #else
-#include <../../kernel/include/sleeplock.h>
+#include <kernel/include/sleeplock.h>
 #endif
 // Constants that userspace testers might be interested in.
 // To not pollute the namespace, they have double underscores.

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stdint.h"
+#include <time.h>
 #include <stddef.h>
 #include <sys/types.h>
 int
@@ -49,8 +49,8 @@ int
 getpid(void);
 void *
 sbrk(int);
-int
-sleep(int);
+unsigned int
+sleep(unsigned int);
 // needs sys/reboot
 int
 reboot(int cmd);

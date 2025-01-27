@@ -11,6 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stddef.h>
+#include <time.h>
 
 int errno;
 extern char **environ;

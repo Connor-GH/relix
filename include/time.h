@@ -1,6 +1,7 @@
 #pragma once
 #include <date.h>
 #include <stdint.h>
+#include "kernel/include/time.h"
 typedef uint64_t time_t;
 
 struct tm {

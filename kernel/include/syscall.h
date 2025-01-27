@@ -58,20 +58,30 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 #endif
 #if defined(__KERNEL__) && !defined(__ASSEMBLER__)
 #include <stdint.h>
+/*
+ * All of the generic integer type "arg" and "fetch" family of functions
+ * are defined from macro generation.
+ */
 int
 argint(int, int *);
 int
-argptr(int, char **, int);
+argunsigned_int(int, unsigned int *);
 int
-arguintptr(int n, uintptr_t *ip);
+arguintptr_t(int n, uintptr_t *ip);
 int
-argssize(int n, ssize_t *sp);
-ssize_t
-argstr(int, char **);
+argssize_t(int n, ssize_t *sp);
+
 int
 fetchint(uintptr_t, int *);
 int
-fetchuintp(uintptr_t addr, uintptr_t *ip);
+fetchunsigned_int(uintptr_t, unsigned int *);
+int
+fetchuintptr_t(uintptr_t addr, uintptr_t *ip);
+
+int
+argptr(int, char **, int);
+ssize_t
+argstr(int, char **);
 ssize_t
 fetchstr(uintptr_t, char **);
 void

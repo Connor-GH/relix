@@ -8,6 +8,17 @@
 #include "syscall.h"
 #include "console.h"
 
+#define SYSCALL_ARG_FETCH(T) \
+int \
+fetch ## T(uintptr_t addr, T *ip) \
+{ \
+	struct proc *curproc = myproc(); \
+	if (addr >= curproc->sz || addr + sizeof(T) > curproc->sz) \
+		return -1; \
+	*ip = *(T *)(addr); \
+	return 0; \
+}
+
 // User code makes a system call with INT T_SYSCALL.
 // System call number in %eax.
 // Arguments on the stack, from the user call to the C
@@ -15,6 +26,7 @@
 // to a saved program counter, and then the first argument.
 
 // Fetch the int at addr from the current process.
+#if 0
 int
 fetchint(uintptr_t addr, int *ip)
 {
@@ -25,8 +37,14 @@ fetchint(uintptr_t addr, int *ip)
 	*ip = *(int *)(addr);
 	return 0;
 }
+#endif
+SYSCALL_ARG_FETCH(int);
+typedef unsigned int unsigned_int;
+SYSCALL_ARG_FETCH(unsigned_int);
+SYSCALL_ARG_FETCH(uintptr_t);
+#if 0
 int
-fetchuintp(uintptr_t addr, uintptr_t *ip)
+fetchuintptr_t(uintptr_t addr, uintptr_t *ip)
 {
 	struct proc *proc = myproc();
 	if (addr >= proc->sz || addr + sizeof(uintptr_t) > proc->sz)
@@ -34,6 +52,7 @@ fetchuintp(uintptr_t addr, uintptr_t *ip)
 	*ip = *(uintptr_t *)(addr);
 	return 0;
 }
+#endif
 
 // Fetch the nul-terminated string at addr from the current process.
 // Doesn't actually copy the string - just sets *pp to point at it.
@@ -78,12 +97,18 @@ fetcharg(int n)
 	}
 }
 
-int
-argint(int n, int *ip)
-{
-	*ip = fetcharg(n);
-	return 0;
+#define SYSCALL_ARG_N(T) \
+int \
+arg ## T(int n, T *ip) \
+{ \
+	*ip = fetcharg(n); \
+	return 0; \
 }
+SYSCALL_ARG_N(int);
+SYSCALL_ARG_N(unsigned_int);
+SYSCALL_ARG_N(uintptr_t);
+SYSCALL_ARG_N(ssize_t);
+#if 0
 int
 arguintptr(int n, uintptr_t *ip)
 {
@@ -97,6 +122,7 @@ argssize(int n, ssize_t *sp)
 	*sp = fetcharg(n);
 	return 0;
 }
+#endif
 
 
 // Fetch the nth word-sized system call argument as a pointer
@@ -108,7 +134,7 @@ argptr(int n, char **pp, int size)
 	uintptr_t i;
 	struct proc *curproc = myproc();
 
-	if (arguintptr(n, &i) < 0)
+	if (arguintptr_t(n, &i) < 0)
 		return -1;
 	if (size < 0 || (uintptr_t)i >= curproc->sz ||
 			(uintptr_t)i + size > curproc->sz)
@@ -125,7 +151,7 @@ ssize_t
 argstr(int n, char **pp)
 {
 	uintptr_t addr;
-	if (arguintptr(n, &addr) < 0)
+	if (arguintptr_t(n, &addr) < 0)
 		return -1;
 	return fetchstr(addr, pp);
 }

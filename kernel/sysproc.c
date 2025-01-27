@@ -59,7 +59,7 @@ sys_sbrk(void)
 	uintptr_t addr;
 	uintptr_t n;
 
-	if (arguintptr(0, &n) < 0)
+	if (arguintptr_t(0, &n) < 0)
 		return -EINVAL;
 	addr = myproc()->sz;
 	if (growproc(n) < 0)
@@ -70,10 +70,10 @@ sys_sbrk(void)
 size_t
 sys_sleep(void)
 {
-	int n;
+	unsigned int n;
 	time_t ticks0;
 
-	if (argint(0, &n) < 0)
+	if (argunsigned_int(0, &n) < 0)
 		return -EINVAL;
 	acquire(&tickslock);
 	ticks0 = ticks;

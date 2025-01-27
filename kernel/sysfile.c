@@ -508,8 +508,8 @@ sys_execve(void)
 	uintptr_t uargv, uarg;
 	uintptr_t uenvp, uenv;
 
-	if (argstr(0, &path) < 0 || arguintptr(1, &uargv) < 0 ||
-			arguintptr(2, &uenvp) < 0) {
+	if (argstr(0, &path) < 0 || arguintptr_t(1, &uargv) < 0 ||
+			arguintptr_t(2, &uenvp) < 0) {
 		return -EINVAL;
 	}
 	memset(argv, 0, sizeof(argv));
@@ -517,7 +517,7 @@ sys_execve(void)
 	for (int i = 0;; i++) {
 		if (i >= NELEM(argv))
 			return -ENOEXEC;
-		if (fetchuintp(uargv + sizeof(uintptr_t) * i, &uarg) < 0)
+		if (fetchuintptr_t(uargv + sizeof(uintptr_t) * i, &uarg) < 0)
 			return -ENOEXEC;
 		if (uarg == 0) {
 			argv[i] = 0;
@@ -529,7 +529,7 @@ sys_execve(void)
 	for (int i = 0;; i++) {
 		if (i >= NELEM(envp))
 			return -ENOEXEC;
-		if (fetchuintp(uenvp + sizeof(uintptr_t) * i, &uenv) < 0)
+		if (fetchuintptr_t(uenvp + sizeof(uintptr_t) * i, &uenv) < 0)
 			return -ENOEXEC;
 		if (uenv == 0) {
 			envp[i] = 0;
@@ -717,7 +717,7 @@ sys_lseek(void)
 	int whence;
 	struct file *file;
 
-	if (argfd(0, &fd, &file) < 0 || argssize(1, &offset) < 0 ||
+	if (argfd(0, &fd, &file) < 0 || argssize_t(1, &offset) < 0 ||
 			argint(2, &whence) < 0)
 		return -EINVAL;
 	if (S_ISFIFO(file->ip->mode) || S_ISSOCK(file->ip->mode))

@@ -85,7 +85,7 @@ parse_multiboot(struct multiboot_info *mbinfo)
 			for (; (multiboot_uint8_t *)memmap < (multiboot_uint8_t *)tag + tag->size;
 					 memmap = (multiboot_memory_map_t *)((uint64_t)memmap +
 						((struct multiboot_tag_mmap *)tag)->entry_size)) {
-				uart_cprintf("%#0llx-%#0llx %s\n", memmap->addr,
+				uart_cprintf("%#018llx-%#018llx %s\n", memmap->addr,
 								memmap->addr + memmap->len - 1,
 								multiboot_mmap_type(memmap->type));
 				if (memmap->type == MULTIBOOT_MEMORY_AVAILABLE) {
@@ -110,7 +110,7 @@ parse_multiboot(struct multiboot_info *mbinfo)
 			// direct RGB color.
 			if (fbtag.framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB) {
 				struct fb_rgb color = fb->rgb;
-				uart_cprintf("%d %d %d %d %d %d\n", color.framebuffer_red_field_position,
+				uart_cprintf("R%d %db\nG%d %db\nB%d %db\n", color.framebuffer_red_field_position,
 								color.framebuffer_red_mask_size,
 								color.framebuffer_green_field_position,
 								color.framebuffer_green_mask_size,

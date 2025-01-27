@@ -119,6 +119,7 @@ images: $(BIN)/fs.img $(BIN)/kernel
 $(DIRECTORIES):
 	mkdir -p $@
 
+include lib/Makefile
 include userspace/Makefile
 include kernel/Makefile
 

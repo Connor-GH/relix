@@ -2,10 +2,10 @@
 #include <stdint.h>
 
 /* clang-format off */
-#define FONT_DATA(w, l) struct font_data_##w ##x ##l { uint8_t width; uint8_t height; const uint8_t (*font)[256][w*l]; };
+#define FONT_DATA(w, l) struct font_data_##w ##x ##l { uint8_t width; uint8_t height; const _Bool (*font)[256][w*l]; };
 FONT_DATA(8, 16);
 
-const uint8_t font_default[256][8*16] = {
+const _Bool font_default[256][8*16] = {
 	['\0' ... ' '] = {
 		0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0,

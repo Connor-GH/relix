@@ -5,8 +5,12 @@ use core::ffi::c_char;
 
 unsafe extern "C" {
     fn ansi_change_color(bold: bool, color: u32, c: c_char, fg: bool);
+    fn ansi_set_cursor_location_x(x: u16);
+    fn ansi_set_cursor_location_y(y: u16);
+    fn ansi_set_cursor_location_up(by: u16);
     fn ansi_set_cursor_location(x: u16, y: u16);
     safe fn ansi_4bit_to_hex_color(color: u16, is_bg: bool) -> u32;
+    fn ansi_erase_in_front_of_cursor();
 }
 /// A type implementing Perform that just logs actions
 struct Log;
@@ -83,18 +87,22 @@ impl Perform for Log {
                 if param_vec.len() != 2 {
                     return;
                 }
-                unsafe { ansi_set_cursor_location(*param_vec[0], *param_vec[1]); }
+                // Locations are '1'-based.
+                unsafe { ansi_set_cursor_location(*param_vec[0] - 1, *param_vec[1] - 1); }
+            },
+            b'A' => {
+                let n: u16 = **param_vec.get(0).unwrap_or(&&1);
+                unsafe { ansi_set_cursor_location_up(n); }
             },
             b'K' => {
                 let n: u16 = **param_vec.get(0).unwrap_or(&&0u16);
                 match n {
-                    0 => {},
+                    0 => {unsafe { ansi_erase_in_front_of_cursor(); }},
                     1 => {},
                     2 => {},
                     _ => {},
                 }
-
-            }
+            },
             _ => {}
         }
     }

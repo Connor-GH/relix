@@ -1,12 +1,14 @@
 #pragma once
 
+// mkfs defines this when building.
+#ifndef USE_HOST_TOOLS
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include "kernel/include/fs.h"
 
-// mkfs defines this when building.
-#ifndef USE_HOST_TOOLS
+#if defined(__ONLY_SHARE_FILE_IMPL) || defined(__USER__)
 struct _IO_FILE {
 	char *write_buffer;
 	size_t write_buffer_size;
@@ -18,10 +20,10 @@ struct _IO_FILE {
 	bool error;
 };
 
-#include <stat.h>
 
 typedef struct _IO_FILE FILE;
-
+#endif
+#if defined(__USER__)
 extern FILE *stdin;
 extern FILE *stdout;
 extern FILE *stderr;
@@ -60,4 +62,5 @@ fopen(const char *restrict pathname, const char *restrict mode);
 int
 fclose(FILE *stream);
 #define putc(c, stream) fputc(c, stream)
+#endif
 #endif /* USE_HOST_TOOLS */

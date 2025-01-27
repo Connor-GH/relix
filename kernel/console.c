@@ -3,6 +3,7 @@
 // Output is written to the screen and serial port.
 
 #include "vga.h"
+#include "lib/print.h"
 #include <stdint.h>
 #include <stdint.h>
 #include <stdarg.h>
@@ -60,36 +61,6 @@ set_term_color(uint32_t foreground, uint32_t background, bool changed_fg,
 		static_foreg = (!changed_fg) ? static_foreg : foreground;
 		static_backg = (!changed_bg) ? static_backg : background;
 	}
-}
-
-static void
-printint(putfunc_t putfunc, uint64_t x, int64_t xs, int base, bool is_unsigned,
-				 int *padding)
-{
-	static char digits[] = "0123456789abcdef";
-	char buf[32];
-	int i;
-	long_form = 0;
-
-	i = 0;
-	do {
-		buf[i++] = digits[x % base];
-	} while ((x /= base) != 0);
-	while (i < *padding) {
-		buf[i++] = '0';
-	}
-	*padding = 0;
-
-	if (is_unsigned == false && (xs < 0))
-		buf[i++] = '-';
-
-	if (alt_form && base == 16) {
-		putfunc('0', static_foreg, static_backg);
-		putfunc('x', static_foreg, static_backg);
-		alt_form = 0;
-	}
-	while (--i >= 0)
-		putfunc(buf[i], static_foreg, static_backg);
 }
 
 static void
@@ -158,21 +129,36 @@ ansi_change_color(bool bold, uint32_t color, uint8_t c, bool fg)
 	else
 		set_term_color(0, color, false, true);
 }
+static void
+uartputc_wrapper(FILE *fp, char c, char *buf)
+{
+	uartputc3(c, 0, 0);
+}
 __attribute__((format(printf, 1, 2)))
 __nonnull(1) void uart_cprintf(const char *fmt, ...)
 {
 	va_list argp;
 	va_start(argp, fmt);
-	vcprintf(uartputc3, fmt, argp, cons.locking);
+	sharedlib_vprintf_template(uartputc_wrapper,
+														let_rust_handle_it, NULL, NULL, fmt, &argp,
+														NULL, NULL, NULL, false);
 	va_end(argp);
 }
 
+static void
+vga_write_char_wrapper(FILE *fp, char c, char *buf)
+{
+	vga_write_char(c, static_foreg, static_backg);
+}
 __attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *fmt,
 																																...)
 {
 	va_list argp;
 	va_start(argp, fmt);
-	vcprintf(vga_write_char, fmt, argp, cons.locking);
+	sharedlib_vprintf_template(vga_write_char_wrapper,
+														let_rust_handle_it, NULL, NULL, fmt, &argp,
+														(void (*)(void *))acquire,
+														(void (*)(void *))release, &cons.lock, true);
 	va_end(argp);
 }
 __attribute__((format(printf, 1, 2)))
@@ -180,121 +166,11 @@ __nonnull(1) void vga_cprintf(const char *fmt, ...)
 {
 	va_list argp;
 	va_start(argp, fmt);
-	vcprintf(vga_write_char, fmt, argp, cons.locking);
+	sharedlib_vprintf_template(vga_write_char_wrapper,
+														let_rust_handle_it, NULL, NULL, fmt, &argp,
+														(void (*)(void *))acquire,
+														(void (*)(void *))release, &cons.lock, true);
 	va_end(argp);
-}
-// Print to the console. only understands %d, %x, %p, %s.
-__nonnull(1) static void vcprintf(putfunc_t putfunc, const char *fmt,
-																	va_list argp, int locking)
-{
-	int c;
-	size_t i;
-	char *s;
-	int padding = 0;
-
-	if (locking)
-		acquire(&cons.lock);
-
-	for (i = 0; (c = fmt[i] & 0xff) != 0; i++) {
-		if (c != '%') {
-			// ANSI color escape sequences.
-			// All three of these equal each other, but
-			// they are there for documentation and grepping purposes.
-			if (c == '\033' || c == '\x1b' || c == '\e') {
-				// Rust has a crate for doing this sort of stuff.
-				// It acts as a 'mini parser' that sends us various
-				// types, and we have to make sense of them.
-				i += let_rust_handle_it(fmt + i);
-				continue;
-			}
-			putfunc(c, static_foreg, static_backg);
-			continue;
-		}
-do_again:
-		c = fmt[++i] & 0xff;
-		if (c == 0)
-			break;
-		switch (c) {
-		case 'u':
-			if (long_form == 0) {
-				unsigned int ud = va_arg(argp, unsigned int);
-				printint(putfunc, ud, ud, 10, 0, &padding);
-			} else {
-				unsigned long ul = va_arg(argp, unsigned long);
-				printint(putfunc, ul, ul, 10, 0, &padding);
-			}
-			break;
-		case 'd':
-			if (long_form == 0) {
-				int d = va_arg(argp, int);
-				printint(putfunc, d, d, 10, 1, &padding);
-			} else {
-				long ld = va_arg(argp, long);
-				printint(putfunc, ld, ld, 10, 1, &padding);
-			}
-			break;
-		case '0':
-			zero_form = 1;
-			padding = 18; // TODO make dynamic
-			goto do_again;
-		case '#':
-			alt_form = 1;
-			goto do_again;
-		case 'l':
-			long_form = 1;
-			goto do_again;
-		case 'x':
-			if (long_form == 0) {
-				unsigned int x = va_arg(argp, unsigned int);
-				printint(putfunc, x, x, 16, 1, &padding);
-			} else {
-				unsigned long lx = va_arg(argp, unsigned long);
-				printint(putfunc, lx, lx, 16, 1, &padding);
-			}
-			break;
-		case 'b':
-			if (long_form == 0) {
-				unsigned int b = va_arg(argp, unsigned int);
-				printint(putfunc, b, b, 2, 1, &padding);
-			} else {
-				unsigned long lb = va_arg(argp, unsigned long);
-				printint(putfunc, lb, lb, 2, 1, &padding);
-			}
-			break;
-		case 'p':
-			alt_form = 1;
-			uintptr_t p = (uintptr_t)va_arg(argp, void *);
-			printint(putfunc, p, p, 16, 1, &padding);
-			break;
-		case 'o':
-			if (long_form == 0) {
-				unsigned int o = va_arg(argp, unsigned int);
-				printint(putfunc, o, o, 8, 0, &padding);
-			} else {
-				unsigned int lo = va_arg(argp, unsigned int);
-				printint(putfunc, lo, lo, 8, 0, &padding);
-			}
-			break;
-		case 's':
-			if ((s = va_arg(argp, char *)) == 0)
-				s = "(null)";
-			for (; *s; s++)
-				putfunc(*s, static_foreg, static_backg);
-			break;
-		case '%':
-			putfunc('%', static_foreg, static_backg);
-			break;
-		default:
-			// Print unknown % sequence to draw attention.
-			putfunc('%', static_foreg, static_backg);
-			putfunc(c, static_foreg, static_backg);
-			break;
-		}
-skip_printing:;
-	}
-
-	if (locking)
-		release(&cons.lock);
 }
 
 __noreturn __cold void
@@ -313,6 +189,9 @@ panic(const char *s)
 	for (i = 0; i < 10; i++)
 		uart_cprintf(" %#lx", pcs[i]);
 	panicked = 1; // freeze other CPU
+#if !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wanalyzer-infinite-loop"
+#endif
 	for (;;)
 		;
 }

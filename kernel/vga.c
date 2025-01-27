@@ -3,7 +3,9 @@
 #include "memlayout.h"
 #include "font.h"
 #include "kernel_assert.h"
+#include "macros.h"
 #include "uart.h"
+#include "console.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -110,7 +112,7 @@ static void
 render_font_glyph(const uint8_t character, const uint32_t x, const uint32_t y,
 									const uint8_t width,
 									const uint8_t height,
-									const uint8_t font[static 256][width * height],
+									const bool font[static 256][width * height],
 									const uint32_t foreground, const uint32_t background)
 {
 	for (int i = 0; i < height; i++) {
@@ -142,10 +144,30 @@ ansi_set_cursor_location(uint16_t x, uint16_t y)
 {
 	// TODO we should have some sort of font-change function.
 	// Also, we should probably move some of this to userspace.
-	struct font_data_8x16 font_data = { 8, 16, &font_default };
-	fb_char_index = x_y_to_fb_char_index(x, y, font_data.width);
-	cursor_position = (struct CursorPosition){x, y};
+	ansi_set_cursor_location_x(x);
+	ansi_set_cursor_location_y(y);
 }
+void
+ansi_set_cursor_location_x(uint16_t x)
+{
+	struct font_data_8x16 font_data = { 8, 16, &font_default };
+	fb_char_index = x_y_to_fb_char_index(x, cursor_position.y, font_data.width);
+	cursor_position = (struct CursorPosition){x, cursor_position.y};
+}
+
+void
+ansi_set_cursor_location_y(uint16_t y)
+{
+	struct font_data_8x16 font_data = { 8, 16, &font_default };
+	fb_char_index = x_y_to_fb_char_index(cursor_position.x, y, font_data.width);
+	cursor_position = (struct CursorPosition){cursor_position.x, y};
+}
+void
+ansi_set_cursor_location_up(uint16_t by)
+{
+	ansi_set_cursor_location(0, saturating_sub(cursor_position.y, by, 0));
+}
+
 static void
 vga_write_carriage_return(uint32_t fb_width, uint8_t font_width)
 {
@@ -178,7 +200,7 @@ vga_backspace(uint8_t font_width, uint8_t font_height, uint32_t background)
 // the speedup is around 2x.
 static void
 vga_scroll(uint32_t fb_width, uint32_t fb_height, uint8_t font_width,
-					 uint8_t font_height, const uint8_t (*font)[])
+					 uint8_t font_height, const bool (*font)[])
 {
 
 	uint32_t fb_in_bytes = fb_height * fb_width;
@@ -211,6 +233,7 @@ vga_scroll(uint32_t fb_width, uint32_t fb_height, uint8_t font_width,
 		clear_cells(i, height-1, 1, 1,
 							font_width, font_height, VGA_COLOR_WHITE, VGA_COLOR_BLACK, font);
 	}
+	cursor_position = (struct CursorPosition){0, height-1};
 
 	vga_write_carriage_return(fb_width, font_width);
 }
@@ -218,7 +241,7 @@ vga_scroll(uint32_t fb_width, uint32_t fb_height, uint8_t font_width,
 void
 clear_cells(uint32_t x, uint32_t y, uint32_t x_len, uint32_t y_len,
 						uint8_t font_width, uint8_t font_height, uint32_t foreground,
-						uint32_t background, const uint8_t (*font)[])
+						uint32_t background, const bool (*font)[])
 {
 	const uint32_t height = height_chars(font_height);
 	const uint32_t width = width_chars(font_width);
@@ -230,6 +253,39 @@ clear_cells(uint32_t x, uint32_t y, uint32_t x_len, uint32_t y_len,
 										 font_height, font, foreground, background);
 		}
 	}
+}
+
+void
+ansi_erase_in_front_of_cursor(void)
+{
+	struct font_data_8x16 font_data = {8, 16, &font_default};
+	uint32_t background = damage_tracking_data.bg[cursor_position.x][cursor_position.y];
+	uint32_t foreground = damage_tracking_data.fg[cursor_position.x][cursor_position.y];
+	/*
+	 * Observe the following situation where we want to erase from '$' to 'END':
+	 * $ foo bar baz
+	 * more foo     END
+	 *
+	 * You can do this with 2 rectangles.
+	 *
+	 * First, draw from cursor to end of line, with the height of the rectangle
+	 * being as large as it needs to be until it reaches the end of the screen:
+	 * $[ foo bar baz]
+	 * m[ore foo     ]END
+	 *
+	 *
+	 * Second, draw from width=0 to the cursor's x coordinate, and a height
+	 * also being as large as it needs to be:
+	 * $
+	 * [m]              END
+	 */
+	clear_cells(cursor_position.x, cursor_position.y,
+						 width_chars(font_data.width) - cursor_position.x,
+						 height_chars(font_data.height) - cursor_position.y + 1, font_data.width,
+						 font_data.height, foreground, background, *font_data.font);
+	clear_cells(0, cursor_position.y, cursor_position.x-1,
+						 height_chars(font_data.height) - cursor_position.y + 1, font_data.width,
+						 font_data.height, foreground, background, *font_data.font);
 }
 
 // Consistent with the define found in console.c.

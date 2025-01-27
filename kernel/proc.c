@@ -159,6 +159,8 @@ userinit(void)
 	struct proc *p;
 
 	p = allocproc();
+	if (p == NULL)
+		panic("userinit: allocproc failed");
 
 	initproc = p;
 	if ((p->pgdir = setupkvm()) == 0)

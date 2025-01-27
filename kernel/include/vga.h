@@ -4,6 +4,7 @@
 #define BPP_DEPTH 32
 #ifndef __ASSEMBLER__
 #include "../boot/multiboot2.h"
+#include <stdbool.h>
 
 #define R(x) (x << 16)
 #define G(x) (x << 8)
@@ -45,5 +46,11 @@ vga_fill_rect(struct vga_rectangle rect, uint32_t hex_color);
 void
 clear_cells(uint32_t x, uint32_t y, uint32_t x_len, uint32_t y_len,
 						uint8_t font_height, uint8_t font_width, uint32_t foreground,
-						uint32_t background, const uint8_t (*font)[]);
+						uint32_t background, const bool (*font)[]);
+void
+ansi_set_cursor_location_x(uint16_t x);
+void
+ansi_set_cursor_location_y(uint16_t y);
+void
+ansi_set_cursor_location(uint16_t x, uint16_t y);
 #endif

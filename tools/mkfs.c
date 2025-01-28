@@ -297,7 +297,7 @@ rsect(uint32_t sec, void *buf)
 		perror("lseek");
 		exit(1);
 	}
-	if (read(fsfd, buf, BSIZE) != BSIZE) {
+	if (read(fsfd, buf, BSIZE) == -1) {
 		perror("read");
 		exit(1);
 	}

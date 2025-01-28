@@ -123,7 +123,8 @@ fileseek(struct file *f, int n, int whence)
 	} else if (whence == SEEK_SET) {
 		offset = n;
 	} else if (whence == SEEK_END) {
-		panic("SEEK_END unimplemented!");
+		// Not sure if this is right.
+		offset = f->ip->size;
 	} else {
 		return -EINVAL;
 	}

@@ -2,5 +2,6 @@
 #define O_WRONLY 0x001
 #define O_RDWR 0x002
 #define O_CREATE 0x200
+#define O_APPEND 0x400
 int
 open(const char *, int);

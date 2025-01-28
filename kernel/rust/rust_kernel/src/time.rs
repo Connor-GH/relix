@@ -12,9 +12,7 @@ const fn is_leap_year(year: u64) -> bool {
     year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
 }
 const fn day_of_year(year: u64, month: u64, day: u64) -> u64 {
-    if !(month >= 1 && month <= 12) {
-        panic!("month is not between 1 and 12");
-    }
+    if !(month >= 1 && month <= 12) {}
     const SEEK_TABLE: [u64; 12] = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
     let mut day_of_year = SEEK_TABLE[month as usize - 1] + day - 1;
 

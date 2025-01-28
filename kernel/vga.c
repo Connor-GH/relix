@@ -1,10 +1,12 @@
 #include "vga.h"
 #include "boot/multiboot2.h"
+#include "file.h"
 #include "memlayout.h"
 #include "font.h"
 #include "kernel_assert.h"
 #include "macros.h"
 #include "uart.h"
+#include "kalloc.h"
 #include "console.h"
 #include <stdbool.h>
 #include <stddef.h>
@@ -44,6 +46,25 @@ const uint32_t COLOR_RED;
 	INTERNAL_COLOR_BLUE | INTERNAL_COLOR_GREEN | INTERNAL_COLOR_RED
 #define INTERNAL_COLOR_BLACK 0
 
+static int
+vgawrite(__attribute__((unused)) struct inode *ip,
+				 char *buf1, int n)
+{
+	uint8_t *buf = (uint8_t *)buf1;
+	if (buf == NULL)
+		return -1;
+	uint32_t x = buf[0] | (buf[1] << 8U) | (buf[2] << 16U) | (buf[3] << 24U);
+	uint32_t y = buf[4] | (buf[5] << 8U) | (buf[6] << 16U) | (buf[7] << 24U);
+	uint32_t color = buf[8] | (buf[9] << 8U) | (buf[10] << 16U) | (buf[11] << 24U);
+	vga_write(x, y, color);
+	return n;
+}
+
+static int
+vgaread(struct inode *ip, char *buf, int n)
+{
+	return 0;
+}
 /*
  * This init function needs these 3 parameters
  * because at some point during kernel bring-up,
@@ -57,6 +78,8 @@ vga_init(struct multiboot_tag_framebuffer *tag, struct fb_rgb rgb,
 	fb_data = tag;
 	fb_rgb = rgb;
 	fb_common = common;
+	devsw[FB].read = vgaread;
+	devsw[FB].write = vgawrite;
 }
 
 // The color is in hex: 0xRRGGBB
@@ -64,6 +87,8 @@ void
 vga_write(uint32_t x, uint32_t y, uint32_t color)
 {
 	kernel_assert(fb_data != NULL);
+	if (x > fb_common.framebuffer_width || y > fb_common.framebuffer_height)
+		return;
 
 	void *fb = IO2V(fb_common.framebuffer_addr);
 	multiboot_uint32_t *pixel =
@@ -71,15 +96,6 @@ vga_write(uint32_t x, uint32_t y, uint32_t color)
 	*pixel = color;
 }
 
-void
-vga_fill_rect(struct vga_rectangle rect, uint32_t hex_color)
-{
-	for (uint32_t x = 0; x < rect.xlen; x++) {
-		for (uint32_t y = 0; y < rect.ylen; y++) {
-			vga_write(x + rect.x, y + rect.y, hex_color);
-		}
-	}
-}
 
 // fb_char_index counts all pixels for width,
 // but only the bottom pixels in a font for height. So for

@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "drivers/mmu.h"
 #include "drivers/lapic.h"
+#include "drivers/ps2mouse.h"
 #include "proc.h"
 #include "x86.h"
 #include "trap.h"
@@ -35,19 +36,26 @@ decipher_page_fault_error_code(uint64_t error_code)
 	cprintf("This error code was caused for the following reasons: \n");
 	if (error_code & PAGE_FAULT_PRESENT) {
 		cprintf("The present bit is not set.\n");
-	} else if (error_code & PAGE_FAULT_WRITE) {
+	}
+	if (error_code & PAGE_FAULT_WRITE) {
 		cprintf("Caused by a write.\n");
-	} else if (error_code & PAGE_FAULT_USER) {
+	}
+	if (error_code & PAGE_FAULT_USER) {
 		cprintf("CPL was set to 3 (user mode).\n");
-	} else if (error_code & PAGE_FAULT_RESERVED_WRITE) {
+	}
+	if (error_code & PAGE_FAULT_RESERVED_WRITE) {
 		cprintf("A reserved bit was set to one.\n");
-	} else if (error_code & PAGE_FAULT_INSN_FETCH) {
+	}
+	if (error_code & PAGE_FAULT_INSN_FETCH) {
 		cprintf("Caused by an instruction fetch.\n");
-	} else if (error_code & PAGE_FAULT_PROT_KEY_VIOLATION) {
+	}
+	if (error_code & PAGE_FAULT_PROT_KEY_VIOLATION) {
 		cprintf("Caused by a Protection Key violation.\n");
-	} else if (error_code & PAGE_FAULT_SHADOW_STACK) {
+	}
+	if (error_code & PAGE_FAULT_SHADOW_STACK) {
 		cprintf("Caused by a shadow stack access.\n");
-	} else if (error_code & PAGE_FAULT_SGX) {
+	}
+	if (error_code & PAGE_FAULT_SGX) {
 		cprintf("Caused by an SGX violation.\n");
 	}
 }
@@ -88,6 +96,10 @@ trap(struct trapframe *tf)
 		break;
 	case T_IRQ0 + IRQ_COM1:
 		uartintr();
+		lapiceoi();
+		break;
+	case T_IRQ0 + IRQ_PS2_MOUSE:
+		ps2mouseintr();
 		lapiceoi();
 		break;
 	case T_IRQ0 + 7:

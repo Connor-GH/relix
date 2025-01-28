@@ -4,6 +4,7 @@
 #include "drivers/memlayout.h"
 #include "drivers/acpi.h"
 #include "drivers/lapic.h"
+#include "drivers/ps2mouse.h"
 #include "param.h"
 #include "proc.h"
 #include "x86.h"
@@ -65,6 +66,7 @@ main(struct multiboot_info *mbinfo)
 	binit(); // buffer cache
 	fileinit(); // file table
 	ideinit(); // disk
+	ps2mouseinit();
 	//timerinit();
 	rust_hello_world();
 	startothers(); // start other processors

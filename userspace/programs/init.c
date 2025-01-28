@@ -29,9 +29,13 @@ main(void)
 	(void)dup(fd); // stderr
 	fprintf(stdout, "/dev/console created\n");
 	if (open("/dev/null", O_RDWR) < 0) {
-		mknod("/dev/null", 2, 2);
+		mknod("/dev/null", 2, 1);
 	}
 	fprintf(stdout, "/dev/null created\n");
+	if (open("/dev/fb0", O_RDWR) < 0) {
+		mknod("/dev/fb0", 3, 0);
+	}
+	fprintf(stdout, "/dev/fb0 created\n");
 	for (;;) {
 		fprintf(stdout, "init: starting sh service\n");
 		int pid = fork();

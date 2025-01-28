@@ -1,14 +1,14 @@
 #pragma once
-#define WIDTH 640
-#define HEIGHT 480
-#define BPP_DEPTH 32
+#define WIDTH 640U
+#define HEIGHT 480U
+#define BPP_DEPTH 32U
 #ifndef __ASSEMBLER__
 #include "../boot/multiboot2.h"
 #include <stdbool.h>
 
-#define R(x) (x << 16)
-#define G(x) (x << 8)
-#define B(x) (x << 0)
+#define R(x) (x << 16U)
+#define G(x) (x << 8U)
+#define B(x) (x << 0U)
 enum {
 	VGA_COLOR_BLACK = 0x000000,
 	VGA_COLOR_RED = R(170) | G(0) | B(0),

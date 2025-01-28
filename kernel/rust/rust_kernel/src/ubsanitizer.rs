@@ -32,9 +32,9 @@
  */
 
 use crate::printing::*;
+use bindings::__IncompleteArrayField;
 use core::ffi::CStr;
 use core::ffi::{c_char, c_void};
-use bindings::__IncompleteArrayField;
 
 #[repr(C)]
 struct CSourceLocation {

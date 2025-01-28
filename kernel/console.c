@@ -172,6 +172,26 @@ __nonnull(1) void vga_cprintf(const char *fmt, ...)
 														(void (*)(void *))release, &cons.lock, true);
 	va_end(argp);
 }
+size_t global_string_index = 0;
+void
+string_putc_wrapper(FILE *fp, char c, char *buf)
+{
+	buf[global_string_index++] = c;
+}
+size_t ansi_noop(const char *s) { return 0; }
+
+__attribute__((format(printf, 2, 3)))
+__nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...)
+{
+	va_list argp;
+	va_start(argp, fmt);
+	global_string_index = 0;
+	sharedlib_vprintf_template(string_putc_wrapper,
+														ansi_noop, NULL, str, fmt, &argp,
+														(void (*)(void *))acquire,
+														(void (*)(void *))release, &cons.lock, true);
+	va_end(argp);
+}
 
 __noreturn __cold void
 panic(const char *s)
@@ -228,9 +248,12 @@ consputc3(int c, uint32_t foreg, uint32_t backg)
 
 	if (c == BACKSPACE) {
 		uartputc('\b');
-	} else
+		uartputc(' ');
+		uartputc('\b');
+	} else {
 		uartputc(c);
-	vga_write(c, static_foreg, static_backg);
+	}
+	vga_write_char(c, static_foreg, static_backg);
 }
 
 #define INPUT_BUF 128
@@ -266,7 +289,7 @@ consoleintr(int (*getc)(void))
 		case '\x7f': // Backspace
 			if (input.e != input.w) {
 				input.e--;
-				vga_write_char(BACKSPACE, static_foreg, static_backg);
+				consputc3(BACKSPACE, static_foreg, static_backg);
 			}
 			break;
 		default:
@@ -354,7 +377,6 @@ console_height_text(void)
 	return __multiboot_console_height_text();
 }
 /* clang-format off */
-// This is asynchronous.
 __nonnull(1, 2) static int
 consolewrite(__attribute__((unused)) struct inode *ip,
 																		 char *buf, int n)

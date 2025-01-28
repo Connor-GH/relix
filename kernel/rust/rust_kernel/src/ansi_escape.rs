@@ -81,6 +81,7 @@ impl Perform for Log {
                     }
                 }
                 unsafe { ansi_change_color(bold, color, c as c_char, changing_fg) };
+                return;
             }
             // Cursor position.
             b'H' => {
@@ -88,21 +89,30 @@ impl Perform for Log {
                     return;
                 }
                 // Locations are '1'-based.
-                unsafe { ansi_set_cursor_location(*param_vec[0] - 1, *param_vec[1] - 1); }
-            },
+                unsafe {
+                    ansi_set_cursor_location(*param_vec[0] - 1, *param_vec[1] - 1);
+                }
+                return;
+            }
             b'A' => {
                 let n: u16 = **param_vec.get(0).unwrap_or(&&1);
-                unsafe { ansi_set_cursor_location_up(n); }
-            },
+                unsafe {
+                    ansi_set_cursor_location_up(n);
+                }
+                return;
+            }
             b'K' => {
                 let n: u16 = **param_vec.get(0).unwrap_or(&&0u16);
                 match n {
-                    0 => {unsafe { ansi_erase_in_front_of_cursor(); }},
-                    1 => {},
-                    2 => {},
-                    _ => {},
+                    0 => unsafe {
+                        ansi_erase_in_front_of_cursor();
+                    },
+                    1 => {}
+                    2 => {}
+                    _ => {}
                 }
-            },
+                return;
+            }
             _ => {}
         }
     }

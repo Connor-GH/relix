@@ -183,11 +183,11 @@ numerical_padding:
 			case 'x': {
 				if (IS_SET(flags, FLAG_LONG)) {
 					unsigned long lx = va_arg(*argp, unsigned long);
-					printint(put_function, buf, fp, lx, 16, true, flags, str_pad);
+					printint(put_function, buf, fp, lx, 16, false, flags, str_pad);
 					str_pad = 0;
 				} else {
 					unsigned int x = va_arg(*argp, unsigned int);
-					printint(put_function, buf, fp, x, 16, true, flags, str_pad);
+					printint(put_function, buf, fp, x, 16, false, flags, str_pad);
 					str_pad = 0;
 				}
 				break;

@@ -111,11 +111,11 @@ string_to_mode(const char *restrict mode)
 	case 'a': {
 		if (mode[1] != '\0') {
 			if (mode[1] == '+') {
-				mode_val = O_RDWR | O_CREATE /*| O_APPEND*/;
+				mode_val = O_RDWR | O_CREATE | O_APPEND;
 				break;
 			}
 		}
-		mode_val = O_WRONLY | O_CREATE /*| O_APPEND*/;
+		mode_val = O_WRONLY | O_CREATE | O_APPEND;
 		break;
 	}
 	default:
@@ -211,6 +211,7 @@ fclose(FILE *stream)
 	if (close(stream->fd) < 0)
 		return EOF;
 	open_files[stream->static_table_index] = NULL;
+	open_files_index--;
 	free(stream);
 
 	return 0;

@@ -362,7 +362,7 @@ fileopen(char *path, mode_t omode)
 
 	begin_op();
 
-	if (omode & O_CREATE) {
+	if ((omode & O_CREATE) == O_CREATE) {
 		// try to create a file and it exists.
 		if ((ip = namei(path)) != 0) {
 			// if it's a block device, possibly do something special.
@@ -417,7 +417,7 @@ get_fd:
 
 	f->type = FD_INODE;
 	f->ip = ip;
-	f->off = 0;
+	f->off = (omode & O_APPEND) == O_APPEND ? f->ip->size : 0;
 	f->readable = !(omode & O_WRONLY);
 	f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
 	return fd;

@@ -148,7 +148,7 @@ $(BIN)/mkfs: $(TOOLSDIR)/mkfs.c
 $(BIN)/fs.img: $(BIN)/mkfs $(UPROGS) $(D_PROGS)
 	./$(BIN)/mkfs $@ README.md sysroot/test.sh $(wildcard sysroot/etc/*) $(UPROGS) $(D_PROGS)
 
-clean: cargo_clean
+clean: user_cargo_clean kernel_cargo_clean
 	@if [ -z "$(BIN)" ]; then exit 1; fi
 	@if [ "x$(SYSROOT)" = "x" ]; then exit 1; fi
 	@if [ "x$(KERNELDIR)" = "x" ]; then exit 1; fi

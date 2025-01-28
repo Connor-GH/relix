@@ -23,4 +23,5 @@ $(ULIB_STATIC): $(ULIB_OBJ) $(ULIB_ASM_OBJ)
 	$(AR) -r $@ $^
 	$(RANLIB) $@
 
+include $(UDIR)/rust/Makefile
 include $(UDIR)/programs/Makefile

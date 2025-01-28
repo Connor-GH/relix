@@ -21,7 +21,7 @@ struct devsw {
 
 extern struct devsw devsw[];
 
-enum { CONSOLE = 1, NULLDRV };
+enum { CONSOLE = 1, NULLDRV = 2, FB = 3, };
 
 struct file *
 filealloc(void);

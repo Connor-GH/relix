@@ -9,6 +9,6 @@ $(BIN)/%.o: $(UPROGS_DIR)/%.c
 	$(CC) $(CFLAGS) $(UCFLAGS) -c -o $@ $^
 
 # link together, then remove the .note.gnu.property that GCC generates.
-$(SYSROOT)/$(BIN)/_%: $(BIN)/%.o $(ULIB_STATIC) $(SHAREDLIBS_STATIC)
+$(SYSROOT)/$(BIN)/_%: $(BIN)/%.o $(ULIB_STATIC) $(SHAREDLIBS_STATIC) $(USER_RUST_OBJ)
 	$(CC) $(CFLAGS) $(UCFLAGS) $(LINKER_FLAGS) -Wl,-z,noexecstack -Wl,-O1 -Wl,-N,-e,_start -Wl,--section-start=.text=0 -o $@ $^
 	$(OBJCOPY) --remove-section .note.gnu.property $@

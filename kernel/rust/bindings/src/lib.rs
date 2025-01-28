@@ -4,6 +4,8 @@ pub mod console;
 pub mod kalloc;
 pub mod memlayout;
 pub mod uart;
+pub mod ioapic;
+pub mod vga;
 
 #[repr(C)]
 #[derive(Default)]

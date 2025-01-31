@@ -247,6 +247,9 @@ fgets(char *buf, int max, FILE *restrict stream)
 }
 
 /* We don't care about what's passed in buf */
+// This is where the buffered IO happens.
+// It functions for both characters and pixels
+// (in the format described in libgui)
 static void
 fd_putc(FILE *fp, char c, char *__attribute__((unused)) buf)
 {

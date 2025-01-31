@@ -33,12 +33,12 @@ extern char end[]; // first address after kernel loaded from ELF file
 
 uint64_t available_memory;
 uint64_t top_memory;
-// Bootstrap processor starts running C code here.
-// Allocate a real stack and switch to it, first
-// doing some setup required for memory allocator to work.
 
 extern void
 rust_hello_world(void);
+extern void
+pci_init(void);
+
 int
 main(struct multiboot_info *mbinfo)
 {
@@ -69,6 +69,7 @@ main(struct multiboot_info *mbinfo)
 	ps2mouseinit();
 	//timerinit();
 	rust_hello_world();
+	pci_init();
 	startothers(); // start other processors
 	kinit2(P2V(4 * 1024 * 1024), P2V(PHYSTOP)); // must come after startothers()
 	userinit(); // first user process

@@ -3,6 +3,7 @@
 #![feature(ascii_char)]
 pub mod allocator;
 pub mod ansi_escape;
+pub mod pci;
 pub mod printing;
 pub mod time;
 pub mod ubsanitizer;

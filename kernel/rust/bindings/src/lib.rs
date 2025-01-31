@@ -6,6 +6,7 @@ pub mod memlayout;
 pub mod uart;
 pub mod ioapic;
 pub mod vga;
+pub mod x86;
 
 #[repr(C)]
 #[derive(Default)]

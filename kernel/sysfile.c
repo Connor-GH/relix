@@ -4,6 +4,7 @@
 // user code, and calls into file.c and fs.c.
 //
 
+#include "pci.h"
 #include <defs.h>
 #include <stdint.h>
 #include <stat.h>
@@ -25,6 +26,7 @@
 #include "syscall.h"
 #include "pipe.h"
 #include "exec.h"
+#include "ioctl.h"
 #include "kernel_string.h"
 #include "drivers/lapic.h"
 #include "vm.h"
@@ -724,6 +726,41 @@ sys_lseek(void)
 		return -ESPIPE;
 
 	return fileseek(file, offset, whence);
+}
+
+size_t
+sys_ioctl(void)
+{
+	int fd;
+	struct file *file;
+	unsigned long request;
+	void *last_optional_arg = NULL;
+	uintptr_t uptr;
+	if (argfd(0, &fd, &file) < 0 || argunsigned_long(1, &request) < 0)
+		return -EINVAL;
+
+	// The file needs to be a block device.
+	if (!S_ISBLK(file->ip->mode))
+		return -ENOTTY;
+
+	switch (request) {
+		case PCIIOCGETCONF: {
+			if (argptr(2, (char **)&last_optional_arg, sizeof(struct pci_conf *)) < 0)
+				return -EINVAL;
+			if (last_optional_arg == NULL)
+				return -EFAULT;
+
+			// INVARIANT: pci_init must happen before pci_get_conf().
+			struct FatPointerArray_pci_conf pci_conf = pci_get_conf();
+			memcpy(last_optional_arg, pci_conf.ptr, pci_conf.len * sizeof(struct pci_conf));
+			return 0;
+			break;
+		}
+		default: {
+			return -EINVAL;
+		}
+	}
+
 }
 
 /* Unimplemented */

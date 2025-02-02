@@ -1,6 +1,7 @@
 #![no_std]
 #![feature(string_remove_matches)]
 #![feature(ascii_char)]
+#![feature(vec_into_raw_parts)]
 pub mod allocator;
 pub mod ansi_escape;
 pub mod pci;

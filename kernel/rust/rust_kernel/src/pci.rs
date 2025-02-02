@@ -1,8 +1,12 @@
 // https://wiki.osdev.org/PCI
 use crate::printing::*;
 use bindings::x86::{inl, outl};
+use alloc::vec::Vec;
+use spin::Mutex;
 const CONFIG_ADDRESS: u16 = 0xCF8;
 const CONFIG_DATA: u16 = 0xCFC;
+
+static PCI_CONFS: Mutex<Vec<PciConf>> = Mutex::new(Vec::new());
 
 pub struct PCICommonHeader {
     vendor_id: u16,
@@ -28,6 +32,24 @@ pub struct PCICommonHeader {
     min_gnt: u8,
     max_latency: u8,
 }
+#[derive(Clone)]
+#[repr(C)]
+pub struct PciConf {
+  vendor_id: u16,
+  device_id: u16,
+  subsystem_vendor_id: u16,
+  subsystem_id: u16,
+  revision_id: u8,
+  prog_if: u8,
+  subclass: u8,
+  base_class: u8,
+  cacheline_size: u8,
+  header_type: u8,
+  function: u8,
+  device: u8,
+  bus: u8,
+}
+
 impl core::fmt::Display for PCICommonHeader {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_fmt(format_args!(
@@ -133,6 +155,23 @@ impl PCICommonHeader {
             max_latency,
         })
     }
+    fn as_pci_conf(&self, bus: u8, device: u8, function: u8) -> PciConf {
+        PciConf {
+            vendor_id: self.vendor_id,
+            device_id: self.device_id,
+            subsystem_vendor_id: self.subsystem_vendor_id,
+            subsystem_id: self.subsystem_id,
+            revision_id: self.revision_id,
+            prog_if: self.prog_if,
+            subclass: self.subclass,
+            base_class: self.base_class,
+            cacheline_size: self.cacheline_size,
+            header_type: self.header_type,
+            bus,
+            device,
+            function,
+        }
+    }
 }
 
 // Read a "word" from the PCI config. A "word" is 16 bits.
@@ -198,12 +237,16 @@ fn check_device(bus: u8, device: u8) {
             let dev = PCICommonHeader::from(bus, device, func);
             if let Some(dev) = dev {
                 println!("{}", dev);
+                let mut pci_confs = PCI_CONFS.lock();
+                pci_confs.push(dev.as_pci_conf(bus, device, func));
             }
         }
     } else {
         let dev = PCICommonHeader::from(bus, device, 0);
         if let Some(dev) = dev {
             println!("{}", dev);
+            let mut pci_confs = PCI_CONFS.lock();
+            pci_confs.push(dev.as_pci_conf(bus, device, 0));
         }
     }
 }
@@ -262,10 +305,29 @@ fn pci_brute_force_scan() {
     }
 }
 
+#[repr(C)]
+#[derive(Debug)]
+pub struct FatPointerArray_pci_conf {
+    ptr: *mut PciConf,
+    len: usize,
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn pci_get_conf() -> FatPointerArray_pci_conf {
+    let pci_confs = PCI_CONFS.lock();
+    let (ptr, len, _) = pci_confs.clone()
+        .into_raw_parts();
+    FatPointerArray_pci_conf { ptr, len }
+}
+
 /*
  * Currently, these do not get added to any structure. They just get printed.
  */
 #[unsafe(no_mangle)]
 pub extern "C" fn pci_init() {
     check_all_buses();
+    let pci_confs = PCI_CONFS.lock();
+    if pci_confs.len() == 0 {
+        // no devices found
+    }
 }

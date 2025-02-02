@@ -114,7 +114,17 @@ trap(struct trapframe *tf)
 		break;
 	case T_GPFLT:
 		cprintf("General protection fault\n");
-		myproc()->killed = 1;
+		if ((tf->cs & 3) == DPL_USER) {
+		 myproc()->killed = 1;
+		} else {
+			uart_cprintf("BUG: General protection fault in the kernel!\n");
+			uart_cprintf("from cpu %d eip %lx (cr2=%#lx)\n",
+							my_cpu_id(), tf->eip, rcr2());
+			// Skip over the faulting instruction and
+			// hope for the best.
+			tf->eip += 8;
+
+		}
 		break;
 	// TODO handle pagefaults in a way that allows copy-on-write
 	case T_PGFLT:

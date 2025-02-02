@@ -7,6 +7,7 @@ pub mod uart;
 pub mod ioapic;
 pub mod vga;
 pub mod x86;
+pub mod param;
 
 #[repr(C)]
 #[derive(Default)]

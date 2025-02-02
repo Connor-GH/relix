@@ -17,3 +17,4 @@
 #define MAX_USERNAME 256
 #define MAX_PASSWD 128
 #define MAXENV 32
+#define MAX_PCI_DEVICES 32

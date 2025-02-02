@@ -25,34 +25,12 @@ fetch ## T(uintptr_t addr, T *ip) \
 // library system call function. The saved user %esp points
 // to a saved program counter, and then the first argument.
 
-// Fetch the int at addr from the current process.
-#if 0
-int
-fetchint(uintptr_t addr, int *ip)
-{
-	struct proc *curproc = myproc();
-
-	if (addr >= curproc->sz || addr + sizeof(int) > curproc->sz)
-		return -1;
-	*ip = *(int *)(addr);
-	return 0;
-}
-#endif
 SYSCALL_ARG_FETCH(int);
 typedef unsigned int unsigned_int;
+typedef unsigned long unsigned_long;
 SYSCALL_ARG_FETCH(unsigned_int);
 SYSCALL_ARG_FETCH(uintptr_t);
-#if 0
-int
-fetchuintptr_t(uintptr_t addr, uintptr_t *ip)
-{
-	struct proc *proc = myproc();
-	if (addr >= proc->sz || addr + sizeof(uintptr_t) > proc->sz)
-		return -1;
-	*ip = *(uintptr_t *)(addr);
-	return 0;
-}
-#endif
+SYSCALL_ARG_FETCH(unsigned_long);
 
 // Fetch the nul-terminated string at addr from the current process.
 // Doesn't actually copy the string - just sets *pp to point at it.
@@ -106,24 +84,9 @@ arg ## T(int n, T *ip) \
 }
 SYSCALL_ARG_N(int);
 SYSCALL_ARG_N(unsigned_int);
+SYSCALL_ARG_N(unsigned_long);
 SYSCALL_ARG_N(uintptr_t);
 SYSCALL_ARG_N(ssize_t);
-#if 0
-int
-arguintptr(int n, uintptr_t *ip)
-{
-	*ip = fetcharg(n);
-	return 0;
-}
-
-int
-argssize(int n, ssize_t *sp)
-{
-	*sp = fetcharg(n);
-	return 0;
-}
-#endif
-
 
 // Fetch the nth word-sized system call argument as a pointer
 // to a block of memory of size bytes.  Check that the pointer
@@ -220,6 +183,8 @@ extern size_t
 sys_fsync(void);
 extern size_t
 sys_writev(void);
+extern size_t
+sys_ioctl(void);
 
 static size_t (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,				 [SYS__exit] = sys__exit,
@@ -238,6 +203,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_strace] = sys_strace,		 [SYS_symlink] = sys_symlink,
 	[SYS_readlink] = sys_readlink, [SYS_lseek] = sys_lseek,
 	[SYS_fsync] = sys_fsync,			 [SYS_writev] = sys_writev,
+	[SYS_ioctl] = sys_ioctl,
 };
 
 void

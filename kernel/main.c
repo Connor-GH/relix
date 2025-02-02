@@ -14,6 +14,7 @@
 #include "mp.h"
 #include "ioapic.h"
 #include "uart.h"
+#include "pci.h"
 #include "bio.h"
 #include "file.h"
 #include "ide.h"
@@ -36,8 +37,6 @@ uint64_t top_memory;
 
 extern void
 rust_hello_world(void);
-extern void
-pci_init(void);
 
 int
 main(struct multiboot_info *mbinfo)

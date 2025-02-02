@@ -27,7 +27,7 @@ switchuvm(struct proc *);
 void
 switchkvm(void);
 int
-copyout(uintptr_t *, uint32_t, void *, uint32_t);
+copyout(uintptr_t *pgdir, uintptr_t va, void *pa, size_t len);
 void
 clearpteu(uintptr_t *pgdir, char *uva);
 int

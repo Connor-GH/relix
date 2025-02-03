@@ -2,6 +2,7 @@
 use core::ffi::c_uint;
 use userspace_bindings::stdio::{FILE, fclose, fflush, fopen, fprintf};
 
+const LIBGUI_BUFFER_SIZE: usize = 960;
 pub struct Rectangle {
     pub x: u32,
     pub y: u32,
@@ -37,7 +38,8 @@ impl<const WIDTH: usize, const HEIGHT: usize, const DEPTH: usize> Drop
     }
 }
 
-fn libgui_pixel_write_fp(fp: *mut FILE, x: u32, y: u32, color: u32) -> isize {
+#[unsafe(no_mangle)]
+pub extern "C" fn libgui_pixel_write_fp(fp: *mut FILE, x: u32, y: u32, color: u32) -> isize {
     let mut buf: [u8; 13] = [0; 13]; // 4 bytes * 3 + nul
     buf[0] = x as u8;
     buf[1] = (x >> 8) as u8;
@@ -89,10 +91,40 @@ pub extern "C" fn libgui_pixel_write(x: u32, y: u32, color: u32) -> isize {
 
     return 0;
 }
+#[unsafe(no_mangle)]
+pub extern "C" fn libgui_init(file: *const core::ffi::c_char) -> *mut FILE {
+    let fp: *mut FILE = unsafe { userspace_bindings::stdio::fopen(file, c"w".as_ptr()) };
+    if fp.is_null() {
+        return core::ptr::null_mut();
+    }
+    /*
+     * SAFETY:
+     * C handles it when the pointer is null.
+     * Also, we guarantee that this fp hasn't been written to, so
+     * we can freely change its buffer contents.
+     */
+    unsafe {
+        userspace_bindings::stdlib::free((*fp).write_buffer as *mut _);
+        (*fp).write_buffer = userspace_bindings::stdlib::malloc(LIBGUI_BUFFER_SIZE) as *mut _;
+        // Graphics require larger buffers than stdio.
+        (*fp).write_buffer_size = LIBGUI_BUFFER_SIZE;
+        (*fp).stdio_flush = false;
+    }
+    fp
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn libgui_fini(fp: *mut FILE) {
+    unsafe { userspace_bindings::stdio::fclose(fp); }
+}
 
 #[unsafe(no_mangle)]
 pub extern "C" fn libgui_fill_rect(rect: *const Rectangle, hex_color: u32) {
     let fp: *mut FILE = unsafe { fopen(c"/dev/fb0".as_ptr(), c"w".as_ptr()) };
+    libgui_fill_rect_fp(fp, rect, hex_color);
+    unsafe { fclose(fp) };
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn libgui_fill_rect_fp(fp: *mut FILE, rect: *const Rectangle, hex_color: u32) {
     for x in 0..(unsafe { &*rect }).xlen {
         for y in 0..(unsafe { &*rect }).ylen {
             libgui_pixel_write_fp(
@@ -103,5 +135,4 @@ pub extern "C" fn libgui_fill_rect(rect: *const Rectangle, hex_color: u32) {
             );
         }
     }
-    unsafe { fclose(fp) };
 }

@@ -146,6 +146,7 @@ fopen(const char *restrict pathname, const char *restrict mode)
 		return NULL;
 	fp->write_buffer_size = WRITE_BUFFER_SIZE;
 	fp->write_buffer_index = 0;
+	fp->stdio_flush = true;
 	if (open_files_index < NFILE) {
 		fp->static_table_index = open_files_index;
 		open_files[open_files_index++] = fp;
@@ -183,6 +184,7 @@ fdopen(int fd, const char *restrict mode)
 		return NULL;
 	fp->write_buffer_size = WRITE_BUFFER_SIZE;
 	fp->write_buffer_index = 0;
+	fp->stdio_flush = true;
 	if (open_files_index < NFILE) {
 		fp->static_table_index = open_files_index;
 		open_files[open_files_index++] = fp;
@@ -287,7 +289,8 @@ vfprintf(FILE *restrict stream, const char *fmt, va_list *argp)
 {
 	sharedlib_vprintf_template(fd_putc, ansi_noop, stream, NULL, fmt, argp,
 														NULL, NULL, NULL, false);
-	flush(stream);
+	if (stream && stream->stdio_flush)
+		flush(stream);
 }
 
 void

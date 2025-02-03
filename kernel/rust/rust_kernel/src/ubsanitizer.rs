@@ -37,39 +37,39 @@ use core::ffi::CStr;
 use core::ffi::{c_char, c_void};
 
 #[repr(C)]
-struct CSourceLocation {
+pub struct CSourceLocation {
     filename: *const c_char,
     line: u32,
     column: u32,
 }
 
 #[repr(C)]
-struct CTypeDescriptor {
+pub struct CTypeDescriptor {
     type_kind: u16,
     type_info: u16,
     type_name: __IncompleteArrayField<c_char>,
 }
 
 #[repr(C)]
-struct COverflowData {
+pub struct COverflowData {
     location: CSourceLocation,
     type_: *const CTypeDescriptor,
 }
 
 #[repr(C)]
-struct CUnreachableData {
+pub struct CUnreachableData {
     location: CSourceLocation,
 }
 
 #[repr(C)]
-struct CCFICheckFailData {
+pub struct CCFICheckFailData {
     check_kind: u8,
     location: CSourceLocation,
     type_: *const CTypeDescriptor,
 }
 
 #[repr(C)]
-struct CDynamicTypeCacheMissData {
+pub struct CDynamicTypeCacheMissData {
     location: CSourceLocation,
     type_: *const CTypeDescriptor,
     type_info: *const c_void,
@@ -77,56 +77,56 @@ struct CDynamicTypeCacheMissData {
 }
 
 #[repr(C)]
-struct CFunctionTypeMismatchData {
+pub struct CFunctionTypeMismatchData {
     location: CSourceLocation,
     type_: *const CTypeDescriptor,
 }
 
 #[repr(C)]
-struct CInvalidBuiltinData {
+pub struct CInvalidBuiltinData {
     location: CSourceLocation,
     kind: u8,
 }
 
 #[repr(C)]
-struct CInvalidValueData {
+pub struct CInvalidValueData {
     location: CSourceLocation,
     type_: *const CTypeDescriptor,
 }
 
 #[repr(C)]
-struct CNonNullArgData {
+pub struct CNonNullArgData {
     location: CSourceLocation,
     attribute_location: CSourceLocation,
     arg_index: i32,
 }
 
 #[repr(C)]
-struct CNonNullReturnData {
+pub struct CNonNullReturnData {
     attribute_location: CSourceLocation,
 }
 
 #[repr(C)]
-struct COutOfBoundsData {
+pub struct COutOfBoundsData {
     location: CSourceLocation,
     array_type: *const CTypeDescriptor,
     index_type: *const CTypeDescriptor,
 }
 
 #[repr(C)]
-struct CPointerOverflowData {
+pub struct CPointerOverflowData {
     location: CSourceLocation,
 }
 
 #[repr(C)]
-struct CShiftOutOfBoundsData {
+pub struct CShiftOutOfBoundsData {
     location: CSourceLocation,
     lhs_type: *const CTypeDescriptor,
     rhs_type: *const CTypeDescriptor,
 }
 
 #[repr(C)]
-struct CTypeMismatchData {
+pub struct CTypeMismatchData {
     location: CSourceLocation,
     type_: *const CTypeDescriptor,
     log_alignment: u64,
@@ -134,7 +134,7 @@ struct CTypeMismatchData {
 }
 
 #[repr(C)]
-struct CTypeMismatchDataV1 {
+pub struct CTypeMismatchDataV1 {
     location: CSourceLocation,
     type_: *const CTypeDescriptor,
     log_alignment: u8,
@@ -142,20 +142,20 @@ struct CTypeMismatchDataV1 {
 }
 
 #[repr(C)]
-struct CVLABoundData {
+pub struct CVLABoundData {
     location: CSourceLocation,
     type_: *const CTypeDescriptor,
 }
 
 #[repr(C)]
-struct CFloatCastOverflowData {
+pub struct CFloatCastOverflowData {
     location: CSourceLocation, /* This field exists in this struct since 2015 August 11th */
     from_type: *const CTypeDescriptor,
     to_type: *const CTypeDescriptor,
 }
 
 #[repr(C)]
-struct CImplicitConversionData {
+pub struct CImplicitConversionData {
     location: CSourceLocation,
     from_type: *const CTypeDescriptor,
     to_type: *const CTypeDescriptor,
@@ -163,7 +163,7 @@ struct CImplicitConversionData {
 }
 
 #[repr(C)]
-struct CAlignmentAssumptionData {
+pub struct CAlignmentAssumptionData {
     location: CSourceLocation,
     assumption_location: CSourceLocation,
     type_: *const CTypeDescriptor,

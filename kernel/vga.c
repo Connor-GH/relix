@@ -53,10 +53,12 @@ vgawrite(__attribute__((unused)) struct inode *ip,
 	uint8_t *buf = (uint8_t *)buf1;
 	if (buf == NULL)
 		return -1;
-	uint32_t x = buf[0] | (buf[1] << 8U) | (buf[2] << 16U) | (buf[3] << 24U);
-	uint32_t y = buf[4] | (buf[5] << 8U) | (buf[6] << 16U) | (buf[7] << 24U);
-	uint32_t color = buf[8] | (buf[9] << 8U) | (buf[10] << 16U) | (buf[11] << 24U);
-	vga_write(x, y, color);
+	for (int i = 0; i < n; i+=12) {
+		uint32_t x = buf[i+0] | (buf[i+1] << 8U) | (buf[i+2] << 16U) | (buf[i+3] << 24U);
+		uint32_t y = buf[i+4] | (buf[i+5] << 8U) | (buf[i+6] << 16U) | (buf[i+7] << 24U);
+		uint32_t color = buf[i+8] | (buf[i+9] << 8U) | (buf[i+10] << 16U) | (buf[i+11] << 24U);
+		vga_write(x, y, color);
+	}
 	return n;
 }
 

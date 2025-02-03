@@ -18,6 +18,7 @@ struct _IO_FILE {
 	int mode;
 	bool eof;
 	bool error;
+	bool stdio_flush;
 };
 
 

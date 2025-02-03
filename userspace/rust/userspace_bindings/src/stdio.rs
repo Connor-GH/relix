@@ -10,6 +10,7 @@ pub struct FILE {
     pub mode: c_int,
     pub eof: bool,
     pub error: bool,
+    pub stdio_flush: bool,
 }
 
 unsafe extern "C" {

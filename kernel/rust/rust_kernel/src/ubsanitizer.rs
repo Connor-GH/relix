@@ -185,16 +185,16 @@ fn print_location(location: &CSourceLocation) {
     }
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_add_overflow(data: *const COverflowData, lhs: u64, rhs: u64) {
+pub extern "C" fn __ubsan_handle_add_overflow(data: *const COverflowData, lhs: u64, rhs: u64) {
     println!("KUBSAN: add overflow: {} + {}", lhs, rhs);
     print_location(&unsafe { &*data }.location);
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_add_overflow_abort(_data: *const COverflowData, _lhs: u64, _rhs: u64) {
+pub extern "C" fn __ubsan_handle_add_overflow_abort(_data: *const COverflowData, _lhs: u64, _rhs: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_alignment_assumption(
+pub extern "C" fn __ubsan_handle_alignment_assumption(
     _data: *const CAlignmentAssumptionData,
     _ptr: u64,
     _alignment: u64,
@@ -203,7 +203,7 @@ fn __ubsan_handle_alignment_assumption(
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_alignment_assumption_abort(
+pub extern "C" fn __ubsan_handle_alignment_assumption_abort(
     _data: *const CAlignmentAssumptionData,
     _ptr: u64,
     _alignment: u64,
@@ -212,11 +212,11 @@ fn __ubsan_handle_alignment_assumption_abort(
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_builtin_unreachable(_data: *const CUnreachableData) {
+pub extern "C" fn __ubsan_handle_builtin_unreachable(_data: *const CUnreachableData) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_cfi_bad_type(
+pub extern "C" fn __ubsan_handle_cfi_bad_type(
     _data: *const CCFICheckFailData,
     _vtable: u64,
     _is_valid_vtable: bool,
@@ -227,11 +227,11 @@ fn __ubsan_handle_cfi_bad_type(
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_cfi_check_fail(_data: *const CCFICheckFailData, _value: u64, _valid_vtable: u64) {
+pub extern "C" fn __ubsan_handle_cfi_check_fail(_data: *const CCFICheckFailData, _value: u64, _valid_vtable: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_cfi_check_fail_abort(
+pub extern "C" fn __ubsan_handle_cfi_check_fail_abort(
     _data: *const CCFICheckFailData,
     _value: u64,
     _valid_vtable: u64,
@@ -239,16 +239,16 @@ fn __ubsan_handle_cfi_check_fail_abort(
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_divrem_overflow(data: *const COverflowData, lhs: u64, rhs: u64) {
+pub extern "C" fn __ubsan_handle_divrem_overflow(data: *const COverflowData, lhs: u64, rhs: u64) {
     println!("KUBSAN: divrem overflow: {} / {}", lhs, rhs);
     print_location(&unsafe { &*data }.location);
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_divrem_overflow_abort(_data: *const COverflowData, _lhs: u64, _rhs: u64) {
+pub extern "C" fn __ubsan_handle_divrem_overflow_abort(_data: *const COverflowData, _lhs: u64, _rhs: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_dynamic_type_cache_miss(
+pub extern "C" fn __ubsan_handle_dynamic_type_cache_miss(
     _data: *const CDynamicTypeCacheMissData,
     _ptr: u64,
     _hash: u64,
@@ -256,7 +256,7 @@ fn __ubsan_handle_dynamic_type_cache_miss(
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_dynamic_type_cache_miss_abort(
+pub extern "C" fn __ubsan_handle_dynamic_type_cache_miss_abort(
     _data: *const CDynamicTypeCacheMissData,
     _ptr: u64,
     _hash: u64,
@@ -264,26 +264,26 @@ fn __ubsan_handle_dynamic_type_cache_miss_abort(
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_float_cast_overflow(_data: *const CFloatCastOverflowData, _from: u64) {
+pub extern "C" fn __ubsan_handle_float_cast_overflow(_data: *const CFloatCastOverflowData, _from: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_float_cast_overflow_abort(_data: *const CFloatCastOverflowData, _from: u64) {
+pub extern "C" fn __ubsan_handle_float_cast_overflow_abort(_data: *const CFloatCastOverflowData, _from: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_function_type_mismatch(_data: *const CFunctionTypeMismatchData, _function: u64) {
+pub extern "C" fn __ubsan_handle_function_type_mismatch(_data: *const CFunctionTypeMismatchData, _function: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_function_type_mismatch_abort(
+pub extern "C" fn __ubsan_handle_function_type_mismatch_abort(
     _data: *const CFunctionTypeMismatchData,
     _function: u64,
 ) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_function_type_mismatch_v1(
+pub extern "C" fn __ubsan_handle_function_type_mismatch_v1(
     _data: *const CFunctionTypeMismatchData,
     _function: u64,
     _callee_rtti: u64,
@@ -292,7 +292,7 @@ fn __ubsan_handle_function_type_mismatch_v1(
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_function_type_mismatch_v1_abort(
+pub extern "C" fn __ubsan_handle_function_type_mismatch_v1_abort(
     _data: *const CFunctionTypeMismatchData,
     _function: u64,
     _callee_rtti: u64,
@@ -301,44 +301,44 @@ fn __ubsan_handle_function_type_mismatch_v1_abort(
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_invalid_builtin(_data: *const CInvalidBuiltinData) {
+pub extern "C" fn __ubsan_handle_invalid_builtin(_data: *const CInvalidBuiltinData) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_invalid_builtin_abort(_data: *const CInvalidBuiltinData) {
+pub extern "C" fn __ubsan_handle_invalid_builtin_abort(_data: *const CInvalidBuiltinData) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_load_invalid_value(data: *const CInvalidValueData, val: u64) {
+pub extern "C" fn __ubsan_handle_load_invalid_value(data: *const CInvalidValueData, val: u64) {
     println!("KUBSAN: load-invalid-value: {}", val);
     print_location(&unsafe { &*data }.location);
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_load_invalid_value_abort(_data: *const CInvalidValueData, _val: u64) {
+pub extern "C" fn __ubsan_handle_load_invalid_value_abort(_data: *const CInvalidValueData, _val: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_missing_return(_data: *const CUnreachableData) {
+pub extern "C" fn __ubsan_handle_missing_return(_data: *const CUnreachableData) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_moverflow(_data: *const COverflowData, _lhs: u64, _rhs: u64) {
+pub extern "C" fn __ubsan_handle_moverflow(_data: *const COverflowData, _lhs: u64, _rhs: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_moverflow_abort(_data: *const COverflowData, _lhs: u64, _rhs: u64) {
+pub extern "C" fn __ubsan_handle_moverflow_abort(_data: *const COverflowData, _lhs: u64, _rhs: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_negate_overflow(_data: *const COverflowData, _old_val: u64) {
+pub extern "C" fn __ubsan_handle_negate_overflow(_data: *const COverflowData, _old_val: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_negate_overflow_abort(_data: *const COverflowData, _old_val: u64) {
+pub extern "C" fn __ubsan_handle_negate_overflow_abort(_data: *const COverflowData, _old_val: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_nonnull_arg(data: *const CNonNullArgData) {
+pub extern "C" fn __ubsan_handle_nonnull_arg(data: *const CNonNullArgData) {
     println!(
         "KUBSAN: null pointer passed as argument {}, which is declared to never be null",
         (unsafe { &*data }).arg_index
@@ -346,55 +346,63 @@ fn __ubsan_handle_nonnull_arg(data: *const CNonNullArgData) {
     print_location(&(unsafe { &*data }).location);
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_nonnull_arg_abort(_data: *const CNonNullArgData) {
+pub extern "C" fn __ubsan_handle_nonnull_arg_abort(_data: *const CNonNullArgData) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_nonnull_return_v1(
+pub extern "C" fn __ubsan_handle_nonnull_return_v1(
     _data: *const CNonNullReturnData,
     _location_ptr: *const CSourceLocation,
 ) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_nonnull_return_v1_abort(
+pub extern "C" fn __ubsan_handle_nonnull_return_v1_abort(
     _data: *const CNonNullReturnData,
     _location_ptr: *const CSourceLocation,
 ) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_nullability_arg(_data: *const CNonNullArgData) {
+pub extern "C" fn __ubsan_handle_nullability_arg(_data: *const CNonNullArgData) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_nullability_arg_abort(_data: *const CNonNullArgData) {
+pub extern "C" fn __ubsan_handle_nullability_arg_abort(_data: *const CNonNullArgData) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_nullability_return_v1(
+pub extern "C" fn __ubsan_handle_nullability_return_v1(
     _data: *const CNonNullReturnData,
     _location_ptr: *const CSourceLocation,
 ) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_nullability_return_v1_abort(
+pub extern "C" fn __ubsan_handle_nullability_return_v1_abort(
     _data: *const CNonNullReturnData,
     _location_ptr: *const CSourceLocation,
 ) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_out_of_bounds(_data: *const COutOfBoundsData, _index: u64) {
+pub extern "C" fn __ubsan_handle_out_of_bounds(data: *const COutOfBoundsData, index: u64) {
+    let data = unsafe { &*data };
+    let index_type = unsafe { &*data.index_type };
+    let array_type = unsafe { &*data.array_type };
+    println!("index_type {} {} {}", index_type.type_kind, index_type.type_info,
+                unsafe { core::ffi::CStr::from_ptr(index_type.type_name.as_ptr()) }.to_str().unwrap() );
+    println!("array_type {} {} {}", array_type.type_kind, array_type.type_info,
+                unsafe { core::ffi::CStr::from_ptr(array_type.type_name.as_ptr()) }.to_str().unwrap() );
+    println!("tried index {}", index);
+    print_location(&unsafe { &*data }.location);
+}
+#[unsafe(no_mangle)]
+pub extern "C" fn __ubsan_handle_out_of_bounds_abort(_data: *const COutOfBoundsData, _index: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_out_of_bounds_abort(_data: *const COutOfBoundsData, _index: u64) {
-    todo!();
-}
-#[unsafe(no_mangle)]
-fn __ubsan_handle_pointer_overflow(data: *const CPointerOverflowData, base: u64, result: u64) {
+pub extern "C" fn __ubsan_handle_pointer_overflow(data: *const CPointerOverflowData, base: u64, result: u64) {
     if base == 0 && result == 0 {
         println!("KUBSAN: applied zero offset to nullptr");
     } else if base == 0 && result != 0 {
@@ -413,7 +421,7 @@ fn __ubsan_handle_pointer_overflow(data: *const CPointerOverflowData, base: u64,
     print_location(&unsafe { &*data }.location);
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_pointer_overflow_abort(
+pub extern "C" fn __ubsan_handle_pointer_overflow_abort(
     _data: *const CPointerOverflowData,
     _base: u64,
     _result: u64,
@@ -421,11 +429,11 @@ fn __ubsan_handle_pointer_overflow_abort(
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_shift_out_of_bounds(_data: *const CShiftOutOfBoundsData, _lhs: u64, _rhs: u64) {
+pub extern "C" fn __ubsan_handle_shift_out_of_bounds(_data: *const CShiftOutOfBoundsData, _lhs: u64, _rhs: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_shift_out_of_bounds_abort(
+pub extern "C" fn __ubsan_handle_shift_out_of_bounds_abort(
     _data: *const CShiftOutOfBoundsData,
     _lhs: u64,
     _rhs: u64,
@@ -433,29 +441,29 @@ fn __ubsan_handle_shift_out_of_bounds_abort(
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_sub_overflow(data: *const COverflowData, lhs: u64, rhs: u64) {
+pub extern "C" fn __ubsan_handle_sub_overflow(data: *const COverflowData, lhs: u64, rhs: u64) {
     println!("KUBSAN: sub overflow: {} - {}", lhs, rhs);
     print_location(&unsafe { &*data }.location);
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_sub_overflow_abort(_data: *const COverflowData, _lhs: u64, _rhs: u64) {
+pub extern "C" fn __ubsan_handle_sub_overflow_abort(_data: *const COverflowData, _lhs: u64, _rhs: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_mul_overflow(data: *const COverflowData, lhs: u64, rhs: u64) {
+pub extern "C" fn __ubsan_handle_mul_overflow(data: *const COverflowData, lhs: u64, rhs: u64) {
     println!("KUBSAN: mul overflow: {} * {}", lhs, rhs);
     print_location(&unsafe { &*data }.location);
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_type_mismatch(_data: *const CTypeMismatchData, _ptr: u64) {
+pub extern "C" fn __ubsan_handle_type_mismatch(_data: *const CTypeMismatchData, _ptr: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_type_mismatch_abort(_data: *const CTypeMismatchData, _ptr: u64) {
+pub extern "C" fn __ubsan_handle_type_mismatch_abort(_data: *const CTypeMismatchData, _ptr: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_type_mismatch_v1(data: *const CTypeMismatchDataV1, ptr: u64) {
+pub extern "C" fn __ubsan_handle_type_mismatch_v1(data: *const CTypeMismatchDataV1, ptr: u64) {
     const KINDS: &[&str] = &[
         "load of",
         "store to",
@@ -482,23 +490,23 @@ fn __ubsan_handle_type_mismatch_v1(data: *const CTypeMismatchDataV1, ptr: u64) {
     print_location(&unsafe { &*data }.location);
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_type_mismatch_v1_abort(_data: *const CTypeMismatchDataV1, _ptr: u64) {
+pub extern "C" fn __ubsan_handle_type_mismatch_v1_abort(_data: *const CTypeMismatchDataV1, _ptr: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_vla_bound_not_positive(_data: *const CVLABoundData, _bound: u64) {
+pub extern "C" fn __ubsan_handle_vla_bound_not_positive(_data: *const CVLABoundData, _bound: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_vla_bound_not_positive_abort(_data: *const CVLABoundData, _bound: u64) {
+pub extern "C" fn __ubsan_handle_vla_bound_not_positive_abort(_data: *const CVLABoundData, _bound: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_implicit_conversion(_data: *const CImplicitConversionData, _from: u64, _to: u64) {
+pub extern "C" fn __ubsan_handle_implicit_conversion(_data: *const CImplicitConversionData, _from: u64, _to: u64) {
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_handle_implicit_conversion_abort(
+pub extern "C" fn __ubsan_handle_implicit_conversion_abort(
     _data: *const CImplicitConversionData,
     _from: u64,
     _to: u64,
@@ -506,7 +514,7 @@ fn __ubsan_handle_implicit_conversion_abort(
     todo!();
 }
 #[unsafe(no_mangle)]
-fn __ubsan_get_current_report_data(
+pub extern "C" fn __ubsan_get_current_report_data(
     _out_issue_kind: *const *const c_char,
     _out_message: *const *const c_char,
     _out_filename: *const *const c_char,

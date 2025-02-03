@@ -195,8 +195,8 @@ iinit(int dev)
 	}
 
 	readsb(dev, &global_sb);
-	cprintf("sb: size %d nblocks %d ninodes %d nlog %d logstart %d\
- inodestart %d bmap start %d\n",
+	cprintf("sb: size %lu nblocks %lu ninodes %lu nlog %lu logstart %lu\
+ inodestart %lu bmap start %lu\n",
 					global_sb.size, global_sb.nblocks, global_sb.ninodes, global_sb.nlog,
 					global_sb.logstart, global_sb.inodestart, global_sb.bmapstart);
 }

@@ -58,7 +58,11 @@ __nonnull(1, 2) void *memmove(void *dst, const void *src, uint32_t n)
 
 __nonnull(1, 2) void *memcpy(void *dst, const void *src, uint32_t n)
 {
-	return movsq((uint64_t *)dst, (uint64_t *)src, n / sizeof(uint64_t));
+	if (n % 8 == 0)
+		return movsq((uint64_t *)dst, (uint64_t *)src, n / sizeof(uint64_t));
+	else
+		return movsb((uint8_t *)dst, (uint8_t *)src, n / sizeof(uint8_t));
+
 }
 
 __nonnull(1, 2) char *strcat(char *dst, const char *src)

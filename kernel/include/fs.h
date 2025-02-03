@@ -31,13 +31,13 @@
 // mkfs computes the super block and builds an initial file system. The
 // super block describes the disk layout:
 struct superblock {
-	uint32_t size; // Size of file system image (blocks)
-	uint32_t nblocks; // Number of data blocks
-	uint32_t ninodes; // Number of inodes.
-	uint32_t nlog; // Number of log blocks
-	uint32_t logstart; // Block number of first log block
-	uint32_t inodestart; // Block number of first inode block
-	uint32_t bmapstart; // Block number of first free map block
+	uintptr_t size; // Size of file system image (blocks)
+	uintptr_t nblocks; // Number of data blocks
+	uintptr_t ninodes; // Number of inodes.
+	uintptr_t nlog; // Number of log blocks
+	uintptr_t logstart; // Block number of first log block
+	uintptr_t inodestart; // Block number of first inode block
+	uintptr_t bmapstart; // Block number of first free map block
 };
 // in-memory copy of an inode
 struct inode {

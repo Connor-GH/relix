@@ -334,7 +334,7 @@ balloc(int32_t used)
 	for (i = 0; i < used; i++) {
 		buf[i / 8] = buf[i / 8] | (0x1 << (i % 8));
 	}
-	printf("balloc: write bitmap block at sector %d\n", sb.bmapstart);
+	printf("balloc: write bitmap block at sector %lu\n", sb.bmapstart);
 	wsect(sb.bmapstart, buf);
 }
 

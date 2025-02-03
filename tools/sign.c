@@ -30,6 +30,10 @@ main(int argc, char **argv)
 	fprintf(stderr, "boot block is %zd bytes (max 510)\n", n);
 
 	char *padding = malloc(510 - (size_t)n);
+	if (padding == NULL) {
+		perror("malloc");
+		exit(EXIT_FAILURE);
+	}
 	// put padding in padding variable
 	memset(padding, '\0', 510 - (size_t)n);
 

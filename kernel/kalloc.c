@@ -73,6 +73,9 @@ __nonnull(1) void kpage_free(char *v)
 	pushcli();
 	struct run *r;
 	int id = my_cpu_id();
+	// We do not allocate for devices.
+	if (V2IO(v) >= DEVBASE)
+		return;
 
 	if ((uintptr_t)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
 		panic("kpage_free");

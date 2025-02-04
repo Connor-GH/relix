@@ -4,6 +4,8 @@
 // user code, and calls into file.c and fs.c.
 //
 
+#include "memlayout.h"
+#include "mmu.h"
 #include "pci.h"
 #include <defs.h>
 #include <stdint.h>
@@ -27,6 +29,8 @@
 #include "pipe.h"
 #include "exec.h"
 #include "ioctl.h"
+#include "kalloc.h"
+#include "mman.h"
 #include "kernel_string.h"
 #include "drivers/lapic.h"
 #include "vm.h"
@@ -43,8 +47,10 @@ argfd(int n, int *pfd, struct file **pf)
 
 	if (argint(n, &fd) < 0)
 		return -EINVAL;
-	if (fd < 0 || fd >= NOFILE || (f = myproc()->ofile[fd]) == 0)
+	if (fd < 0 || (f = myproc()->ofile[fd]) == 0)
 		return -EBADF;
+	if (fd >= NOFILE)
+		return -ENFILE;
 	if (pfd)
 		*pfd = fd;
 	if (pf)
@@ -744,23 +750,130 @@ sys_ioctl(void)
 		return -ENOTTY;
 
 	switch (request) {
-		case PCIIOCGETCONF: {
-			if (argptr(2, (char **)&last_optional_arg, sizeof(struct pci_conf *)) < 0)
-				return -EINVAL;
-			if (last_optional_arg == NULL)
-				return -EFAULT;
-
-			// INVARIANT: pci_init must happen before pci_get_conf().
-			struct FatPointerArray_pci_conf pci_conf = pci_get_conf();
-			memcpy(last_optional_arg, pci_conf.ptr, pci_conf.len * sizeof(struct pci_conf));
-			return 0;
-			break;
-		}
-		default: {
+	case PCIIOCGETCONF: {
+		if (argptr(2, (char **)&last_optional_arg, sizeof(struct pci_conf *)) < 0)
 			return -EINVAL;
+		if (last_optional_arg == NULL)
+			return -EFAULT;
+
+		// INVARIANT: pci_init must happen before pci_get_conf().
+		struct FatPointerArray_pci_conf pci_conf = pci_get_conf();
+		memcpy(last_optional_arg, pci_conf.ptr,
+					 pci_conf.len * sizeof(struct pci_conf));
+		return 0;
+		break;
+	}
+	default: {
+		return -EINVAL;
+	}
+	}
+}
+
+static int
+mmap_prot_to_perm(int prot)
+{
+	int ret = PTE_U;
+	if ((prot & PROT_READ) == PROT_READ) {
+		// No PTE flag for this
+	}
+	if ((prot & PROT_WRITE) == PROT_WRITE) {
+		ret |= PTE_W;
+	}
+	return ret;
+}
+size_t
+sys_mmap(void)
+{
+	void *addr;
+	size_t length;
+	int prot, flags, fd;
+	struct file *file;
+	off_t offset;
+	if (argptr(0, (char **)&addr, sizeof(void *)) < 0 ||
+			argsize_t(1, &length) < 0 || argint(2, &prot) < 0 ||
+			argint(3, &flags) < 0 || argfd(4, &fd, &file) < 0 ||
+			argoff_t(5, &offset) < 0)
+		return -EINVAL;
+	if (length == 0)
+		return -EINVAL;
+	// We don't support MAP_PRIVATE or MAP_SHARED_VALIDATE for now.
+	if ((flags & MAP_SHARED) != MAP_SHARED)
+		return -EINVAL;
+
+	// "The file has been locked, or too much memory has been locked"
+	if (file->ip->lock.locked)
+		return -EAGAIN;
+	if (length % PGSIZE != 0 || (uintptr_t)addr % PGSIZE != 0)
+		return -EINVAL;
+	int perm = mmap_prot_to_perm(prot);
+	struct mmap_info info;
+	if (S_ISBLK(file->ip->mode)) {
+		if (file->ip->major < 0 || file->ip->major >= NDEV ||
+				!devsw[file->ip->major].mmap)
+			return -ENODEV;
+		info = devsw[file->ip->major].mmap(length, (uintptr_t)addr);
+		info.file = file;
+	} else {
+		info = (struct mmap_info){ length, (uintptr_t)addr, 0/* virtual address */, NULL};
+	}
+	struct proc *proc = myproc();
+	if (proc->mmap_count > NMMAP)
+		return -ENOMEM;
+	// Place it anywhere.
+	if (addr == NULL) {
+		info.virt_addr = PGROUNDUP(proc->effective_largest_sz);
+		if (mappages(myproc()->pgdir, (void *)info.virt_addr,
+								 info.length, info.addr, perm) < 0) {
+			return -ENOMEM;
+		}
+		myproc()->effective_largest_sz += info.length;
+		proc->mmap_info[proc->mmap_count++] = info;
+		return (size_t)info.virt_addr;
+	} else {
+		if (mappages(proc->pgdir, addr, info.length, info.addr, perm) < 0) {
+			void *ptr = kmalloc(info.length);
+			if (ptr == NULL)
+				return -ENOMEM;
+			if (mappages(proc->pgdir, addr, info.length, V2P(ptr), perm) < 0) {
+				kfree(ptr);
+				return -ENOMEM;
+			}
+			proc->mmap_info[proc->mmap_count++] = info;
+			return (size_t)ptr;
+		}
+		proc->mmap_info[proc->mmap_count++] = info;
+		return (size_t)addr;
+	}
+}
+
+size_t
+sys_munmap(void)
+{
+	void *addr;
+	size_t length;
+
+	struct proc *proc = myproc();
+	if (argptr(0, (char **)&addr, sizeof(void *)) < 0 ||
+			 argsize_t(1, &length) < 0)
+		return -EINVAL;
+	if (length == 0)
+		return -EINVAL;
+	int j = -1;
+	for (int i = 0; i < NMMAP; i++) {
+		if ((proc->mmap_info[i].virt_addr == (uintptr_t)addr) &&
+        ((proc->mmap_info[i].length == length) ||
+        (proc->mmap_info[i].file && S_ISBLK(proc->mmap_info[i].file->ip->mode)))) {
+			j = i;
 		}
 	}
-
+	if (j == -1)
+		return -EINVAL;
+	for (int i = 0; i < PGROUNDUP(proc->mmap_info[j].length); i+= PGSIZE) {
+    unmap_user_page(proc->pgdir, (char *)proc->mmap_info[j].virt_addr);
+	}
+	if (addr != NULL && V2P(addr) < KERNBASE)
+		kfree(addr);
+	return 0;
 }
 
 /* Unimplemented */

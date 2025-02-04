@@ -1,3 +1,4 @@
+#include "mman.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -194,7 +195,7 @@ userinit(void)
 int
 growproc(int n)
 {
-	uint32_t sz;
+	uintptr_t sz;
 	struct proc *curproc = myproc();
 
 	sz = curproc->sz;
@@ -206,6 +207,8 @@ growproc(int n)
 			return -EFAULT;
 	}
 	curproc->sz = sz;
+	if (sz > curproc->effective_largest_sz)
+		curproc->effective_largest_sz = curproc->sz;
 	switchuvm(curproc);
 	return 0;
 }
@@ -234,6 +237,9 @@ fork(void)
 		return -EIO;
 	}
 	np->sz = curproc->sz;
+	np->effective_largest_sz = curproc->effective_largest_sz;
+	np->mmap_count = curproc->mmap_count;
+	memcpy(np->mmap_info, curproc->mmap_info, sizeof(np->mmap_info));
 	np->parent = curproc;
 	*np->tf = *curproc->tf;
 
@@ -333,6 +339,8 @@ wait(int *wstatus)
 				pid = p->pid;
 				kpage_free(p->kstack);
 				p->kstack = 0;
+				memset(p->mmap_info, 0, sizeof(p->mmap_info));
+				p->mmap_count = 0;
 				freevm(p->pgdir);
 				p->pid = 0;
 				p->parent = 0;

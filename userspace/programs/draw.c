@@ -4,12 +4,12 @@
 
 int main(void)
 {
-	FILE *fp = libgui_init("/dev/fb0");
-	if (fp == NULL) {
-		perror("fopen");
+	void *fb = libgui_init("/dev/fb0");
+	if (fb == NULL) {
+		perror("libgui_init");
 		exit(EXIT_FAILURE);
 	}
-	libgui_fill_rect_fp(fp, &(struct rectangle){0, 0, 1920, 1080}, 0xff0000);
-	libgui_fini(fp);
+	libgui_fill_rect_ptr(fb, &(struct rectangle){0, 0, 640, 480}, 0xff0000);
+	libgui_fini(fb);
 	return 0;
 }

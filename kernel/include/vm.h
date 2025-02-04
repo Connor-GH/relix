@@ -32,3 +32,5 @@ void
 clearpteu(uintptr_t *pgdir, char *uva);
 int
 mappages(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm);
+void
+unmap_user_page(uintptr_t *pgdir, char *user_va);

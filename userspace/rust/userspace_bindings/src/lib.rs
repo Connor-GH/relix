@@ -5,6 +5,10 @@ pub mod stdio;
 pub mod stdlib;
 pub mod unistd;
 pub mod string;
+pub mod mman;
+pub mod sys_types;
+pub mod ioctl;
+pub mod pci;
 
 extern crate alloc;
 use alloc::ffi::CString;

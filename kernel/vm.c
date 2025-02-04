@@ -28,6 +28,9 @@ walkpgdir(uintptr_t *pgdir, const void *va, int alloc)
 	if (*pde & PTE_P) {
 		pgtab = (pte_t *)p2v(PTE_ADDR(*pde));
 	} else {
+
+		// Not present? We need to allocate. But if we aren't allocating,
+		// this makes no sense to do.
 		if (!alloc || (pgtab = (pte_t *)kpage_alloc()) == 0)
 			return 0;
 		// Make sure all those PTE_P bits are zero.
@@ -153,15 +156,21 @@ deallocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 	a = PGROUNDUP(newsz);
 	for (; a < oldsz; a += PGSIZE) {
 		pte = walkpgdir(pgdir, (char *)a, 0);
-		if (!pte)
+		if (!pte) {
 			//a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
 			a += (NPTENTRIES - 1) * PGSIZE;
-		else if ((*pte & PTE_P) != 0) {
+		} else if ((*pte & PTE_P) != 0) {
 			pa = PTE_ADDR(*pte);
 			if (pa == 0)
 				panic("kpage_free");
-			char *v = p2v(pa);
-			kpage_free(v);
+			// Temporary hack.
+			// The only set of memory above the physical address of KERNBASE
+			// is a device's mmio. Since those aren't allocated, just ignore
+			// them.
+			if ((uintptr_t)P2V(pa) < KERNBASE) {
+				char *v = p2v(pa);
+				kpage_free(v);
+			}
 			*pte = 0;
 		}
 	}
@@ -198,6 +207,19 @@ clearpteu(uintptr_t *pgdir, char *uva)
 	if (pte == 0)
 		panic("clearpteu");
 	*pte &= ~PTE_U;
+}
+
+void
+unmap_user_page(uintptr_t *pgdir, char *user_va)
+{
+	pte_t *pte;
+
+	pte = walkpgdir(pgdir, user_va, 0);
+	if (pte == 0) {
+		panic("unmap_user_page: no page found");
+	}
+	// Clear all bits in the PTE.
+	*pte = 0;
 }
 
 // Given a parent process's page table, create a copy

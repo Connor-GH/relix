@@ -18,3 +18,4 @@
 #define MAX_PASSWD 128
 #define MAXENV 32
 #define MAX_PCI_DEVICES 32
+#define NMMAP 10 // maximum number of mmap()'s allowed per process'

@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stat.h>
 #include "fs.h"
+#include "mman.h"
 struct file {
 	enum { FD_NONE, FD_PIPE, FD_INODE } type;
 	int ref; // reference count
@@ -17,6 +18,7 @@ struct file {
 struct devsw {
 	int (*read)(struct inode *, char *, int);
 	int (*write)(struct inode *, char *, int);
+	struct mmap_info (*mmap)(size_t length, uintptr_t addr);
 };
 
 extern struct devsw devsw[];

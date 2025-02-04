@@ -27,11 +27,17 @@ nulldrvread(struct inode *ip, char *buf, int n)
 	return 0;
 }
 
+static struct mmap_info
+nulldrvmmap_noop(size_t length, uintptr_t addr)
+{
+	return (struct mmap_info){};
+}
 void
 nulldrvinit(void)
 {
 	initlock(&nulldrv.lock, "nulldrv");
 	devsw[NULLDRV].write = nulldrvwrite;
 	devsw[NULLDRV].read = nulldrvread;
+	devsw[NULLDRV].mmap = nulldrvmmap_noop;
 	nulldrv.locking = 1;
 }

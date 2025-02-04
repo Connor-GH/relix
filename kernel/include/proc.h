@@ -1,6 +1,7 @@
 #pragma once
 // Per-CPU state
 #include "fs.h"
+#include "mman.h"
 #include "param.h"
 #include "spinlock.h"
 #include "syscall.h"
@@ -93,6 +94,9 @@ struct proc {
 	struct cred cred; // user's credentials for the process.
 	char name[16]; // Process name (debugging)
 	char strace_mask_ptr[SYSCALL_AMT]; // mask for tracing syscalls
+	struct mmap_info mmap_info[NMMAP];
+	size_t mmap_count;
+	size_t effective_largest_sz; // Largest address when including mmap
 };
 
 // Process memory is laid out contiguously, low addresses first:

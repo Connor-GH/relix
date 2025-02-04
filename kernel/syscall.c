@@ -1,4 +1,6 @@
+#include "param.h"
 #include "spinlock.h"
+#include "memlayout.h"
 #include "trap.h"
 #include <fcntl.h>
 #include <stdint.h>
@@ -87,6 +89,8 @@ SYSCALL_ARG_N(unsigned_int);
 SYSCALL_ARG_N(unsigned_long);
 SYSCALL_ARG_N(uintptr_t);
 SYSCALL_ARG_N(ssize_t);
+SYSCALL_ARG_N(size_t);
+SYSCALL_ARG_N(off_t);
 
 // Fetch the nth word-sized system call argument as a pointer
 // to a block of memory of size bytes.  Check that the pointer
@@ -94,15 +98,17 @@ SYSCALL_ARG_N(ssize_t);
 int
 argptr(int n, char **pp, int size)
 {
-	uintptr_t i;
+	uintptr_t ptr;
 	struct proc *curproc = myproc();
 
-	if (arguintptr_t(n, &i) < 0)
+	if (arguintptr_t(n, &ptr) < 0)
 		return -1;
-	if (size < 0 || (uintptr_t)i >= curproc->sz ||
-			(uintptr_t)i + size > curproc->sz)
+
+	if (size < 0 ||
+		((uintptr_t)ptr >= curproc->effective_largest_sz || (uintptr_t)ptr + size > curproc->effective_largest_sz)) {
 		return -1;
-	*pp = (char *)i;
+	}
+	*pp = (char *)ptr;
 	return 0;
 }
 
@@ -185,6 +191,10 @@ extern size_t
 sys_writev(void);
 extern size_t
 sys_ioctl(void);
+extern size_t
+sys_mmap(void);
+extern size_t
+sys_munmap(void);
 
 static size_t (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,				 [SYS__exit] = sys__exit,
@@ -203,7 +213,8 @@ static size_t (*syscalls[])(void) = {
 	[SYS_strace] = sys_strace,		 [SYS_symlink] = sys_symlink,
 	[SYS_readlink] = sys_readlink, [SYS_lseek] = sys_lseek,
 	[SYS_fsync] = sys_fsync,			 [SYS_writev] = sys_writev,
-	[SYS_ioctl] = sys_ioctl,
+	[SYS_ioctl] = sys_ioctl,			 [SYS_mmap] = sys_mmap,
+	[SYS_munmap] = sys_munmap,
 };
 
 void

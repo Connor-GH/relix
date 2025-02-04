@@ -34,7 +34,7 @@ static void
 decipher_page_fault_error_code(uint64_t error_code)
 {
 	cprintf("This error code was caused for the following reasons: \n");
-	if (error_code & PAGE_FAULT_PRESENT) {
+	if ((error_code & PAGE_FAULT_PRESENT) != PAGE_FAULT_PRESENT) {
 		cprintf("The present bit is not set.\n");
 	}
 	if (error_code & PAGE_FAULT_WRITE) {
@@ -131,6 +131,8 @@ trap(struct trapframe *tf)
 		uart_cprintf("Page fault at %#lx\n", rcr2());
 		decipher_page_fault_error_code(tf->err);
 		myproc()->killed = 1;
+		if ((tf->cs & DPL_USER) == 0)
+			panic("trap");
 		break;
 	case T_FPERR:
 	case T_SIMDERR:

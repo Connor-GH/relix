@@ -1,6 +1,9 @@
 #![no_std]
-use core::ffi::c_uint;
+use core::ffi::{c_uint, c_int, c_void};
 use userspace_bindings::stdio::{FILE, fclose, fflush, fopen, fprintf};
+use userspace_bindings::fcntl::{open, O_RDWR};
+use userspace_bindings::unistd::close;
+use userspace_bindings::mman::{mmap, munmap, MMAP_FAILED, PROT_READ, PROT_WRITE, MAP_SHARED};
 
 const LIBGUI_BUFFER_SIZE: usize = 960;
 pub struct Rectangle {
@@ -10,72 +13,45 @@ pub struct Rectangle {
     pub ylen: u32,
 }
 type Point = (u32, u32);
-pub struct FrameBuffer<'a, const WIDTH: usize, const HEIGHT: usize, const DEPTH: usize> {
-    fp: &'a mut FILE,
+pub struct FrameBuffer<const WIDTH: usize, const HEIGHT: usize, const DEPTH: usize> {
+    fd: c_int,
+    ptr: *mut c_void,
 }
 
 impl<const WIDTH: usize, const HEIGHT: usize, const DEPTH: usize>
-    FrameBuffer<'_, WIDTH, HEIGHT, DEPTH>
+    FrameBuffer<WIDTH, HEIGHT, DEPTH>
 {
     fn new() -> Option<Self> {
-        let ptr = &unsafe { fopen(c"/dev/fb0".as_ptr(), c"w".as_ptr()) };
-        if ptr.is_null() {
+        let fd = unsafe { open(c"/dev/fb0".as_ptr(), O_RDWR)};
+        if fd == -1 {
             None
         } else {
-            Some(FrameBuffer { fp: unsafe { &mut **ptr } })
+            let ptr = unsafe { mmap(core::ptr::null_mut(),
+            0, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0) };
+            Some(FrameBuffer { fd, ptr })
         }
     }
     fn write_pixel(&mut self, p: Point, color: u32) {
-        libgui_pixel_write_fp(self.fp, p.0, p.1, color);
+        libgui_pixel_write_ptr(self.ptr, p.0, p.1, color);
     }
 }
 
 impl<const WIDTH: usize, const HEIGHT: usize, const DEPTH: usize> Drop
-    for FrameBuffer<'_, WIDTH, HEIGHT, DEPTH>
+    for FrameBuffer<WIDTH, HEIGHT, DEPTH>
 {
     fn drop(&mut self) {
-        unsafe { fclose(self.fp ); }
+        unsafe {
+            close(self.fd);
+            munmap(self.ptr, WIDTH * HEIGHT * DEPTH);
+        }
     }
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn libgui_pixel_write_fp(fp: *mut FILE, x: u32, y: u32, color: u32) -> isize {
-    let mut buf: [u8; 13] = [0; 13]; // 4 bytes * 3 + nul
-    buf[0] = x as u8;
-    buf[1] = (x >> 8) as u8;
-    buf[2] = (x >> 16) as u8;
-    buf[3] = (x >> 24) as u8;
-    buf[4] = y as u8;
-    buf[5] = (y >> 8) as u8;
-    buf[6] = (y >> 16) as u8;
-    buf[7] = (y >> 24) as u8;
-    buf[8] = color as u8;
-    buf[9] = (color >> 8) as u8;
-    buf[10] = (color >> 16) as u8;
-    buf[11] = (color >> 24) as u8;
-    // So that printf thinks it's a string and strlen works.
-    // Someone is bound to treat this as a string.
-    buf[12] = b'\0';
-    // The kernel reads in bytes from /dev/fb0 to do pixel drawing.
-    // The format is [u8; 13] because the u32's are chopped up into
-    // little endian u8's.
+pub extern "C" fn libgui_pixel_write_ptr(ptr: *mut c_void, x: u32, y: u32, color: u32) -> isize {
     unsafe {
-        fprintf(
-            fp,
-            c"%c%c%c%c%c%c%c%c%c%c%c%c".as_ptr(),
-            buf[0] as c_uint,
-            buf[1] as c_uint,
-            buf[2] as c_uint,
-            buf[3] as c_uint,
-            buf[4] as c_uint,
-            buf[5] as c_uint,
-            buf[6] as c_uint,
-            buf[7] as c_uint,
-            buf[8] as c_uint,
-            buf[9] as c_uint,
-            buf[10] as c_uint,
-            buf[11] as c_uint,
-        );
+        let ptr = ptr as *mut u32;
+        *ptr.offset((y * 640 + x) as isize) = color;
     }
     return 0;
 }
@@ -92,43 +68,48 @@ pub extern "C" fn libgui_pixel_write(x: u32, y: u32, color: u32) -> isize {
     return 0;
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn libgui_init(file: *const core::ffi::c_char) -> *mut FILE {
-    let fp: *mut FILE = unsafe { userspace_bindings::stdio::fopen(file, c"w".as_ptr()) };
-    if fp.is_null() {
+pub extern "C" fn libgui_init(file: *const core::ffi::c_char) -> *mut c_void {
+    let fd = unsafe { open(file, O_RDWR) };
+    if fd == -1 {
         return core::ptr::null_mut();
     }
     /*
      * SAFETY:
      * C handles it when the pointer is null.
-     * Also, we guarantee that this fp hasn't been written to, so
-     * we can freely change its buffer contents.
      */
     unsafe {
-        userspace_bindings::stdlib::free((*fp).write_buffer as *mut _);
-        (*fp).write_buffer = userspace_bindings::stdlib::malloc(LIBGUI_BUFFER_SIZE) as *mut _;
-        // Graphics require larger buffers than stdio.
-        (*fp).write_buffer_size = LIBGUI_BUFFER_SIZE;
-        (*fp).stdio_flush = false;
+        let ptr = mmap(core::ptr::null_mut(),
+            640 * 480 * 32, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+        close(fd);
+        ptr
     }
-    fp
+
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn libgui_fini(fp: *mut FILE) {
-    unsafe { userspace_bindings::stdio::fclose(fp); }
+pub extern "C" fn libgui_fini(ptr: *mut c_void) {
+    unsafe {
+        munmap(ptr, 640 * 480 * 32);
+    }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn libgui_fill_rect(rect: *const Rectangle, hex_color: u32) {
-    let fp: *mut FILE = unsafe { fopen(c"/dev/fb0".as_ptr(), c"w".as_ptr()) };
-    libgui_fill_rect_fp(fp, rect, hex_color);
-    unsafe { fclose(fp) };
+    let fd = unsafe { open(c"/dev/fb0".as_ptr(), O_RDWR)};
+    let ptr = unsafe { mmap(core::ptr::null_mut(),
+        640 * 480 * 32, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0) };
+
+    libgui_fill_rect_ptr(ptr, rect, hex_color);
+    unsafe {
+        close(fd);
+        munmap(ptr, 640 * 480 * 32)
+    };
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn libgui_fill_rect_fp(fp: *mut FILE, rect: *const Rectangle, hex_color: u32) {
+pub extern "C" fn libgui_fill_rect_ptr(ptr: *mut c_void, rect: *const Rectangle, hex_color: u32) {
     for x in 0..(unsafe { &*rect }).xlen {
         for y in 0..(unsafe { &*rect }).ylen {
-            libgui_pixel_write_fp(
-                fp,
+            libgui_pixel_write_ptr(
+                ptr,
                 x + (unsafe { &*rect }).x,
                 y + (unsafe { &*rect }).x,
                 hex_color,

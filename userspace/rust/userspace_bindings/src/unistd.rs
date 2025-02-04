@@ -1,6 +1,6 @@
 use core::ffi::{c_char, c_int, c_void};
+use crate::sys_types::off_t;
 
-pub type off_t = isize;
 unsafe extern "C" {
     pub fn fork() -> c_int;
     pub fn _exit(status: c_int) -> !;

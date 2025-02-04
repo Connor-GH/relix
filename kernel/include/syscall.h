@@ -34,7 +34,9 @@
 #define SYS_fsync 31
 #define SYS_writev 32
 #define SYS_ioctl 33
-#define SYSCALL_AMT 33
+#define SYS_mmap 34
+#define SYS_munmap 35
+#define SYSCALL_AMT 35
 #ifndef __ASSEMBLER__
 #include <stddef.h>
 #include "types.h"
@@ -55,7 +57,8 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_strace] = "strace",		 [SYS_symlink] = "symlink",
 	[SYS_readlink] = "readlink", [SYS_lseek] = "lseek",
 	[SYS_fsync] = "fsync",			 [SYS_writev] = "writev",
-	[SYS_ioctl] = "ioctl",
+	[SYS_ioctl] = "ioctl",			 [SYS_mmap] = "mmap",
+	[SYS_munmap] = "munmap",
 };
 #endif
 #if defined(__KERNEL__) && !defined(__ASSEMBLER__)
@@ -74,6 +77,10 @@ int
 arguintptr_t(int n, uintptr_t *ip);
 int
 argssize_t(int n, ssize_t *sp);
+int
+argsize_t(int n, size_t *sp);
+int
+argoff_t(int n, off_t *sp);
 
 int
 fetchint(uintptr_t, int *);

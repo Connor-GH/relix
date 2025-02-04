@@ -2,6 +2,7 @@
 // Input is from the keyboard or serial port.
 // Output is written to the screen and serial port.
 
+#include "mman.h"
 #include "vga.h"
 #include "lib/print.h"
 #include <stdint.h>
@@ -391,6 +392,12 @@ consolewrite(__attribute__((unused)) struct inode *ip,
 }
 /* clang-format on */
 
+static struct mmap_info
+consolemmap_noop(size_t length, uintptr_t addr)
+{
+	return (struct mmap_info){};
+}
+
 void
 consoleinit(void)
 {
@@ -398,6 +405,7 @@ consoleinit(void)
 
 	devsw[CONSOLE].write = consolewrite;
 	devsw[CONSOLE].read = consoleread;
+	devsw[CONSOLE].mmap = consolemmap_noop;
 	cons.locking = 1;
 
 	ioapicenable(IRQ_KBD, 0);

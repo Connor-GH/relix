@@ -172,6 +172,9 @@ ok:
 	curproc->sz = sz;
 	curproc->tf->eip = elf.e_entry; // main
 	curproc->tf->esp = sp;
+	memset(curproc->mmap_info, 0, sizeof(curproc->mmap_info));
+	curproc->mmap_count = 0;
+	curproc->effective_largest_sz = sz;
 	// If parent is NULL, it's also possible we are init.
 	if (curproc->parent != NULL)
 		curproc->cred = curproc->parent->cred;

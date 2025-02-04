@@ -1,10 +1,12 @@
 #include "vga.h"
 #include "boot/multiboot2.h"
 #include "file.h"
+#include "fs.h"
 #include "memlayout.h"
 #include "font.h"
 #include "kernel_assert.h"
 #include "macros.h"
+#include "mman.h"
 #include "uart.h"
 #include "kalloc.h"
 #include "console.h"
@@ -67,6 +69,12 @@ vgaread(struct inode *ip, char *buf, int n)
 {
 	return 0;
 }
+
+static struct mmap_info
+vgammap(size_t length, uintptr_t addr)
+{
+	return (struct mmap_info){WIDTH*HEIGHT*BPP_DEPTH, fb_common.framebuffer_addr, 0, NULL};
+}
 /*
  * This init function needs these 3 parameters
  * because at some point during kernel bring-up,
@@ -82,6 +90,7 @@ vga_init(struct multiboot_tag_framebuffer *tag, struct fb_rgb rgb,
 	fb_common = common;
 	devsw[FB].read = vgaread;
 	devsw[FB].write = vgawrite;
+	devsw[FB].mmap = vgammap;
 }
 
 // The color is in hex: 0xRRGGBB

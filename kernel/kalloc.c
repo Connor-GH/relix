@@ -149,10 +149,12 @@ kfree(void *ap)
 	Header *bp, *p;
 
 	bp = (Header *)ap - 1;
-	for (p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
+	for (p = freep; p && !(bp > p && bp < p->s.ptr); p = p->s.ptr)
 		if (p >= p->s.ptr && (bp > p || bp < p->s.ptr))
 			break;
 
+	if (!p)
+		return;
 	if (bp + bp->s.size == p->s.ptr) {
 		bp->s.size += p->s.ptr->s.size;
 		bp->s.ptr = p->s.ptr->s.ptr;
@@ -193,6 +195,8 @@ kmalloc(size_t nbytes)
 		base.s.size = 0;
 	}
 	for (p = prevp->s.ptr;; prevp = p, p = p->s.ptr) {
+		if (!p)
+			panic("Out of memory!");
 		if (p->s.size >= nunits) {
 			if (p->s.size == nunits)
 				prevp->s.ptr = p->s.ptr;

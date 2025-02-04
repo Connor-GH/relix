@@ -167,7 +167,7 @@ deallocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 			// The only set of memory above the physical address of KERNBASE
 			// is a device's mmio. Since those aren't allocated, just ignore
 			// them.
-			if ((uintptr_t)P2V(pa) < KERNBASE) {
+			if ((uintptr_t)P2V(pa) > KERNBASE) {
 				char *v = p2v(pa);
 				kpage_free(v);
 			}

@@ -14,6 +14,8 @@
 #include <signal.h>
 #include <stddef.h>
 
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#pragma clang diagnostic ignored "-Wunknown-warning-option"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 char buf[8192];
@@ -419,6 +421,8 @@ preempt(void)
 void
 exitwait(void)
 {
+#pragma GCC diagnostic ignored "-Wclobbered"
+#pragma GCC diagnostic push
 	int i, pid;
 
 	for (i = 0; i < 100; i++) {
@@ -437,6 +441,8 @@ exitwait(void)
 		}
 	}
 	fprintf(stdout, "exitwait ok\n");
+
+#pragma GCC diagnostic pop
 }
 
 void
@@ -551,6 +557,8 @@ fourfiles(void)
 {
 	int fd, pid, i, j, n, total, pi;
 	char *names[] = { "f0", "f1", "f2", "f3" };
+#pragma GCC diagnostic ignored "-Wclobbered"
+#pragma GCC diagnostic push
 	char *fname;
 
 	fprintf(stdout, "fourfiles test\n");
@@ -608,6 +616,7 @@ fourfiles(void)
 		unlink(fname);
 	}
 
+#pragma GCC diagnostic pop
 	fprintf(stdout, "fourfiles ok\n");
 }
 

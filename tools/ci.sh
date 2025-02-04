@@ -25,7 +25,7 @@ for TOOLCHAIN in "${TOOLCHAINS[@]}"; do
 			exit 1
 		fi
 
-		make qemu
+		make qemu CONSOLE_LOG=1
 	done
 done
 

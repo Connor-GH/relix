@@ -57,7 +57,7 @@ my_cpu_id(void)
 }
 
 // Must be called with interrupts disabled to avoid the caller being
-// rescheduled between reading lapicid and running through the loop.
+// rescheduled between inode_readng lapicid and running through the loop.
 static int pass = 0;
 struct cpu *
 mycpu(void)
@@ -85,7 +85,7 @@ mycpu(void)
 }
 
 // Disable interrupts so that we are not rescheduled
-// while reading proc from the cpu structure
+// while inode_readng proc from the cpu structure
 struct proc *
 myproc(void)
 {
@@ -249,7 +249,7 @@ fork(void)
 	for (i = 0; i < NOFILE; i++)
 		if (curproc->ofile[i])
 			np->ofile[i] = filedup(curproc->ofile[i]);
-	np->cwd = idup(curproc->cwd);
+	np->cwd = inode_dup(curproc->cwd);
 
 	safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
@@ -288,7 +288,7 @@ exit(int status)
 	}
 
 	begin_op();
-	iput(curproc->cwd);
+	inode_put(curproc->cwd);
 	end_op();
 	curproc->cwd = 0;
 	curproc->status = status;
@@ -460,7 +460,7 @@ forkret(void)
 		// of a regular process (e.g., they call sleep), and thus cannot
 		// be run from main().
 		first = 0;
-		iinit(ROOTDEV);
+		inode_init(ROOTDEV);
 		initlog(ROOTDEV);
 	}
 

@@ -23,11 +23,8 @@ use spin::Mutex;
 #[panic_handler]
 fn rs_panic(info: &core::panic::PanicInfo) -> ! {
 
-    let s = format!("{info}").as_str().to_string();
-
-    let info_cstr = CString::new(s).unwrap_or_default();
+    println!("{info}");
     unsafe {
-        fprintf(stdout, c"%s".as_ptr(), info_cstr.as_ptr());
         exit(1);
     }
 }
@@ -51,7 +48,7 @@ pub use core::fmt::Write;
 pub fn print(args: core::fmt::Arguments) {
     CONSOLE_WRITER.lock().write_fmt(args).unwrap();
 }
-mod smaller {
+mod printing {
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::printing::print(format_args!($($arg)*)))

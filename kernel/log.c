@@ -62,7 +62,7 @@ initlog(int dev)
 
 	struct superblock sb;
 	initlock(&log.lock, "log");
-	readsb(dev, &sb);
+	read_superblock(dev, &sb);
 	log.start = sb.logstart;
 	log.size = sb.nlog;
 	log.dev = dev;
@@ -76,12 +76,12 @@ install_trans(void)
 	int tail;
 
 	for (tail = 0; tail < log.lh.n; tail++) {
-		struct buf *lbuf = bread(log.dev, log.start + tail + 1); // read log block
-		struct buf *dbuf = bread(log.dev, log.lh.block[tail]); // read dst
+		struct buf *lbuf = block_read(log.dev, log.start + tail + 1); // read log block
+		struct buf *dbuf = block_read(log.dev, log.lh.block[tail]); // read dst
 		memmove(dbuf->data, lbuf->data, BSIZE); // copy block to dst
-		bwrite(dbuf); // write dst to disk
-		brelse(lbuf);
-		brelse(dbuf);
+		block_write(dbuf); // write dst to disk
+		block_release(lbuf);
+		block_release(dbuf);
 	}
 }
 
@@ -89,14 +89,14 @@ install_trans(void)
 static void
 read_head(void)
 {
-	struct buf *buf = bread(log.dev, log.start);
+	struct buf *buf = block_read(log.dev, log.start);
 	struct logheader *lh = (struct logheader *)(buf->data);
 	int i;
 	log.lh.n = lh->n;
 	for (i = 0; i < log.lh.n; i++) {
 		log.lh.block[i] = lh->block[i];
 	}
-	brelse(buf);
+	block_release(buf);
 }
 
 // Write in-memory log header to disk.
@@ -105,15 +105,15 @@ read_head(void)
 static void
 write_head(void)
 {
-	struct buf *buf = bread(log.dev, log.start);
+	struct buf *buf = block_read(log.dev, log.start);
 	struct logheader *hb = (struct logheader *)(buf->data);
 	int i;
 	hb->n = log.lh.n;
 	for (i = 0; i < log.lh.n; i++) {
 		hb->block[i] = log.lh.block[i];
 	}
-	bwrite(buf);
-	brelse(buf);
+	block_write(buf);
+	block_release(buf);
 }
 
 static void
@@ -184,12 +184,12 @@ write_log(void)
 	int tail;
 
 	for (tail = 0; tail < log.lh.n; tail++) {
-		struct buf *to = bread(log.dev, log.start + tail + 1); // log block
-		struct buf *from = bread(log.dev, log.lh.block[tail]); // cache block
+		struct buf *to = block_read(log.dev, log.start + tail + 1); // log block
+		struct buf *from = block_read(log.dev, log.lh.block[tail]); // cache block
 		memmove(to->data, from->data, BSIZE);
-		bwrite(to); // write the log
-		brelse(from);
-		brelse(to);
+		block_write(to); // write the log
+		block_release(from);
+		block_release(to);
 	}
 }
 
@@ -209,11 +209,11 @@ commit(void)
 // Record the block number and pin in the cache with B_DIRTY.
 // commit()/write_log() will do the disk write.
 //
-// log_write() replaces bwrite(); a typical use is:
-//   bp = bread(...)
+// log_write() replaces block_write(); a typical use is:
+//   bp = block_read(...)
 //   modify bp->data[]
 //   log_write(bp)
-//   brelse(bp)
+//   block_release(bp)
 void
 log_write(struct buf *b)
 {

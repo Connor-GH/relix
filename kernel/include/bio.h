@@ -2,10 +2,10 @@
 #include <stdint.h>
 
 void
-binit(void);
+block_init(void);
 struct buf *
-bread(uint32_t, uint32_t);
+block_read(uint32_t, uint32_t);
 void
-brelse(struct buf *);
+block_release(struct buf *);
 void
-bwrite(struct buf *);
+block_write(struct buf *);

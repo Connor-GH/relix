@@ -62,7 +62,7 @@ main(struct multiboot_info *mbinfo)
 	nulldrvinit();
 	pinit(); // process table
 	tvinit(); // trap vectors
-	binit(); // buffer cache
+	block_init(); // buffer cache
 	fileinit(); // file table
 	ideinit(); // disk
 	ps2mouseinit();

@@ -4,7 +4,6 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
-#include <stdlib.h>
 
 // remove "SYS_"
 // sizeof minus one because of the null terminator

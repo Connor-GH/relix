@@ -15,7 +15,7 @@
 #define __MAXFILE (__NDIRECT + __NINDIRECT + (__NINDIRECT * __NINDIRECT))
 #define __NDINDIRECT_PER_ENTRY __NDIRECT
 #define __NDINDIRECT_ENTRY __NDIRECT
-#define __BSIZE 4096UL // block size
+#define __BSIZE 2048UL // block size
 #if !defined(__USER__) || defined(USE_HOST_TOOLS)
 #define NDIRECT __NDIRECT
 #define NINDIRECT __NINDIRECT
@@ -94,27 +94,27 @@ struct dinode {
 #ifndef USE_HOST_TOOLS
 #include "stat.h"
 void
-readsb(int dev, struct superblock *sb);
+read_superblock(int dev, struct superblock *sb);
 int
 dirlink(struct inode *, const char *, uint32_t);
 struct inode *
 dirlookup(struct inode *, const char *, uint64_t *);
 struct inode *
-ialloc(uint32_t, int32_t);
+inode_alloc(uint32_t, int32_t);
 struct inode *
-idup(struct inode *);
+inode_dup(struct inode *);
 void
-iinit(int dev);
+inode_init(int dev);
 void
-ilock(struct inode *);
+inode_lock(struct inode *);
 void
-iput(struct inode *);
+inode_put(struct inode *);
 void
-iunlock(struct inode *);
+inode_unlock(struct inode *);
 void
-iunlockput(struct inode *);
+inode_unlockput(struct inode *);
 void
-iupdate(struct inode *);
+inode_update(struct inode *);
 int
 namecmp(const char *, const char *);
 struct inode *
@@ -122,10 +122,10 @@ namei(const char *);
 struct inode *
 nameiparent(const char *, char *);
 int
-readi(struct inode *, char *, uint64_t, uint64_t);
+inode_read(struct inode *, char *, uint64_t, uint64_t);
 void
-stati(struct inode *, struct stat *);
+inode_stat(struct inode *, struct stat *);
 int
-writei(struct inode *, char *, uint64_t, uint64_t);
+inode_write(struct inode *, char *, uint64_t, uint64_t);
 #endif
 #endif

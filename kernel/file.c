@@ -76,7 +76,7 @@ fileclose(struct file *f)
 		pipeclose(ff.pipe, ff.writable);
 	else if (ff.type == FD_INODE) {
 		begin_op();
-		iput(ff.ip);
+		inode_put(ff.ip);
 		end_op();
 	}
 }
@@ -86,9 +86,9 @@ int
 filestat(struct file *f, struct stat *st)
 {
 	if (f->type == FD_INODE) {
-		ilock(f->ip);
-		stati(f->ip, st);
-		iunlock(f->ip);
+		inode_lock(f->ip);
+		inode_stat(f->ip, st);
+		inode_unlock(f->ip);
 		return 0;
 	}
 	return -ENOENT;
@@ -105,10 +105,10 @@ fileread(struct file *f, char *addr, int n)
 	if (f->type == FD_PIPE)
 		return piperead(f->pipe, addr, n);
 	if (f->type == FD_INODE) {
-		ilock(f->ip);
-		if ((r = readi(f->ip, addr, f->off, n)) > 0)
+		inode_lock(f->ip);
+		if ((r = inode_read(f->ip, addr, f->off, n)) > 0)
 			f->off += r;
-		iunlock(f->ip);
+		inode_unlock(f->ip);
 		return r;
 	}
 	panic("fileread");
@@ -147,7 +147,7 @@ filewrite(struct file *f, char *addr, int n)
 		// the maximum log transaction size, including
 		// i-node, indirect block, allocation blocks,
 		// and 2 blocks of slop for non-aligned writes.
-		// this really belongs lower down, since writei()
+		// this really belongs lower down, since inode_write()
 		// might be writing a device like the console.
 		int max = ((MAXOPBLOCKS - 1 - 1 - 2) / 2) * 512;
 		int i = 0;
@@ -157,10 +157,10 @@ filewrite(struct file *f, char *addr, int n)
 				n1 = max;
 
 			begin_op();
-			ilock(f->ip);
-			if ((r = writei(f->ip, addr + i, f->off, n1)) > 0)
+			inode_lock(f->ip);
+			if ((r = inode_write(f->ip, addr + i, f->off, n1)) > 0)
 				f->off += r;
-			iunlock(f->ip);
+			inode_unlock(f->ip);
 			end_op();
 
 			if (r < 0)

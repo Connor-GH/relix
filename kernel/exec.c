@@ -55,7 +55,7 @@ __nonnull(1, 2) int execve(const char *path, char *const *argv, char *const *env
 		end_op();
 		return -1;
 	}
-	ilock(ip);
+	inode_lock(ip);
 	pgdir = 0;
 
 	// hold back on GID/UID protection right now
@@ -63,7 +63,7 @@ __nonnull(1, 2) int execve(const char *path, char *const *argv, char *const *env
 		cprintf("exec: user does not have matching uid/gid for this file\n");
 		cprintf("Requested gid: %d user gid: %d\n", ip->gid, curproc->cred.gid);
 		cprintf("Requested uid: %d user uid: %d\n", ip->uid, curproc->cred.uid);
-		iunlockput(ip);
+		inode_unlockput(ip);
 		return -1;
 	}*/
 	// TODO change "1" to check for user permissions
@@ -80,13 +80,13 @@ __nonnull(1, 2) int execve(const char *path, char *const *argv, char *const *env
 		}
 		end_op();
 		cprintf("exec: file is not executable\n");
-		iunlockput(ip);
+		inode_unlockput(ip);
 		return -1;
 	}
 
 ok:
 	// Check ELF header
-	if (readi(ip, (char *)&elf, 0, sizeof(elf)) != sizeof(elf))
+	if (inode_read(ip, (char *)&elf, 0, sizeof(elf)) != sizeof(elf))
 		goto bad;
 	if (elf.magic != ELF_MAGIC_NUMBER)
 		goto bad;
@@ -97,7 +97,7 @@ ok:
 	// Load program into memory.
 	sz = 0;
 	for (i = 0, off = elf.e_phoff; i < elf.e_phnum; i++, off += sizeof(ph)) {
-		if (readi(ip, (char *)&ph, off, sizeof(ph)) != sizeof(ph))
+		if (inode_read(ip, (char *)&ph, off, sizeof(ph)) != sizeof(ph))
 			goto bad;
 		if (ph.p_type != PT_LOAD)
 			continue;
@@ -112,7 +112,7 @@ ok:
 		if (loaduvm(pgdir, (char *)ph.p_vaddr, ip, ph.p_offset, ph.p_filesz) < 0)
 			goto bad;
 	}
-	iunlockput(ip);
+	inode_unlockput(ip);
 	end_op();
 	ip = 0;
 	// Allocate two pages at the next page boundary.
@@ -186,7 +186,7 @@ bad:
 	if (pgdir)
 		freevm(pgdir);
 	if (ip) {
-		iunlockput(ip);
+		inode_unlockput(ip);
 		end_op();
 	}
 	return -1;

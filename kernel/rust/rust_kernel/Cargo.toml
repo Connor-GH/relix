@@ -7,3 +7,6 @@ edition = "2024"
 anstyle-parse = { version = "0.2.6", features = ["utf8", "core"]}
 bindings = { path = "../bindings", version = "0.1.0" }
 spin = "0.9.8"
+
+[profile.release]
+lto = true

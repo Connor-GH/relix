@@ -196,7 +196,7 @@ kmalloc(size_t nbytes)
 	}
 	for (p = prevp->s.ptr;; prevp = p, p = p->s.ptr) {
 		if (!p)
-			panic("Out of memory!");
+			return 0;
 		if (p->s.size >= nunits) {
 			if (p->s.size == nunits)
 				prevp->s.ptr = p->s.ptr;

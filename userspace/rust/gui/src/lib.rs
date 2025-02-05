@@ -1,6 +1,5 @@
 #![no_std]
 use core::ffi::{c_uint, c_int, c_void};
-use userspace_bindings::stdio::{FILE, fclose, fflush, fopen, fprintf};
 use userspace_bindings::fcntl::{open, O_RDWR};
 use userspace_bindings::unistd::close;
 use userspace_bindings::mman::{mmap, munmap, MMAP_FAILED, PROT_READ, PROT_WRITE, MAP_SHARED};
@@ -49,6 +48,9 @@ impl<const WIDTH: usize, const HEIGHT: usize, const DEPTH: usize> Drop
 
 #[unsafe(no_mangle)]
 pub extern "C" fn libgui_pixel_write_ptr(ptr: *mut c_void, x: u32, y: u32, color: u32) -> isize {
+    if ptr.is_null() {
+        return -1;
+    }
     unsafe {
         let ptr = ptr as *mut u32;
         *ptr.offset((y * 640 + x) as isize) = color;

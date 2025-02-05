@@ -178,39 +178,39 @@ sys_link(void)
 		return -ENOENT;
 	}
 
-	ilock(ip);
+	inode_lock(ip);
 	if (S_ISDIR(ip->mode)) {
-		iunlockput(ip);
+		inode_unlockput(ip);
 		end_op();
 		return -EISDIR;
 	}
 
 	ip->nlink++;
-	iupdate(ip);
-	iunlock(ip);
+	inode_update(ip);
+	inode_unlock(ip);
 
 	if ((dp = nameiparent(new, name)) == 0) {
 		retflag = ENOENT;
 		goto bad;
 	}
-	ilock(dp);
+	inode_lock(dp);
 	if (dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0) {
-		iunlockput(dp);
+		inode_unlockput(dp);
 		retflag = EXDEV; // probably incorrect
 		goto bad;
 	}
-	iunlockput(dp);
-	iput(ip);
+	inode_unlockput(dp);
+	inode_put(ip);
 
 	end_op();
 
 	return 0;
 
 bad:
-	ilock(ip);
+	inode_lock(ip);
 	ip->nlink--;
-	iupdate(ip);
-	iunlockput(ip);
+	inode_update(ip);
+	inode_unlockput(ip);
 	end_op();
 	return -retflag;
 }
@@ -223,8 +223,8 @@ isdirempty(struct inode *dp)
 	struct dirent de;
 
 	for (off = 2 * sizeof(de); off < dp->size; off += sizeof(de)) {
-		if (readi(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
-			panic("isdirempty: readi");
+		if (inode_read(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+			panic("isdirempty: inode_read");
 		if (de.inum != 0)
 			return 0;
 	}
@@ -249,7 +249,7 @@ sys_unlink(void)
 		return -ENOENT;
 	}
 
-	ilock(dp);
+	inode_lock(dp);
 
 	// Cannot unlink "." or "..".
 	if (namecmp(name, ".") == 0 || namecmp(name, "..") == 0)
@@ -260,35 +260,35 @@ sys_unlink(void)
 		goto bad;
 	}
 
-	ilock(ip);
+	inode_lock(ip);
 
 	if (ip->nlink < 1)
 		panic("unlink: nlink < 1");
 	if (S_ISDIR(ip->mode) && !isdirempty(ip)) {
-		iunlockput(ip);
+		inode_unlockput(ip);
 		error = ENOTEMPTY;
 		goto bad;
 	}
 
 	memset(&de, 0, sizeof(de));
-	if (writei(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
-		panic("unlink: writei");
+	if (inode_write(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+		panic("unlink: inode_write");
 	if (S_ISDIR(ip->mode)) {
 		dp->nlink--;
-		iupdate(dp);
+		inode_update(dp);
 	}
-	iunlockput(dp);
+	inode_unlockput(dp);
 
 	ip->nlink--;
-	iupdate(ip);
-	iunlockput(ip);
+	inode_update(ip);
+	inode_unlockput(ip);
 
 	end_op();
 
 	return 0;
 
 bad:
-	iunlockput(dp);
+	inode_unlockput(dp);
 	end_op();
 	return -error;
 }
@@ -303,11 +303,11 @@ create(char *path, mode_t mode, short major, short minor)
 	// get inode of path, and put the name in name.
 	if ((dp = nameiparent(path, name)) == 0)
 		return 0;
-	ilock(dp);
+	inode_lock(dp);
 
 	if ((ip = dirlookup(dp, name, 0)) != 0) {
-		iunlockput(dp);
-		ilock(ip);
+		inode_unlockput(dp);
+		inode_lock(ip);
 		if (S_ISREG(ip->mode) && S_ISREG(mode)) {
 			ip->mode = mode; // TODO limit permissions
 			return ip;
@@ -316,22 +316,22 @@ create(char *path, mode_t mode, short major, short minor)
 			ip->mode = mode;
 			return ip;
 		}
-		iunlockput(ip);
+		inode_unlockput(ip);
 		return 0;
 	}
 
-	if ((ip = ialloc(dp->dev, mode)) == 0)
-		panic("create: ialloc");
+	if ((ip = inode_alloc(dp->dev, mode)) == 0)
+		panic("create: inode_alloc");
 
-	ilock(ip);
+	inode_lock(ip);
 	ip->major = major;
 	ip->minor = minor;
 	ip->nlink = 1;
 	ip->mode = mode;
 	ip->gid = DEFAULT_GID;
 	ip->uid = DEFAULT_UID;
-	// atime, mtime, etc. get handled in iupdate()
-	iupdate(ip);
+	// atime, mtime, etc. get handled in inode_update()
+	inode_update(ip);
 	// Create . and .. entries.
 	// because every directory goes as follows:
 	// $ ls -l
@@ -344,7 +344,7 @@ create(char *path, mode_t mode, short major, short minor)
 	// ..
 	if (S_ISDIR(mode)) {
 		dp->nlink++; // for ".."
-		iupdate(dp);
+		inode_update(dp);
 		// No ip->nlink++ for ".": avoid cyclic ref count.
 		if (dirlink(ip, ".", ip->inum) < 0 || dirlink(ip, "..", dp->inum) < 0)
 			panic("create dots");
@@ -353,7 +353,7 @@ create(char *path, mode_t mode, short major, short minor)
 	if (dirlink(dp, name, ip->inum) < 0)
 		panic("create: dirlink");
 
-	iunlockput(dp);
+	inode_unlockput(dp);
 
 	return ip;
 }
@@ -374,11 +374,11 @@ fileopen(char *path, mode_t omode)
 		// try to create a file and it exists.
 		if ((ip = namei(path)) != 0) {
 			// if it's a block device, possibly do something special.
-			ilock(ip);
+			inode_lock(ip);
 			if (S_ISBLK(ip->mode))
 				goto get_fd;
 			// if it's not a block device, just exit.
-			iunlockput(ip);
+			inode_unlockput(ip);
 			end_op();
 			return -ENOTBLK;
 		}
@@ -394,17 +394,17 @@ fileopen(char *path, mode_t omode)
 			end_op();
 			return -ENOENT;
 		}
-		ilock(ip);
+		inode_lock(ip);
 
 		if (S_ISLNK(ip->mode)) {
 			if ((ip = link_dereference(ip, path)) == 0) {
-				iunlockput(ip);
+				inode_unlockput(ip);
 				end_op();
 				return -EINVAL;
 			}
 		}
 		if (S_ISDIR(ip->mode) && omode != O_RDONLY) {
-			iunlockput(ip);
+			inode_unlockput(ip);
 			end_op();
 			return -EISDIR;
 		}
@@ -416,11 +416,11 @@ get_fd:
 	if ((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0) {
 		if (f)
 			fileclose(f);
-		iunlockput(ip);
+		inode_unlockput(ip);
 		end_op();
 		return -EBADF;
 	}
-	iunlock(ip);
+	inode_unlock(ip);
 	end_op();
 
 	f->type = FD_INODE;
@@ -454,7 +454,7 @@ sys_mkdir(void)
 		end_op();
 		return -EINVAL;
 	}
-	iunlockput(ip);
+	inode_unlockput(ip);
 	end_op();
 	return 0;
 }
@@ -473,7 +473,7 @@ sys_mknod(void)
 		end_op();
 		return -EINVAL;
 	}
-	iunlockput(ip);
+	inode_unlockput(ip);
 	end_op();
 	return 0;
 }
@@ -490,7 +490,7 @@ sys_chdir(void)
 		end_op();
 		return -EINVAL;
 	}
-	ilock(ip);
+	inode_lock(ip);
 	if (S_ISLNK(ip->mode)) {
 		if ((ip = link_dereference(ip, path)) == 0) {
 			end_op();
@@ -498,12 +498,12 @@ sys_chdir(void)
 		}
 	}
 	if (!S_ISDIR(ip->mode)) {
-		iunlockput(ip);
+		inode_unlockput(ip);
 		end_op();
 		return -ENOTDIR;
 	}
-	iunlock(ip);
-	iput(curproc->cwd);
+	inode_unlock(ip);
+	inode_put(curproc->cwd);
 	end_op();
 	curproc->cwd = ip;
 	return 0;
@@ -585,10 +585,10 @@ sys_chmod(void)
 		end_op();
 		return -EINVAL;
 	}
-	ilock(ip);
+	inode_lock(ip);
 	// capture the file type and change the permissions
 	ip->mode = (ip->mode & S_IFMT) | mode;
-	iunlock(ip);
+	inode_unlock(ip);
 	end_op();
 	return 0;
 }
@@ -629,23 +629,23 @@ sys_symlink(void)
 	}
 
 	// Dirlookup's first arg needs a lock.
-	ilock(eexist);
+	inode_lock(eexist);
 
 	if ((ip = dirlookup(eexist, dir, &poff)) != 0) {
-		iunlockput(eexist);
+		inode_unlockput(eexist);
 		end_op();
 		return -EEXIST;
 	}
-	iunlock(eexist);
+	inode_unlock(eexist);
 
 	if ((ip = create(linkpath, S_IFLNK | S_IAUSR, 0, 0)) == 0) {
 		end_op();
 		return -ENOSPC;
 	}
-	if (writei(ip, target, 0, strlen(target) + 1) != strlen(target) + 1)
-		panic("symlink writei");
+	if (inode_write(ip, target, 0, strlen(target) + 1) != strlen(target) + 1)
+		panic("symlink inode_write");
 
-	iunlockput(ip);
+	inode_unlockput(ip);
 	end_op();
 
 	return 0;
@@ -666,27 +666,27 @@ sys_readlink(void)
 		return -ENOENT;
 	}
 
-	ilock(ip);
+	inode_lock(ip);
 
 	if (!S_ISLNK(ip->mode)) {
-		iunlock(ip);
+		inode_unlock(ip);
 		end_op();
 		return -EINVAL;
 	}
 
 	if (ip->size > bufsize) {
-		iunlock(ip);
+		inode_unlock(ip);
 		end_op();
 		return -EINVAL;
 	}
 
-	if (readi(ip, ubuf, 0, bufsize) < 0)
-		panic("readlink readi");
+	if (inode_read(ip, ubuf, 0, bufsize) < 0)
+		panic("readlink inode_read");
 
 	if (copyout(myproc()->pgdir, (uintptr_t)ubuf, ubuf, bufsize) < 0)
 		panic("readlink copyout");
 
-	iunlock(ip);
+	inode_unlock(ip);
 	end_op();
 	return 0;
 }
@@ -701,19 +701,19 @@ link_dereference(struct inode *ip, char *buff)
 		if (ref_count == 0)
 			goto bad;
 
-		if (readi(new_ip, buff, 0, new_ip->size) < 0)
+		if (inode_read(new_ip, buff, 0, new_ip->size) < 0)
 			goto bad;
 
-		iunlock(new_ip);
+		inode_unlock(new_ip);
 		if ((new_ip = namei(buff)) == 0)
 			return 0;
 
-		ilock(new_ip);
+		inode_lock(new_ip);
 	}
 	return new_ip;
 
 bad:
-	iunlock(new_ip);
+	inode_unlock(new_ip);
 	return 0;
 }
 

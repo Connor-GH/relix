@@ -64,6 +64,7 @@ ifneq ($(RELEASE),)
 	RUSTFLAGS += -C opt-level=2
 	KCFLAGS += -D__KERNEL_DEBUG__=0
 else
+	RUSTFLAGS += -C opt-level=s
 	CFLAGS += -Werror
 	KCFLAGS += -D__KERNEL_DEBUG__=1
 endif

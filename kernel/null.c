@@ -10,20 +10,20 @@ struct {
 int
 nulldrvwrite(struct inode *ip, char *buf, int n)
 {
-	iunlock(ip);
+	inode_unlock(ip);
 	acquire(&nulldrv.lock);
 	release(&nulldrv.lock);
-	ilock(ip);
+	inode_lock(ip);
 	return n;
 }
 
 int
 nulldrvread(struct inode *ip, char *buf, int n)
 {
-	iunlock(ip);
+	inode_unlock(ip);
 	acquire(&nulldrv.lock);
 	release(&nulldrv.lock);
-	ilock(ip);
+	inode_lock(ip);
 	return 0;
 }
 

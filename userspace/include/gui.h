@@ -1,7 +1,6 @@
 #pragma once
 #include <stdint.h>
 #include <sys/types.h>
-#include <stdio.h>
 
 struct rectangle {
 	uint32_t x;

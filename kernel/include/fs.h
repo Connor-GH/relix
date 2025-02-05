@@ -10,12 +10,12 @@
 // Constants that userspace testers might be interested in.
 // To not pollute the namespace, they have double underscores.
 #define __DIRSIZ 254U
-#define __NDIRECT 8U
+#define __NDIRECT 8UL
 #define __NINDIRECT (__BSIZE / sizeof(uint32_t))
 #define __MAXFILE (__NDIRECT + __NINDIRECT + (__NINDIRECT * __NINDIRECT))
 #define __NDINDIRECT_PER_ENTRY __NDIRECT
 #define __NDINDIRECT_ENTRY __NDIRECT
-#define __BSIZE 2048U // block size
+#define __BSIZE 4096UL // block size
 #if !defined(__USER__) || defined(USE_HOST_TOOLS)
 #define NDIRECT __NDIRECT
 #define NINDIRECT __NINDIRECT
@@ -98,7 +98,7 @@ readsb(int dev, struct superblock *sb);
 int
 dirlink(struct inode *, const char *, uint32_t);
 struct inode *
-dirlookup(struct inode *, const char *, uint32_t *);
+dirlookup(struct inode *, const char *, uint64_t *);
 struct inode *
 ialloc(uint32_t, int32_t);
 struct inode *
@@ -122,10 +122,10 @@ namei(const char *);
 struct inode *
 nameiparent(const char *, char *);
 int
-readi(struct inode *, char *, uint32_t, uint32_t);
+readi(struct inode *, char *, uint64_t, uint64_t);
 void
 stati(struct inode *, struct stat *);
 int
-writei(struct inode *, char *, uint32_t, uint32_t);
+writei(struct inode *, char *, uint64_t, uint64_t);
 #endif
 #endif

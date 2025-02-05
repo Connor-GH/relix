@@ -579,10 +579,10 @@ stati(struct inode *ip, struct stat *st)
 // Read data from inode.
 // Caller must hold ip->lock.
 int
-readi(struct inode *ip, char *dst, uint32_t off, uint32_t n)
+readi(struct inode *ip, char *dst, uint64_t off, uint64_t n)
 {
 	kernel_assert(holdingsleep(&ip->lock));
-	uint32_t tot, m;
+	uint64_t tot, m;
 	struct buf *bp;
 
 	if (S_ISBLK(ip->mode)) {
@@ -608,10 +608,10 @@ readi(struct inode *ip, char *dst, uint32_t off, uint32_t n)
 // Write data to inode.
 // Caller must hold ip->lock.
 int
-writei(struct inode *ip, char *src, uint32_t off, uint32_t n)
+writei(struct inode *ip, char *src, uint64_t off, uint64_t n)
 {
 	kernel_assert(holdingsleep(&ip->lock));
-	uint32_t tot, m;
+	uint64_t tot, m;
 	struct buf *bp;
 
 	if (S_ISBLK(ip->mode)) {
@@ -651,9 +651,9 @@ namecmp(const char *s, const char *t)
 // Look for a directory entry in a directory.
 // If found, set *poff to byte offset of entry.
 struct inode *
-dirlookup(struct inode *dp, const char *name, uint32_t *poff)
+dirlookup(struct inode *dp, const char *name, uint64_t *poff)
 {
-	uint32_t off, inum;
+	uint64_t off, inum;
 	struct dirent de;
 
 	if (!S_ISDIR(dp->mode))
@@ -678,11 +678,11 @@ dirlookup(struct inode *dp, const char *name, uint32_t *poff)
 
 // Write a new directory entry (name, inum) into the directory dp.
 static uint32_t last_inum = 0;
-static uint32_t last_offset_from_inum = 0;
+static uint64_t last_offset_from_inum = 0;
 int
 dirlink(struct inode *dp, const char *name, uint32_t inum)
 {
-	int off = 0;
+	uint64_t off = 0;
 	struct dirent de;
 	struct inode *ip;
 
@@ -735,7 +735,7 @@ static const char *
 skipelem(const char *path, char *name)
 {
 	const char *s;
-	int len;
+	size_t len;
 
 	while (*path == '/')
 		path++;

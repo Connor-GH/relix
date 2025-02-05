@@ -237,7 +237,7 @@ sys_unlink(void)
 	struct inode *ip, *dp;
 	struct dirent de;
 	char name[DIRSIZ], *path;
-	uint32_t off;
+	uint64_t off;
 	int error = EINVAL;
 
 	if (argstr(0, &path) < 0)
@@ -613,7 +613,7 @@ sys_symlink(void)
 {
 	char *target, *linkpath;
 	char dir[DIRSIZ];
-	uint32_t poff;
+	uint64_t poff;
 	struct inode *eexist, *ip;
 	if (argstr(0, &target) < 0 || argstr(1, &linkpath) < 0)
 		return -EINVAL;

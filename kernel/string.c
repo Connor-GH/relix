@@ -3,8 +3,9 @@
 #include "kernel_string.h"
 #include "x86.h"
 #include "compiler_attributes.h"
+#include "macros.h"
 
-__nonnull(1) void *memset(void *dst, int c, uint32_t n)
+__nonnull(1) void *memset(void *dst, int c, size_t n)
 {
 	if ((size_t)dst % 4 == 0 && n % 4 == 0) {
 		c &= 0xFF;
@@ -14,7 +15,7 @@ __nonnull(1) void *memset(void *dst, int c, uint32_t n)
 	return dst;
 }
 
-__nonnull(1, 2) int memcmp(const void *v1, const void *v2, uint32_t n)
+__nonnull(1, 2) int memcmp(const void *v1, const void *v2, size_t n)
 {
 	const uint8_t *dst, *s2;
 
@@ -29,13 +30,13 @@ __nonnull(1, 2) int memcmp(const void *v1, const void *v2, uint32_t n)
 	return 0;
 }
 __deprecated("Removed in POSIX.1-2008")
-	__nonnull(1, 2) int bcmp(const void *v1, const void *v2, uint32_t n)
+	__nonnull(1, 2) int bcmp(const void *v1, const void *v2, size_t n)
 {
 	return memcmp(v1, v2, n);
 }
 
 // Based on code from https://libc11.org/string/memmove.html (public domain)
-__nonnull(1, 2) void *memmove(void *dst, const void *src, uint32_t n)
+__nonnull(1, 2) void *memmove(void *dst, const void *src, size_t n)
 {
 	char *dest = (char *)dst;
 	const char *source = (const char *)src;
@@ -56,7 +57,7 @@ __nonnull(1, 2) void *memmove(void *dst, const void *src, uint32_t n)
 	return dst;
 }
 
-__nonnull(1, 2) void *memcpy(void *dst, const void *src, uint32_t n)
+__nonnull(1, 2) void *memcpy(void *dst, const void *src, size_t n)
 {
 	if (n % 8 == 0)
 		return movsq((uint64_t *)dst, (uint64_t *)src, n / sizeof(uint64_t));
@@ -67,14 +68,14 @@ __nonnull(1, 2) void *memcpy(void *dst, const void *src, uint32_t n)
 
 __nonnull(1, 2) char *strcat(char *dst, const char *src)
 {
-	int start = strlen(dst);
-	int j = 0;
-	for (int i = start; i < start + strlen(src) + 1; i++, j++) {
+	size_t start = strlen(dst);
+	size_t j = 0;
+	for (size_t i = start; i < start + strlen(src) + 1; i++, j++) {
 		dst[i] = src[j];
 	}
 	return dst;
 }
-__nonnull(1, 2) int strncmp(const char *p, const char *q, uint32_t n)
+__nonnull(1, 2) int strncmp(const char *p, const char *q, size_t n)
 {
 	while (n > 0 && *p && *p == *q)
 		n--, p++, q++;
@@ -83,7 +84,7 @@ __nonnull(1, 2) int strncmp(const char *p, const char *q, uint32_t n)
 	return (uint8_t)*p - (uint8_t)*q;
 }
 
-__nonnull(1, 2) char *strncpy(char *s, const char *t, int n)
+__nonnull(1, 2) char *strncpy(char *s, const char *t, size_t n)
 {
 	char *os;
 
@@ -108,22 +109,17 @@ __nonnull(1, 2) char *safestrcpy(char *s, const char *t, int n)
 	*s = 0;
 	return os;
 }
-static inline int
-min(int a, int b)
-{
-	return a > b ? b : a;
-}
-__nonnull(1, 2) char *strlcpy_nostrlen(char *dst, const char *src, int dst_len,
-																			 int src_len)
+__nonnull(1, 2) char *strlcpy_nostrlen(char *dst, const char *src, size_t dst_len,
+																			 size_t src_len)
 {
 	// this is guaranteed to NUL-terminate even on strings without strlen.
 	// only issue is lack of verification of string length.
 	return safestrcpy(dst, src, min(dst_len, src_len));
 }
 
-__nonnull(1) uint32_t strlen(const char *s)
+__nonnull(1) size_t strlen(const char *s)
 {
-	int n;
+	size_t n;
 
 	for (n = 0; s[n]; n++)
 		;

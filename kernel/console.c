@@ -151,6 +151,8 @@ vga_write_char_wrapper(FILE *fp, char c, char *buf)
 {
 	vga_write_char(c, static_foreg, static_backg);
 }
+
+__attribute__((deprecated("Use vga_cprintf or uart_cprintf")))
 __attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *fmt,
 																																...)
 {

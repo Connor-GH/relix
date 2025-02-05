@@ -41,17 +41,22 @@ rust_hello_world(void);
 int
 main(struct multiboot_info *mbinfo)
 {
+	/*-----------------------*\
+	| uart-only printing zone |
+	\*-----------------------*/
 	uartinit1(); // serial port
-	parse_multiboot(mbinfo);
-	kernel_assert(available_memory != 0);
 	kinit1(end, P2V(4 * 1024 * 1024)); // phys page allocator
-
-	// We can start printing to the screen here.
-	// Any printing before this MUST be uart.
 	kvmalloc(); // kernel page table
+	parse_multiboot(P2V(mbinfo));
+	kernel_assert(available_memory != 0);
+
+	/*----------------------------------------------*\
+	| We can start printing to the framebuffer here. |
+	\*----------------------------------------------*/
+
 	ioapicinit(); // another interrupt controller
 	uartinit2();
-	cprintf("xv6_64 (built with %s and linker %s)\n", XV6_COMPILER, XV6_LINKER);
+	vga_cprintf("xv6_64 (built with %s and linker %s)\n", XV6_COMPILER, XV6_LINKER);
 	if (acpiinit() != 0)
 		mpinit(); // detect other processors
 	lapicinit(); // interrupt controller
@@ -70,7 +75,7 @@ main(struct multiboot_info *mbinfo)
 	rust_hello_world();
 	pci_init();
 	startothers(); // start other processors
-	kinit2(P2V(4 * 1024 * 1024), P2V(PHYSTOP)); // must come after startothers()
+	kinit2(P2V(4 * 1024 * 1024), P2V(available_memory)); // must come after startothers()
 	userinit(); // first user process
 	mpmain(); // finish this processor's setup
 }
@@ -89,7 +94,7 @@ mpenter(void)
 static void
 mpmain(void)
 {
-	cprintf("\033[97;44mcpu%d: starting\033[m\n", my_cpu_id());
+	vga_cprintf("\033[97;44mcpu%d: starting\033[m\n", my_cpu_id());
 	idtinit(); // load idt register
 	xchg(&(mycpu()->started), 1); // tell startothers() we're up
 	scheduler(); // start running processes

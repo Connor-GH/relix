@@ -13,7 +13,7 @@
 // * Only one process at a time can use a buffer,
 //     so do not keep them longer than necessary.
 
-#include "compiler_attributes.h"
+#include "kernel_assert.h"
 #include "stdint.h"
 #include "param.h"
 #include "spinlock.h"
@@ -143,8 +143,7 @@ block_read(uint32_t dev, uint32_t blockno)
 void
 block_write(struct buf *b)
 {
-	if (unlikely(!holdingsleep(&b->lock)))
-		panic("bwrite");
+	kernel_assert(holdingsleep(&b->lock));
 	b->flags |= B_DIRTY;
 	iderw(b);
 }
@@ -154,8 +153,7 @@ block_write(struct buf *b)
 void
 block_release(struct buf *b)
 {
-	if (unlikely(!holdingsleep(&b->lock)))
-		panic("block_release");
+	kernel_assert(holdingsleep(&b->lock));
 
 	releasesleep(&b->lock);
 

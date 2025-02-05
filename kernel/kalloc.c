@@ -77,7 +77,8 @@ __nonnull(1) void kpage_free(char *v)
 	if (V2IO(v) >= DEVBASE)
 		return;
 
-	if ((uintptr_t)v % PGSIZE || v < end || V2P(v) >= PHYSTOP)
+	if ((uintptr_t)v % PGSIZE || v < end ||
+		(V2P(v) >= available_memory && likely(available_memory > 0)))
 		panic("kpage_free");
 
 	//if (kmem.use_lock)

@@ -1,8 +1,5 @@
 #include "boot/multiboot2.h"
-#include "kalloc.h"
-#include "memlayout.h"
 #include "vga.h"
-#include "vm.h"
 #include <stdint.h>
 #include "console.h"
 

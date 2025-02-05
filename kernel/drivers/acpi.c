@@ -72,7 +72,7 @@ scan_rsdp(uint32_t base, uint32_t len)
 	}
 	return (struct acpi_rsdp *)0;
 }
-#define acpi_cprintf(...) cprintf("acpi: " __VA_ARGS__)
+#define acpi_cprintf(...) vga_cprintf("acpi: " __VA_ARGS__)
 static void
 dump_rsdp(struct acpi_rsdp *rsdp)
 {

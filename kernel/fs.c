@@ -343,8 +343,7 @@ inode_lock(struct inode *ip)
 
 	if (ip == 0 || ip->ref < 1)
 		panic("inode_lock");
-	if (holdingsleep(&ip->lock))
-		panic("inode_lock: already locking");
+	kernel_assert(!holdingsleep(&ip->lock));
 
 	acquiresleep(&ip->lock);
 
@@ -376,8 +375,7 @@ inode_unlock(struct inode *ip)
 {
 	if (ip == 0 || ip->ref < 1)
 		panic("inode_unlock");
- if (!holdingsleep(&ip->lock))
-		panic("inode_unlock: inode was not locking");
+	kernel_assert(holdingsleep(&ip->lock));
 
 	releasesleep(&ip->lock);
 }
@@ -499,6 +497,8 @@ bmap(struct inode *ip, uint32_t bn)
 static void
 inode_truncate(struct inode *ip)
 {
+	// NOTE: change the a and a2 pointers to uintptr_t
+	// if/when BSIZE increases to 4096+
 	struct buf *bp;
 	uint32_t *a;
 

@@ -7,6 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 #include "console.h"
+#include "kernel_assert.h"
 
 void
 initlock(struct spinlock *lk, char *name)
@@ -24,8 +25,7 @@ void
 acquire(struct spinlock *lk)
 {
 	pushcli(); // disable interrupts to avoid deadlock.
-	if (holding(lk))
-		panic("acquire");
+	kernel_assert(!holding(lk));
 
 	while (__sync_lock_test_and_set(&lk->locked, 1) != 0)
 		;
@@ -42,8 +42,7 @@ acquire(struct spinlock *lk)
 void
 release(struct spinlock *lk)
 {
-	if (!holding(lk))
-		panic("release");
+	kernel_assert(holding(lk));
 
 	lk->pcs[0] = 0;
 	lk->cpu = 0;

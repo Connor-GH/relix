@@ -46,9 +46,10 @@ main(struct multiboot_info *mbinfo)
 	\*-----------------------*/
 	uartinit1(); // serial port
 	kinit1(end, P2V(4 * 1024 * 1024)); // phys page allocator
-	kvmalloc(); // kernel page table
-	parse_multiboot(P2V(mbinfo));
+	parse_multiboot(mbinfo);
 	kernel_assert(available_memory != 0);
+	// Past kvmalloc, addresses need to be virtual.
+	kvmalloc(); // kernel page table
 
 	/*----------------------------------------------*\
 	| We can start printing to the framebuffer here. |

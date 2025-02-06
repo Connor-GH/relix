@@ -26,7 +26,7 @@ impl<const WIDTH: usize, const HEIGHT: usize, const DEPTH: usize>
             None
         } else {
             let ptr = unsafe { mmap(core::ptr::null_mut(),
-            0, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0) };
+            WIDTH * HEIGHT * (DEPTH/8), PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0) };
             Some(FrameBuffer { fd, ptr })
         }
     }
@@ -41,7 +41,7 @@ impl<const WIDTH: usize, const HEIGHT: usize, const DEPTH: usize> Drop
     fn drop(&mut self) {
         unsafe {
             close(self.fd);
-            munmap(self.ptr, WIDTH * HEIGHT * DEPTH);
+            munmap(self.ptr, WIDTH * HEIGHT * (DEPTH/8));
         }
     }
 }
@@ -81,7 +81,7 @@ pub extern "C" fn libgui_init(file: *const core::ffi::c_char) -> *mut c_void {
      */
     unsafe {
         let ptr = mmap(core::ptr::null_mut(),
-            640 * 480 * 32, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
+            640 * 480 * 4, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
         close(fd);
         ptr
     }
@@ -90,7 +90,7 @@ pub extern "C" fn libgui_init(file: *const core::ffi::c_char) -> *mut c_void {
 #[unsafe(no_mangle)]
 pub extern "C" fn libgui_fini(ptr: *mut c_void) {
     unsafe {
-        munmap(ptr, 640 * 480 * 32);
+        munmap(ptr, 640 * 480 * 4);
     }
 }
 
@@ -98,12 +98,12 @@ pub extern "C" fn libgui_fini(ptr: *mut c_void) {
 pub extern "C" fn libgui_fill_rect(rect: *const Rectangle, hex_color: u32) {
     let fd = unsafe { open(c"/dev/fb0".as_ptr(), O_RDWR)};
     let ptr = unsafe { mmap(core::ptr::null_mut(),
-        640 * 480 * 32, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0) };
+        640 * 480 * 4, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0) };
 
     libgui_fill_rect_ptr(ptr, rect, hex_color);
     unsafe {
         close(fd);
-        munmap(ptr, 640 * 480 * 32)
+        munmap(ptr, 640 * 480 * 4)
     };
 }
 #[unsafe(no_mangle)]

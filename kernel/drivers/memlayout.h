@@ -1,6 +1,7 @@
 #pragma once
 #include <limits.h>
 #include <stdint.h>
+#include "../include/vga.h"
 // Memory layout
 #define kiB (1024ULL)
 #define MiB (1024 * kiB)

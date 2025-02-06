@@ -53,4 +53,6 @@ void
 ansi_set_cursor_location_y(uint16_t y);
 void
 ansi_set_cursor_location(uint16_t x, uint16_t y);
+struct multiboot_tag_framebuffer_common
+get_fb_common(void);
 #endif

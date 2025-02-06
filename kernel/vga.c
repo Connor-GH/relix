@@ -75,6 +75,13 @@ vgammap(size_t length, uintptr_t addr)
 {
 	return (struct mmap_info){WIDTH*HEIGHT*BPP_DEPTH, fb_common.framebuffer_addr, 0, NULL};
 }
+// INVARIANT: must be ran after vga_init().
+struct multiboot_tag_framebuffer_common
+get_fb_common(void)
+{
+	return fb_common;
+}
+
 /*
  * This init function needs these 3 parameters
  * because at some point during kernel bring-up,

@@ -24,10 +24,12 @@
  */
 
 #include "compiler_attributes.h"
+#include "kernel/boot/multiboot2.h"
 #include "param.h"
 #include "stdint.h"
 #include "console.h"
 #include "kernel_string.h"
+#include "vga.h"
 #include "x86.h"
 #include "memlayout.h"
 #include "mmu.h"
@@ -185,13 +187,18 @@ kvmalloc(void)
 	kpdpt[509] = v2p(iopgdir) | PTE_P | PTE_W;
 	// The boot page table used in entry64.S and entryother.S.
 	// PTE_PS in a page directory entry enables 4Mbyte pages.
+	// Notice, though, how cr4 does not have bit 7 set in entry64.S
+	// that means that this effectively does nothing until we turn it on.
 	for (n = 0; n < NPDENTRIES; n++) {
 		kpgdir0[n] = (n << PDXSHIFT) | PTE_PS | PTE_P | PTE_W;
 		kpgdir1[n] = ((n + 512) << PDXSHIFT) | PTE_PS | PTE_P | PTE_W;
 	}
-	for (n = 0; n < 16; n++)
-		iopgdir[n] = (DEVSPACE + (n << PDXSHIFT)) | PTE_PS | PTE_P | PTE_W |
+	struct multiboot_tag_framebuffer_common fb_common = get_fb_common();
+	uintptr_t fb_addr = fb_common.framebuffer_addr;
+	for (n = 0; n < 16; n++) {
+		iopgdir[n] = (fb_addr + (n << PDXSHIFT)) | PTE_PS | PTE_P | PTE_W |
 								 PTE_PWT | PTE_PCD;
+	}
 	switchkvm();
 }
 

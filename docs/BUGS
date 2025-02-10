@@ -1,7 +1,4 @@
-date:
-	illegal instruction in date(1), TODO
-
 sh:
 	can't always runcmd in child -- breaks cd.
-	maybe should hard-code PATH=/ ?
+
 

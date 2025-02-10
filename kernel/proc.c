@@ -340,7 +340,6 @@ wait(int *wstatus)
 			havekids = 1;
 			if (p->state == ZOMBIE) {
 				// Found one.
-				// signal won't be 0 when we implement it.
 				if (wstatus != NULL)
 					*wstatus = W_EXITCODE(p->status, p->last_signal);
 				pid = p->pid;

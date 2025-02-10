@@ -37,7 +37,7 @@ lapicinit(void)
 
 	// The timer repeatedly counts down at bus frequency
 	// from lapic[TICR] and then issues an interrupt.
-	// If xv6 cared more about precise timekeeping,
+	// If relix cared more about precise timekeeping,
 	// TICR would be calibrated using an external time source.
 	uint32_t eax, ebx, ecx, edx;
 	cpuid(6, 0, &eax, &ebx, &ecx, &edx);

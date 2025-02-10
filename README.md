@@ -1,4 +1,4 @@
-# xv6 work continued from the MIT PDOS team
+# relix: xv6 work continued from the MIT PDOS team
 
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
 Version 6 (v6). xv6 loosely follows the structure and style of v6,
@@ -20,6 +20,8 @@ but is implemented for a modern x86-based multiprocessor using ANSI C.
 - 64-bit port, code pulled from swetland/xv6
 - multiboot2 support
 
+<img src="docs/pictures/relix1.png">
+<img src="docs/pictures/relixcolors.png">
 # dependencies
 - gcc/clang
 - ld/lld

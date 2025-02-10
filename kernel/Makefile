@@ -14,7 +14,7 @@ KERNEL_DRIVERS = $(KERNELDIR)/drivers/kbd.c \
 								 $(KERNELDIR)/drivers/ps2mouse.c
 KERNEL_OBJS = $(KERNEL_SRC:$(KERNELDIR)/%.c=$(BIN)/%.o) $(KERNEL_ASM:$(KERNELDIR)/%.S=$(BIN)/%.o) \
 	$(KERNEL_DRIVERS:$(KERNELDIR)/drivers/%.c=$(BIN)/%.o)
-KERNEL_EXTRAS = -D__KERNEL__
+KERNEL_EXTRAS = -D__KERNEL__ -D__relix__
 
 ifneq ($(KUBSAN),)
 	KUBSAN_FLAGS = -fsanitize=undefined
@@ -29,12 +29,12 @@ KERNEL_INC = $(IVARS) \
 include $(KERNELDIR)/boot/Makefile
 include $(KERNELDIR)/rust/Makefile
 
-$(BIN)/xv6.img: $(BIN)/kernel
+$(BIN)/relix.img: $(BIN)/kernel
 	dd if=/dev/zero of=$@ count=10000
 	dd if=$(BIN)/bootblock of=$@ conv=notrunc
 	dd if=$(BIN)/kernel of=$@ seek=1 conv=notrunc
 
-$(BIN)/xv6memfs.img: bootblock kernelmemfs
+$(BIN)/relixmemfs.img: bootblock kernelmemfs
 	dd if=/dev/zero of=$@ count=10000
 	dd if=$(BIN)/bootblock of=$@ conv=notrunc
 	dd if=$(BIN)/kernelmemfs of=$@ seek=1 conv=notrunc

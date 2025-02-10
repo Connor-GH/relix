@@ -9,7 +9,7 @@
 #include <stdint.h>
 #define SYSROOT "sysroot/"
 
-#define stat xv6_stat // avoid clash with host struct stat
+#define stat relix_stat // avoid clash with host struct stat
 #define USE_HOST_TOOLS
 #include "../kernel/include/fs.h"
 #include "../include/stat.h"

@@ -57,7 +57,7 @@ main(struct multiboot_info *mbinfo)
 
 	ioapicinit(); // another interrupt controller
 	uartinit2();
-	vga_cprintf("xv6_64 (built with %s and linker %s)\n", XV6_COMPILER, XV6_LINKER);
+	vga_cprintf("relix (built with %s and linker %s)\n", RELIX_COMPILER, RELIX_LINKER);
 	if (acpiinit() != 0)
 		mpinit(); // detect other processors
 	lapicinit(); // interrupt controller

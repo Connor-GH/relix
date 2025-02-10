@@ -128,7 +128,7 @@ seginit(void)
 	ltr(SEG_TSS << 3);
 }
 
-// The core xv6 code only knows about two levels of page tables,
+// The core relix code only knows about two levels of page tables,
 // so we will create all four, but only return the second level.
 // because we need to find the other levels later, we'll stash
 // backpointers to them in the top two entries of the level two

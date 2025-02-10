@@ -35,7 +35,7 @@ uartinit1(void)
 
 
 	// Announce that we're here.
-	for (p = "xv6...\n"; *p; p++)
+	for (p = "booting relix...\n"; *p; p++)
 		uartputc(*p);
 }
 

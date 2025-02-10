@@ -146,8 +146,8 @@ $(BIN)/mkfs: $(TOOLSDIR)/mkfs.c
 .PRECIOUS: $(BIN)/%.o
 
 
-$(BIN)/fs.img: $(BIN)/mkfs $(UPROGS) $(D_PROGS)
-	./$(BIN)/mkfs $@ README.md sysroot/test.sh $(wildcard sysroot/etc/*) $(UPROGS) $(D_PROGS)
+$(BIN)/fs.img: $(BIN)/mkfs $(UPROGS)  bin/kernel
+	./$(BIN)/mkfs $@ README.md sysroot/test.sh $(wildcard sysroot/etc/*) $(UPROGS)
 
 clean: user_cargo_clean kernel_cargo_clean
 	@if [ -z "$(BIN)" ]; then exit 1; fi
@@ -187,7 +187,7 @@ ifndef MEM
 MEM := 224M
 endif
 QEMUOPTS = -drive file=$(BIN)/fs.img,index=1,media=disk,format=raw,if=ide,aio=native,cache.direct=on \
-					 -enable-kvm -smp cpus=$(CPUS),cores=1,threads=1,sockets=$(CPUS) -m $(MEM) $(QEMUEXTRA)
+					 -enable-kvm -smp cpus=$(CPUS),cores=1,threads=1,sockets=$(CPUS) -m $(MEM) -vga std $(QEMUEXTRA)
 
 ifdef CONSOLE_LOG
 	QEMUOPTS += -serial mon:stdio

@@ -1,6 +1,7 @@
 #pragma once
 // Per-CPU state
 #include "fs.h"
+#include "kernel_signal.h"
 #include "mman.h"
 #include "param.h"
 #include "spinlock.h"
@@ -97,6 +98,8 @@ struct proc {
 	struct mmap_info mmap_info[NMMAP];
 	size_t mmap_count;
 	size_t effective_largest_sz; // Largest address when including mmap
+	sighandler_t sig_handlers[__SIG_last];
+	int last_signal;
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -114,7 +117,7 @@ fork(void);
 int
 growproc(int);
 int
-kill(int);
+kill(pid_t, int);
 struct cpu *
 mycpu(void);
 struct proc *
@@ -141,3 +144,5 @@ void
 wakeup(void *);
 void
 yield(void);
+struct proc *
+last_proc_ran(void);

@@ -1,5 +1,6 @@
 // Shell.
 
+#include <signal.h>
 #include <sys/wait.h>
 #include <sys/param.h>
 #include <fcntl.h>
@@ -18,6 +19,11 @@
 #define LIST 4
 #define BACK 5
 extern char *const *environ;
+
+void
+sigint_handler(int signum)
+{
+}
 
 struct cmd {
 	int type;
@@ -197,6 +203,11 @@ main(void)
 			close(fd);
 			break;
 		}
+	}
+	sighandler_t sighandler = signal(SIGINT, sigint_handler);
+	if (sighandler == SIG_ERR) {
+		perror("signal");
+		exit(EXIT_FAILURE);
 	}
 
 	// TODO make more general builtin parser.

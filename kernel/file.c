@@ -10,7 +10,8 @@
 #include "console.h"
 #include "pipe.h"
 #include "log.h"
-#include <unistd.h>
+#include "proc.h"
+#include "lseek.h"
 
 struct devsw devsw[NDEV];
 struct {
@@ -18,6 +19,11 @@ struct {
 	struct file file[NFILE];
 } ftable;
 
+struct file *
+fd_to_struct_file(int fd)
+{
+	return myproc()->ofile[fd];
+}
 void
 fileinit(void)
 {

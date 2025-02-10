@@ -11,6 +11,6 @@ main(int argc, char **argv)
 		return 1;
 	}
 	for (i = 1; i < argc; i++)
-		kill(atoi(argv[i]));
+		kill(atoi(argv[i]), SIGKILL);
 	return 0;
 }

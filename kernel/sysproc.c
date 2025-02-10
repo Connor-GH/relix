@@ -7,6 +7,7 @@
 #include "syscall.h"
 #include "trap.h"
 #include "kernel_string.h"
+#include "kernel_signal.h"
 #include "drivers/lapic.h"
 #include "console.h"
 #include "time.h"
@@ -40,11 +41,14 @@ sys_wait(void)
 size_t
 sys_kill(void)
 {
-	int pid;
+	pid_t pid;
+	int signal;
 
 	if (argint(0, &pid) < 0)
 		return -EINVAL;
-	return kill(pid);
+	if (argint(1, &signal) < 0)
+		return -EINVAL;
+	return kill(pid, signal);
 }
 
 size_t
@@ -115,8 +119,8 @@ static void __attribute__((noreturn))
 poweroff(void)
 {
 	// get rid of init
-	kill(0);
-	kill(1);
+	kill(0, SIGKILL);
+	kill(1, SIGKILL);
 	// shut down qemu through magic acpi numbers
 	outw(0xB004, 0x0 | 0x2000);
 	outw(0x604, 0x0 | 0x2000);
@@ -133,14 +137,14 @@ sys_reboot(void)
 
 	switch (cmd) {
 	case RB_POWER_OFF:
-		kill(1);
+		kill(1, SIGKILL);
 		cprintf("Shutting down.\n");
 		poweroff();
 		/* unreachable */
 		return 0;
 		break;
 	case RB_HALT:
-		kill(1);
+		kill(1, SIGKILL);
 		cprintf("System Halted.\n");
 		cli();
 		hlt();
@@ -175,4 +179,16 @@ sys_strace(void)
 		return -EINVAL;
 	memmove(myproc()->strace_mask_ptr, trace_ptr, SYSCALL_AMT);
 	return 0;
+}
+
+size_t
+sys_signal(void)
+{
+	int signum;
+	sighandler_t handler;
+	if (argint(0, &signum) < 0)
+		return -EINVAL;
+	if (argptr(1, (char **)&handler, sizeof(*handler)) < 0)
+		return -EINVAL;
+	return (size_t)kernel_attach_signal(signum, handler);
 }

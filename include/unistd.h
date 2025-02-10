@@ -3,6 +3,7 @@
 #include <time.h>
 #include <stddef.h>
 #include <sys/types.h>
+#include "kernel/include/lseek.h"
 int
 fork(void) __attribute__((returns_twice));
 void
@@ -63,11 +64,6 @@ extern int optind, opterr, optopt;
 int
 getopt(int argc, char *const argv[], const char *optstring);
 
-enum {
-	SEEK_SET,
-	SEEK_CUR,
-	SEEK_END,
-};
 
 #define STDIN_FILENO 0
 #define STDOUT_FILENO 1

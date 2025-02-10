@@ -49,23 +49,13 @@ const uint32_t COLOR_RED;
 #define INTERNAL_COLOR_BLACK 0
 
 static int
-vgawrite(__attribute__((unused)) struct inode *ip,
-				 char *buf1, int n)
+vgaread(struct inode *ip, char *buf, int n)
 {
-	uint8_t *buf = (uint8_t *)buf1;
-	if (buf == NULL)
-		return -1;
-	for (int i = 0; i < n; i+=12) {
-		uint32_t x = buf[i+0] | (buf[i+1] << 8U) | (buf[i+2] << 16U) | (buf[i+3] << 24U);
-		uint32_t y = buf[i+4] | (buf[i+5] << 8U) | (buf[i+6] << 16U) | (buf[i+7] << 24U);
-		uint32_t color = buf[i+8] | (buf[i+9] << 8U) | (buf[i+10] << 16U) | (buf[i+11] << 24U);
-		vga_write(x, y, color);
-	}
-	return n;
+	return 0;
 }
 
 static int
-vgaread(struct inode *ip, char *buf, int n)
+vgawrite(struct inode *ip, char *buf, int n)
 {
 	return 0;
 }
@@ -73,7 +63,7 @@ vgaread(struct inode *ip, char *buf, int n)
 static struct mmap_info
 vgammap(size_t length, uintptr_t addr)
 {
-	return (struct mmap_info){WIDTH*HEIGHT*BPP_DEPTH, fb_common.framebuffer_addr, 0, NULL};
+	return (struct mmap_info){WIDTH*HEIGHT*(BPP_DEPTH/8), fb_common.framebuffer_addr, 0, NULL};
 }
 // INVARIANT: must be ran after vga_init().
 struct multiboot_tag_framebuffer_common

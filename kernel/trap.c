@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include "drivers/mmu.h"
@@ -110,12 +111,14 @@ trap(struct trapframe *tf)
 		break;
 	case T_ILLOP:
 		cprintf("Illegal instruction\n");
-		myproc()->killed = 1;
+		if ((tf->cs & 3) == DPL_USER) {
+			kill(myproc()->killed, SIGILL);
+		}
 		break;
 	case T_GPFLT:
 		cprintf("General protection fault\n");
 		if ((tf->cs & 3) == DPL_USER) {
-		 myproc()->killed = 1;
+			kill(myproc()->killed, SIGSEGV);
 		} else {
 			uart_cprintf("BUG: General protection fault in the kernel!\n");
 			uart_cprintf("from cpu %d eip %lx (cr2=%#lx)\n",
@@ -128,22 +131,23 @@ trap(struct trapframe *tf)
 		break;
 	// TODO handle pagefaults in a way that allows copy-on-write
 	case T_PGFLT:
-		uart_cprintf("Page fault at %#lx\n", rcr2());
+		uart_cprintf("Page fault at %#lx, ip=%#lx\n", rcr2(), tf->eip);
 		decipher_page_fault_error_code(tf->err);
-		myproc()->killed = 1;
 		if ((tf->cs & DPL_USER) == 0)
 			panic("trap");
+		else {
+			kill(myproc()->killed, SIGSEGV);
+		}
 		break;
 	case T_FPERR:
-	case T_SIMDERR:
-		cprintf("Floating point error\n");
-		myproc()->killed = 1;
-		break;
 	case T_DIVIDE:
-		cprintf("Division by zero.\n");
-		myproc()->killed = 1;
+		uart_cprintf("%s[%d]: trap divide error\n", myproc()->name, myproc()->pid);
+		kill(myproc()->pid, SIGFPE);
 		break;
-
+	case T_SIMDERR:
+		uart_cprintf("%s[%d]: floating point error\n", myproc()->name, myproc()->pid);
+		kill(myproc()->pid, SIGFPE);
+		break;
 	default:
 		if (myproc() == 0 || (tf->cs & 3) == 0) {
 			// In kernel, it must be our mistake.

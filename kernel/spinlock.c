@@ -25,6 +25,8 @@ void
 acquire(struct spinlock *lk)
 {
 	pushcli(); // disable interrupts to avoid deadlock.
+	if (holding(lk))
+		uart_cprintf("%s\n", lk->name);
 	kernel_assert(!holding(lk));
 
 	while (__sync_lock_test_and_set(&lk->locked, 1) != 0)

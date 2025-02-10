@@ -43,3 +43,5 @@ int
 filewrite(struct file *, char *, int n);
 int
 fileseek(struct file *f, int n, int whence);
+struct file *
+fd_to_struct_file(int fd);

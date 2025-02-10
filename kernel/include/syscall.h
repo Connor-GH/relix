@@ -36,7 +36,8 @@
 #define SYS_ioctl 33
 #define SYS_mmap 34
 #define SYS_munmap 35
-#define SYSCALL_AMT 35
+#define SYS_signal 36
+#define SYSCALL_AMT 36
 #ifndef __ASSEMBLER__
 #include <stddef.h>
 #include "types.h"
@@ -58,7 +59,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_readlink] = "readlink", [SYS_lseek] = "lseek",
 	[SYS_fsync] = "fsync",			 [SYS_writev] = "writev",
 	[SYS_ioctl] = "ioctl",			 [SYS_mmap] = "mmap",
-	[SYS_munmap] = "munmap",
+	[SYS_munmap] = "munmap",		 [SYS_signal] = "signal"
 };
 #endif
 #if defined(__KERNEL__) && !defined(__ASSEMBLER__)

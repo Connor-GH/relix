@@ -1,4 +1,5 @@
 #include "mman.h"
+#include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -21,6 +22,7 @@
 #include "fs.h"
 #include "compiler_attributes.h"
 #include "types.h"
+#include "kernel_signal.h"
 
 #define W_EXITCODE(ret, signal) ((ret) << 8 | (signal))
 
@@ -85,7 +87,7 @@ mycpu(void)
 }
 
 // Disable interrupts so that we are not rescheduled
-// while inode_readng proc from the cpu structure
+// while reading proc from the cpu structure
 struct proc *
 myproc(void)
 {
@@ -148,6 +150,11 @@ found:
 	p->cred.gid = 0;
 
 	memset(p->strace_mask_ptr, 0, SYSCALL_AMT);
+
+	for (int i = 0; i < __SIG_last; i++) {
+		p->sig_handlers[i] = SIG_DFL;
+	}
+	p->last_signal = 0;
 
 	return p;
 }
@@ -335,7 +342,7 @@ wait(int *wstatus)
 				// Found one.
 				// signal won't be 0 when we implement it.
 				if (wstatus != NULL)
-					*wstatus = W_EXITCODE(p->status, 0);
+					*wstatus = W_EXITCODE(p->status, p->last_signal);
 				pid = p->pid;
 				kpage_free(p->kstack);
 				p->kstack = 0;
@@ -346,6 +353,9 @@ wait(int *wstatus)
 				p->parent = 0;
 				p->name[0] = 0;
 				p->killed = 0;
+				p->last_signal = 0;
+				for (int i = 0; i < __SIG_last; i++)
+					p->sig_handlers[i] = SIG_DFL;
 				p->state = UNUSED;
 				release(&ptable.lock);
 				return pid;
@@ -363,6 +373,21 @@ wait(int *wstatus)
 	}
 }
 
+struct proc *
+last_proc_ran(void)
+{
+
+	struct proc *p;
+	acquire(&ptable.lock);
+	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if (p != initproc && p->pid != 2 && (p->state == RUNNING || p->state == SLEEPING)) {
+			release(&ptable.lock);
+			return p;
+    }
+  }
+	release(&ptable.lock);
+	return NULL;
+}
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -527,18 +552,40 @@ wakeup(void *chan)
 	release(&ptable.lock);
 }
 
-// Kill the process with the given pid.
+static void
+copy_signal_to_stack(struct proc *proc, int signal)
+{
+	uintptr_t sp = proc->tf->esp;
+	uintptr_t ustack[2];
+	ustack[0] = proc->tf->eip + 5;
+	ustack[1] = (uintptr_t)proc->sig_handlers[signal];
+	sp -= sizeof(sighandler_t (*)(int));
+	if (copyout(proc->pgdir, sp, ustack, sizeof(ustack)) < 0) {
+		panic("failed to copyout");
+	}
+	proc->tf->rdi = signal;
+	proc->tf->eip = ustack[1];
+	proc->tf->esp = sp;
+}
+
+// Send the process with the given pid the given signal.
 // Process won't exit until it returns
 // to user space (see trap in trap.c).
 int
-kill(int pid)
+kill(pid_t pid, int signal)
 {
 	struct proc *p;
 
 	acquire(&ptable.lock);
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
 		if (p->pid == pid) {
-			p->killed = 1;
+			if (signal == SIGFPE || signal == SIGSEGV || signal == SIGBUS ||
+				signal == SIGILL || signal == SIGKILL || p->sig_handlers[signal] == SIG_DFL) {
+				p->killed = 1;
+			} else {
+				copy_signal_to_stack(p, signal);
+			}
+			p->last_signal = signal;
 			// Wake process from sleep if necessary.
 			if (p->state == SLEEPING)
 				p->state = RUNNABLE;
@@ -548,6 +595,21 @@ kill(int pid)
 	}
 	release(&ptable.lock);
 	return -1;
+}
+
+
+sighandler_t
+kernel_attach_signal(int signum, sighandler_t handler)
+{
+	if (signum == SIGFPE || signum == SIGSEGV || signum == SIGBUS ||
+		signum == SIGILL)
+		return SIG_ERR;
+	if (signum >= __SIG_last || signum < 0) {
+		return SIG_ERR;
+	} else {
+		myproc()->sig_handlers[signum] = handler;
+		return 0;
+	}
 }
 
 // Print a process listing to console.  For debugging.

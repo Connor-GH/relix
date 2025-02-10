@@ -209,8 +209,9 @@ panic(const char *s)
 	uart_cprintf("%s", s);
 	uart_cprintf("\n");
 	getcallerpcs(&s, pcs);
-	for (i = 0; i < 10; i++)
+	for (i = 0; i < 10; i++) {
 		uart_cprintf(" %#lx", pcs[i]);
+	}
 	panicked = 1; // freeze other CPU
 #if !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wanalyzer-infinite-loop"
@@ -306,6 +307,13 @@ consoleintr(int (*getc)(void))
 						vga_write_char('\n', static_foreg, static_backg);
 					input.w = input.e;
 					wakeup(&input.r);
+				} else if (c == C('C')) {
+					struct proc *p = myproc();
+					if (p == NULL)
+						p = last_proc_ran();
+					if (p == NULL)
+						break;
+					kill(p->pid, SIGINT);
 				}
 			}
 			break;

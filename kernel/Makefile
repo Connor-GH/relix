@@ -41,6 +41,7 @@ $(BIN)/xv6memfs.img: bootblock kernelmemfs
 
 $(BIN)/kernel: $(KERNELDIR)/kernel64.ld $(KERNEL_OBJS) $(BIN)/entry.o $(BIN)/entryother.o $(BIN)/initcode.o $(BIN)/bootblock $(BIN)/sign $(KERNEL_RUST_MODULES) $(SHAREDLIBS_STATIC)
 	$(CC) $(CFLAGS) $(KUBSAN_FLAGS) -Wl,-melf_x86_64,-z,noexecstack,-O1 -Wl,-T,$(KERNELDIR)/kernel$(BITS).ld -o $@ $(BIN)/entry.o $(KERNEL_OBJS) $(KERNEL_RUST_OBJ) $(SHAREDLIBS_STATIC) -Wl,-b,binary $(BIN)/initcode $(BIN)/entryother
+	./tools/gensyms.sh > sysroot/etc/ksyms.map
 
 $(BIN)/%.o: $(KERNELDIR)/%.c
 	$(CC) $(CFLAGS) $(KCFLAGS) $(KUBSAN_FLAGS) $(KERNEL_INC) -c $^ -o $@

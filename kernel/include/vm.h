@@ -1,7 +1,6 @@
 #pragma once
-#include "fs.h"
 #include <stdint.h>
-#include <proc.h>
+#include "proc.h"
 void
 seginit(void);
 void

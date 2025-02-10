@@ -1,7 +1,9 @@
 #include "boot/multiboot2.h"
 #include "vga.h"
+#include "vm.h"
 #include <stdint.h>
 #include "console.h"
+#include "memlayout.h"
 
 const char *
 multiboot_mmap_type(int type)

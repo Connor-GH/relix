@@ -195,6 +195,8 @@ extern size_t
 sys_mmap(void);
 extern size_t
 sys_munmap(void);
+extern size_t
+sys_signal(void);
 
 static size_t (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,				 [SYS__exit] = sys__exit,
@@ -214,7 +216,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_readlink] = sys_readlink, [SYS_lseek] = sys_lseek,
 	[SYS_fsync] = sys_fsync,			 [SYS_writev] = sys_writev,
 	[SYS_ioctl] = sys_ioctl,			 [SYS_mmap] = sys_mmap,
-	[SYS_munmap] = sys_munmap,
+	[SYS_munmap] = sys_munmap,		 [SYS_signal] = sys_signal,
 };
 
 void

@@ -63,6 +63,10 @@ extern char *optarg;
 extern int optind, opterr, optopt;
 int
 getopt(int argc, char *const argv[], const char *optstring);
+char *
+getcwd(char *buf, size_t size);
+int
+dup2(int oldfd, int newfd);
 
 
 #define STDIN_FILENO 0
@@ -70,3 +74,5 @@ getopt(int argc, char *const argv[], const char *optstring);
 #define STDERR_FILENO 2
 off_t
 lseek(int fd, off_t offset, int whence);
+int
+isatty(int fd);

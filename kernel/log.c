@@ -4,7 +4,7 @@
 #include "fs.h"
 #include "log.h"
 #include "console.h"
-#include "kernel_string.h"
+#include <string.h>
 #include "bio.h"
 #include "proc.h"
 

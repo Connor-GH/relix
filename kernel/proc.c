@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <stddef.h>
+#include <string.h>
 #include "drivers/mmu.h"
 #include "drivers/lapic.h"
 #include "defs.h"
@@ -12,7 +13,6 @@
 #include "proc.h"
 #include "spinlock.h"
 #include "kalloc.h"
-#include "kernel_string.h"
 #include "console.h"
 #include "vm.h"
 #include "log.h"
@@ -183,7 +183,7 @@ userinit(void)
 	p->tf->esp = PGSIZE;
 	p->tf->eip = 0; // beginning of initcode.S
 
-	safestrcpy(p->name, "initcode", sizeof(p->name));
+	__safestrcpy(p->name, "initcode", sizeof(p->name));
 	p->cwd = namei("/");
 
 	// this assignment to p->state lets other cores
@@ -258,7 +258,7 @@ fork(void)
 			np->ofile[i] = filedup(curproc->ofile[i]);
 	np->cwd = inode_dup(curproc->cwd);
 
-	safestrcpy(np->name, curproc->name, sizeof(curproc->name));
+	__safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
 	// when fork()ing, copy the parent's mask
 	memmove(np->strace_mask_ptr, curproc->strace_mask_ptr, SYSCALL_AMT);

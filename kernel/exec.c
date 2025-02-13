@@ -7,7 +7,7 @@
 #include "log.h"
 #include "fs.h"
 #include "console.h"
-#include "kernel_string.h"
+#include <string.h>
 #include "kernel_assert.h"
 #include "vm.h"
 #include "drivers/mmu.h"
@@ -164,7 +164,7 @@ ok:
 	for (last = s = path; *s; s++)
 		if (*s == '/')
 			last = s + 1;
-	safestrcpy(curproc->name, last, sizeof(curproc->name));
+	__safestrcpy(curproc->name, last, sizeof(curproc->name));
 
 	// Commit to the user image.
 	oldpgdir = curproc->pgdir;

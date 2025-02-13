@@ -4,13 +4,13 @@
 
 #include <stdint.h>
 #include <stdint.h>
+#include <string.h>
 #include "drivers/memlayout.h"
 #include "drivers/lapic.h"
 #include "param.h"
 #include "mp.h"
 #include "x86.h"
 #include "proc.h"
-#include "kernel_string.h"
 #include "console.h"
 #include "kernel_assert.h"
 #include "compiler_attributes.h"
@@ -139,7 +139,7 @@ mpinit(void)
 		case MPBUS:
 			bus = (struct mpbus *)p;
 			char bus_str[7];
-			safestrcpy(bus_str, (char *)bus->bus_string, 6);
+			__safestrcpy(bus_str, (char *)bus->bus_string, 6);
 			cprintf("Bus discovered: %s\n", bus_str);
 			p += sizeof(struct mpbus);
 			continue;

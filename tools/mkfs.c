@@ -89,8 +89,8 @@ make_file(uint32_t currentino, const char *name, uint32_t parentino)
 {
 	struct dirent de;
 	bzero(&de, sizeof(de));
-	de.inum = xshort(currentino);
-	strcpy(de.name, name);
+	de.d_ino = xshort(currentino);
+	strcpy(de.d_name, name);
 	iappend(parentino == 0 ? currentino : parentino, &de, sizeof(de));
 }
 
@@ -100,9 +100,12 @@ make_dir(uint32_t parentino, const char *name)
 	uint32_t currentino = ialloc(S_IFDIR | S_IAUSR);
 
 	// creates dir
+	// parentino/name -> currentino
 	make_file(currentino, name, parentino);
+	// currentino/. -> currentino
 	make_file(currentino, ".", 0);
-	make_file(currentino, "..", 0);
+	// currentino/.. -> parentino
+	make_file(parentino, "..", currentino);
 
 	return currentino;
 }
@@ -171,13 +174,13 @@ main(int32_t argc, char *argv[])
 	assert(rootino == ROOTINO);
 
 	bzero(&de, sizeof(de));
-	de.inum = xshort(rootino);
-	strcpy(de.name, ".");
+	de.d_ino = xshort(rootino);
+	strcpy(de.d_name, ".");
 	iappend(rootino, &de, sizeof(de));
 
 	bzero(&de, sizeof(de));
-	de.inum = xshort(rootino);
-	strcpy(de.name, "..");
+	de.d_ino = xshort(rootino);
+	strcpy(de.d_name, "..");
 	iappend(rootino, &de, sizeof(de));
 
 	makedirs();
@@ -195,9 +198,9 @@ main(int32_t argc, char *argv[])
 		// build operating system from trying to execute them
 		// in place of system binaries like rm and cat.
 		// ../bin/_rm => ../bin/rm
-		uint32_t k = 0;
+		size_t k = 0;
 		char *str = malloc(FILENAME_MAX);
-		for (int32_t j = 0; j < strlen(argv[i]); j++) {
+		for (size_t j = 0; j < strlen(argv[i]); j++) {
 			if (argv[i][j] != '_') {
 				str[k] = argv[i][j];
 				k++;
@@ -226,7 +229,7 @@ main(int32_t argc, char *argv[])
 			name = argv[i];
 			ino = rootino;
 		}
-		strncpy(de.name, name, DIRSIZ);
+		strncpy(de.d_name, name, DIRSIZ);
 
 		inum = ialloc(S_IFREG | S_IAUSR);
 

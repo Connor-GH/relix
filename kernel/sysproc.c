@@ -6,7 +6,7 @@
 #include "proc.h"
 #include "syscall.h"
 #include "trap.h"
-#include "kernel_string.h"
+#include <string.h>
 #include "kernel_signal.h"
 #include "drivers/lapic.h"
 #include "console.h"

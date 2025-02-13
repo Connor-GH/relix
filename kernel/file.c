@@ -3,7 +3,10 @@
 //
 
 #include "fs.h"
+#include "include/sleeplock.h"
 #include <errno.h>
+#include <string.h>
+#include <dirent.h>
 #include "param.h"
 #include "spinlock.h"
 #include "file.h"
@@ -178,4 +181,57 @@ filewrite(struct file *f, char *addr, int n)
 		return i == n ? n : -EDOM;
 	}
 	panic("filewrite");
+}
+
+static int
+name_of_inode(struct inode *ip, struct inode *parent, char buf[static DIRSIZ], size_t n)
+{
+	off_t off;
+	struct dirent de;
+	for (off = 0; off < parent->size; off += sizeof(de)) {
+		if (inode_read(parent, (char *)&de, off, sizeof(de)) != sizeof(de))
+			panic("name_of_inode: can't read dir entry");
+		if (de.d_ino == ip->inum) {
+			strncpy(buf, de.d_name, n-1);
+			return 0;
+		}
+	}
+	return -1;
+}
+
+
+// Write n bytes to buf, including the null terminator.
+// Returns the number of bytes written.
+char *
+inode_to_path(char *buf, size_t n, struct inode *ip)
+{
+	struct inode *parent;
+	char node_name[DIRSIZ];
+	bool isroot, isdir;
+	inode_lock(ip);
+	isroot = ip->inum == namei("/")->inum;
+	isdir = S_ISDIR(ip->mode);
+	inode_unlock(ip);
+
+	if (isroot) {
+		buf[0] = '/';
+		buf[1] = '\0';
+		return buf;
+	} else if (isdir) {
+		inode_lock(ip);
+		parent = dirlookup(ip, "..", 0);
+		inode_unlock(ip);
+		inode_lock(parent);
+		if (name_of_inode(ip, parent, node_name, n) < 0) {
+			return NULL;
+		}
+		inode_unlock(parent);
+		char *s = inode_to_path(buf, n, parent);
+		if (strcmp(s, "/") != 0) {
+			strncat(s, "/", 2);
+		}
+		return strncat(s, node_name, DIRSIZ - strlen(node_name));
+	} else {
+		return NULL;
+	}
 }

@@ -16,80 +16,6 @@
 int errno;
 extern char **environ;
 
-char *
-strcpy(char *s, const char *t)
-{
-	char *os;
-
-	os = s;
-	while ((*s++ = *t++) != 0)
-		;
-	return os;
-}
-
-char *
-strcat(char *dst, const char *src)
-{
-	int start = strlen(dst);
-	int j = 0;
-	for (int i = start; i < start + strlen(src) + 1; i++, j++) {
-		dst[i] = src[j];
-	}
-	return dst;
-}
-
-int
-strcmp(const char *p, const char *q)
-{
-	while (*p && *p == *q)
-		p++, q++;
-	return (uint8_t)*p - (uint8_t)*q;
-}
-
-int
-strncmp(const char *p, const char *q, uint32_t n)
-{
-	while (n > 0 && *p && *p == *q)
-		n--, p++, q++;
-	if (n == 0)
-		return 0;
-	return (uint8_t)*p - (uint8_t)*q;
-}
-
-uint32_t
-strlen(const char *s)
-{
-	int n;
-
-	for (n = 0; s[n]; n++)
-		;
-	return n;
-}
-
-void *
-memset(void *dst, int c, uint32_t n)
-{
-	stosb(dst, c, n);
-	return dst;
-}
-
-char *
-strchr(const char *s, char c)
-{
-	for (; *s; s++)
-		if (*s == c)
-			return (char *)s;
-	return 0;
-}
-char *
-strrchr(const char *s, char c)
-{
-	for (int i = strlen(s) - 1; i >= 0; i--)
-		if (s[i] == c)
-			return (char *)s + i;
-	return 0;
-}
-
 // fill in st from pathname n
 __attribute__((nonnull(2))) int
 stat(const char *n, struct stat *st)
@@ -104,10 +30,22 @@ stat(const char *n, struct stat *st)
 	close(fd);
 	return r;
 }
+// This should probably be moved into the kernel, because
+// we have more symbolic link information there. It might
+// be possible, however, to keep this in userspace if we
+// can get enough information about files without too many
+// syscalls.
+int
+lstat(const char *n, struct stat *st)
+{
+	return stat(n, st);
+}
 
 DIR *
-fopendir(int fd)
+fdopendir(int fd)
 {
+	struct dirent de;
+	struct __linked_list_dirent *ll = malloc(sizeof(*ll));
 	if (fd == -1)
 		return NULL;
 	DIR *dirp = (DIR *)malloc(sizeof(DIR));
@@ -116,10 +54,38 @@ fopendir(int fd)
 		return NULL;
 	}
 	dirp->fd = fd;
-	dirp->buffer = NULL;
-	dirp->buffer_size = 0;
-	dirp->nextptr = NULL;
+	ll->prev = NULL;
+
+	while (read(fd, &de, sizeof(de)) == sizeof(de) && strcmp(de.d_name, "") != 0) {
+		ll->data = de;
+		ll->next = malloc(sizeof(*ll));
+		ll->next->prev = ll;
+		ll = ll->next;
+	}
+	ll->next = NULL;
+	ll->data = (struct dirent){0, ""};
+
+	// "Rewind" dir
+	while (ll->prev != NULL) {
+		ll = ll->prev;
+	}
+	dirp->list = ll;
 	return dirp;
+}
+
+struct dirent *
+readdir(DIR *dirp)
+{
+
+	if (dirp == NULL || dirp->list == NULL) {
+		errno = EBADF;
+		return NULL;
+	}
+	struct dirent *to_ret = &dirp->list->data;
+	dirp->list = dirp->list->next;
+	if (strcmp(to_ret->d_name, "") == 0 && to_ret->d_ino == 0)
+		return NULL;
+	return to_ret;
 }
 
 DIR *
@@ -128,7 +94,7 @@ opendir(const char *path)
 	int fd = open(path, O_RDONLY /*| O_DIRECTORY*/);
 	if (fd == -1)
 		return NULL;
-	return fopendir(fd);
+	return fdopendir(fd);
 }
 int
 closedir(DIR *dir)
@@ -136,11 +102,19 @@ closedir(DIR *dir)
 	if (dir == NULL || dir->fd == -1) {
 		return -1; // EBADF
 	}
-	if (dir->buffer != NULL)
-		free(dir->buffer);
 	int rc = close(dir->fd);
 	if (rc == 0)
 		dir->fd = -1;
+	if (dir->list == NULL)
+		return -1;
+	while (dir->list != NULL && dir->list->next != NULL) {
+		dir->list = dir->list->next;
+	}
+	dir->list = dir->list->prev;
+	while (dir->list->prev != NULL) {
+		free(dir->list->next);
+	}
+	free(dir->list);
 	free(dir);
 	return rc;
 }
@@ -158,59 +132,83 @@ atoi(const char *s)
 		n = n * 10 + *s++ - '0';
 	return n;
 }
+long long
+strtoll(const char *restrict s, char **restrict endptr, int base)
+{
+	long long num = 0;
+	bool positive = true;
+	const char base_uppercase[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	const char base_lowercase[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+	if ((base != 0 && base < 2) || base > 36) {
+		errno = EINVAL;
+		return 0;
+	}
+	size_t i = 0;
+	// skip whitespace
+	while (isspace(s[i]))
+		i++;
+	if (s[i] == '+') {
+		i++;
+		positive = true;
+	} else if (s[i] == '-') {
+		i++;
+		positive = false;
+	}
+	if (base == 0 || base == 16) {
+		// Hexadecimal.
+		if (strncmp(s + i, "0x", 2) == 0 || strncmp(s + i, "0X", 2) == 0) {
+			base = 16;
+			i += 2;
+		// Octal.
+		} else if (strncmp(s + i, "0", 1) == 0) {
+			i++;
+			base = 8;
+		}
+	}
+	if (base <= 10) {
+		while (s[i] != '\0' && '0' <= s[i] && s[i] <= '9')
+			num = num * base + s[i++] - '0';
+		return num;
+	} else if (base <= 36) {
+		while (s[i] != '\0' && (('0' <= s[i] && s[i] <= '9') ||
+			('a' <= s[i] && s[i] <= 'z') || ('A' <= s[i] && s[i] <= 'Z'))) {
+			if ('0' <= s[i] && s[i] <= '9')
+				num = num * base + s[i++] - '0';
+			if ('a' <= s[i] && s[i] <= 'z') {
+				num = num * base + s[i++] - 'a';
+			} else if ('A' <= s[i] && s[i] <= 'Z') {
+				num = num * base + s[i++] - 'A';
+			}
+		}
+		return num;
+	}
+	errno = EINVAL;
+	return 0;
+
+}
+
+long
+strtol(const char *restrict s, char **restrict nptr, int base)
+{
+	return (long)strtoll(s, nptr, base);
+}
+
+long
+atol(const char *s)
+{
+	return strtol(s, NULL, 0);
+}
+
+long long
+atoll(const char *s)
+{
+	return strtoll(s, NULL, 0);
+}
+
 int
 atoi_base(const char *s, uint32_t base)
 {
-	int n = 0;
-
-	if (base <= 10) {
-		while ('0' <= *s && *s <= '9')
-			n = n * base + *s++ - '0';
-		return n;
-	} else if (base <= 16) {
-		while (('0' <= *s && *s <= '9') || ('a' <= *s && *s <= 'f')) {
-			if ('0' <= *s && *s <= '9')
-				n = n * base + *s++ - '0';
-			if ('a' <= *s && *s <= 'f')
-				n = n * base + *s++ - 'a';
-		}
-		return n;
-	} else {
-		return 0;
-	}
-}
-
-void *
-memmove(void *vdst, const void *vsrc, uint32_t n)
-{
-	char *dst;
-	const char *src;
-
-	dst = vdst;
-	src = vsrc;
-	while (n-- > 0)
-		*dst++ = *src++;
-	return vdst;
-}
-
-void *
-memcpy(void *dst, const void *src, uint32_t n)
-{
-	return memmove(dst, src, n);
-}
-
-char *
-strncpy(char *dst, const char *src, int n)
-{
-	char *my_dst;
-	const char *my_src;
-
-	my_dst = dst;
-	my_src = src;
-	while (n-- > 0)
-		*my_dst++ = *my_src++;
-	*my_dst++ = '\0';
-	return dst;
+	return (int)strtoll(s, NULL, base);
 }
 
 void
@@ -234,44 +232,15 @@ isspace(int c)
 	return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' ||
 				 c == '\v';
 }
-static char *restrict __strtok_token = NULL;
-/*
- * Break a string into a sequence of zero or more nonempty tokens.
- * If the same string is being parsed as the previous invocation, str must be NULL.
- */
-char *
-strtok(char *restrict str, const char *restrict delimeter)
+int
+isalpha(int c)
 {
-	if (str == NULL && __strtok_token)
-		return NULL;
-
-	if (str != NULL) {
-		__strtok_token = str;
-	}
-
-	if (__strtok_token == NULL) {
-		return NULL;
-	}
-
-	while (*__strtok_token && strchr(delimeter, *__strtok_token) != NULL) {
-		__strtok_token++;
-	}
-
-	if (*__strtok_token == '\0') {
-		return NULL;
-	}
-
-	char *start = __strtok_token;
-	while (*__strtok_token && strchr(delimeter, *__strtok_token) == NULL) {
-		__strtok_token++;
-	}
-
-	// The input string gets consumed from the input, so we modify it here.
-	if (*__strtok_token) {
-		*__strtok_token++ = '\0';
-	}
-
-	return start;
+	return ('a' <= c && c <= 'z') || ('A' <= c &&c <= 'Z');
+}
+int
+isalnum(int c)
+{
+	return isalpha(c) || isdigit(c);
 }
 
 // Fun fact: setenv sets errno, but getenv does not :^)
@@ -305,7 +274,7 @@ strdup(const char *s)
 		errno = ENOMEM;
 		return NULL;
 	}
-	strncpy(new_s, s, strlen(s));
+	strncpy(new_s, s, strlen(s) + 1);
 	return new_s;
 }
 
@@ -336,4 +305,41 @@ exit(int status)
 		}
 	}
 	_exit(status);
+}
+
+__attribute__((noreturn)) void
+abort(void)
+{
+	_exit(1);
+}
+
+int
+dup2(int oldfd, int newfd)
+{
+	return dup(oldfd);
+}
+
+
+extern int
+__getcwd(char *buf, size_t n);
+char *
+getcwd(char *buf, size_t n)
+{
+	int ret = __getcwd(buf, n);
+	if (ret < 0)
+		return NULL;
+	else
+		return buf;
+}
+
+int
+fcntl(int fd, int cmd, ...)
+{
+	fprintf(stderr, "fcntl: not implemented!\n");
+	return -1;
+}
+int
+isatty(int fd)
+{
+	return fd == 0;
 }

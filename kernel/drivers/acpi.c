@@ -25,12 +25,12 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include "stdint.h"
 #include "param.h"
 #include "memlayout.h"
 #include "proc.h"
 #include "acpi.h"
-#include "kernel_string.h"
 #include "kernel_assert.h"
 #include "console.h"
 #include "lapic.h"
@@ -77,7 +77,7 @@ static void
 dump_rsdp(struct acpi_rsdp *rsdp)
 {
 	char rsdp_oem_id[7];
-	strlcpy_nostrlen(rsdp_oem_id, (char *)rsdp->oem_id, sizeof(rsdp_oem_id),
+	__strlcpy_nostrlen(rsdp_oem_id, (char *)rsdp->oem_id, sizeof(rsdp_oem_id),
 									 sizeof(rsdp->oem_id));
 
 	acpi_cprintf("oem id: %s\n", rsdp_oem_id);

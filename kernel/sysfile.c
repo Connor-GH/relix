@@ -31,7 +31,7 @@
 #include "ioctl.h"
 #include "kalloc.h"
 #include "mman.h"
-#include "kernel_string.h"
+#include <string.h>
 #include "drivers/lapic.h"
 #include "vm.h"
 
@@ -225,7 +225,7 @@ isdirempty(struct inode *dp)
 	for (off = 2 * sizeof(de); off < dp->size; off += sizeof(de)) {
 		if (inode_read(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
 			panic("isdirempty: inode_read");
-		if (de.inum != 0)
+		if (de.d_ino != 0)
 			return 0;
 	}
 	return 1;
@@ -506,6 +506,22 @@ sys_chdir(void)
 	inode_put(curproc->cwd);
 	end_op();
 	curproc->cwd = ip;
+	return 0;
+}
+
+size_t
+sys_getcwd(void)
+{
+	char *buf;
+	size_t size;
+	if (argstr(0, &buf) < 0 || argsize_t(1, &size) < 0)
+		return -EINVAL;
+
+	// Translate cwd from inode into path.
+	char *ret = inode_to_path(buf, size, myproc()->cwd);
+	// If we are negative, propogate the errno.
+	if (ret == NULL)
+		return -EINVAL;
 	return 0;
 }
 

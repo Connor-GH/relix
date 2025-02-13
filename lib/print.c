@@ -79,7 +79,7 @@ printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 void
 sharedlib_vprintf_template(void (*put_function)(FILE *fp, char c, char *buf),
 								 size_t (*ansi_func)(const char *), FILE *fp,
-								 char *restrict buf, const char *fmt, va_list *argp,
+								 char *restrict buf, const char *fmt, va_list argp,
 								 void (*acq)(void *), void (*rel)(void *), void *lock, bool locking)
 {
 	char *s;
@@ -146,67 +146,57 @@ numerical_padding:
 			case 'i':
 			case 'd': {
 				if (IS_SET(flags, FLAG_LONG)) {
-					long ld = va_arg(*argp, long);
+					long ld = va_arg(argp, long);
 					printint(put_function, buf, fp, ld, 10, true, flags, str_pad);
-					str_pad = 0;
 				} else {
-					int d = va_arg(*argp, int);
+					int d = va_arg(argp, int);
 					printint(put_function, buf, fp, d, 10, true, flags, str_pad);
-					str_pad = 0;
 				}
 				break;
 			}
 			case 'b': {
 				if (IS_SET(flags, FLAG_LONG)) {
-					long lb = va_arg(*argp, unsigned long);
+					long lb = va_arg(argp, unsigned long);
 					printint(put_function, buf, fp, lb, 2, false, flags, str_pad);
-					str_pad = 0;
 				} else {
-					unsigned int b = va_arg(*argp, unsigned int);
+					unsigned int b = va_arg(argp, unsigned int);
 					printint(put_function, buf, fp, b, 2, false, flags, str_pad);
-					str_pad = 0;
 				}
 				break;
 			}
 			case 'u': {
 				if (IS_SET(flags, FLAG_LONG)) {
-					long lu = va_arg(*argp, unsigned long);
+					long lu = va_arg(argp, unsigned long);
 					printint(put_function, buf, fp, lu, 10, false, flags, str_pad);
-					str_pad = 0;
 				} else {
-					unsigned int u = va_arg(*argp, unsigned int);
+					unsigned int u = va_arg(argp, unsigned int);
 					printint(put_function, buf, fp, u, 10, false, flags, str_pad);
-					str_pad = 0;
 				}
 				break;
 			}
 			case 'x': {
 				if (IS_SET(flags, FLAG_LONG)) {
-					unsigned long lx = va_arg(*argp, unsigned long);
+					unsigned long lx = va_arg(argp, unsigned long);
 					printint(put_function, buf, fp, lx, 16, false, flags, str_pad);
-					str_pad = 0;
 				} else {
-					unsigned int x = va_arg(*argp, unsigned int);
+					unsigned int x = va_arg(argp, unsigned int);
 					printint(put_function, buf, fp, x, 16, false, flags, str_pad);
-					str_pad = 0;
 				}
 				break;
 			}
 			case 'p': {
 				flags |= FLAG_ALTFORM;
-				uintptr_t x = (uintptr_t)va_arg(*argp, void *);
+				uintptr_t x = (uintptr_t)va_arg(argp, void *);
 				printint(put_function, buf, fp, x, 16, false, flags, str_pad);
-				str_pad = 0;
 				break;
 			}
 			case 'o': {
-				int x = va_arg(*argp, int);
+				int x = va_arg(argp, int);
 				printint(put_function, buf, fp, x, 8, false, flags, str_pad);
-				str_pad = 0;
 				break;
 			}
 			case 's': {
-				s = va_arg(*argp, char *);
+				s = va_arg(argp, char *);
 				if (s == 0)
 					s = "(null)";
 				size_t len = strlen(s);
@@ -218,11 +208,10 @@ numerical_padding:
 					for (int _ = 0; _ < str_pad - len; _++)
 						put_function(fp, ' ', buf);
 				}
-				str_pad = 0;
 				break;
 			}
 			case 'c': {
-				int c_ = va_arg(*argp, int);
+				int c_ = va_arg(argp, int);
 				put_function(fp, c_, buf);
 				break;
 			}
@@ -235,7 +224,9 @@ numerical_padding:
 				put_function(fp, c, buf);
 				break;
 			}
+			str_pad = 0;
 			state = 0;
+			flags = 0;
 skip_state_reset:; // state = '%' if set
 		}
 	}

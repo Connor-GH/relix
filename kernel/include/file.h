@@ -45,3 +45,5 @@ int
 fileseek(struct file *f, int n, int whence);
 struct file *
 fd_to_struct_file(int fd);
+char *
+inode_to_path(char *buf, size_t n, struct inode *ip);

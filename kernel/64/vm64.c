@@ -28,7 +28,7 @@
 #include "param.h"
 #include "stdint.h"
 #include "console.h"
-#include "kernel_string.h"
+#include <string.h>
 #include "vga.h"
 #include "x86.h"
 #include "memlayout.h"

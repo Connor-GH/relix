@@ -7,13 +7,11 @@
 __attribute__((noreturn)) void
 exit(int status);
 __attribute__((malloc)) void *
-malloc(uint32_t);
+malloc(size_t);
 __attribute__((malloc)) void *
-calloc(size_t nmemb, uint32_t sz);
+calloc(size_t nmemb, size_t sz);
 void
 free(void *);
-int
-atoi(const char *);
 int
 atoi_base(const char *, uint32_t base);
 __attribute__((malloc)) void *
@@ -27,4 +25,16 @@ getenv(const char *name);
 #define ATEXIT_MAX 32
 int
 atexit(void (*function)(void));
+int
+atoi(const char *);
+long
+atol(const char *);
+long long
+atoll(const char *);
+long
+strtol(const char *restrict s, char **restrict nptr, int base);
+long long
+strtoll(const char *restrict s, char **restrict nptr, int base);
+__attribute__((noreturn)) void
+abort(void);
 #endif

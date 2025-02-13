@@ -44,7 +44,7 @@ free(void *ap)
 }
 
 static Header *
-morecore(uint32_t nu)
+morecore(size_t nu)
 {
 	char *p;
 	Header *hp;
@@ -61,10 +61,10 @@ morecore(uint32_t nu)
 }
 
 __attribute__((malloc)) void *
-malloc(uint32_t nbytes)
+malloc(size_t nbytes)
 {
 	Header *p, *prevp;
-	uint32_t nunits;
+	size_t nunits;
 
 	nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
 	if ((prevp = freep) == 0) {
@@ -97,7 +97,7 @@ realloc(void *ptr, size_t size)
 	return ptr;
 }
 __attribute__((malloc)) void *
-calloc(size_t nmemb, uint32_t sz)
+calloc(size_t nmemb, size_t sz)
 {
 	void *ptr = malloc(nmemb * sz);
 	if (ptr == NULL)

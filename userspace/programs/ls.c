@@ -307,9 +307,9 @@ ls(char *path, bool lflag, bool iflag, bool pflag, bool hflag)
 		char *p = buf + strlen(buf);
 		*p++ = '/';
 		while (read(fd, &de, sizeof(de)) == sizeof(de)) {
-			if (de.inum == 0)
+			if (de.d_ino == 0)
 				continue;
-			strcpy(p, de.name);
+			strcpy(p, de.d_name);
 			if (stat(buf, &st) < 0) {
 				fprintf(stderr, "ls: cannot stat %s\n", buf);
 				perror("stat");

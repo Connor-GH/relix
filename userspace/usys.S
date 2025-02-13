@@ -16,6 +16,23 @@
 		movl $-1, %eax; \
 	ok_ ## name: \
 		ret
+  .globl name; \
+
+
+#define SYSCALL_PRIVATE(name) \
+  .globl __ ## name; \
+  __ ## name: \
+    movl $SYS_ ## name, %eax; \
+    int $T_SYSCALL; \
+    cmpl $0, %eax; /* did we return successfully? */ \
+		jge ok_ ## __ ## name; \
+		cmpl $-MAX_ERRNO, %eax; /* do we exceed the max errno? */ \
+		jl ok_ ## __ ## name; \
+		neg %eax; \
+		movl %eax, errno; \
+		movl $-1, %eax; \
+	ok_ ## __ ## name: \
+		ret
 
 SYSCALL(fork)
 SYSCALL(_exit)
@@ -53,3 +70,4 @@ SYSCALL(ioctl)
 SYSCALL(mmap)
 SYSCALL(munmap)
 SYSCALL(signal)
+SYSCALL_PRIVATE(getcwd)

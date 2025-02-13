@@ -136,7 +136,7 @@ trap(struct trapframe *tf)
 		if ((tf->cs & DPL_USER) == 0)
 			panic("trap");
 		else {
-			kill(myproc()->killed, SIGSEGV);
+			kill(myproc()->pid, SIGSEGV);
 		}
 		break;
 	case T_FPERR:

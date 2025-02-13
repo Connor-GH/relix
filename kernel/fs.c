@@ -22,7 +22,7 @@
 #include "spinlock.h"
 #include "buf.h"
 #include "file.h"
-#include "kernel_string.h"
+#include <string.h>
 #include "kernel_assert.h"
 #include "bio.h"
 #include "log.h"
@@ -648,9 +648,11 @@ namecmp(const char *s, const char *t)
 
 // Look for a directory entry in a directory.
 // If found, set *poff to byte offset of entry.
+// Caller needs to hold dp->lock.
 struct inode *
 dirlookup(struct inode *dp, const char *name, uint64_t *poff)
 {
+	kernel_assert(holdingsleep(&dp->lock));
 	uint64_t off, inum;
 	struct dirent de;
 
@@ -660,13 +662,13 @@ dirlookup(struct inode *dp, const char *name, uint64_t *poff)
 	for (off = 0; off < dp->size; off += sizeof(de)) {
 		if (inode_read(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
 			panic("dirlookup read");
-		if (de.inum == 0)
+		if (de.d_ino == 0)
 			continue;
-		if (namecmp(name, de.name) == 0) {
+		if (namecmp(name, de.d_name) == 0) {
 			// entry matches path element
 			if (poff)
 				*poff = off;
-			inum = de.inum;
+			inum = de.d_ino;
 			return inode_get(dp->dev, inum);
 		}
 	}
@@ -700,14 +702,14 @@ dirlink(struct inode *dp, const char *name, uint32_t inum)
 	for (; off < dp->size; off += sizeof(de)) {
 		if (inode_read(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
 			panic("dirlink read");
-		if (de.inum == 0) {
+		if (de.d_ino == 0) {
 			last_offset_from_inum = off;
 			break;
 		}
 	}
 
-	strncpy(de.name, name, DIRSIZ);
-	de.inum = inum;
+	strncpy(de.d_name, name, DIRSIZ);
+	de.d_ino = inum;
 	if (inode_write(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
 		panic("dirlink");
 	last_inum = inum;

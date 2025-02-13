@@ -205,18 +205,26 @@ fclose(FILE *stream)
 {
 	if (stream == NULL) {
 		errno = EBADF;
+		stream->error = true;
 		return EOF;
 	}
 	fflush(stream);
 	if (stream->write_buffer != NULL)
 		free(stream->write_buffer);
-	if (close(stream->fd) < 0)
+	if (close(stream->fd) < 0) {
+		stream->error = true;
 		return EOF;
+	}
 	open_files[stream->static_table_index] = NULL;
 	open_files_index--;
 	free(stream);
 
 	return 0;
+}
+int
+ferror(FILE *stream)
+{
+	return stream->error;
 }
 
 int
@@ -238,8 +246,10 @@ fgets(char *buf, int max, FILE *restrict stream)
 
 	for (i = 0; i + 1 < max;) {
 		c = getc(stream);
-		if (c == EOF)
+		if (c == EOF) {
+			stream->eof = true;
 			return NULL;
+		}
 		buf[i++] = c;
 		if (c == '\n' || c == '\r')
 			break;
@@ -285,7 +295,7 @@ ansi_noop(const char *s)
 	return 1;
 }
 void
-vfprintf(FILE *restrict stream, const char *fmt, va_list *argp)
+vfprintf(FILE *restrict stream, const char *fmt, va_list argp)
 {
 	sharedlib_vprintf_template(fd_putc, ansi_noop, stream, NULL, fmt, argp,
 														NULL, NULL, NULL, false);
@@ -294,7 +304,7 @@ vfprintf(FILE *restrict stream, const char *fmt, va_list *argp)
 }
 
 void
-vsprintf(char *restrict str, const char *restrict fmt, va_list *argp)
+vsprintf(char *restrict str, const char *restrict fmt, va_list argp)
 {
 	global_idx = 0;
 	sharedlib_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp,
@@ -305,7 +315,7 @@ sprintf(char *restrict str, const char *restrict fmt, ...)
 {
 	va_list listp;
 	va_start(listp, fmt);
-	vsprintf(str, fmt, &listp);
+	vsprintf(str, fmt, listp);
 	va_end(listp);
 }
 
@@ -314,7 +324,7 @@ fprintf(FILE *restrict stream, const char *fmt, ...)
 {
 	va_list listp;
 	va_start(listp, fmt);
-	vfprintf(stream, fmt, &listp);
+	vfprintf(stream, fmt, listp);
 	va_end(listp);
 }
 
@@ -323,7 +333,7 @@ printf(const char *fmt, ...)
 {
 	va_list listp;
 	va_start(listp, fmt);
-	vfprintf(stdout, fmt, &listp);
+	vfprintf(stdout, fmt, listp);
 	va_end(listp);
 }
 

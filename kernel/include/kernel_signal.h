@@ -34,6 +34,7 @@ enum {
 	SIGSYS = 31,
 	__SIG_last
 };
+#define NSIG __SIG_last - 1
 union sigval {
 	int sival_int;
 	void *sival_ptr;

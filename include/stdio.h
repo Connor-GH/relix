@@ -25,6 +25,7 @@ struct _IO_FILE {
 typedef struct _IO_FILE FILE;
 #endif
 #if defined(__USER__)
+#define BUFSIZ 512
 extern FILE *stdin;
 extern FILE *stdout;
 extern FILE *stderr;
@@ -33,13 +34,13 @@ extern FILE *stderr;
 #define FILENAME_MAX __DIRSIZ
 
 void
-vfprintf(FILE *restrict, const char *, va_list *argp);
+vfprintf(FILE *restrict, const char *, va_list argp);
 __attribute__((format(printf, 2, 3))) void
 fprintf(FILE *restrict, const char *, ...);
 __attribute__((format(printf, 1, 2))) void
 printf(const char *, ...);
 void
-vsprintf(char *restrict str, const char *restrict fmt, va_list *argp);
+vsprintf(char *restrict str, const char *restrict fmt, va_list argp);
 void
 sprintf(char *restrict str, const char *restrict fmt, ...);
 char *
@@ -62,6 +63,8 @@ FILE *
 fopen(const char *restrict pathname, const char *restrict mode);
 int
 fclose(FILE *stream);
+int
+ferror(FILE *stream);
 #define putc(c, stream) fputc(c, stream)
 #endif
 #endif /* USE_HOST_TOOLS */

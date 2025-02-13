@@ -10,7 +10,7 @@
 #include "stdbool.h"
 #include "compiler_attributes.h"
 #include "lapic.h"
-#include "kernel_string.h"
+#include <string.h>
 #include "console.h"
 #include "spinlock.h"
 

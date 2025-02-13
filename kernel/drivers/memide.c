@@ -6,18 +6,18 @@
 #include <buf.h>
 #include "fs.h"
 #include "console.h"
-#include "kernel_string.h"
+#include <string.h>
 
 extern uint8_t _binary_fs_img_start[], _binary_fs_img_size[];
 
-static int disksize;
+static size_t disksize;
 static uint8_t *memdisk;
 
 void
 ideinit(void)
 {
 	memdisk = _binary_fs_img_start;
-	disksize = (uint32_t)_binary_fs_img_size / BSIZE;
+	disksize = (size_t)_binary_fs_img_size / BSIZE;
 }
 
 // Interrupt handler.

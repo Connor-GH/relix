@@ -10,7 +10,7 @@
 #include "vm.h"
 #include "fs.h"
 #include "spinlock.h"
-#include "kernel_string.h"
+#include <string.h>
 
 extern char data[]; // defined by kernel.ld
 uintptr_t *kpgdir; // for use in scheduler()

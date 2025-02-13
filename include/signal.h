@@ -6,5 +6,6 @@ int
 kill(pid_t pid, int signal);
 sighandler_t
 signal(int signum, sighandler_t handler);
+typedef int sig_atomic_t;
 #endif
 

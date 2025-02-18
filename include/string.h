@@ -13,6 +13,8 @@ strncmp(const char *p, const char *q, size_t n);
 char *
 strncpy(char *s, const char *t, size_t n);
 char *
+stpncpy(char *dst, const char *src, size_t n);
+char *
 __safestrcpy(char *s, const char *t, size_t n);
 char *
 __strlcpy_nostrlen(char *dst, const char *src, size_t dst_len,
@@ -20,7 +22,7 @@ __strlcpy_nostrlen(char *dst, const char *src, size_t dst_len,
 size_t
 strlen(const char *s);
 char *
-strchr(const char *str, char c);
+strrchr(const char *str, char c);
 char *
 strrchr(const char *str, char c);
 char *

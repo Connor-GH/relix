@@ -43,9 +43,9 @@ typedef int cmp_t(void *, const void *, const void *);
 #elif defined(I_AM_QSORT_S)
 typedef int cmp_t(const void *, const void *, void *);
 #else
-typedef int cmp_t(const void *, const void *);
+//typedef int cmp_t(const void *, const void *);
 #endif
-static inline char *med3(char *, char *, char *, cmp_t *, void *);
+static inline char *med3(char *, char *, char *, int (*)(const void *, const void *), void *);
 
 #define MIN(a, b) ((a) < (b) ? a : b)
 
@@ -80,7 +80,7 @@ swapfunc(char *a, char *b, size_t es)
 #endif
 
 static inline char *
-med3(char *a, char *b, char *c, cmp_t *cmp,
+med3(char *a, char *b, char *c, int (*cmp)(const void *, const void *),
 		 void *thunk
 #if !defined(I_AM_QSORT_R) && !defined(I_AM_QSORT_R_COMPAT) && \
 	!defined(I_AM_QSORT_S)
@@ -105,7 +105,7 @@ med3(char *a, char *b, char *c, cmp_t *cmp,
 #define local_qsort local_qsort_s
 #endif
 static void
-local_qsort(void *a, size_t n, size_t es, cmp_t *cmp, void *thunk)
+local_qsort(void *a, size_t n, size_t es, int (*cmp)(const void *, const void *), void *thunk)
 {
 	char *pa, *pb, *pc, *pd, *pl, *pm, *pn;
 	size_t d1, d2;
@@ -249,7 +249,7 @@ qsort_s(void *a, rsize_t n, rsize_t es, cmp_t *cmp, void *thunk)
 }
 #else
 void
-qsort(void *a, size_t n, size_t es, cmp_t *cmp)
+qsort(void *a, size_t n, size_t es, int (*cmp)(const void *, const void *))
 {
 	local_qsort(a, n, es, cmp, NULL);
 }

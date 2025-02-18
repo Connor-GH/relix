@@ -10,16 +10,15 @@
 #include "syscall.h"
 #include "console.h"
 
-#define SYSCALL_ARG_FETCH(T) \
-int \
-fetch ## T(uintptr_t addr, T *ip) \
-{ \
-	struct proc *curproc = myproc(); \
-	if (addr >= curproc->sz || addr + sizeof(T) > curproc->sz) \
-		return -1; \
-	*ip = *(T *)(addr); \
-	return 0; \
-}
+#define SYSCALL_ARG_FETCH(T)                                   \
+	int fetch##T(uintptr_t addr, T *ip)                          \
+	{                                                            \
+		struct proc *curproc = myproc();                           \
+		if (addr >= curproc->sz || addr + sizeof(T) > curproc->sz) \
+			return -1;                                               \
+		*ip = *(T *)(addr);                                        \
+		return 0;                                                  \
+	}
 
 // User code makes a system call with INT T_SYSCALL.
 // System call number in %eax.
@@ -77,13 +76,12 @@ fetcharg(int n)
 	}
 }
 
-#define SYSCALL_ARG_N(T) \
-int \
-arg ## T(int n, T *ip) \
-{ \
-	*ip = fetcharg(n); \
-	return 0; \
-}
+#define SYSCALL_ARG_N(T)   \
+	int arg##T(int n, T *ip) \
+	{                        \
+		*ip = fetcharg(n);     \
+		return 0;              \
+	}
 SYSCALL_ARG_N(int);
 SYSCALL_ARG_N(unsigned_int);
 SYSCALL_ARG_N(unsigned_long);
@@ -104,8 +102,8 @@ argptr(int n, char **pp, int size)
 	if (arguintptr_t(n, &ptr) < 0)
 		return -1;
 
-	if (size < 0 ||
-		((uintptr_t)ptr >= curproc->effective_largest_sz || (uintptr_t)ptr + size > curproc->effective_largest_sz)) {
+	if (size < 0 || ((uintptr_t)ptr >= curproc->effective_largest_sz ||
+									 (uintptr_t)ptr + size > curproc->effective_largest_sz)) {
 		return -1;
 	}
 	*pp = (char *)ptr;
@@ -199,6 +197,20 @@ extern size_t
 sys_signal(void);
 extern size_t
 sys_getcwd(void);
+extern size_t
+sys_sigprocmask(void);
+extern size_t
+sys_vfork(void);
+extern size_t
+sys_wait3(void);
+extern size_t
+sys_sigsuspend(void);
+extern size_t
+sys_umask(void);
+extern size_t
+sys_sigaction(void);
+extern size_t
+sys_rename(void);
 
 static size_t (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,				 [SYS__exit] = sys__exit,
@@ -219,7 +231,9 @@ static size_t (*syscalls[])(void) = {
 	[SYS_fsync] = sys_fsync,			 [SYS_writev] = sys_writev,
 	[SYS_ioctl] = sys_ioctl,			 [SYS_mmap] = sys_mmap,
 	[SYS_munmap] = sys_munmap,		 [SYS_signal] = sys_signal,
-	[SYS_getcwd] = sys_getcwd,
+	[SYS_getcwd] = sys_getcwd,		 [SYS_sigprocmask] = sys_sigprocmask,
+	[SYS_umask] = sys_umask,			 [SYS_sigaction] = sys_sigaction,
+	[SYS_rename] = sys_rename,
 };
 
 void

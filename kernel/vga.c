@@ -202,7 +202,10 @@ vga_write_carriage_return(uint32_t fb_width, uint8_t font_width)
 static void
 vga_write_newline(uint32_t fb_width, uint8_t font_width, uint32_t height)
 {
-	fb_char_index = ROUND_UP(fb_char_index, fb_width);
+	if (fb_char_index % fb_width == 0)
+		fb_char_index += fb_width;
+	else
+		fb_char_index = ROUND_UP(fb_char_index, fb_width);
 }
 
 static void

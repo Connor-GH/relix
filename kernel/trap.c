@@ -133,9 +133,10 @@ trap(struct trapframe *tf)
 	case T_PGFLT:
 		uart_cprintf("Page fault at %#lx, ip=%#lx\n", rcr2(), tf->eip);
 		decipher_page_fault_error_code(tf->err);
-		if ((tf->cs & DPL_USER) == 0)
+		if ((tf->cs & DPL_USER) == 0) {
 			panic("trap");
-		else {
+		} else {
+			uart_cprintf("Process %s killed with SIGSEGV: sp=%#lx\n", myproc()->name, tf->esp);
 			kill(myproc()->pid, SIGSEGV);
 		}
 		break;

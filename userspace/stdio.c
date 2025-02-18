@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #include <sys/uio.h>
 #include <sys/param.h>
+#include <sys/stat.h>
 
 FILE *stdin;
 FILE *stdout;
@@ -20,7 +21,8 @@ FILE *stderr;
 static FILE *open_files[NFILE];
 static size_t open_files_index = 0;
 
-static uint32_t global_idx = 0;
+static size_t global_idx = 0;
+static size_t global_idx_fgetc = 0;
 
 #define WRITE_BUFFER_SIZE 256
 void
@@ -53,10 +55,11 @@ flush(FILE *stream)
 		errno = EBADF;
 		return -1;
 	}
-	writev(stream->fd,
-				 &(const struct iovec){ stream->write_buffer,
-																stream->write_buffer_index },
-				 1);
+	fwrite(stream->write_buffer, 1, stream->write_buffer_index, stream);
+	//writev(stream->fd,
+	//			 &(const struct iovec){ stream->write_buffer,
+	//															stream->write_buffer_index },
+	//			 1);
 	stream->write_buffer_index = 0;
 	return 0;
 }
@@ -147,6 +150,7 @@ fopen(const char *restrict pathname, const char *restrict mode)
 	fp->write_buffer_size = WRITE_BUFFER_SIZE;
 	fp->write_buffer_index = 0;
 	fp->stdio_flush = true;
+	fp->buffer_mode = BUFFER_MODE_BLOCK;
 	if (open_files_index < NFILE) {
 		fp->static_table_index = open_files_index;
 		open_files[open_files_index++] = fp;
@@ -160,6 +164,26 @@ fopen(const char *restrict pathname, const char *restrict mode)
 		return NULL;
 	}
 	return fp;
+}
+
+FILE *
+freopen(const char *restrict pathname, const char *restrict mode,
+				FILE *restrict stream)
+{
+	if (stream && !stream->error && stream->fd != -1) {
+		fclose(stream);
+	}
+	stream = fopen(pathname, mode);
+	return stream;
+}
+
+int
+feof(FILE *stream)
+{
+	if (stream)
+		return stream->eof;
+	else
+		return -1;
 }
 
 // Mandated by POSIX
@@ -185,6 +209,7 @@ fdopen(int fd, const char *restrict mode)
 	fp->write_buffer_size = WRITE_BUFFER_SIZE;
 	fp->write_buffer_index = 0;
 	fp->stdio_flush = true;
+	fp->buffer_mode = BUFFER_MODE_BLOCK;
 	if (open_files_index < NFILE) {
 		fp->static_table_index = open_files_index;
 		open_files[open_files_index++] = fp;
@@ -238,6 +263,15 @@ getc(FILE *stream)
 	return c;
 }
 
+static void
+static_fgetc(FILE *stream, char c, char *buf)
+{
+	if (global_idx_fgetc < __DIRSIZ - 1)
+		buf[global_idx_fgetc++] = getc(stream);
+	else
+		buf[global_idx_fgetc++] = '\0';
+}
+
 char *
 fgets(char *buf, int max, FILE *restrict stream)
 {
@@ -265,7 +299,11 @@ fgets(char *buf, int max, FILE *restrict stream)
 static void
 fd_putc(FILE *fp, char c, char *__attribute__((unused)) buf)
 {
-	if (fp && fp->write_buffer_index >= fp->write_buffer_size - 1) {
+	if (fp &&
+		((fp->buffer_mode == BUFFER_MODE_BLOCK &&
+		fp->write_buffer_index >= fp->write_buffer_size - 1) ||
+	(fp->buffer_mode == BUFFER_MODE_UNBUFFERED) ||
+	(fp->buffer_mode == BUFFER_MODE_LINE && c == '\n'))) {
 		flush(fp);
 	} else {
 		fp->write_buffer[fp->write_buffer_index++] = c;
@@ -294,47 +332,111 @@ ansi_noop(const char *s)
 {
 	return 1;
 }
-void
-vfprintf(FILE *restrict stream, const char *fmt, va_list argp)
+
+int
+vfprintf(FILE *restrict stream, const char *restrict fmt, va_list argp)
 {
-	sharedlib_vprintf_template(fd_putc, ansi_noop, stream, NULL, fmt, argp,
-														NULL, NULL, NULL, false);
+	int ret = sharedlib_vprintf_template(fd_putc, ansi_noop, stream, NULL, fmt, argp,
+														NULL, NULL, NULL, false, -1);
 	if (stream && stream->stdio_flush)
 		flush(stream);
+	return ret;
 }
 
-void
+int
+vsnprintf(char *restrict str, size_t n, const char *restrict fmt, va_list argp)
+{
+	global_idx = 0;
+	return sharedlib_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp,
+														NULL, NULL, NULL, false, n);
+}
+int
 vsprintf(char *restrict str, const char *restrict fmt, va_list argp)
 {
 	global_idx = 0;
-	sharedlib_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp,
-														NULL, NULL, NULL, false);
+	return sharedlib_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp,
+														NULL, NULL, NULL, false, -1);
 }
-void
+int
+snprintf(char *restrict str, size_t n, const char *restrict fmt, ...)
+{
+	int ret;
+	va_list listp;
+	va_start(listp, fmt);
+	ret = vsnprintf(str, n, fmt, listp);
+	va_end(listp);
+	return ret;
+}
+
+int
 sprintf(char *restrict str, const char *restrict fmt, ...)
 {
+	int ret;
 	va_list listp;
 	va_start(listp, fmt);
-	vsprintf(str, fmt, listp);
+	ret = vsprintf(str, fmt, listp);
 	va_end(listp);
+	return ret;
 }
 
-__attribute__((format(printf, 2, 3))) void
-fprintf(FILE *restrict stream, const char *fmt, ...)
+int
+vfscanf(FILE *restrict stream, const char *restrict fmt, va_list argp)
 {
-	va_list listp;
-	va_start(listp, fmt);
-	vfprintf(stream, fmt, listp);
-	va_end(listp);
+	static char static_buffer[__DIRSIZ];
+	global_idx_fgetc = 0;
+	return sharedlib_vprintf_template(static_fgetc,
+														ansi_noop, stream, static_buffer, fmt, argp, NULL, NULL, NULL, false, -1);
 }
 
-__attribute__((format(printf, 1, 2))) void
-printf(const char *fmt, ...)
+int
+fscanf(FILE *restrict stream, const char *restrict fmt, ...)
 {
+	int ret;
 	va_list listp;
 	va_start(listp, fmt);
-	vfprintf(stdout, fmt, listp);
+	ret = vfscanf(stream, fmt, listp);
 	va_end(listp);
+	return ret;
+}
+
+__attribute__((format(printf, 2, 3))) int
+fprintf(FILE *restrict stream, const char *restrict fmt, ...)
+{
+	int ret;
+	va_list listp;
+	va_start(listp, fmt);
+	ret = vfprintf(stream, fmt, listp);
+	va_end(listp);
+	return ret;
+}
+
+__attribute__((format(printf, 1, 2))) int
+printf(const char *restrict fmt, ...)
+{
+	int ret;
+	va_list listp;
+	va_start(listp, fmt);
+	ret = vfprintf(stdout, fmt, listp);
+	va_end(listp);
+	return ret;
+}
+
+int
+fputs(const char *restrict s, FILE *restrict stream)
+{
+	return fprintf(stream, "%s\n", s);
+}
+
+int
+puts(const char *restrict s)
+{
+	return fputs(s, stdout);
+}
+
+void
+setlinebuf(FILE *restrict stream)
+{
+	stream->buffer_mode = BUFFER_MODE_LINE;
 }
 
 void
@@ -343,8 +445,73 @@ perror(const char *s)
 	fprintf(stderr, "%s: %s\n", s, errno_codes[errno]);
 }
 
+void
+clearerr(FILE *stream)
+{
+	if (stream) {
+		stream->eof = false;
+		stream->error = false;
+	}
+}
+
 const char *
 strerror(int err_no)
 {
 	return errno_codes[err_no];
+}
+int
+remove(const char *pathname)
+{
+	struct stat st;
+	if (stat(pathname, &st) < 0) {
+		return -1;
+	}
+	if (S_ISDIR(st.st_mode)) {
+		return 0;
+		// rmdir
+	} else if (S_ISREG(st.st_mode)) {
+		if (unlink(pathname) < 0)
+			return -1;
+		return 0;
+	}
+	return -1;
+}
+
+size_t
+fwrite(void *ptr, size_t size, size_t nmemb, FILE *restrict stream)
+{
+	size_t count = size * nmemb;
+	int fd = fileno(stream);
+	ssize_t ret = write(fd, ptr, count);
+	if (ret < 0) {
+		stream->error = true;
+		return 0;
+	}
+	stream->file_offset = count;
+	return ret / size;
+}
+
+size_t
+fread(void *ptr, size_t size, size_t nmemb, FILE *restrict stream)
+{
+	size_t count = size * nmemb;
+	int fd = fileno(stream);
+	ssize_t ret = read(fd, ptr, count);
+	if (ret < 0) {
+		stream->error = true;
+		return 0;
+	}
+	stream->file_offset = count;
+	return ret / size;
+}
+
+long
+ftell(FILE *stream)
+{
+	if (stream) {
+		return stream->file_offset;
+	} else {
+		errno = -EBADF;
+		return -1;
+	}
 }

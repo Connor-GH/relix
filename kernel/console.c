@@ -142,7 +142,7 @@ __nonnull(1) void uart_cprintf(const char *fmt, ...)
 	va_start(argp, fmt);
 	sharedlib_vprintf_template(uartputc_wrapper,
 														let_rust_handle_it, NULL, NULL, fmt, argp,
-														NULL, NULL, NULL, false);
+														NULL, NULL, NULL, false, -1);
 	va_end(argp);
 }
 
@@ -161,7 +161,7 @@ __attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *fmt,
 	sharedlib_vprintf_template(vga_write_char_wrapper,
 														let_rust_handle_it, NULL, NULL, fmt, argp,
 														(void (*)(void *))acquire,
-														(void (*)(void *))release, &cons.lock, true);
+														(void (*)(void *))release, &cons.lock, true, -1);
 	va_end(argp);
 }
 __attribute__((format(printf, 1, 2)))
@@ -172,7 +172,7 @@ __nonnull(1) void vga_cprintf(const char *fmt, ...)
 	sharedlib_vprintf_template(vga_write_char_wrapper,
 														let_rust_handle_it, NULL, NULL, fmt, argp,
 														(void (*)(void *))acquire,
-														(void (*)(void *))release, &cons.lock, true);
+														(void (*)(void *))release, &cons.lock, true, -1);
 	va_end(argp);
 }
 size_t global_string_index = 0;
@@ -192,7 +192,7 @@ __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...)
 	sharedlib_vprintf_template(string_putc_wrapper,
 														ansi_noop, NULL, str, fmt, argp,
 														(void (*)(void *))acquire,
-														(void (*)(void *))release, &cons.lock, true);
+														(void (*)(void *))release, &cons.lock, true, -1);
 	va_end(argp);
 }
 

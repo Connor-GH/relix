@@ -1,5 +1,6 @@
 #pragma once
 #include <stat.h>
+#include <time.h>
 int
 mknod(const char *, short, short);
 int
@@ -12,3 +13,5 @@ __attribute__((nonnull(2))) int
 stat(const char *, struct stat *);
 int
 lstat(const char *n, struct stat *st);
+mode_t
+umask(mode_t mask);

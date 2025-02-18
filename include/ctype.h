@@ -27,3 +27,5 @@ int
 ispunct(int c);
 int
 iscntrl(int c);
+int
+isblank(int c);

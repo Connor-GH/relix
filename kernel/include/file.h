@@ -30,7 +30,7 @@ filealloc(void);
 void
 fileclose(struct file *);
 int
-fileopen(char *path, int omode);
+fileopen(char *path, int flags);
 struct file *
 filedup(struct file *);
 void

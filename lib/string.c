@@ -4,6 +4,7 @@
 #include <string.h>
 #include "kernel/include/x86.h"
 #include <stddef.h>
+#include <ctype.h>
 
 #define min(x, y) ((x) < (y) ? (x) : (y))
 
@@ -25,7 +26,26 @@ strcmp(const char *p, const char *q)
 		p++, q++;
 	return (uint8_t)*p - (uint8_t)*q;
 }
+char *
+strstr(const char *s1, const char *s2)
+{
+	const char *p1 = s1;
+	const char *p2;
 
+	while (*s1) {
+		p2 = s2;
+		while (*p2 != '\0' && (*p1 == *p2)) {
+			p1++;
+			p2++;
+		}
+		if (*p2 == '\0') {
+			return (char *)s1;
+		}
+		s1++;
+		p1 = s1;
+	}
+	return NULL;
+}
 int
 strncmp(const char *p, const char *q, size_t n)
 {
@@ -35,6 +55,22 @@ strncmp(const char *p, const char *q, size_t n)
 		return 0;
 	return (uint8_t)*p - (uint8_t)*q;
 }
+
+int
+strncasecmp(const char *p, const char *q, size_t n)
+{
+	while (n > 0 && *p && tolower(*p) == tolower(*q))
+		n--, p++, q++;
+	if (n == 0)
+		return 0;
+	return (uint8_t)*p - (uint8_t)*q;
+}
+int
+strcasecmp(const char *p, const char *q)
+{
+	return strncasecmp(p, q, min(strlen(p), strlen(q)));
+}
+
 size_t
 strlen(const char *s)
 {
@@ -68,10 +104,19 @@ strncpy(char *dst, const char *src, size_t n)
 
 	my_dst = dst;
 	while (n-- > 0 && (*dst++ = *src++) != 0)
-		; //*my_dst++ = *src++;
+		;
 	while (n-- > 1)
 		*dst++ = '\0';
 	return my_dst;
+}
+char *
+stpncpy(char *dst, const char *src, size_t n)
+{
+	while (n-- > 0 && (*dst++ = *src++) != 0)
+		;
+	while (n-- > 1)
+		*dst++ = '\0';
+	return dst;
 }
 
 static char *restrict __strtok_token = NULL;

@@ -359,7 +359,7 @@ create(char *path, mode_t mode, short major, short minor)
 }
 
 int
-fileopen(char *path, mode_t omode)
+fileopen(char *path, int flags)
 {
 	int fd;
 	struct file *f;
@@ -370,7 +370,7 @@ fileopen(char *path, mode_t omode)
 
 	begin_op();
 
-	if ((omode & O_CREATE) == O_CREATE) {
+	if ((flags & O_CREATE) == O_CREATE) {
 		// try to create a file and it exists.
 		if ((ip = namei(path)) != 0) {
 			// if it's a block device, possibly do something special.
@@ -403,7 +403,7 @@ fileopen(char *path, mode_t omode)
 				return -EINVAL;
 			}
 		}
-		if (S_ISDIR(ip->mode) && omode != O_RDONLY) {
+		if (S_ISDIR(ip->mode) && flags != O_RDONLY) {
 			inode_unlockput(ip);
 			end_op();
 			return -EISDIR;
@@ -425,9 +425,9 @@ get_fd:
 
 	f->type = FD_INODE;
 	f->ip = ip;
-	f->off = (omode & O_APPEND) == O_APPEND ? f->ip->size : 0;
-	f->readable = !(omode & O_WRONLY);
-	f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
+	f->off = (flags & O_APPEND) == O_APPEND ? f->ip->size : 0;
+	f->readable = !(flags & O_WRONLY);
+	f->writable = (flags & O_WRONLY) || (flags & O_RDWR);
 	return fd;
 }
 
@@ -435,11 +435,13 @@ size_t
 sys_open(void)
 {
 	char *path;
-	mode_t omode;
+	int flags;
 
-	if (argstr(0, &path) < 0 || argint(1, &omode) < 0)
+	if (argstr(0, &path) < 0 || argint(1, &flags) < 0)
 		return -EINVAL;
-	return fileopen(path, omode);
+	/* TODO ignoring mode flag */
+
+	return fileopen(path, flags);
 }
 
 size_t
@@ -641,7 +643,7 @@ sys_symlink(void)
 	}
 	if ((eexist = nameiparent(linkpath, dir)) == 0) {
 		end_op();
-		return -EEXIST;
+		return -ENOENT;
 	}
 
 	// Dirlookup's first arg needs a lock.
@@ -907,4 +909,92 @@ sys_fsync(void)
 		return 0;
 	}
 	return 0;
+}
+
+size_t
+sys_umask(void)
+{
+	mode_t mask;
+	if (argint(0, &mask) < 0) {
+		return 0;
+	}
+	return mask;
+}
+
+size_t
+sys_rename(void)
+{
+	char *oldpath_;
+	char *newpath_;
+	char dir[DIRSIZ];
+	char newdir[DIRSIZ];
+	struct inode *ip1, *ip2;
+	struct dirent de;
+	char newelem[DIRSIZ];
+	if (argstr(0, &oldpath_) < 0 || argstr(1, &newpath_) < 0) {
+		return -EINVAL;
+	}
+	// argstr wants a mutable char *, but our arguments are const.
+	// we cast them back here.
+	const char *oldpath = oldpath_;
+	const char *newpath = newpath_;
+
+	begin_op();
+	if ((ip1 = namei(oldpath)) == 0) {
+		end_op();
+		return -ENOENT;
+	}
+	if ((ip2 = nameiparent(newpath, newelem)) == 0) {
+		end_op();
+		return -ENOENT;
+	}
+	struct inode *dp = nameiparent(oldpath, dir);
+	struct inode *new_dp = nameiparent(newpath, newdir);
+	if (dp == 0 || new_dp == 0) {
+		end_op();
+		return -ENOENT;
+	}
+
+	inode_lock(dp);
+	// This starts at "2 * sizeof(de)" in order to skip "." and "..".
+	for (off_t off = 2 * sizeof(de); off < dp->size; off += sizeof(de)) {
+		// By this point, we know that the dirent should exist, but this
+		// error-out condition leans on the cautious side.
+		if (inode_read(dp, (char *)&de, off, sizeof(de)) != sizeof(de)) {
+			end_op();
+			return -ENOENT;
+		}
+		if (strncmp(de.d_name, dir, strlen(dir)) == 0) {
+			uint16_t inode = de.d_ino;
+
+			// Remove the old entry.
+			memset(&de, '\0', sizeof(de));
+			if (inode_write(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+				panic("rename: inode_write");
+
+			// In the case of "mv /foo /bar", we use the same directory pointer (inode).
+			// In that case, we do not want to try and lock the same inode twice.
+			if (new_dp != dp)
+				inode_lock(new_dp);
+			// Add the file to the directory.
+			// Reuse the inode number, but have a new name.
+			if (dirlink(new_dp, newelem, inode) < 0) {
+				if (new_dp != dp)
+					inode_unlockput(new_dp);
+				return -EEXIST;
+			}
+			if (new_dp != dp)
+				inode_unlockput(new_dp);
+
+
+			// Commit to disk.
+			inode_unlockput(dp);
+			end_op();
+			return 0;
+		}
+	}
+
+	inode_unlock(dp);
+	end_op();
+	return -ENOENT;
 }

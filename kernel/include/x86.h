@@ -43,6 +43,38 @@ outsl(int port, const void *addr, int cnt)
 											 : "cc");
 }
 
+static __always_inline uint64_t
+read_cr4(void)
+{
+	uint64_t cr4;
+	__asm__ __volatile__("mov %%cr4, %0"
+												: "=r" (cr4));
+	return cr4;
+}
+
+static __always_inline void
+write_cr4(uint64_t value)
+{
+	__asm__ __volatile__("mov %0, %%cr4" : : "r" (value));
+}
+
+
+static __always_inline uint64_t
+read_cr0(void)
+{
+	uint64_t cr0;
+	__asm__ __volatile__("mov %%cr0, %0"
+												: "=r" (cr0));
+	return cr0;
+}
+
+static __always_inline void
+write_cr0(uint64_t value)
+{
+	__asm__ __volatile__("mov %0, %%cr0" : : "r" (value));
+}
+
+
 static __always_inline void
 stosb(void *addr, int data, int cnt)
 {

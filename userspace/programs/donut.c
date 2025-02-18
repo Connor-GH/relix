@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
-#define puts(x) printf("%s\n", x)
 
 #define USE_MULTIPLIER 1
 

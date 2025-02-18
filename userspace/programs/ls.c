@@ -159,7 +159,7 @@ fmtname(char *path, int fmt_flag)
 {
 	static char buf[__DIRSIZ + 1];
 	char *p;
-	char indicator;
+	char *indicator = "";
 	bool skip_fmt = false;
 	// zero out the buffer.
 	memset(buf, '\0', sizeof(buf));
@@ -179,23 +179,23 @@ fmtname(char *path, int fmt_flag)
 		skip_fmt = true;
 		break;
 	case FMT_DIR:
-		indicator = '/';
+		indicator = "/";
 		break;
 	case FMT_LINK:
-		indicator = '@';
+		indicator = "@";
 		break;
 	case FMT_SOCK:
-		indicator = '=';
+		indicator = "=";
 		break;
 	case FMT_FIFO:
-		indicator = '|';
+		indicator = "|";
 		break;
 	case FMT_EXE:
-		indicator = '*';
+		indicator = "*";
 		break;
 	}
 	if (!skip_fmt)
-		memset(buf + strlen(p), indicator, 1);
+		strncat(buf, indicator, 2);
 	if (fmt_flag == FMT_LINK) {
 		char sprintf_buf[__DIRSIZ];
 		char readlink_buf[__DIRSIZ];

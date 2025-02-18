@@ -1,0 +1,11 @@
+---
+Checks: "
+        linuxkernel-*,
+        clang-analyzer-*,
+        misc-*,
+        performance-*,
+        portability-*,
+"
+WarningsAsErrors: ''
+HeaderFilterRegex: ''
+FormatStyle:     none

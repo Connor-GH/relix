@@ -192,3 +192,33 @@ sys_signal(void)
 		return -EINVAL;
 	return (size_t)kernel_attach_signal(signum, handler);
 }
+
+size_t
+sys_sigprocmask(void)
+{
+	return -ENOSYS;
+}
+
+// TODO implement properly
+size_t
+sys_vfork(void)
+{
+	return sys_fork();
+}
+
+size_t
+sys_wait3(void)
+{
+	return -ENOSYS;
+}
+
+size_t
+sys_sigsuspend(void)
+{
+	return -ENOSYS;
+}
+size_t
+sys_sigaction(void)
+{
+	return -ENOSYS;
+}

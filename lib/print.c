@@ -15,7 +15,7 @@ enum {
 };
 #define IS_SET(x, flag) (bool)((x & flag) == flag)
 
-static void
+static int
 printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 				 FILE *fp, int64_t xx, int base, bool sgn, int flags, int padding)
 {
@@ -24,6 +24,7 @@ printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 	int i = 0;
 	int neg = 0;
 	uint64_t x;
+	int ret;
 
 	if (sgn && xx < 0) {
 		neg = 1;
@@ -70,27 +71,31 @@ printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 			buf[i++] = ' ';
 		}
 	}
+	ret = i;
 
 	while (--i >= 0)
 		put_function(fp, buf[i], put_func_buf);
+	return ret;
 }
 
 // Print to the given fd. Only understands %d, %x, %p, %s.
-void
+int
 sharedlib_vprintf_template(void (*put_function)(FILE *fp, char c, char *buf),
 								 size_t (*ansi_func)(const char *), FILE *fp,
 								 char *restrict buf, const char *fmt, va_list argp,
-								 void (*acq)(void *), void (*rel)(void *), void *lock, bool locking)
+								 void (*acq)(void *), void (*rel)(void *), void *lock, bool locking,
+								 size_t print_n_chars)
 {
 	char *s;
-	int c, i, state;
+	int c = 0, i = 0, state = 0;
 	int flags = 0;
 	int str_pad = 0;
 
 	if (locking)
 		acq(lock);
-	state = 0;
-	for (i = 0; fmt[i]; i++) {
+	for (; fmt[i]; i++) {
+		if (print_n_chars != (size_t)(-1) && i >= print_n_chars)
+			break;
 		// 'floor' character down to bottom 255 chars
 		c = fmt[i] & 0xff;
 		if (state == 0) {
@@ -199,8 +204,12 @@ numerical_padding:
 				s = va_arg(argp, char *);
 				if (s == 0)
 					s = "(null)";
-				size_t len = strlen(s);
-				while (*s != 0) {
+				size_t len;
+				if (strcmp(s, "") == 0) {
+						len = 0;
+				} else
+						len = strlen(s);
+				while (len != 0 && *s != 0) {
 					put_function(fp, *s, buf);
 					s++;
 				}
@@ -232,4 +241,5 @@ skip_state_reset:; // state = '%' if set
 	}
 	if (locking)
 		rel(lock);
+	return i;
 }

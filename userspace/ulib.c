@@ -1,6 +1,8 @@
 #include "stat.h"
 #include <errno.h>
+#include <setjmp.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -11,6 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stddef.h>
+#include <signal.h>
 #include <time.h>
 
 int errno;
@@ -100,13 +103,16 @@ int
 closedir(DIR *dir)
 {
 	if (dir == NULL || dir->fd == -1) {
-		return -1; // EBADF
+		errno = EBADF;
+		return -1;
 	}
 	int rc = close(dir->fd);
 	if (rc == 0)
 		dir->fd = -1;
-	if (dir->list == NULL)
+	if (dir->list == NULL) {
+		errno = -EBADF;
 		return -1;
+	}
 	while (dir->list != NULL && dir->list->next != NULL) {
 		dir->list = dir->list->next;
 	}
@@ -166,7 +172,7 @@ strtoll(const char *restrict s, char **restrict endptr, int base)
 		}
 	}
 	if (base <= 10) {
-		while (s[i] != '\0' && '0' <= s[i] && s[i] <= '9')
+		while ('0' <= s[i] && s[i] <= '9')
 			num = num * base + s[i++] - '0';
 		return num;
 	} else if (base <= 36) {
@@ -219,28 +225,6 @@ assert_fail(const char *assertion, const char *file, int lineno,
 					assertion);
 	fprintf(stderr, "Aborting.\n");
 	exit(-1);
-}
-int
-isdigit(int c)
-{
-	return '0' <= c && c <= '9';
-}
-
-int
-isspace(int c)
-{
-	return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' ||
-				 c == '\v';
-}
-int
-isalpha(int c)
-{
-	return ('a' <= c && c <= 'z') || ('A' <= c &&c <= 'Z');
-}
-int
-isalnum(int c)
-{
-	return isalpha(c) || isdigit(c);
 }
 
 // Fun fact: setenv sets errno, but getenv does not :^)
@@ -296,6 +280,18 @@ atexit(void (*function)(void))
 	return -1;
 }
 
+int
+setjmp(jmp_buf env)
+{
+	return 0;
+}
+
+void __attribute__((noreturn))
+longjmp(jmp_buf env, int val)
+{
+	while(1) {}
+}
+
 __attribute__((noreturn)) void
 exit(int status)
 {
@@ -342,4 +338,48 @@ int
 isatty(int fd)
 {
 	return fd == 0;
+}
+
+int
+sigemptyset(sigset_t *set)
+{
+	return -1;
+}
+
+int
+sigfillset(sigset_t *set)
+{
+	return -1;
+}
+
+int
+raise(int sig)
+{
+	return kill(getpid(), sig);
+}
+
+int
+system(const char *command)
+{
+	pid_t pid = fork();
+	if (pid < 0)
+		return -1;
+	if (pid == 0) {
+		// Where we *would* execute execl... TODO
+		exit(-1);
+	}
+	int status;
+	wait(&status);
+	return WEXITSTATUS(status);
+}
+
+int
+fseek(FILE *stream, long offset, int whence)
+{
+	if (stream) {
+		return lseek(stream->fd, offset, whence);
+	} else {
+		errno = EBADF;
+		return -1;
+	}
 }

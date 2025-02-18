@@ -6,6 +6,8 @@
 #include "kernel/include/lseek.h"
 int
 fork(void) __attribute__((returns_twice));
+int
+vfork(void) __attribute__((returns_twice));
 void
 _exit(int) __attribute__((noreturn));
 int

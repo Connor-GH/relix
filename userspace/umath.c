@@ -30,3 +30,9 @@ ceil_log2(size_t n)
 {
 	return !!n * floor_log2(n - 1) + !!n;
 }
+
+int
+abs(int j)
+{
+	return j < 0 ? -j : j;
+}

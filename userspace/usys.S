@@ -71,3 +71,10 @@ SYSCALL(mmap)
 SYSCALL(munmap)
 SYSCALL(signal)
 SYSCALL_PRIVATE(getcwd)
+SYSCALL(sigprocmask) # TODO
+SYSCALL(vfork) # TODO
+SYSCALL(wait3) # TODO
+SYSCALL(umask) # TODO
+SYSCALL(sigsuspend) # TODO
+SYSCALL(sigaction) # TODO
+SYSCALL(rename)

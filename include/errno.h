@@ -44,6 +44,7 @@ extern int errno;
 #define ENOLCK 37 /* No record locks available */
 #define ENOSYS 38 /* Invalid syscall number */
 #define ENOTEMPTY 39 /* Directory not empty */
+#define ELOOP 40 /* Too many symbolic links */
 #if !defined(__KERNEL__) && !defined(__ASSEMBLER__)
 static const char *const errno_codes[] = {
 	[EPERM] = "Operation not permitted",
@@ -85,5 +86,6 @@ static const char *const errno_codes[] = {
 	[ENOLCK] = "No record locks available",
 	[ENOSYS] = "Invalid syscall number",
 	[ENOTEMPTY] = "Directory not empty",
+	[ELOOP] = "Too many symbolic links",
 };
 #endif

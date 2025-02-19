@@ -1,5 +1,6 @@
 #pragma once
 #include <pci.h>
+#include "fb.h"
 #define _IOC_RW 0b11
 #define _IOC_RO 0b01
 #define _IOC_WO 0b10
@@ -10,3 +11,4 @@
 // In the future, this constant may change.
 #define _IOC(drv_magic, rw, size, number) ((drv_magic << 24) | (number << 16) | (size << 2) | rw)
 #define PCIIOCGETCONF _IOC('P', _IOC_RW, sizeof(struct pci_conf), 0)
+#define FBIOGET_VSCREENINFO _IOC('F', _IOC_RW, sizeof(struct fb_var_screeninfo), 0)

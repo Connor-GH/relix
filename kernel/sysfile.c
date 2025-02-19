@@ -4,9 +4,11 @@
 // user code, and calls into file.c and fs.c.
 //
 
+#include "fb.h"
 #include "memlayout.h"
 #include "mmu.h"
 #include "pci.h"
+#include "vga.h"
 #include <defs.h>
 #include <stdint.h>
 #include <stat.h>
@@ -778,6 +780,18 @@ sys_ioctl(void)
 		struct FatPointerArray_pci_conf pci_conf = pci_get_conf();
 		memcpy(last_optional_arg, pci_conf.ptr,
 					 pci_conf.len * sizeof(struct pci_conf));
+		return 0;
+		break;
+	}
+	case FBIOGET_VSCREENINFO: {
+		if (argptr(2, (char **)&last_optional_arg, sizeof(struct fb_var_screeninfo *)) < 0)
+				return -EINVAL;
+
+		if (last_optional_arg == NULL)
+			return -EFAULT;
+
+		struct fb_var_screeninfo info = {WIDTH, HEIGHT, BPP_DEPTH};
+		memcpy(last_optional_arg, &info, sizeof(struct fb_var_screeninfo));
 		return 0;
 		break;
 	}

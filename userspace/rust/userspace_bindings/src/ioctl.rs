@@ -13,9 +13,18 @@ macro_rules! _IOC {
     ($drv_magic:expr, $rw:expr, $size:expr, $number:expr) => ((($drv_magic as u32) << 24)
     | ($number << 16) | ($size << 2) | $rw)
 }
-pub const PCIIOCGETCONF: u32 = _IOC!('P', _IOC_RW, size_of::<crate::pci::PciConf>() as u32, 0);
 
+#[repr(C)]
+#[derive(Debug)]
+pub struct FbVarScreenInfo {
+    pub xres: u32,
+    pub yres: u32,
+    pub bpp: u8,
+}
+
+pub const PCIIOCGETCONF: u32 = _IOC!('P', _IOC_RW, size_of::<crate::pci::PciConf>() as u32, 0);
+pub const FBIOGET_VSCREENINFO: u32 = _IOC!('F', _IOC_RW, size_of::<FbVarScreenInfo>() as u32, 0);
 
 unsafe extern "C" {
-    pub fn ioctl(fd: c_int, request: c_ulong, ...);
+    pub fn ioctl(fd: c_int, request: c_ulong, ...) -> c_int;
 }

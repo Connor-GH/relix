@@ -1,7 +1,7 @@
 #pragma once
 #include <buf.h>
 void
-initlog(int dev);
+initlog(dev_t dev);
 void
 log_write(struct buf *);
 void

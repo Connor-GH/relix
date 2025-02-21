@@ -140,13 +140,13 @@ trap(struct trapframe *tf)
 			kill(myproc()->pid, SIGSEGV);
 		}
 		break;
-	case T_FPERR:
 	case T_DIVIDE:
-		uart_cprintf("%s[%d]: trap divide error\n", myproc()->name, myproc()->pid);
+		uart_cprintf("%s[%d]: trap divide by zero error: %#lx\n", myproc()->name, myproc()->pid, tf->eip);
 		kill(myproc()->pid, SIGFPE);
 		break;
 	case T_SIMDERR:
-		uart_cprintf("%s[%d]: floating point error\n", myproc()->name, myproc()->pid);
+	case T_FPERR:
+		uart_cprintf("%s[%d]: floating point error: %#lx\n", myproc()->name, myproc()->pid, tf->eip);
 		kill(myproc()->pid, SIGFPE);
 		break;
 	default:

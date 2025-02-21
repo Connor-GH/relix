@@ -96,18 +96,21 @@ strrchr(const char *s, char c)
 			return (char *)s + i;
 	return 0;
 }
-
 char *
 strncpy(char *dst, const char *src, size_t n)
 {
-	char *my_dst;
+	char *start = dst;
+	while (n > 0 && *src != '\0') {
+		*dst++ = *src++;
+    n--;
+  }
 
-	my_dst = dst;
-	while (n-- > 0 && (*dst++ = *src++) != 0)
-		;
-	while (n-- > 1)
-		*dst++ = '\0';
-	return my_dst;
+	while (n > 0) {
+    *dst++ = '\0';
+    n--;
+  }
+
+  return start;
 }
 char *
 stpncpy(char *dst, const char *src, size_t n)
@@ -197,9 +200,14 @@ memmove(void *dst, const void *src, size_t n)
 {
 	char *dest = (char *)dst;
 	const char *source = (const char *)src;
+	if (dest == source || n == 0)
+		return dst;
+
+	if (dest == NULL)
+		return NULL;
 	// If source is lower than dest in memory,
 	// we don't have to worry about clobbering it going forwards.
-	if (dest <= source) {
+	if (dest < source) {
 		while (n--) {
 			*dest++ = *source++;
 		}

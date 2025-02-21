@@ -31,6 +31,11 @@ __init_stdio(void)
 	FILE *file_stdin = fdopen(0, "r");
 	FILE *file_stdout = fdopen(1, "w"); // maybe should be a+?
 	FILE *file_stderr = fdopen(2, "w"); // maybe should be a+?
+	/* stdin, stdout are line buffered by default. */
+	setvbuf(file_stdin, NULL, _IOLBF, 0);
+	setvbuf(file_stdout, NULL, _IOLBF, 0);
+	/* stderr is unbuffered by default. */
+	setvbuf(file_stderr, NULL, _IONBF, 0);
 	open_files[0] = file_stdin;
 	open_files[1] = file_stdout;
 	open_files[2] = file_stderr;
@@ -299,14 +304,13 @@ fgets(char *buf, int max, FILE *restrict stream)
 static void
 fd_putc(FILE *fp, char c, char *__attribute__((unused)) buf)
 {
+	fp->write_buffer[fp->write_buffer_index++] = c;
 	if (fp &&
 		((fp->buffer_mode == BUFFER_MODE_BLOCK &&
 		fp->write_buffer_index >= fp->write_buffer_size - 1) ||
 	(fp->buffer_mode == BUFFER_MODE_UNBUFFERED) ||
 	(fp->buffer_mode == BUFFER_MODE_LINE && c == '\n'))) {
 		flush(fp);
-	} else {
-		fp->write_buffer[fp->write_buffer_index++] = c;
 	}
 }
 static void
@@ -347,6 +351,7 @@ int
 vsnprintf(char *restrict str, size_t n, const char *restrict fmt, va_list argp)
 {
 	global_idx = 0;
+	memset(str, '\0', n);
 	return sharedlib_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp,
 														NULL, NULL, NULL, false, n);
 }
@@ -399,6 +404,56 @@ fscanf(FILE *restrict stream, const char *restrict fmt, ...)
 	return ret;
 }
 
+/* This is only a temporary incomplete implementation. */
+int
+sscanf(const char *restrict str, const char *restrict fmt, ...)
+{
+	int state = 0;
+	int count = 0;
+	size_t i = 0;
+	size_t j = 0;
+	size_t format_size = 0;
+	va_list listp;
+	va_start(listp, fmt);
+
+	while (str[i] != '\0' && fmt[j] != '\0') {
+		if (fmt[j] == '%') {
+			count++;
+			state = '%';
+			format_size++;
+			goto skip_str_forward;
+		} else if (state == '%') {
+			switch (fmt[j]) {
+			case 'i':
+			case 'd': {
+				format_size++;
+				char *cont = "this has to be initialized to something";
+				int d = strtol(str + i, &cont, 10);
+				*va_arg(listp, int *) = d;
+				i += cont - (str+i) - format_size;
+				format_size = 0;
+				state = 0;
+				break;
+			}
+			default: {
+				if (count > 0)
+					count--;
+				state = 0;
+				break;
+			}
+			}
+
+		} else {
+			// ??
+		}
+			i++;
+skip_str_forward:
+			j++;
+	}
+	va_end(listp);
+	return count;
+}
+
 __attribute__((format(printf, 2, 3))) int
 fprintf(FILE *restrict stream, const char *restrict fmt, ...)
 {
@@ -433,10 +488,26 @@ puts(const char *restrict s)
 	return fputs(s, stdout);
 }
 
+int
+setvbuf(FILE *restrict stream, char *restrict buf, int modes, size_t n)
+{
+	if (buf != NULL) {
+		fflush(stream);
+		stream->write_buffer = buf;
+		stream->write_buffer_size = n;
+	}
+	if (!(modes == _IOFBF || modes == _IOLBF || modes == _IONBF)) {
+		errno = EINVAL;
+		return -1;
+	}
+	stream->buffer_mode = modes;
+	return 0;
+}
+
 void
 setlinebuf(FILE *restrict stream)
 {
-	stream->buffer_mode = BUFFER_MODE_LINE;
+	setvbuf(stream, NULL, _IOLBF, 0);
 }
 
 void

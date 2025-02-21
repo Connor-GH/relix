@@ -76,7 +76,7 @@ main(struct multiboot_info *mbinfo)
 	rust_hello_world();
 	pci_init();
 	startothers(); // start other processors
-	kinit2(P2V(4 * 1024 * 1024), P2V(available_memory)); // must come after startothers()
+	kinit2(P2V(4UL * 1024 * 1024), P2V(available_memory)); // must come after startothers()
 	userinit(); // first user process
 	mpmain(); // finish this processor's setup
 }

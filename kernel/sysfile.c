@@ -95,11 +95,11 @@ size_t
 sys_read(void)
 {
 	struct file *f;
-	int n;
+	uint64_t n;
 	char *p;
 
 	// do not rearrange, because then 'n' will be undefined.
-	if (argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
+	if (argfd(0, 0, &f) < 0 || arguintptr_t(2, &n) < 0 || argptr(1, &p, n) < 0)
 		return -EINVAL;
 	return fileread(f, p, n);
 }
@@ -108,10 +108,10 @@ size_t
 sys_write(void)
 {
 	struct file *f;
-	int n;
+	uint64_t n;
 	char *p;
 
-	if (argfd(0, 0, &f) < 0 || argint(2, &n) < 0 || argptr(1, &p, n) < 0)
+	if (argfd(0, 0, &f) < 0 || arguintptr_t(2, &n) < 0 || argptr(1, &p, n) < 0)
 		return -EINVAL;
 	return filewrite(f, p, n);
 }
@@ -221,10 +221,9 @@ bad:
 static int
 isdirempty(struct inode *dp)
 {
-	int off;
 	struct dirent de;
 
-	for (off = 2 * sizeof(de); off < dp->size; off += sizeof(de)) {
+	for (uint64_t off = 2 * sizeof(de); off < dp->size; off += sizeof(de)) {
 		if (inode_read(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
 			panic("isdirempty: inode_read");
 		if (de.d_ino != 0)
@@ -542,7 +541,7 @@ sys_execve(void)
 	}
 	memset(argv, 0, sizeof(argv));
 	memset(envp, 0, sizeof(envp));
-	for (int i = 0;; i++) {
+	for (size_t i = 0;; i++) {
 		if (i >= NELEM(argv))
 			return -ENOEXEC;
 		if (fetchuintptr_t(uargv + sizeof(uintptr_t) * i, &uarg) < 0)
@@ -554,7 +553,7 @@ sys_execve(void)
 		if (fetchstr(uarg, &argv[i]) < 0)
 			return -EINVAL;
 	}
-	for (int i = 0;; i++) {
+	for (size_t i = 0;; i++) {
 		if (i >= NELEM(envp))
 			return -ENOEXEC;
 		if (fetchuintptr_t(uenvp + sizeof(uintptr_t) * i, &uenv) < 0)
@@ -675,9 +674,9 @@ size_t
 sys_readlink(void)
 {
 	char *target, *ubuf;
-	int bufsize = 0;
+	size_t bufsize = 0;
 	if (argstr(0, &target) < 0 || argstr(1, &ubuf) < 0 ||
-			argint(2, &bufsize) < 0) {
+			argsize_t(2, &bufsize) < 0) {
 		return -EINVAL;
 	}
 	struct inode *ip;
@@ -853,7 +852,8 @@ sys_mmap(void)
 		return -ENOMEM;
 	// Place it anywhere.
 	if (addr == NULL) {
-		info.virt_addr = PGROUNDUP(proc->effective_largest_sz);
+		if (info.virt_addr == 0)
+			info.virt_addr = PGROUNDUP(proc->effective_largest_sz);
 		if (mappages(myproc()->pgdir, (void *)info.virt_addr,
 								 info.length, info.addr, perm) < 0) {
 			return -ENOMEM;

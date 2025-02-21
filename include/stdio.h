@@ -26,7 +26,9 @@ struct _IO_FILE {
 #define BUFFER_MODE_LINE 0x1
 #define BUFFER_MODE_BLOCK 0x2
 #define BUFFER_MODE_UNBUFFERED 0x3
-
+#define _IONBF BUFFER_MODE_UNBUFFERED
+#define _IOLBF BUFFER_MODE_LINE
+#define _IOFBF BUFFER_MODE_BLOCK
 
 typedef struct _IO_FILE FILE;
 #endif
@@ -64,6 +66,8 @@ puts(const char *s);
 void
 setlinebuf(FILE *restrict stream);
 int
+setvbuf(FILE *restrict stream, char *restrict buf, int modes, size_t n);
+int
 getc(FILE *stream);
 int
 fileno(FILE *stream);
@@ -84,6 +88,8 @@ freopen(const char *restrict pathname, const char *restrict mode,
 				FILE *restrict stream);
 int
 fscanf(FILE *restrict stream, const char *restrict fmt, ...);
+int
+sscanf(const char *restrict str, const char *restrict fmt, ...);
 int
 feof(FILE *stream);
 int

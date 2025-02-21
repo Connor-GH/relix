@@ -131,15 +131,12 @@ kpage_alloc(void)
 
 typedef long Align;
 
-union header {
-	struct {
-		union header *ptr;
-		uint32_t size;
-	} s;
-	Align x;
-};
+struct header {
+		struct header *ptr;
+		size_t size;
+} __attribute__((aligned(8)));
 
-typedef union header Header;
+typedef struct header Header;
 
 static Header base;
 static Header *freep;
@@ -150,27 +147,27 @@ kfree(void *ap)
 	Header *bp, *p;
 
 	bp = (Header *)ap - 1;
-	for (p = freep; p && !(bp > p && bp < p->s.ptr); p = p->s.ptr)
-		if (p >= p->s.ptr && (bp > p || bp < p->s.ptr))
+	for (p = freep; p && !(bp > p && bp < p->ptr); p = p->ptr)
+		if (p >= p->ptr && (bp > p || bp < p->ptr))
 			break;
 
 	if (!p)
 		return;
-	if (bp + bp->s.size == p->s.ptr) {
-		bp->s.size += p->s.ptr->s.size;
-		bp->s.ptr = p->s.ptr->s.ptr;
+	if (bp + bp->size == p->ptr) {
+		bp->size += p->ptr->size;
+		bp->ptr = p->ptr->ptr;
 	} else
-		bp->s.ptr = p->s.ptr;
-	if (p + p->s.size == bp) {
-		p->s.size += bp->s.size;
-		p->s.ptr = bp->s.ptr;
+		bp->ptr = p->ptr;
+	if (p + p->size == bp) {
+		p->size += bp->size;
+		p->ptr = bp->ptr;
 	} else
-		p->s.ptr = bp;
+		p->ptr = bp;
 	freep = p;
 }
 
 static Header *
-morecore(__attribute__((unused)) uint32_t nu)
+morecore(__attribute__((unused)) size_t nu)
 {
 	char *p;
 	Header *hp;
@@ -179,7 +176,7 @@ morecore(__attribute__((unused)) uint32_t nu)
 	if (p == 0)
 		return 0;
 	hp = (Header *)p;
-	hp->s.size = 4096 / sizeof(Header); // kalloc always allocates 4096 bytes
+	hp->size = 4096 / sizeof(Header); // kalloc always allocates 4096 bytes
 	kfree((void *)(hp + 1));
 	return freep;
 }
@@ -188,23 +185,23 @@ void *
 kmalloc(size_t nbytes)
 {
 	Header *p, *prevp;
-	uint32_t nunits;
+	size_t nunits;
 
 	nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
 	if ((prevp = freep) == 0) {
-		base.s.ptr = freep = prevp = &base;
-		base.s.size = 0;
+		base.ptr = freep = prevp = &base;
+		base.size = 0;
 	}
-	for (p = prevp->s.ptr;; prevp = p, p = p->s.ptr) {
+	for (p = prevp->ptr;; prevp = p, p = p->ptr) {
 		if (!p)
 			return 0;
-		if (p->s.size >= nunits) {
-			if (p->s.size == nunits)
-				prevp->s.ptr = p->s.ptr;
+		if (p->size >= nunits) {
+			if (p->size == nunits)
+				prevp->ptr = p->ptr;
 			else {
-				p->s.size -= nunits;
-				p += p->s.size;
-				p->s.size = nunits;
+				p->size -= nunits;
+				p += p->size;
+				p->size = nunits;
 			}
 			freep = prevp;
 			return (void *)(p + 1);
@@ -220,7 +217,7 @@ __attribute__((malloc)) __nonnull(1) void *krealloc(void *ptr, size_t size)
 	if (!newptr)
 		return NULL;
 	Header *hdr = (Header *)ptr - 1;
-	memcpy(newptr, ptr, min(hdr->s.size, size));
+	memcpy(newptr, ptr, min(hdr->size, size));
 	kfree(ptr);
 
 	return newptr;

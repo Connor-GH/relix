@@ -174,6 +174,9 @@ strtoll(const char *restrict s, char **restrict endptr, int base)
 	if (base <= 10) {
 		while ('0' <= s[i] && s[i] <= '9')
 			num = num * base + s[i++] - '0';
+		if (*endptr != NULL) {
+			*endptr = (char *)(s + i + 1);
+		}
 		return num;
 	} else if (base <= 36) {
 		while (s[i] != '\0' && (('0' <= s[i] && s[i] <= '9') ||
@@ -185,6 +188,9 @@ strtoll(const char *restrict s, char **restrict endptr, int base)
 			} else if ('A' <= s[i] && s[i] <= 'Z') {
 				num = num * base + s[i++] - 'A';
 			}
+		}
+		if (*endptr != NULL) {
+			*endptr = (char *)(s + i + 1);
 		}
 		return num;
 	}
@@ -361,16 +367,8 @@ raise(int sig)
 int
 system(const char *command)
 {
-	pid_t pid = fork();
-	if (pid < 0)
-		return -1;
-	if (pid == 0) {
-		// Where we *would* execute execl... TODO
-		exit(-1);
-	}
-	int status;
-	wait(&status);
-	return WEXITSTATUS(status);
+	fprintf(stderr, "FIXME: system(\"%s\")\n", command);
+	return 1;
 }
 
 int

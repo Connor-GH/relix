@@ -5,6 +5,7 @@ Checks: "
         misc-*,
         performance-*,
         portability-*,
+        -performance-no-int-to-ptr,
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''

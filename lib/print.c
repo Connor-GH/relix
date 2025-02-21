@@ -12,6 +12,7 @@ enum {
 	FLAG_BLANK = 1 << 3,
 	FLAG_SIGN = 1 << 4,
 	FLAG_LONG = 1 << 5,
+	FLAG_PRECISION = 1 << 6,
 };
 #define IS_SET(x, flag) (bool)((x & flag) == flag)
 
@@ -37,7 +38,7 @@ printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 	while ((x_copy /= base) != 0)
 		numlen++;
 
-	if (IS_SET(flags, FLAG_LJUST)) {
+	if (IS_SET(flags, FLAG_LJUST) && !IS_SET(flags, FLAG_PRECISION)) {
 		if (base == 16 && IS_SET(flags, FLAG_ALTFORM))
 			padding -= 2;
 		while (i < padding - numlen) {
@@ -62,8 +63,15 @@ printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 		buf[i++] = '-';
 	else if (IS_SET(flags, FLAG_SIGN))
 		buf[i++] = '+';
-	if (IS_SET(flags, FLAG_BLANK))
-		buf[i++] = ' ';
+	if (IS_SET(flags, FLAG_BLANK)) {
+		while (i < padding) {
+			buf[i++] = ' ';
+		}
+	} else if (IS_SET(flags, FLAG_PRECISION)) {
+		while (i < padding) {
+			buf[i++] = '0';
+		}
+	}
 
 	if (!IS_SET(flags, FLAG_LJUST) && !IS_SET(flags, FLAG_PADZERO) &&
 			padding != 0) {
@@ -109,6 +117,14 @@ sharedlib_vprintf_template(void (*put_function)(FILE *fp, char c, char *buf),
 			}
 		} else if (state == '%') {
 			switch (c) {
+			case '.': {
+				if (str_pad == 0) {
+					flags |= FLAG_PRECISION;
+					goto skip_state_reset;
+				} else {
+					goto numerical_padding;
+				}
+			}
 			case '0': {
 				if (str_pad == 0) {
 					flags |= FLAG_PADZERO;

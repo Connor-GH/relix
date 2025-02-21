@@ -113,7 +113,7 @@ pub extern "C" fn libgui_fill_rect_ptr(ptr: *mut c_void, rect: *const Rectangle,
             libgui_pixel_write_ptr(
                 ptr,
                 x + (unsafe { &*rect }).x,
-                y + (unsafe { &*rect }).x,
+                y + (unsafe { &*rect }).y,
                 hex_color,
             );
         }

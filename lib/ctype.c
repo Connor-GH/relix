@@ -64,8 +64,7 @@ toupper(int c)
 		return c - 0x20;
 	else if ('A' <= c && c <= 'Z')
 		return c;
-	else
-		return 0;
+	return c;
 }
 
 int
@@ -75,8 +74,7 @@ tolower(int c)
 		return c + 0x20;
 	else if ('a' <= c && c <= 'z')
 		return c;
-	else
-		return 0;
+	return c;
 }
 
 int

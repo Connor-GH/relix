@@ -75,10 +75,12 @@ idestart(struct buf *b)
 {
 	if (unlikely(b == 0))
 		panic("idestart");
-	if (b->blockno >= FSSIZE)
+	if (b->blockno >= FSSIZE) {
+		uart_cprintf("blockno: %ld\n", b->blockno);
 		panic("incorrect blockno");
+	}
 	const int sector_per_block = BSIZE / SECTOR_SIZE;
-	int sector = b->blockno * sector_per_block;
+	size_t sector = b->blockno * sector_per_block;
 	int read_cmd = (sector_per_block == 1) ? IDE_CMD_READ : IDE_CMD_RDMUL;
 	int write_cmd = (sector_per_block == 1) ? IDE_CMD_WRITE : IDE_CMD_WRMUL;
 
@@ -152,8 +154,9 @@ iderw(struct buf *b)
 	*pp = b;
 
 	// Start disk if necessary.
-	if (idequeue == b)
+	if (idequeue == b) {
 		idestart(b);
+	}
 
 	// Wait for request to finish.
 	while ((b->flags & (B_VALID | B_DIRTY)) != B_VALID) {

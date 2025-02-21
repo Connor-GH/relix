@@ -4,8 +4,8 @@
 #include "fs.h"
 struct buf {
 	int flags;
-	uint32_t dev;
-	uint32_t blockno;
+	dev_t dev;
+	ssize_t blockno;
 	struct sleeplock lock;
 	uint32_t refcnt;
 	struct buf *prev; // LRU cache list

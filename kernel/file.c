@@ -104,10 +104,10 @@ filestat(struct file *f, struct stat *st)
 }
 
 // Read from file f.
-int
-fileread(struct file *f, char *addr, int n)
+ssize_t
+fileread(struct file *f, char *addr, uint64_t n)
 {
-	int r;
+	ssize_t r;
 
 	if (f->readable == 0)
 		return -EINVAL;
@@ -123,10 +123,10 @@ fileread(struct file *f, char *addr, int n)
 	panic("fileread");
 }
 
-int
-fileseek(struct file *f, int n, int whence)
+off_t
+fileseek(struct file *f, off_t n, int whence)
 {
-	int offset = 0;
+	off_t offset = 0;
 	if (whence == SEEK_CUR) {
 		offset = f->off + n;
 	} else if (whence == SEEK_SET) {
@@ -142,10 +142,10 @@ fileseek(struct file *f, int n, int whence)
 }
 
 // Write to file f.
-int
-filewrite(struct file *f, char *addr, int n)
+ssize_t
+filewrite(struct file *f, char *addr, uint64_t n)
 {
-	int r;
+	ssize_t r;
 
 	if (f->writable == 0)
 		return -EROFS;
@@ -158,10 +158,10 @@ filewrite(struct file *f, char *addr, int n)
 		// and 2 blocks of slop for non-aligned writes.
 		// this really belongs lower down, since inode_write()
 		// might be writing a device like the console.
-		int max = ((MAXOPBLOCKS - 1 - 1 - 2) / 2) * 512;
-		int i = 0;
+		size_t max = ((MAXOPBLOCKS - 1 - 1 - 2) / 2) * 512;
+		size_t i = 0;
 		while (i < n) {
-			int n1 = n - i;
+			size_t n1 = n - i;
 			if (n1 > max)
 				n1 = max;
 

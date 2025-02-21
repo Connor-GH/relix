@@ -63,7 +63,8 @@ vgawrite(struct inode *ip, char *buf, int n)
 static struct mmap_info
 vgammap(size_t length, uintptr_t addr)
 {
-	return (struct mmap_info){WIDTH*HEIGHT*(BPP_DEPTH/8), fb_common.framebuffer_addr, 0, NULL};
+	// A hack for now until we can better determine where to put this.
+	return (struct mmap_info){WIDTH*HEIGHT*(BPP_DEPTH/8), fb_common.framebuffer_addr, 0x3f000000, NULL};
 }
 // INVARIANT: must be ran after vga_init().
 struct multiboot_tag_framebuffer_common

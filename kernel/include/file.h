@@ -10,7 +10,7 @@ struct file {
 	char writable;
 	struct pipe *pipe;
 	struct inode *ip;
-	uint32_t off;
+	off_t off;
 };
 
 // table mapping major device number to
@@ -35,14 +35,14 @@ struct file *
 filedup(struct file *);
 void
 fileinit(void);
-int
-fileread(struct file *, char *, int n);
+ssize_t
+fileread(struct file *, char *, uint64_t n);
 int
 filestat(struct file *, struct stat *);
-int
-filewrite(struct file *, char *, int n);
-int
-fileseek(struct file *f, int n, int whence);
+ssize_t
+filewrite(struct file *, char *, uint64_t n);
+off_t
+fileseek(struct file *f, off_t offset, int whence);
 struct file *
 fd_to_struct_file(int fd);
 char *

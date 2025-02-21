@@ -12,7 +12,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "usage: %s [program] [program_args]\n", argv[0]);
 		exit(1);
 	}
-	int before = uptime();
+	time_t before = uptime();
 	char *path = malloc(FILENAME_MAX);
 	if (path == NULL) {
 		perror("malloc");
@@ -22,6 +22,6 @@ main(int argc, char **argv)
 	if (fork() == 0)
 		exec(path, argv + 1);
 	wait(NULL);
-	printf("wall time %dms\n", (uptime() - before));
+	printf("wall time %ldms\n", (uptime() - before));
 	return 0;
 }

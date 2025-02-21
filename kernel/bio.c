@@ -13,8 +13,9 @@
 // * Only one process at a time can use a buffer,
 //     so do not keep them longer than necessary.
 
+#include <stddef.h>
+#include <stdint.h>
 #include "kernel_assert.h"
-#include "stdint.h"
 #include "param.h"
 #include "spinlock.h"
 #include "sleeplock.h"
@@ -37,8 +38,8 @@ struct {
 	struct spinlock bucket_lock[NBUCKET];
 } block_cache;
 
-int
-hash(uint32_t blockno)
+static uint64_t
+hash(uint64_t blockno)
 {
 	return blockno % min(NBUCKET, ncpu);
 }
@@ -48,7 +49,7 @@ block_init(void)
 {
 	struct buf *b;
 
-	for (int i = 0; i < min(NBUCKET, ncpu); i++) {
+	for (size_t i = 0; i < min(NBUCKET, ncpu); i++) {
 		initlock(&block_cache.bucket_lock[i], "block_cache.bucket");
 		block_cache.bucket[i].next = &block_cache.bucket[i];
 		block_cache.bucket[i].prev = &block_cache.bucket[i];
@@ -56,7 +57,7 @@ block_init(void)
 
 	// Create hash table of buffers
 	for (b = block_cache.buf; b < block_cache.buf + NBUF; b++) {
-		int hi = hash(b->blockno);
+		uint64_t hi = hash(b->blockno);
 		b->next = block_cache.bucket[hi].next;
 		b->prev = &block_cache.bucket[hi];
 		initsleeplock(&b->lock, "buffer");
@@ -68,13 +69,13 @@ block_init(void)
 // Look through buffer cache for block on device dev.
 // If not found, allocate a buffer.
 // In either case, return locked buffer.
-static int i = 0;
+static size_t i = 0;
 
 static struct buf *
-block_get(uint32_t dev, uint32_t blockno)
+block_get(dev_t dev, uint64_t blockno)
 {
 	struct buf *b;
-	int hi = hash(blockno);
+	size_t hi = hash(blockno);
 
 	// Find cache from bucket hi.
 	acquire(&block_cache.bucket_lock[hi]);
@@ -129,7 +130,7 @@ block_get(uint32_t dev, uint32_t blockno)
 
 // Return a locked buf with the contents of the indicated block.
 struct buf *
-block_read(uint32_t dev, uint32_t blockno)
+block_read(dev_t dev, uint64_t blockno)
 {
 	struct buf *b;
 	b = block_get(dev, blockno);
@@ -157,7 +158,7 @@ block_release(struct buf *b)
 
 	releasesleep(&b->lock);
 
-	int hi = hash(b->blockno);
+	size_t hi = hash(b->blockno);
 	acquire(&block_cache.bucket_lock[hi]);
 	b->refcnt--;
 	if (b->refcnt == 0) {

@@ -30,10 +30,10 @@ execv(const char *prog, char *const *argv)
 {
 	return exec(prog, argv);
 }
-int
-write(int, const void *, int);
-int
-read(int, void *, int);
+ssize_t
+write(int, const void *, size_t);
+ssize_t
+read(int, void *, size_t);
 int
 close(int);
 int
@@ -42,13 +42,13 @@ int
 link(const char *, const char *);
 int
 symlink(const char *target, const char *linkpath);
-int
+ssize_t
 readlink(const char *restrict pathname, char *restrict linkpath, size_t buf);
 int
 chdir(const char *);
 int
 dup(int);
-int
+pid_t
 getpid(void);
 void *
 sbrk(int);

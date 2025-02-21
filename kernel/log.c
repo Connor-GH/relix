@@ -34,17 +34,17 @@
 // Contents of the header block, used for both the on-disk header block
 // and to keep track in memory of logged block# before commit.
 struct logheader {
-	int n;
-	int block[LOGSIZE];
+	size_t n;
+	uintptr_t block[LOGSIZE];
 };
 
 struct log {
 	struct spinlock lock;
-	int start;
-	int size;
-	int outstanding; // how many FS sys calls are executing.
+	uintptr_t start;
+	size_t size;
+	size_t outstanding; // how many FS sys calls are executing.
 	int committing; // in commit(), please wait.
-	int dev;
+	dev_t dev;
 	struct logheader lh;
 };
 struct log log;
@@ -55,7 +55,7 @@ static void
 commit(void);
 
 void
-initlog(int dev)
+initlog(dev_t dev)
 {
 	if (sizeof(struct logheader) >= BSIZE)
 		panic("initlog: too big logheader");
@@ -73,9 +73,8 @@ initlog(int dev)
 static void
 install_trans(void)
 {
-	int tail;
 
-	for (tail = 0; tail < log.lh.n; tail++) {
+	for (size_t tail = 0; tail < log.lh.n; tail++) {
 		struct buf *lbuf = block_read(log.dev, log.start + tail + 1); // read log block
 		struct buf *dbuf = block_read(log.dev, log.lh.block[tail]); // read dst
 		memmove(dbuf->data, lbuf->data, BSIZE); // copy block to dst
@@ -91,9 +90,8 @@ read_head(void)
 {
 	struct buf *buf = block_read(log.dev, log.start);
 	struct logheader *lh = (struct logheader *)(buf->data);
-	int i;
 	log.lh.n = lh->n;
-	for (i = 0; i < log.lh.n; i++) {
+	for (size_t i = 0; i < log.lh.n; i++) {
 		log.lh.block[i] = lh->block[i];
 	}
 	block_release(buf);
@@ -107,9 +105,8 @@ write_head(void)
 {
 	struct buf *buf = block_read(log.dev, log.start);
 	struct logheader *hb = (struct logheader *)(buf->data);
-	int i;
 	hb->n = log.lh.n;
-	for (i = 0; i < log.lh.n; i++) {
+	for (size_t i = 0; i < log.lh.n; i++) {
 		hb->block[i] = log.lh.block[i];
 	}
 	block_write(buf);
@@ -181,9 +178,8 @@ end_op(void)
 static void
 write_log(void)
 {
-	int tail;
 
-	for (tail = 0; tail < log.lh.n; tail++) {
+	for (size_t tail = 0; tail < log.lh.n; tail++) {
 		struct buf *to = block_read(log.dev, log.start + tail + 1); // log block
 		struct buf *from = block_read(log.dev, log.lh.block[tail]); // cache block
 		memmove(to->data, from->data, BSIZE);
@@ -217,7 +213,7 @@ commit(void)
 void
 log_write(struct buf *b)
 {
-	int i;
+	size_t i;
 
 	if (log.lh.n >= LOGSIZE || log.lh.n >= log.size - 1)
 		panic("too big a transaction");

@@ -45,6 +45,7 @@ main(void)
 		}
 		if (pid == 0) {
 			execve("/bin/sh", argv, environ);
+			perror("execve");
 			fprintf(stderr, "init: exec() sh failed\n");
 			return 1;
 		}

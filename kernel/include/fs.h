@@ -4,18 +4,20 @@
 #include <stdint.h>
 #ifndef USE_HOST_TOOLS
 #include "sleeplock.h"
+#include "types.h"
 #else
+#include <kernel/include/types.h>
 #include <kernel/include/sleeplock.h>
 #endif
 // Constants that userspace testers might be interested in.
 // To not pollute the namespace, they have double underscores.
 #define __DIRSIZ 254U
 #define __NDIRECT 8UL
-#define __NINDIRECT (__BSIZE / sizeof(uint32_t))
+#define __NINDIRECT (__BSIZE / sizeof(uintptr_t))
 #define __MAXFILE (__NDIRECT + __NINDIRECT + (__NINDIRECT * __NINDIRECT))
 #define __NDINDIRECT_PER_ENTRY __NDIRECT
 #define __NDINDIRECT_ENTRY __NDIRECT
-#define __BSIZE 2048UL // block size
+#define __BSIZE 2048 // block size
 #if !defined(__USER__) || defined(USE_HOST_TOOLS)
 #define NDIRECT __NDIRECT
 #define NINDIRECT __NINDIRECT
@@ -41,7 +43,7 @@ struct superblock {
 };
 // in-memory copy of an inode
 struct inode {
-	uint32_t dev; // Device number
+	dev_t dev; // Device number
 	uint32_t inum; // Inode number
 	int ref; // Reference count
 	struct sleeplock lock; // protects everything below here
@@ -83,7 +85,7 @@ struct dinode {
 #define IBLOCK(i, sb) ((i) / IPB + sb.inodestart)
 
 // Bitmap bits per block
-#define BPB (BSIZE * 8)
+#define BPB (BSIZE * 8U)
 
 // Block of free map containing bit for block b
 #define BBLOCK(b, sb) (b / BPB + sb.bmapstart)
@@ -94,17 +96,17 @@ struct dinode {
 #ifndef USE_HOST_TOOLS
 #include "stat.h"
 void
-read_superblock(int dev, struct superblock *sb);
+read_superblock(dev_t dev, struct superblock *sb);
 int
 dirlink(struct inode *, const char *, uint32_t);
 struct inode *
 dirlookup(struct inode *, const char *, uint64_t *);
 struct inode *
-inode_alloc(uint32_t, int32_t);
+inode_alloc(dev_t, mode_t);
 struct inode *
 inode_dup(struct inode *);
 void
-inode_init(int dev);
+inode_init(dev_t dev);
 void
 inode_lock(struct inode *);
 void
@@ -121,11 +123,11 @@ struct inode *
 namei(const char *);
 struct inode *
 nameiparent(const char *, char *);
-int
+ssize_t
 inode_read(struct inode *, char *, uint64_t, uint64_t);
 void
 inode_stat(struct inode *, struct stat *);
-int
+ssize_t
 inode_write(struct inode *, char *, uint64_t, uint64_t);
 #endif
 #endif

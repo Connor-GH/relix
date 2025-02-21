@@ -203,8 +203,9 @@ writetest(void)
 void
 writetest1(void)
 {
-	int i, fd, n;
-	const int writetest_max = __NDIRECT + __NINDIRECT + 1;
+	char *writetest1_buf = malloc(__NDIRECT + __NINDIRECT + __NINDIRECT * __NINDIRECT + 1);
+	int fd;
+	const size_t writetest_max = __NDIRECT + __NINDIRECT + __NINDIRECT * __NINDIRECT + 1;
 
 	fprintf(stdout, "big files test\n");
 
@@ -214,10 +215,10 @@ writetest1(void)
 		exit(0);
 	}
 
-	for (i = 0; i < writetest_max; i++) {
-		((int *)buf)[0] = i;
+	for (size_t i = 0; i < writetest_max; i++) {
+		((size_t *)writetest1_buf)[0] = i;
 		if (write(fd, buf, __BSIZE) != __BSIZE) {
-			fprintf(stdout, "error: write big file failed %d\n", i);
+			fprintf(stdout, "error: write big file failed %lu\n", i);
 			exit(0);
 		}
 	}
@@ -229,22 +230,23 @@ writetest1(void)
 		fprintf(stdout, "error: open big failed!\n");
 		exit(0);
 	}
+	size_t i, n;
 
 	n = 0;
 	for (;;) {
 		i = read(fd, buf, __BSIZE);
 		if (i == 0) {
 			if (n == writetest_max - 1) {
-				fprintf(stdout, "read only %d blocks from big", n);
+				fprintf(stdout, "read only %lu blocks from big", n);
 				exit(0);
 			}
 			break;
 		} else if (i != __BSIZE) {
-			fprintf(stdout, "read failed %d\n", i);
+			fprintf(stdout, "read failed %lu\n", i);
 			exit(0);
 		}
-		if (((int *)buf)[0] != n) {
-			fprintf(stdout, "read content of block %d is %d\n", n, ((int *)buf)[0]);
+		if (((size_t *)buf)[0] != n) {
+			fprintf(stdout, "read content of block %lu is %lu\n", n, ((size_t *)buf)[0]);
 			exit(0);
 		}
 		n++;
@@ -1812,6 +1814,8 @@ main(int argc, char *argv[])
 			}
 			concreate();
 			bigwrite();
+			writetest();
+			writetest1();
 			bigdir();
 			return 0;
 		}

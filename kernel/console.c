@@ -2,6 +2,7 @@
 // Input is from the keyboard or serial port.
 // Output is written to the screen and serial port.
 
+#include "kernel_signal.h"
 #include "mman.h"
 #include "vga.h"
 #include "lib/print.h"

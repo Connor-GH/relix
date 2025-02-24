@@ -172,12 +172,12 @@ sys_setuid(void)
 }
 
 size_t
-sys_strace(void)
+sys_ptrace(void)
 {
 	char *trace_ptr;
 	if (argptr(0, &trace_ptr, SYSCALL_AMT) < 0)
 		return -EINVAL;
-	memmove(myproc()->strace_mask_ptr, trace_ptr, SYSCALL_AMT);
+	memmove(myproc()->ptrace_mask_ptr, trace_ptr, SYSCALL_AMT);
 	return 0;
 }
 

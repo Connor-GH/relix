@@ -450,12 +450,15 @@ sys_mkdir(void)
 {
 	char *path;
 	struct inode *ip;
+	mode_t mode;
 
-	begin_op();
-	if (argstr(0, &path) < 0 ||
-			(ip = create(path, S_IFDIR | S_IAUSR, 0, 0)) == 0) {
-		end_op();
+	if (argstr(0, &path) < 0 || argint(1, &mode) < 0) {
 		return -EINVAL;
+	}
+	begin_op();
+	if ((ip = create(path, S_IFDIR | mode, 0, 0)) == 0) {
+		end_op();
+		return -ENOENT;
 	}
 	inode_unlockput(ip);
 	end_op();
@@ -468,13 +471,17 @@ sys_mknod(void)
 	struct inode *ip;
 	char *path;
 	int major, minor;
+	mode_t mode;
+	dev_t dev;
 
-	begin_op();
-	if ((argstr(0, &path)) < 0 || argint(1, &major) < 0 ||
-			argint(2, &minor) < 0 ||
-			(ip = create(path, S_IFBLK | S_IAUSR, major, minor)) == 0) {
-		end_op();
+	if ((argstr(0, &path)) < 0 || argint(1, &mode) < 0 ||
+			arguintptr_t(2, &dev) < 0) {
 		return -EINVAL;
+	}
+	begin_op();
+	if ((ip = create(path, S_IFBLK | mode, major(dev), minor(dev))) == 0) {
+		end_op();
+		return -ENOENT;
 	}
 	inode_unlockput(ip);
 	end_op();

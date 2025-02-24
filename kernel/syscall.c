@@ -176,7 +176,7 @@ sys_echoout(void);
 extern size_t
 sys_setuid(void);
 extern size_t
-sys_strace(void);
+sys_ptrace(void);
 extern size_t
 sys_symlink(void);
 extern size_t
@@ -226,7 +226,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_close] = sys_close,			 [SYS_date] = sys_date,
 	[SYS_chmod] = sys_chmod,			 [SYS_reboot] = sys_reboot,
 	[SYS_echoout] = sys_echoout,	 [SYS_setuid] = sys_setuid,
-	[SYS_strace] = sys_strace,		 [SYS_symlink] = sys_symlink,
+	[SYS_ptrace] = sys_ptrace,		 [SYS_symlink] = sys_symlink,
 	[SYS_readlink] = sys_readlink, [SYS_lseek] = sys_lseek,
 	[SYS_fsync] = sys_fsync,			 [SYS_writev] = sys_writev,
 	[SYS_ioctl] = sys_ioctl,			 [SYS_mmap] = sys_mmap,
@@ -244,7 +244,7 @@ syscall(void)
 
 	num = curproc->tf->eax;
 	if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-		if (curproc->strace_mask_ptr[num] == 1) {
+		if (curproc->ptrace_mask_ptr[num] == 1) {
 			size_t xticks, yticks;
 			acquire(&tickslock);
 			xticks = ticks;

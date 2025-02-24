@@ -1,12 +1,12 @@
 diff --git a/doomgeneric/Makefile b/doomgeneric/Makefile
-index 503e0dc..b1bfb27 100644
+index 503e0dc..561ac69 100644
 --- a/doomgeneric/Makefile
 +++ b/doomgeneric/Makefile
 @@ -11,18 +11,24 @@ else
  	VB=@
  endif
 
-+ROOTDIR=$(shell pwd)/../../../
++ROOTDIR=$(shell pwd)/../../../../
 
  CC=clang  # gcc or g++
  CFLAGS+=-ggdb3 -Os
@@ -30,3 +30,122 @@ index 503e0dc..b1bfb27 100644
  OBJS += $(addprefix $(OBJDIR)/, $(SRC_DOOM))
 
  all:	 $(OUTPUT)
+diff --git a/doomgeneric/doomgeneric_relix.c b/doomgeneric/doomgeneric_relix.c
+new file mode 100644
+index 0000000..b2e1c04
+--- /dev/null
++++ b/doomgeneric/doomgeneric_relix.c
+@@ -0,0 +1,113 @@
++
++#include "doomkeys.h"
++#include "ext.h"
++#include "m_argv.h"
++#include "doomgeneric.h"
++
++#include "userspace/include/gui.h"
++#include <stdio.h>
++#include <unistd.h>
++
++#include <stdbool.h>
++
++#define KEYQUEUE_SIZE 16
++
++static unsigned short s_KeyQueue[KEYQUEUE_SIZE];
++static unsigned int s_KeyQueueWriteIndex = 0;
++static unsigned int s_KeyQueueReadIndex = 0;
++
++static time_t time_since_start = 0;
++static void *fb;
++
++unsigned char
++keycode_to_doom_key(unsigned int keycode)
++{
++	return keycode;
++}
++
++static void
++add_key_to_queue(int pressed, unsigned int keycode)
++{
++	unsigned char key = keycode_to_doom_key(keycode);
++
++	unsigned short keyData = (pressed << 8) | key;
++
++	s_KeyQueue[s_KeyQueueWriteIndex] = keyData;
++	s_KeyQueueWriteIndex++;
++	s_KeyQueueWriteIndex %= KEYQUEUE_SIZE;
++}
++
++void
++DG_Init()
++{
++	time_since_start = uptime();
++	fb = libgui_init("/dev/fb0");
++	if (fb == NULL) {
++		perror("libgui_init");
++		exit(EXIT_FAILURE);
++	}
++}
++
++void
++handle_key_input(void)
++{
++}
++void
++DG_DrawFrame()
++{
++	for (uint32_t y = 0; y < DOOMGENERIC_RESY; y++) {
++		for (uint32_t x = 0; x < DOOMGENERIC_RESX; x++) {
++			libgui_pixel_write_ptr(fb, x, y, *DG_ScreenBuffer);
++		}
++	}
++	handle_key_input();
++}
++
++void
++DG_SleepMs(uint32_t ms)
++{
++	sleep(ms);
++}
++
++uint32_t
++DG_GetTicksMs()
++{
++	return uptime() - time_since_start;
++}
++
++int
++DG_GetKey(int *pressed, unsigned char *doomKey)
++{
++	if (s_KeyQueueReadIndex == s_KeyQueueWriteIndex) {
++		//key queue is empty
++		return 0;
++	} else {
++		unsigned short keyData = s_KeyQueue[s_KeyQueueReadIndex];
++		s_KeyQueueReadIndex++;
++		s_KeyQueueReadIndex %= KEYQUEUE_SIZE;
++
++		*pressed = keyData >> 8;
++		*doomKey = keyData & 0xFF;
++
++		return 1;
++	}
++
++	return 0;
++}
++
++void
++DG_SetWindowTitle(const char *title)
++{
++}
++
++int
++main(int argc, char **argv)
++{
++	doomgeneric_Create(argc, argv);
++
++	while (1) {
++		doomgeneric_Tick();
++	}
++
++	return 0;
++}

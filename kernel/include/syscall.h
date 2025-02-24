@@ -27,7 +27,7 @@
 #define SYS_reboot 24
 #define SYS_echoout 25
 #define SYS_setuid 26
-#define SYS_strace 27
+#define SYS_ptrace 27
 #define SYS_symlink 28
 #define SYS_readlink 29
 #define SYS_lseek 30
@@ -76,7 +76,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_reboot] = "reboot",
 	[SYS_echoout] = "echoout",
 	[SYS_setuid] = "setuid",
-	[SYS_strace] = "strace",
+	[SYS_ptrace] = "ptrace",
 	[SYS_symlink] = "symlink",
 	[SYS_readlink] = "readlink",
 	[SYS_lseek] = "lseek",

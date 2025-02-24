@@ -94,7 +94,7 @@ struct proc {
 	struct inode *cwd; // Current directory
 	struct cred cred; // user's credentials for the process.
 	char name[16]; // Process name (debugging)
-	char strace_mask_ptr[SYSCALL_AMT + 1]; // mask for tracing syscalls
+	char ptrace_mask_ptr[SYSCALL_AMT + 1]; // mask for tracing syscalls
 	struct mmap_info mmap_info[NMMAP];
 	size_t mmap_count;
 	size_t effective_largest_sz; // Largest address when including mmap

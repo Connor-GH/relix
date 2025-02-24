@@ -35,7 +35,7 @@ iputtest(void)
 {
 	fprintf(stdout, "iput test\n");
 
-	if (mkdir("iputdir") < 0) {
+	if (mkdir("iputdir", 0700) < 0) {
 		fprintf(stdout, "mkdir failed\n");
 		exit(0);
 	}
@@ -68,7 +68,7 @@ exitiputtest(void)
 		exit(0);
 	}
 	if (pid == 0) {
-		if (mkdir("iputdir") < 0) {
+		if (mkdir("iputdir", 0700) < 0) {
 			fprintf(stdout, "mkdir failed\n");
 			exit(0);
 		}
@@ -103,7 +103,7 @@ openiputtest(void)
 	int pid;
 
 	fprintf(stdout, "openiput test\n");
-	if (mkdir("oidir") < 0) {
+	if (mkdir("oidir", 0700) < 0) {
 		fprintf(stdout, "mkdir oidir failed\n");
 		exit(0);
 	}
@@ -287,7 +287,7 @@ dirtest(void)
 {
 	fprintf(stdout, "mkdir test\n");
 
-	if (mkdir("dir0") < 0) {
+	if (mkdir("dir0", 0700) < 0) {
 		fprintf(stdout, "mkdir failed\n");
 		exit(0);
 	}
@@ -981,7 +981,7 @@ subdir(void)
 	fprintf(stdout, "subdir test\n");
 
 	unlink("ff");
-	if (mkdir("dd") != 0) {
+	if (mkdir("dd", 0700) != 0) {
 		fprintf(stdout, "subdir mkdir dd failed\n");
 		exit(0);
 	}
@@ -999,7 +999,7 @@ subdir(void)
 		exit(0);
 	}
 
-	if (mkdir("/dd/dd") != 0) {
+	if (mkdir("/dd/dd", 0700) != 0) {
 		fprintf(stdout, "subdir mkdir dd/dd failed\n");
 		exit(0);
 	}
@@ -1103,15 +1103,15 @@ subdir(void)
 		fprintf(stdout, "link dd/ff dd/dd/ffff succeeded!\n");
 		exit(0);
 	}
-	if (mkdir("dd/ff/ff") == 0) {
+	if (mkdir("dd/ff/ff", 0700) == 0) {
 		fprintf(stdout, "mkdir dd/ff/ff succeeded!\n");
 		exit(0);
 	}
-	if (mkdir("dd/xx/ff") == 0) {
+	if (mkdir("dd/xx/ff", 0700) == 0) {
 		fprintf(stdout, "mkdir dd/xx/ff succeeded!\n");
 		exit(0);
 	}
-	if (mkdir("dd/dd/ffff") == 0) {
+	if (mkdir("dd/dd/ffff", 0700) == 0) {
 		fprintf(stdout, "mkdir dd/dd/ffff succeeded!\n");
 		exit(0);
 	}
@@ -1250,19 +1250,19 @@ dirsiz(void)
 	// __DIRSIZ is 14.
 	fprintf(stdout, "dirsiz test\n");
 
-	if (mkdir("12345678901234") != 0) {
+	if (mkdir("12345678901234", 0700) != 0) {
 		fprintf(stdout, "mkdir 12345678901234 failed\n");
 		exit(0);
 	}
-	if (mkdir("12345678901234/123456789012345") != 0) {
+	if (mkdir("12345678901234/123456789012345", 0700) != 0) {
 		fprintf(stdout, "mkdir 12345678901234/123456789012345 failed\n");
 		exit(0);
 	}
-	if (mkdir("123456789012345") != 0) {
+	if (mkdir("123456789012345", 0700) != 0) {
 		fprintf(stdout, "mkdir 123456789012345 failed\n");
 		exit(0);
 	}
-	if (mkdir("123456789012345/123456789012345") != 0) {
+	if (mkdir("123456789012345/123456789012345", 0700) != 0) {
 		fprintf(stdout, "mkdir 123456789012345/123456789012345 failed\n");
 		exit(0);
 	}
@@ -1273,7 +1273,7 @@ dirsiz(void)
 		exit(0);
 	}
 	close(fd);
-	if (mkdir("12345678901234/12345678901234") != 0) {
+	if (mkdir("12345678901234/12345678901234", 0700) != 0) {
 		fprintf(stdout, "mkdir 12345678901234/12345678901234 failed\n");
 		exit(0);
 	}
@@ -1285,7 +1285,7 @@ dirsiz(void)
 	}
 	close(fd);
 
-	if (mkdir("123456789012345/12345678901234") != 0) {
+	if (mkdir("123456789012345/12345678901234", 0700) != 0) {
 		fprintf(stdout, "mkdir 12345678901234/123456789012345 failed\n");
 		exit(0);
 	}
@@ -1297,7 +1297,7 @@ void
 rmdot(void)
 {
 	fprintf(stdout, "rmdot test\n");
-	if (mkdir("dots") != 0) {
+	if (mkdir("dots", 0700) != 0) {
 		fprintf(stdout, "mkdir dots failed\n");
 		exit(0);
 	}
@@ -1359,7 +1359,7 @@ dirfile(void)
 		fprintf(stdout, "create dirfile/xx succeeded!\n");
 		exit(0);
 	}
-	if (mkdir("dirfile/xx") == 0) {
+	if (mkdir("dirfile/xx", 0700) == 0) {
 		fprintf(stdout, "mkdir dirfile/xx succeeded!\n");
 		exit(0);
 	}
@@ -1401,7 +1401,7 @@ iref(void)
 
 	// the 50 is NINODE
 	for (i = 0; i < 50 + 1; i++) {
-		if (mkdir("irefd") != 0) {
+		if (mkdir("irefd", 0700) != 0) {
 			fprintf(stdout, "mkdir irefd failed\n");
 			exit(0);
 		}
@@ -1410,7 +1410,7 @@ iref(void)
 			exit(0);
 		}
 
-		mkdir("");
+		mkdir("", 0700);
 		link("README", "");
 		fd = open("", O_CREATE);
 		if (fd >= 0)

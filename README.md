@@ -39,6 +39,10 @@ run ``make qemu`` with a compiler capable of producing ELF files.
 On linux-based systems and FreeBSD systems, this means the native compiler.
 
 Note that ``make qemu -j16`` will parallelize the build.
+
+# Oh, and it runs DOOM.
+<img src="docs/pictures/doom.mp4">
+
 # TODO
 - XHCI USB keyboard support
 - SATA drive support

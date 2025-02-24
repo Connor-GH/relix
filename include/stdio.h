@@ -49,6 +49,8 @@ __attribute__((format(printf, 2, 3))) int
 fprintf(FILE *restrict, const char *restrict fmt, ...);
 __attribute__((format(printf, 1, 2))) int
 printf(const char *restrict fmt, ...);
+__attribute__((format(printf, 2, 3))) int
+dprintf(int fd, const char *restrict fmt, ...);
 int
 snprintf(char *restrict str, size_t n, const char *restrict fmt, ...);
 int

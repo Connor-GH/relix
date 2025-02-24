@@ -2,6 +2,7 @@
 
 #ifndef USE_HOST_TOOLS
 #include <stdint.h>
+#include <sys/types.h>
 /* fields do not begin with "st_" if they are nonstandard. */
 //
 // +--------->+-------+
@@ -56,16 +57,16 @@
 #define S_IWOTH 00002
 #define S_IXOTH 00001
 struct stat {
-	int st_dev; /* u32 or u64 */ // File system's disk device
+	dev_t st_dev;  // File system's disk device
 	uint32_t st_ino; /* u32 or u64 */ // Inode number
 	short st_nlink; /* u32 or u64 */ // Number of links to file
-	uint64_t st_size; // Size of file in bytes
-	uint32_t st_mode;
-	uint16_t st_uid; /* u32 */
-	uint16_t st_gid; /* u32 */
-	uint64_t st_ctime; // change
-	uint64_t st_atime; // access
-	uint64_t st_mtime; // modification
+	off_t st_size; // Size of file in bytes
+	mode_t st_mode;
+	uid_t st_uid;
+	gid_t st_gid;
+	time_t st_ctime; // change
+	time_t st_atime; // access
+	time_t st_mtime; // modification
 };
 #endif
 // 0700

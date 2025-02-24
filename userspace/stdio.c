@@ -465,6 +465,21 @@ fprintf(FILE *restrict stream, const char *restrict fmt, ...)
 	return ret;
 }
 
+__attribute__((format(printf, 2, 3))) int
+dprintf(int fd, const char *restrict fmt, ...)
+{
+	FILE *fp = fdopen(fd, "w");
+	if (fp == NULL)
+		return -1;
+	int ret;
+	va_list listp;
+	va_start(listp, fmt);
+	ret = vfprintf(fp, fmt, listp);
+	va_end(listp);
+	fclose(fp);
+	return ret;
+}
+
 __attribute__((format(printf, 1, 2))) int
 printf(const char *restrict fmt, ...)
 {

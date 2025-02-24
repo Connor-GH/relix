@@ -6,7 +6,7 @@ UPROGS = $(UPROGS_OBJ:$(BIN)/%.o=$(SYSROOT)/$(BIN)/_%)
 
 
 $(BIN)/%.o: $(UPROGS_DIR)/%.c
-	$(CC) $(CFLAGS) $(UCFLAGS) -c -o $@ $^
+	$(CC) $(CFLAGS) -Wno-error $(UCFLAGS) -c -o $@ $^
 
 # link together, then remove the .note.gnu.property that GCC generates.
 $(SYSROOT)/$(BIN)/_%: $(BIN)/%.o $(ULIB_STATIC) $(SHAREDLIBS_STATIC) $(USER_RUST_OBJ)

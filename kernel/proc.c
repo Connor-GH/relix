@@ -149,7 +149,7 @@ found:
 	p->cred.uid = 0;
 	p->cred.gid = 0;
 
-	memset(p->strace_mask_ptr, 0, SYSCALL_AMT);
+	memset(p->ptrace_mask_ptr, 0, SYSCALL_AMT);
 
 	for (int i = 0; i < __SIG_last; i++) {
 		p->sig_handlers[i] = SIG_DFL;
@@ -262,7 +262,7 @@ fork(void)
 	__safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
 	// when fork()ing, copy the parent's mask
-	memmove(np->strace_mask_ptr, curproc->strace_mask_ptr, SYSCALL_AMT);
+	memmove(np->ptrace_mask_ptr, curproc->ptrace_mask_ptr, SYSCALL_AMT);
 	pid = np->pid;
 
 	acquire(&ptable.lock);
@@ -557,7 +557,7 @@ copy_signal_to_stack(struct proc *proc, int signal)
 {
 	uintptr_t sp = proc->tf->esp;
 	uintptr_t ustack[2];
-	ustack[0] = proc->tf->eip + 5;
+	ustack[0] = proc->tf->eip;
 	ustack[1] = (uintptr_t)proc->sig_handlers[signal];
 	sp -= sizeof(sighandler_t (*)(int));
 	if (copyout(proc->pgdir, sp, ustack, sizeof(ustack)) < 0) {

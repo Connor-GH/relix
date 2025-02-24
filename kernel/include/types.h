@@ -13,7 +13,7 @@ typedef int pid_t;
 typedef int uid_t;
 typedef int gid_t;
 typedef int id_t;
-typedef uint32_t dev_t;
+typedef uint64_t dev_t;
 
 typedef ssize_t off_t;
 

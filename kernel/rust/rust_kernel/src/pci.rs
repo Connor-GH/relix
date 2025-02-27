@@ -3,8 +3,21 @@ use crate::printing::*;
 use bindings::x86::{inl, outl};
 use alloc::vec::Vec;
 use spin::Mutex;
+use crate::ahci::ahci_init;
 const CONFIG_ADDRESS: u16 = 0xCF8;
 const CONFIG_DATA: u16 = 0xCFC;
+
+const COMMAND_MEMORY_SPACE_RESPONSE: u16 = 1 << 1;
+const COMMAND_BUS_MASTER: u16 = 1 << 2;
+const COMMAND_INTERRUPT_DISABLE: u16 = 1 << 10;
+
+
+const MSI_PER_VECTOR_MASKING: u32 = 1 << 8;
+const MSI_64BIT: u32 = 1 << 7;
+
+
+const CAPABILITY_MSI: u8 = 0x5;
+const CAPABILITY_SATA: u8 = 0x12;
 
 static PCI_CONFS: Mutex<Vec<PciConf>> = Mutex::new(Vec::new());
 
@@ -31,8 +44,11 @@ pub struct PCICommonHeader {
     interrupt_pin: u8,
     min_gnt: u8,
     max_latency: u8,
+    bus: u8,
+    device: u8,
+    function: u8
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[repr(C)]
 pub struct PciConf {
   vendor_id: u16,
@@ -49,18 +65,205 @@ pub struct PciConf {
   device: u8,
   bus: u8,
 }
+/*
+ * We only support 64-bit MSI's.
+ * Additionally, we support them
+ * having masks and pending bits
+ * or not.
+ */
+enum MsiType {
+    WithMask(Msi),
+    WithoutMask(MsiNoMask)
+}
 
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+struct Msi {
+    cap_id: u8,
+    next_ptr: u8,
+    message_control: u16,
+
+    message_address: u32,
+    message_upper_address: u32,
+
+    message_data: u16,
+    mask_bits: u32,
+    pending_bits: u32,
+}
+
+impl Msi {
+    fn from_cap_ptr((bus, slot, func): (u8, u8, u8), offset: u8) -> Self {
+        let tuple = (bus, slot, func);
+        let cap_id = pci_config_read_word(tuple, offset) as u8;
+        assert!(cap_id == 0x05, "CapID does not match with MSI!");
+        let next_ptr = (pci_config_read_word(tuple, offset + 0x1) >> 8) as u8;
+        let message_control = pci_config_read_word(tuple, offset + 0x2);
+        assert!(message_control & MSI_64BIT as u16 != 0, "MSI is not 64 bit!");
+        assert!(message_control & MSI_PER_VECTOR_MASKING as u16 != 0, "MSI does not mask vectors!");
+        let message_address = pci_config_read_long(tuple, offset + 0x4);
+        let message_upper_address = pci_config_read_long(tuple, offset + 0x8);
+        let message_data = pci_config_read_word(tuple, offset + 0xC);
+        let mask_bits = pci_config_read_long(tuple, offset + 0x10);
+        let pending_bits = pci_config_read_long(tuple, offset + 0x14);
+        Msi { cap_id, next_ptr, message_control, message_address, message_upper_address, message_data, mask_bits, pending_bits }
+
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+#[repr(C)]
+struct MsiNoMask {
+    cap_id: u8,
+    next_ptr: u8,
+    message_control: u16,
+
+    message_address: u32,
+    message_upper_address: u32,
+
+    message_data: u16,
+}
+
+impl MsiNoMask {
+    fn from_cap_ptr((bus, slot, func): (u8, u8, u8), offset: u8) -> Self {
+        let tuple = (bus, slot, func);
+        let cap_id = pci_config_read_word(tuple, offset) as u8;
+        assert!(cap_id == 0x05, "CapID does not match with MSI!");
+        let next_ptr = (pci_config_read_word(tuple, offset + 0x1) >> 8) as u8;
+        let message_control = pci_config_read_word(tuple, offset + 0x2);
+        assert!(message_control & MSI_64BIT as u16 != 0, "MSI is not 64 bit!");
+        let message_address = pci_config_read_long(tuple, offset + 0x4);
+        let message_upper_address = pci_config_read_long(tuple, offset + 0x8);
+        let message_data = pci_config_read_word(tuple, offset + 0xC);
+        MsiNoMask { cap_id, next_ptr, message_control, message_address, message_upper_address, message_data }
+
+    }
+}
+
+const SATAR0_MINOR_REVISION_MASK: u8 = 0b00001111;
+const SATAR0_MAJOR_REVISION_MASK: u8 = 0b11110000;
+const SATAR1_BAR_LOCATION: u32 = 0b000000000000000000001111;
+const SATAR1_BAR_OFFSET: u32 =   0b111111111111111111110000;
+// serial ata ahci spec 2.4.1
+// SATA Capability Registers 0 and 1
+struct Sata {
+    cap_id: u8,
+    next_ptr: u8,
+    minor0to4major4to7: u8,
+    sata_r1: u32,
+    // Offset that this sits at.
+    // Used for BAR location.
+    offset: u8,
+}
+
+impl Sata {
+    fn from_cap_ptr(tuple: (u8, u8, u8), offset: u8) -> Self {
+        let cap_id = pci_config_read_word(tuple, offset) as u8;
+        let next_ptr = (pci_config_read_word(tuple, offset + 0x1) >> 8) as u8;
+        let minor_revision = pci_config_read_word(tuple, offset + 0x2) as u8 & SATAR0_MINOR_REVISION_MASK;
+        let major_revision = pci_config_read_word(tuple, offset + 0x2) as u8 & SATAR0_MAJOR_REVISION_MASK;
+        let r1 = pci_config_read_long(tuple, offset + 0x4);
+        Sata { cap_id, next_ptr, minor0to4major4to7: minor_revision | major_revision, sata_r1: r1, offset}
+    }
+    fn minor_revision(&self) -> u8 {
+        self.minor0to4major4to7 & SATAR0_MINOR_REVISION_MASK
+    }
+    fn major_revision(&self) -> u8 {
+        (self.minor0to4major4to7 & SATAR0_MAJOR_REVISION_MASK) >> 4
+    }
+    fn bar_location_raw(&self) -> u8 {
+        (self.sata_r1 & SATAR1_BAR_LOCATION) as u8
+    }
+    fn bar_offset_raw(&self) -> u32 {
+        (self.sata_r1 & SATAR1_BAR_OFFSET) >> 4
+    }
+    // Can be anywhere from 0-64KB or 0-(1MB-4) depending on the setup.
+    fn bar_offset(&self) -> u32 {
+        self.bar_offset_raw() * 4
+    }
+    fn bar_location(&self) -> (u8, &str) {
+        match self.bar_location_raw() {
+            0b0100 => (0x10, "BAR0"), // BAR0
+            0b0101 => (0x14, "BAR1"), // BAR1
+            0b0110 => (0x18, "BAR2"), // BAR2
+            0b0111 => (0x1C, "BAR3"), // BAR3
+            0b1000 => (0x20, "BAR4"), // BAR4
+            0b1001 => (0x18, "BAR5"), // BAR5
+            0b1111 => (self.offset + 8, "After SATACR1"),
+            _ => {
+                (0x10, "unknown (using BAR0)")
+            }
+        }
+    }
+}
+impl core::fmt::Debug for Sata {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Sata")
+            .field("capability id", &self.cap_id)
+            .field("next ptr", &self.next_ptr)
+            .field("minor revision", &self.minor_revision())
+            .field("major revision", &self.major_revision())
+            .field("bar location", &self.bar_location())
+            .field("bar offset", &self.bar_offset())
+            .finish()
+    }
+}
+fn dispatch_init_from_id(hdr: &mut PCICommonHeader) {
+    if hdr.vendor_id == 0x8086 && hdr.device_id == 0x2922 && hdr.subsystem_vendor_id == 0x1af4 && hdr.subsystem_id == 0x1100 {
+        ahci_init(hdr);
+    }
+}
+fn info_headers((bus, slot, func): (u8, u8, u8), offset: u8, hdr: &mut PCICommonHeader) {
+    println!("{}", hdr);
+    command_and_status_registers(hdr);
+    dispatch_init_from_id(hdr);
+    traverse_headers((bus, slot, func), offset);
+}
+
+fn traverse_headers((bus, slot, func): (u8, u8, u8), offset: u8) {
+    let tuple = (bus, slot, func);
+
+    // Only things certain about a PCI configuration header.
+    let cap_id = pci_config_read_word(tuple, offset) as u8;
+    let offset = match cap_id {
+        CAPABILITY_MSI => {
+            let control = pci_config_read_word(tuple, offset + 0x2);
+            // Per-vector masking.
+            if control & MSI_PER_VECTOR_MASKING as u16 != 0 {
+                let msi = Msi::from_cap_ptr((bus, slot, func), offset);
+                println!("{:#x?}", msi);
+                msi.next_ptr
+            } else {
+                let msi = MsiNoMask::from_cap_ptr((bus, slot, func), offset);
+                println!("{:#x?}", msi);
+                msi.next_ptr
+            }
+        },
+        CAPABILITY_SATA => {
+            let sata = Sata::from_cap_ptr((bus, slot, func), offset);
+            println!("{:#x?}", sata);
+
+            sata.next_ptr
+        },
+        _ => {
+            0
+        }
+    };
+    if offset != 0 {
+        traverse_headers((bus, slot, func), offset);
+    }
+}
 impl core::fmt::Display for PCICommonHeader {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.write_fmt(format_args!(
-            "{:x}:{:x} {:x}:{:x} {:x} base_class {:x} subclass {:x} header type {:x}",
+            "{:x}:{:x} {:x}:{:x} {:x}:{:x}:{:x} (rev {:x}) header type {:x}",
             self.vendor_id,
             self.device_id,
             self.subsystem_vendor_id,
             self.subsystem_id,
-            self.revision_id,
             self.base_class,
             self.subclass,
+            self.prog_if,
+            self.revision_id,
             self.header_type
         ))
     }
@@ -71,7 +274,7 @@ impl core::fmt::Debug for PCICommonHeader {
             .field("vendor_id", &self.vendor_id)
             .field("device_id", &self.device_id)
             /* command */
-            /* status */
+            .field("status register", &self.status)
             .field("revision_id", &self.revision_id)
             .field("prog_if", &self.prog_if)
             .field("subclass", &self.subclass)
@@ -80,12 +283,12 @@ impl core::fmt::Debug for PCICommonHeader {
             .field("latency_timer", &self.latency_timer)
             .field("header_type", &self.header_type)
             /* BIST */
-            /* base address registers (BAR) */
+            .field("BAR", &self.base_address_registers)
             /* CardBus cis pointer */
             .field("subsystem_vendor_id", &self.subsystem_vendor_id)
             .field("subsystem_id", &self.subsystem_id)
             /* expansion ROM base address */
-            /* capabilities pointer */
+            .field("capabilities_pointer", &self.capabilities_pointer)
             /* Skip reserved */
             .field("interrupt_line", &self.interrupt_line)
             .field("interrupt_pin", &self.interrupt_pin)
@@ -109,10 +312,10 @@ impl PCICommonHeader {
         let prog_if = get_prog_if(tuple);
         let base_class = get_base_class(tuple);
         let subclass = get_subclass(tuple);
-        let cacheline_size = pci_config_read_word(tuple, 0xC) as u8;
-        let latency_timer = pci_config_read_word(tuple, 0xD) as u8;
+        let cacheline_size = pci_config_read_byte(tuple, 0xC);
+        let latency_timer = pci_config_read_byte(tuple, 0xD);
         let header_type = get_header_type(tuple);
-        let bist = pci_config_read_word(tuple, 0xF) as u8;
+        let bist = pci_config_read_byte(tuple, 0xF);
         let base_address_registers = [
             pci_config_read_long(tuple, 0x10),
             pci_config_read_long(tuple, 0x14),
@@ -125,11 +328,11 @@ impl PCICommonHeader {
         let subsystem_vendor_id = pci_config_read_word(tuple, 0x2C);
         let subsystem_id = pci_config_read_word(tuple, 0x2E);
         let expansion_rom_base_address = pci_config_read_long(tuple, 0x30);
-        let capabilities_pointer = pci_config_read_word(tuple, 0x34) as u8;
-        let interrupt_line = pci_config_read_word(tuple, 0x3C) as u8;
-        let interrupt_pin = pci_config_read_word(tuple, 0x3D) as u8;
-        let min_gnt = pci_config_read_word(tuple, 0x3E) as u8;
-        let max_latency = pci_config_read_word(tuple, 0x3F) as u8;
+        let capabilities_pointer = pci_config_read_byte(tuple, 0x34);
+        let interrupt_line = pci_config_read_byte(tuple, 0x3C);
+        let interrupt_pin = pci_config_read_byte(tuple, 0x3D);
+        let min_gnt = pci_config_read_byte(tuple, 0x3E);
+        let max_latency = pci_config_read_byte(tuple, 0x3F);
         Some(PCICommonHeader {
             vendor_id,
             device_id,
@@ -153,6 +356,9 @@ impl PCICommonHeader {
             interrupt_pin,
             min_gnt,
             max_latency,
+            bus,
+            device,
+            function,
         })
     }
     fn as_pci_conf(&self, bus: u8, device: u8, function: u8) -> PciConf {
@@ -205,8 +411,16 @@ fn pci_config_read_word((bus, slot, func): (u8, u8, u8), offset: u8) -> u16 {
  * Read a long (2 "word"s).
  */
 fn pci_config_read_long(tuple: (u8, u8, u8), offset: u8) -> u32 {
-    pci_config_read_word(tuple, offset) as u32
-        & (pci_config_read_word(tuple, offset+2) as u32) << 16
+    let a = pci_config_read_word(tuple, offset) as u32;
+    let b = pci_config_read_word(tuple, offset+2) as u32;
+    a | (b << 16)
+}
+fn pci_config_read_byte(tuple: (u8, u8, u8), offset: u8) -> u8 {
+    return if offset % 2 == 1 {
+        pci_config_read_word(tuple, offset-1) >> 8
+    } else {
+        pci_config_read_word(tuple, offset)
+    } as u8
 }
 
 fn pci_get_vendor_id(tuple: (u8, u8, u8)) -> Option<u16> {
@@ -215,17 +429,75 @@ fn pci_get_vendor_id(tuple: (u8, u8, u8)) -> Option<u16> {
     if vendor != 0xFFFF { Some(vendor) } else { None }
 }
 fn get_header_type(tuple: (u8, u8, u8)) -> u8 {
-    let header = pci_config_read_word(tuple, 0xe) as u8;
-    header
+    pci_config_read_byte(tuple, 0xe)
 }
 fn pci_get_device_id(bus: u8, slot: u8) -> u16 {
-    let device = pci_config_read_word((bus, slot, 0), 2);
-    device
+    pci_config_read_word((bus, slot, 0), 2)
 }
 fn get_revision_id(tuple: (u8, u8, u8)) -> u8 {
-    let revision = pci_config_read_word(tuple, 8);
-    revision as u8
+    pci_config_read_byte(tuple, 8)
 }
+pub fn enable_command_bus_master(hdr: &mut PCICommonHeader) {
+    hdr.command |= COMMAND_BUS_MASTER;
+}
+pub fn disable_intr(hdr: &mut PCICommonHeader) {
+    hdr.command |= COMMAND_INTERRUPT_DISABLE;
+}
+
+pub fn enable_intr(hdr: &mut PCICommonHeader) {
+    hdr.command &= !COMMAND_INTERRUPT_DISABLE;
+}
+/* Get the "num"th bit of "bits", starting from 0.  */
+macro_rules! bit {
+    ($bits:expr, $num:expr) => { $bits & (1 << $num) != 0 }
+}
+
+
+fn pci_status(status: u16) {
+    println!("Cap: {} 66MHz: {} FastB2B: {} MParityErr: {} DEVSEL={} SifTAbort: {} RecTAbort: {} RecMAbort: {} SigSysError: {} ParityErr {}",
+    bit!(status, 4),
+    bit!(status, 5),
+    bit!(status, 7),
+    bit!(status, 8),
+    match (status >> 9) & 0xb11 {
+        0b00 => {"Fast"},
+        0b01 => {"Medium"},
+        0b10 => {"Slow"},
+        _ => {"Unknown"},
+    },
+    bit!(status, 11),
+    bit!(status, 12),
+    bit!(status, 13),
+    bit!(status, 14),
+    bit!(status, 15),
+    );
+}
+
+// Also known as the command register.
+fn pci_control(control: u16) {
+    println!("I/O space: {}", bit!(control, 0));
+    println!("MemSpace: {}", bit!(control, 1));
+    println!("BusMaster: {}", bit!(control, 2));
+    println!("SpecCycle: {}", bit!(control, 3));
+    println!("memory WInv: {}", bit!(control, 4));
+    println!("VGASnoop: {}", bit!(control, 5));
+    println!("ParErr: {}", bit!(control, 6));
+    println!("SERR#: {}", bit!(control, 8));
+    println!("FastB2B: {}", bit!(control, 9));
+    println!("IntOff: {}", bit!(control, 10));
+}
+
+
+fn command_and_status_registers(hdr: &mut PCICommonHeader) {
+    println!("Cap ptr: {:x}", hdr.capabilities_pointer);
+    println!("== Command Register ==");
+    pci_control(hdr.command);
+    println!("== Status Register ==");
+    pci_status(hdr.status);
+    println!("intr: line {} pin {}", hdr.interrupt_line, hdr.interrupt_pin);
+    println!("HDR {:#x?}", hdr);
+}
+
 fn check_device(bus: u8, device: u8) {
     let vendor_id = pci_get_vendor_id((bus, device, 0));
     if vendor_id.is_none() {
@@ -234,30 +506,30 @@ fn check_device(bus: u8, device: u8) {
     let header_type = get_header_type((bus, device, 0));
     if (header_type & 0x80) != 0 {
         for func in 1..8 {
-            let dev = PCICommonHeader::from(bus, device, func);
+            let dev = &mut PCICommonHeader::from(bus, device, func);
             if let Some(dev) = dev {
-                println!("{}", dev);
+                info_headers((bus, device, func), dev.capabilities_pointer, dev);
                 let mut pci_confs = PCI_CONFS.lock();
                 pci_confs.push(dev.as_pci_conf(bus, device, func));
             }
         }
     } else {
-        let dev = PCICommonHeader::from(bus, device, 0);
+        let dev = &mut PCICommonHeader::from(bus, device, 0);
         if let Some(dev) = dev {
-            println!("{}", dev);
+            info_headers((bus, device, 0), dev.capabilities_pointer, dev);
             let mut pci_confs = PCI_CONFS.lock();
             pci_confs.push(dev.as_pci_conf(bus, device, 0));
         }
     }
 }
 fn get_prog_if(tuple: (u8, u8, u8)) -> u8 {
-    (pci_config_read_word(tuple, 5)) as u8
+    pci_config_read_byte(tuple, 0x9)
 }
 fn get_subclass(tuple: (u8, u8, u8)) -> u8 {
-    (pci_config_read_word(tuple, 6)) as u8
+    (pci_config_read_word(tuple, 0xa)) as u8
 }
 fn get_base_class(tuple: (u8, u8, u8)) -> u8 {
-    (pci_config_read_word(tuple, 7)) as u8
+    pci_config_read_byte(tuple, 0xb)
 }
 
 fn check_bus(bus: u8) {
@@ -273,7 +545,7 @@ fn check_function(tuple: (u8, u8, u8)) -> (u8, u8) {
     // 0x6 == bridge, 0x4 == PCI-to-PCI bridge
     // PCI-to-PCI bridge header == 0x1
     if base_class == 0x6 && subclass == 0x4 && header == 0x1 {
-        let secondary_bus = (pci_config_read_word(tuple, 0x15) >> 8) as u8;
+        let secondary_bus = pci_config_read_byte(tuple, 0x15);
         check_bus(secondary_bus);
     }
     (base_class, subclass)

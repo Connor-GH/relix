@@ -39,7 +39,7 @@ pub extern "C" fn read_kernel_symbols() {
     file.read(buf);
     let vec: Vec<u8> = buf.iter().map(|c| *c as u8).collect();
     let str_buf: &str = core::str::from_utf8(vec.as_slice()).expect("Failed to make string");
-    let address = str_buf.trim().parse().unwrap_or(0);
+    let _address = str_buf.trim().parse().unwrap_or(0);
 
 
 

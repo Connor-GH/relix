@@ -12,7 +12,7 @@
 #define MAXOPBLOCKS 10U // max # of blocks any FS op writes
 #define LOGSIZE (MAXOPBLOCKS * 3U) // max data blocks in on-disk log
 #define NBUF (MAXOPBLOCKS * 3U) // size of disk block cache
-#define FSSIZE (10 * 1024U) // size of file system in blocks
+#define FSSIZE (10 * 2048U) // size of file system in blocks
 #define MAXGROUPS 32 // maximum groups there can be
 #define MAX_USERNAME 256
 #define MAX_PASSWD 128

@@ -395,7 +395,7 @@ pub extern "C" fn __ubsan_handle_out_of_bounds(data: *const COutOfBoundsData, in
     println!("array_type {} {} {}", array_type.type_kind, array_type.type_info,
                 unsafe { core::ffi::CStr::from_ptr(array_type.type_name.as_ptr()) }.to_str().unwrap() );
     println!("tried index {}", index);
-    print_location(&unsafe { &*data }.location);
+    print_location(&data.location);
 }
 #[unsafe(no_mangle)]
 pub extern "C" fn __ubsan_handle_out_of_bounds_abort(_data: *const COutOfBoundsData, _index: u64) {

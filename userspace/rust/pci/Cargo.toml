@@ -1,0 +1,10 @@
+[package]
+name = "pci"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["staticlib"]
+[dependencies]
+pci-ids = "0.2.5"
+userspace_bindings = { path = "../userspace_bindings", version = "0.1.0" }

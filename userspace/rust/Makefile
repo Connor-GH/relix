@@ -1,7 +1,7 @@
 USER_RUST_DIR = $(UDIR)/rust
 
 FULL_BIN = $(realpath $(BIN))
-USER_RUST_MODULES = gui
+USER_RUST_MODULES = gui pci
 USER_RUST_OBJ = $(foreach module, $(USER_RUST_MODULES), $(FULL_BIN)/lib$(module).a)
 
 USERL_RUST_FLAGS =

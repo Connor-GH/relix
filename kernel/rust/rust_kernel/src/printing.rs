@@ -1,4 +1,3 @@
-use bindings::console::consputc;
 use bindings::uart::uartputc;
 use core::ffi::c_int;
 use spin::Mutex;

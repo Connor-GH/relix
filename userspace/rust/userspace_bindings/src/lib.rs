@@ -48,7 +48,7 @@ pub use core::fmt::Write;
 pub fn print(args: core::fmt::Arguments) {
     CONSOLE_WRITER.lock().write_fmt(args).unwrap();
 }
-mod printing {
+pub mod printing {
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::printing::print(format_args!($($arg)*)))

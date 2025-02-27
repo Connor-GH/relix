@@ -11,6 +11,7 @@ pub struct RtcDate {
 const fn is_leap_year(year: u64) -> bool {
     year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
 }
+#[allow(dead_code)]
 const fn day_of_year(year: u64, month: u64, day: u64) -> u64 {
     let month = if !(month >= 1 && month <= 12) {
         12
@@ -26,18 +27,22 @@ const fn day_of_year(year: u64, month: u64, day: u64) -> u64 {
     day_of_year
 }
 
+#[allow(dead_code)]
 const fn days_in_year(year: u64) -> u64 {
     365 + (is_leap_year(year) as u64)
 }
+#[allow(dead_code)]
 const fn floor_div_by<const DIVISOR: u64>(dividend: u64) -> u64 {
     assert!(DIVISOR > 1);
     dividend / DIVISOR
 }
 
+#[allow(dead_code)]
 const fn mod_zeroes_in_range<const POSITIVE_MOD: u64>(begin: u64, end: u64) -> u64 {
     floor_div_by::<POSITIVE_MOD>(end - 1) - floor_div_by::<POSITIVE_MOD>(begin - 1)
 }
 
+#[allow(dead_code)]
 const fn years_to_days_since_epoch(year: u64) -> u64 {
     let begin_year: u64;
     let end_year: u64;
@@ -59,12 +64,15 @@ const fn years_to_days_since_epoch(year: u64) -> u64 {
     days + ((extra_leap_days as i64 * leap_sign) as u64)
 }
 
+#[allow(dead_code)]
 const fn days_since_epoch(year: u64, month: u64, day: u64) -> u64 {
     years_to_days_since_epoch(year) + day_of_year(year, month, day)
 }
+#[allow(dead_code)]
 const fn round_down(value: f64) -> u64 {
     value as u64
 }
+#[allow(dead_code)]
 const fn seconds_since_epoch_to_year(seconds: u64) -> u64 {
     const SECONDS_PER_YEAR: f64 = 60.0 * 60.0 * 24.0 * 365.2425;
     let years_since_epoch = seconds as f64 / SECONDS_PER_YEAR;

@@ -3,20 +3,17 @@
 #include <assert.h>
 #include <stddef.h>
 
-#pragma GCC diagnostic ignored "-Wattributes"
-#pragma GCC diagnostic push
-static void __attribute__((optnone)) __attribute__((optimize("O0")))
-nulltest(void)
+static void
+nulltest(int zero)
 {
-	volatile int *ptr = NULL;
+	volatile int *ptr = (int *)((size_t)zero);
 	*ptr = 6;
 	assert(*ptr == 6);
 }
 int
-main(void)
+main(int argc, char **argv)
 {
-	nulltest();
+	nulltest(argc-1);
 	fprintf(stderr, "Tests passed! (This is not a good thing!)\n");
 	return 1;
 }
-#pragma GCC diagnostic pop

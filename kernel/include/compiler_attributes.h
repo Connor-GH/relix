@@ -8,6 +8,19 @@
 #error "Unknown compiler!"
 #endif
 
+#ifdef __CHECKER__
+#define __must_hold(x) __attribute__((context(x, 1, 1)))
+#define __acquires(x) __attribute__((context(x, 0, 1)))
+#define __releases(x) __attribute__((context(x, 1, 0)))
+#define __acquire(x) __context__(x, 1)
+#define __release(x) __context__(x, -1)
+#else
+#define __must_hold(x)
+#define __acquires(x)
+#define __releases(x)
+#define __acquire(x)
+#define __release(x)
+#endif
 #define __always_inline inline __attribute__((__always_inline__))
 // this function does not get called often.
 #define __cold __attribute__((__cold__))

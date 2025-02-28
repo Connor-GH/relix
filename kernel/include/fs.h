@@ -108,13 +108,13 @@ inode_dup(struct inode *);
 void
 inode_init(dev_t dev);
 void
-inode_lock(struct inode *);
+inode_lock(struct inode *ip) __acquires(&ip->lock);
 void
 inode_put(struct inode *);
 void
-inode_unlock(struct inode *);
+inode_unlock(struct inode *ip) __releases(&ip->lock);
 void
-inode_unlockput(struct inode *);
+inode_unlockput(struct inode *ip) __releases(&ip->lock);
 void
 inode_update(struct inode *);
 int
@@ -124,10 +124,10 @@ namei(const char *);
 struct inode *
 nameiparent(const char *, char *);
 ssize_t
-inode_read(struct inode *, char *, uint64_t, uint64_t);
+inode_read(struct inode *ip, char *, uint64_t, uint64_t) __must_hold(&ip->lock);
 void
-inode_stat(struct inode *, struct stat *);
+inode_stat(struct inode *ip, struct stat *) __must_hold(&ip->lock);
 ssize_t
-inode_write(struct inode *, char *, uint64_t, uint64_t);
+inode_write(struct inode *ip, char *, uint64_t, uint64_t) __must_hold(&ip->lock);
 #endif
 #endif

@@ -34,30 +34,30 @@ time_t ticks;
 static void
 decipher_page_fault_error_code(uint64_t error_code)
 {
-	cprintf("This error code was caused for the following reasons: \n");
+	uart_cprintf("This error code was caused for the following reasons: \n");
 	if ((error_code & PAGE_FAULT_PRESENT) != PAGE_FAULT_PRESENT) {
-		cprintf("The present bit is not set.\n");
+		uart_cprintf("The present bit is not set.\n");
 	}
 	if (error_code & PAGE_FAULT_WRITE) {
-		cprintf("Caused by a write.\n");
+		uart_cprintf("Caused by a write.\n");
 	}
 	if (error_code & PAGE_FAULT_USER) {
-		cprintf("CPL was set to 3 (user mode).\n");
+		uart_cprintf("CPL was set to 3 (user mode).\n");
 	}
 	if (error_code & PAGE_FAULT_RESERVED_WRITE) {
-		cprintf("A reserved bit was set to one.\n");
+		uart_cprintf("A reserved bit was set to one.\n");
 	}
 	if (error_code & PAGE_FAULT_INSN_FETCH) {
-		cprintf("Caused by an instruction fetch.\n");
+		uart_cprintf("Caused by an instruction fetch.\n");
 	}
 	if (error_code & PAGE_FAULT_PROT_KEY_VIOLATION) {
-		cprintf("Caused by a Protection Key violation.\n");
+		uart_cprintf("Caused by a Protection Key violation.\n");
 	}
 	if (error_code & PAGE_FAULT_SHADOW_STACK) {
-		cprintf("Caused by a shadow stack access.\n");
+		uart_cprintf("Caused by a shadow stack access.\n");
 	}
 	if (error_code & PAGE_FAULT_SGX) {
-		cprintf("Caused by an SGX violation.\n");
+		uart_cprintf("Caused by an SGX violation.\n");
 	}
 }
 
@@ -105,18 +105,18 @@ trap(struct trapframe *tf)
 		break;
 	case T_IRQ0 + 7:
 	case T_IRQ0 + IRQ_SPURIOUS:
-		cprintf("cpu%d: spurious interrupt at %#lx:%#lx\n", my_cpu_id(), tf->cs,
+		uart_cprintf("cpu%d: spurious interrupt at %#lx:%#lx\n", my_cpu_id(), tf->cs,
 						tf->eip);
 		lapiceoi();
 		break;
 	case T_ILLOP:
-		cprintf("Illegal instruction\n");
+		uart_cprintf("Illegal instruction\n");
 		if ((tf->cs & 3) == DPL_USER) {
 			kill(myproc()->killed, SIGILL);
 		}
 		break;
 	case T_GPFLT:
-		cprintf("General protection fault\n");
+		uart_cprintf("General protection fault\n");
 		if ((tf->cs & 3) == DPL_USER) {
 			kill(myproc()->killed, SIGSEGV);
 		} else {
@@ -152,12 +152,12 @@ trap(struct trapframe *tf)
 	default:
 		if (myproc() == 0 || (tf->cs & 3) == 0) {
 			// In kernel, it must be our mistake.
-			cprintf("unexpected trap %ld from cpu %d eip %lx (cr2=%#lx)\n",
+			uart_cprintf("unexpected trap %ld from cpu %d eip %lx (cr2=%#lx)\n",
 							tf->trapno, my_cpu_id(), tf->eip, rcr2());
 			panic("trap");
 		}
 		// In user space, assume process misbehaved.
-		cprintf("pid %d %s: trap %ld err %ld on cpu %d "
+		uart_cprintf("pid %d %s: trap %ld err %ld on cpu %d "
 						"eip %#lx addr %#lx--kill proc\n",
 						myproc()->pid, myproc()->name, tf->trapno, tf->err, my_cpu_id(),
 						tf->eip, rcr2());

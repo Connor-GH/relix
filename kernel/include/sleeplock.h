@@ -13,9 +13,9 @@ struct sleeplock {
 	int pid; // Process holding lock
 };
 void
-acquiresleep(struct sleeplock *);
+acquiresleep(struct sleeplock *s) __acquires(s);
 void
-releasesleep(struct sleeplock *);
+releasesleep(struct sleeplock *s) __releases(s);
 int
 holdingsleep(struct sleeplock *);
 void

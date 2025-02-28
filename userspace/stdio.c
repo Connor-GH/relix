@@ -540,10 +540,10 @@ clearerr(FILE *stream)
 	}
 }
 
-const char *
+char *
 strerror(int err_no)
 {
-	return errno_codes[err_no];
+	return (char *)errno_codes[err_no];
 }
 int
 remove(const char *pathname)

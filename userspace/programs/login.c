@@ -1,5 +1,4 @@
-#include <kernel/include/proc.h>
-#include <kernel/include/param.h>
+#include <sys/param.h>
 #include <auth.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,8 +10,6 @@
 int
 main(void)
 {
-	struct cred cred;
-	(void)cred;
 	char username[MAX_USERNAME];
 	char passwd[MAX_PASSWD];
 	int uid = -1;
@@ -50,8 +47,6 @@ try_again:
 	if (strcmp(passwd, actual_password) == 0) {
 		fprintf(stdout, "Password is correct!\n");
 		free(actual_password);
-		cred.uid = uid;
-		cred.gid = uid;
 		setuid(uid);
 		char *const sh_argv[] = { "/bin/sh", 0 };
 		execv("/bin/sh", sh_argv);

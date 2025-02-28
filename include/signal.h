@@ -20,5 +20,7 @@ sigsuspend(const sigset_t *mask);
 int
 sigaction(int signum, const struct sigaction *restrict act,
 		struct sigaction *restrict oldact);
+void
+psignal(int sig, const char *s);
 #endif
 

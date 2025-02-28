@@ -21,7 +21,7 @@ ui_pow(unsigned int base, unsigned int power)
 static size_t
 floor_log2(size_t n)
 {
-	return 31U - __builtin_clzl(n);
+	return (sizeof(size_t) * 8 - 1) - __builtin_clzl(n);
 }
 
 // so satisfying.

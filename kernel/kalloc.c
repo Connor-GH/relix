@@ -68,7 +68,7 @@ freerange(void *vstart, void *vend)
 // which normally should have been returned by a
 // call to kpage_alloc().	(The exception is when
 // initializing the allocator; see kinit above.)
-__nonnull(1) void kpage_free(char *v)
+__nonnull(1) void kpage_free(char *v) __releases(kpage)
 {
 	pushcli();
 	struct run *r;
@@ -89,13 +89,14 @@ __nonnull(1) void kpage_free(char *v)
 	//if (kmem.use_lock)
 	release(&kmem.lock[id]);
 	popcli();
+	__release(kpage);
 }
 
 // Allocate one 4096-byte page of physical memory.
 // Returns a pointer that the kernel can use.
 // Returns 0 if the memory cannot be allocated.
 char *
-kpage_alloc(void)
+kpage_alloc(void) __acquires(kpage)
 {
 	pushcli();
 	int id = my_cpu_id();
@@ -123,6 +124,7 @@ kpage_alloc(void)
 	}
 
 	popcli();
+	__acquire(kpage);
 	return (char *)r;
 }
 
@@ -142,7 +144,7 @@ static Header base;
 static Header *freep;
 
 void
-kfree(void *ap)
+kfree(void *ap) __releases(kmem)
 {
 	Header *bp, *p;
 
@@ -156,14 +158,17 @@ kfree(void *ap)
 	if (bp + bp->size == p->ptr) {
 		bp->size += p->ptr->size;
 		bp->ptr = p->ptr->ptr;
-	} else
+	} else {
 		bp->ptr = p->ptr;
+	}
 	if (p + p->size == bp) {
 		p->size += bp->size;
 		p->ptr = bp->ptr;
-	} else
+	} else {
 		p->ptr = bp;
 	freep = p;
+	}
+	__release(kmem);
 }
 
 static Header *
@@ -182,7 +187,7 @@ morecore(__attribute__((unused)) size_t nu)
 }
 
 void *
-kmalloc(size_t nbytes)
+kmalloc(size_t nbytes) __acquires(kmem)
 {
 	Header *p, *prevp;
 	size_t nunits;
@@ -204,6 +209,7 @@ kmalloc(size_t nbytes)
 				p->size = nunits;
 			}
 			freep = prevp;
+			__acquire(kmem);
 			return (void *)(p + 1);
 		}
 		if (p == freep)

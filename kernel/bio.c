@@ -69,10 +69,8 @@ block_init(void)
 // Look through buffer cache for block on device dev.
 // If not found, allocate a buffer.
 // In either case, return locked buffer.
-static size_t i = 0;
-
 static struct buf *
-block_get(dev_t dev, uint64_t blockno)
+block_get(dev_t dev, uint64_t blockno) __acquires(&b->lock)
 {
 	struct buf *b;
 	size_t hi = hash(blockno);
@@ -103,12 +101,8 @@ block_get(dev_t dev, uint64_t blockno)
 	}
 	release(&block_cache.bucket_lock[hi]);
 	// Find Recycle the least recently used (LRU) unused buffer.
-	if (i >= min(NBUCKET, ncpu))
-		i = 0;
-	for (; i < min(NBUCKET, ncpu); i++) {
-		// optimization: skip already checked hashed blockno
-		if (i == hi)
-			continue;
+	for (size_t j = 0; j < min(NBUCKET, ncpu); j++) {
+		size_t i = (hi + j) % min(NBUCKET, ncpu);
 		acquire(&block_cache.bucket_lock[i]);
 		for (b = block_cache.bucket[i].next; b != &block_cache.bucket[i]; b = b->next) {
 			if (b->refcnt == 0 && (b->flags & B_DIRTY) == 0) {
@@ -130,7 +124,7 @@ block_get(dev_t dev, uint64_t blockno)
 
 // Return a locked buf with the contents of the indicated block.
 struct buf *
-block_read(dev_t dev, uint64_t blockno)
+block_read(dev_t dev, uint64_t blockno) __acquires(&b->lock)
 {
 	struct buf *b;
 	b = block_get(dev, blockno);
@@ -142,7 +136,7 @@ block_read(dev_t dev, uint64_t blockno)
 
 // Write b's contents to disk.  Must be locked.
 void
-block_write(struct buf *b)
+block_write(struct buf *b) __must_hold(&b->lock)
 {
 	kernel_assert(holdingsleep(&b->lock));
 	b->flags |= B_DIRTY;
@@ -152,7 +146,7 @@ block_write(struct buf *b)
 // Release a locked buffer.
 // Move to the head of the most-recently-used list.
 void
-block_release(struct buf *b)
+block_release(struct buf *b) __releases(&b->lock)
 {
 	kernel_assert(holdingsleep(&b->lock));
 

@@ -22,7 +22,7 @@ initlock(struct spinlock *lk, char *name)
 // Holding a lock for a long time may cause
 // other CPUs to waste time spinning to acquire it.
 void
-acquire(struct spinlock *lk)
+acquire(struct spinlock *lk) __acquires(lk)
 {
 	pushcli(); // disable interrupts to avoid deadlock.
 	if (holding(lk))
@@ -31,6 +31,7 @@ acquire(struct spinlock *lk)
 
 	while (__sync_lock_test_and_set(&lk->locked, 1) != 0)
 		;
+	__acquire(lk);
 	// Tell the C compiler and the processor to not move loads or stores
 	// past this point, to ensure that the critical section's memory
 	// references happen after the lock is acquired.
@@ -42,7 +43,7 @@ acquire(struct spinlock *lk)
 
 // Release the lock.
 void
-release(struct spinlock *lk)
+release(struct spinlock *lk) __releases(lk)
 {
 	kernel_assert(holding(lk));
 
@@ -60,6 +61,7 @@ release(struct spinlock *lk)
 	// This code can't use a C assignment, since it might
 	// not be atomic. A real OS would use C atomics here.
 	__sync_lock_release(&lk->locked);
+	__release(lk);
 
 	popcli();
 }

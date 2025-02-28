@@ -333,7 +333,7 @@ inode_dup(struct inode *ip)
 // Lock the given inode.
 // Reads the inode from disk if necessary.
 void
-inode_lock(struct inode *ip)
+inode_lock(struct inode *ip) __acquires(&ip->lock)
 {
 	struct buf *bp;
 	struct dinode *dip;
@@ -368,7 +368,7 @@ inode_lock(struct inode *ip)
 
 // Unlock the given inode.
 void
-inode_unlock(struct inode *ip)
+inode_unlock(struct inode *ip) __releases(&ip->lock)
 {
 	if (ip == 0 || ip->ref < 1)
 		panic("inode_unlock");
@@ -410,7 +410,7 @@ inode_put(struct inode *ip)
 
 // Common idiom: unlock, then put.
 void
-inode_unlockput(struct inode *ip)
+inode_unlockput(struct inode *ip) __releases(&ip->lock)
 {
 	inode_unlock(ip);
 	inode_put(ip);
@@ -425,8 +425,10 @@ inode_unlockput(struct inode *ip)
 
 // Return the disk block address of the nth block in inode ip.
 // If there is no such block, bmap allocates one.
+
+// Caller must hold ip->lock.
 static uintptr_t
-bmap(struct inode *ip, uint64_t bn)
+bmap(struct inode *ip, uint64_t bn) __must_hold(&ip->lock)
 {
 	uintptr_t addr, *a;
 	struct buf *bp;
@@ -494,8 +496,6 @@ bmap(struct inode *ip, uint64_t bn)
 static void
 inode_truncate(struct inode *ip)
 {
-	// NOTE: change the a and a2 pointers to uintptr_t
-	// if/when BSIZE increases to 4096+
 	struct buf *bp;
 	uintptr_t *a;
 
@@ -556,7 +556,7 @@ inode_truncate(struct inode *ip)
 // Copy stat information from inode.
 // Caller must hold ip->lock.
 void
-inode_stat(struct inode *ip, struct stat *st)
+inode_stat(struct inode *ip, struct stat *st) __must_hold(&ip->lock)
 {
 	kernel_assert(holdingsleep(&ip->lock));
 	st->st_dev = ip->dev;
@@ -574,7 +574,7 @@ inode_stat(struct inode *ip, struct stat *st)
 // Read data from inode.
 // Caller must hold ip->lock.
 ssize_t
-inode_read(struct inode *ip, char *dst, uint64_t off, uint64_t n)
+inode_read(struct inode *ip, char *dst, uint64_t off, uint64_t n) __must_hold(&ip->lock)
 {
 	kernel_assert(holdingsleep(&ip->lock));
 	uint64_t tot, m;
@@ -603,7 +603,7 @@ inode_read(struct inode *ip, char *dst, uint64_t off, uint64_t n)
 // Write data to inode.
 // Caller must hold ip->lock.
 ssize_t
-inode_write(struct inode *ip, char *src, uint64_t off, uint64_t n)
+inode_write(struct inode *ip, char *src, uint64_t off, uint64_t n) __must_hold(&ip->lock)
 {
 	kernel_assert(holdingsleep(&ip->lock));
 	uint64_t tot, m;
@@ -647,7 +647,7 @@ namecmp(const char *s, const char *t)
 // If found, set *poff to byte offset of entry.
 // Caller needs to hold dp->lock.
 struct inode *
-dirlookup(struct inode *dp, const char *name, uint64_t *poff)
+dirlookup(struct inode *dp, const char *name, uint64_t *poff) __must_hold(&dp->lock)
 {
 	kernel_assert(holdingsleep(&dp->lock));
 	uint32_t inum;

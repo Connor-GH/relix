@@ -579,13 +579,14 @@ kill(pid_t pid, int signal)
 	acquire(&ptable.lock);
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
 		if (p->pid == pid) {
+			p->last_signal = signal;
+
 			if (signal == SIGFPE || signal == SIGSEGV || signal == SIGBUS ||
 				signal == SIGILL || signal == SIGKILL || p->sig_handlers[signal] == SIG_DFL) {
 				p->killed = 1;
 			} else {
 				copy_signal_to_stack(p, signal);
 			}
-			p->last_signal = signal;
 			// Wake process from sleep if necessary.
 			if (p->state == SLEEPING)
 				p->state = RUNNABLE;

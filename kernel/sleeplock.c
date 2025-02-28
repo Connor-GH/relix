@@ -14,7 +14,7 @@ initsleeplock(struct sleeplock *lk, char *name)
 }
 
 void
-acquiresleep(struct sleeplock *lk)
+acquiresleep(struct sleeplock *lk) __acquires(lk)
 {
 	acquire(&lk->lk);
 	while (lk->locked) {
@@ -26,7 +26,7 @@ acquiresleep(struct sleeplock *lk)
 }
 
 void
-releasesleep(struct sleeplock *lk)
+releasesleep(struct sleeplock *lk) __releases(lk)
 {
 	acquire(&lk->lk);
 	lk->locked = 0;

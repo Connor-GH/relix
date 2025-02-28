@@ -10,6 +10,10 @@ int
 strcmp(const char *, const char *);
 int
 strncmp(const char *p, const char *q, size_t n);
+int
+strcasecmp(const char *p, const char *q);
+int
+strncasecmp(const char *p, const char *q, size_t n);
 char *
 strncpy(char *s, const char *t, size_t n);
 char *
@@ -36,6 +40,9 @@ strspn(const char *s1, const char *s2);
 char *
 strncat(char *dst, const char *src, size_t n);
 
+char *
+strsignal(int sig);
+
 void *
 memset(void *dst, int c, size_t n);
 int
@@ -44,7 +51,7 @@ void *
 memmove(void *dst, const void *src, size_t n);
 void *
 memcpy(void *dst, const void *src, size_t n);
-const char *
+char *
 strerror(int err_no);
 char *
 strtok(char *restrict str, const char *restrict delim);

@@ -1,7 +1,12 @@
 #pragma once
 #ifndef USE_HOST_TOOLS
 #include <stdint.h>
+#else
+#undef __always_inline
+#undef __nonnull
 #endif
+
+#include "compiler_attributes.h"
 // Mutual exclusion lock.
 struct spinlock {
 	uint32_t locked; // Is the lock held?
@@ -13,7 +18,7 @@ struct spinlock {
 		// that locked the lock.
 };
 void
-acquire(struct spinlock *);
+acquire(struct spinlock *s) __acquires(s);
 void
 getcallerpcs(void *, uintptr_t *);
 int
@@ -21,7 +26,7 @@ holding(struct spinlock *);
 void
 initlock(struct spinlock *, char *);
 void
-release(struct spinlock *);
+release(struct spinlock *s) __releases(s);
 void
 pushcli(void);
 void

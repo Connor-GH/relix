@@ -59,14 +59,15 @@ fdopendir(int fd)
 	dirp->fd = fd;
 	ll->prev = NULL;
 
-	while (read(fd, &de, sizeof(de)) == sizeof(de) && strcmp(de.d_name, "") != 0) {
+	while (read(fd, &de, sizeof(de)) == sizeof(de) &&
+				 strcmp(de.d_name, "") != 0) {
 		ll->data = de;
 		ll->next = malloc(sizeof(*ll));
 		ll->next->prev = ll;
 		ll = ll->next;
 	}
 	ll->next = NULL;
-	ll->data = (struct dirent){0, ""};
+	ll->data = (struct dirent){ 0, "" };
 
 	// "Rewind" dir
 	while (ll->prev != NULL) {
@@ -79,7 +80,6 @@ fdopendir(int fd)
 struct dirent *
 readdir(DIR *dirp)
 {
-
 	if (dirp == NULL || dirp->list == NULL) {
 		errno = EBADF;
 		return NULL;
@@ -165,7 +165,7 @@ strtoll(const char *restrict s, char **restrict endptr, int base)
 		if (strncmp(s + i, "0x", 2) == 0 || strncmp(s + i, "0X", 2) == 0) {
 			base = 16;
 			i += 2;
-		// Octal.
+			// Octal.
 		} else if (strncmp(s + i, "0", 1) == 0) {
 			i++;
 			base = 8;
@@ -179,8 +179,9 @@ strtoll(const char *restrict s, char **restrict endptr, int base)
 		}
 		return num;
 	} else if (base <= 36) {
-		while (s[i] != '\0' && (('0' <= s[i] && s[i] <= '9') ||
-			('a' <= s[i] && s[i] <= 'z') || ('A' <= s[i] && s[i] <= 'Z'))) {
+		while (s[i] != '\0' &&
+					 (('0' <= s[i] && s[i] <= '9') || ('a' <= s[i] && s[i] <= 'z') ||
+						('A' <= s[i] && s[i] <= 'Z'))) {
 			if ('0' <= s[i] && s[i] <= '9')
 				num = num * base + s[i++] - '0';
 			if ('a' <= s[i] && s[i] <= 'z') {
@@ -196,7 +197,6 @@ strtoll(const char *restrict s, char **restrict endptr, int base)
 	}
 	errno = EINVAL;
 	return 0;
-
 }
 
 long
@@ -295,7 +295,8 @@ setjmp(jmp_buf env)
 void __attribute__((noreturn))
 longjmp(jmp_buf env, int val)
 {
-	while(1) {}
+	while (1) {
+	}
 }
 
 __attribute__((noreturn)) void
@@ -320,7 +321,6 @@ dup2(int oldfd, int newfd)
 {
 	return dup(oldfd);
 }
-
 
 extern int
 __getcwd(char *buf, size_t n);
@@ -380,4 +380,55 @@ fseek(FILE *stream, long offset, int whence)
 		errno = EBADF;
 		return -1;
 	}
+}
+
+static const char *signal_map[] = {
+	[0] = "Success",
+	[SIGHUP] = "Hangup",
+	[SIGINT] = "Interrupt",
+	[SIGQUIT] = "Quit",
+	[SIGILL] = "Illegal instruction",
+	[SIGTRAP] = "Trace/breakpoint trap",
+	[SIGABRT] = "Aborted",
+	[SIGBUS] = "Bus error",
+	[SIGFPE] = "Floating point exception",
+	[SIGKILL] = "Killed",
+	[SIGUSR1] = "User defined signal 1",
+	[SIGSEGV] = "Segmentation fault",
+	[SIGUSR2] = "User defined signal 2",
+	[SIGPIPE] = "Broken pipe",
+	[SIGALRM] = "Alarm clock",
+	[SIGTERM] = "Terminated",
+	[SIGSTKFLT] = "Stack fault",
+	[SIGCHLD] = "Child process status",
+	[SIGCONT] = "Continued (signal)",
+	[SIGSTOP] = "Stopped (signal)",
+	[SIGTSTP] = "Stopped",
+	[SIGTTIN] = "Stopped (tty input)",
+	[SIGTTOU] = "Stopped (tty output)",
+	[SIGURG] = "Urgent I/O condition",
+	[SIGXCPU] = "CPU time limit exceeded",
+	[SIGXFSZ] = "File size limit exceeded",
+	[SIGVTALRM] = "Virtual timer expired",
+	[SIGPROF] = "Profiling timer expired",
+	[SIGWINCH] = "Window changed",
+	[SIGIO] = "I/O possible",
+	[SIGPWR] = "Power failure",
+	[SIGSYS] = "Unknown system call",
+};
+
+char *
+strsignal(int sig)
+{
+	if (sig < 0)
+		return NULL;
+	if (sig >= NSIG)
+		return NULL;
+	return (char *)signal_map[sig];
+}
+
+void
+psignal(int sig, const char *s)
+{
+	fprintf(stderr, "%s: %s\n", s, strsignal(sig));
 }

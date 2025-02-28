@@ -2,14 +2,10 @@
 #include <defs.h>
 #include "drivers/memlayout.h"
 #include "drivers/mmu.h"
-#include "x86.h"
-#include "param.h"
-#include "proc.h"
 #include "kalloc.h"
 #include "console.h"
 #include "vm.h"
 #include "fs.h"
-#include "spinlock.h"
 #include <string.h>
 
 extern char data[]; // defined by kernel.ld
@@ -186,6 +182,7 @@ freevm(uintptr_t *pgdir)
 	if (pgdir == 0)
 		panic("freevm: no pgdir");
 	deallocuvm(pgdir, /*KERNBASE*/ 0x3fa00000, 0);
+	// "- 2" because of the page back pointers.
 	for (i = 0; i < NPDENTRIES - 2; i++) {
 		if (pgdir[i] & PTE_P) {
 			char *v = P2V(PTE_ADDR(pgdir[i]));

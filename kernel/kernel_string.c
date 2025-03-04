@@ -2,7 +2,7 @@
 #include <dirent.h>
 #include <stdlib.h>
 #include <string.h>
-#include "kernel/include/x86.h"
+#include "x86.h"
 #include <stddef.h>
 #include <ctype.h>
 
@@ -22,10 +22,12 @@ strcpy(char *s, const char *t)
 int
 strcmp(const char *p, const char *q)
 {
-	while (*p && *p == *q)
-		p++, q++;
-	return (uint8_t)*p - (uint8_t)*q;
+	size_t n = strlen(p);
+	if (n != strlen(q))
+		return -1;
+	return strncmp(p, q, n);
 }
+
 char *
 strstr(const char *s1, const char *s2)
 {
@@ -76,7 +78,7 @@ strlen(const char *s)
 {
 	int n;
 
-	for (n = 0; s[n]; n++)
+	for (n = 0; s && s[n]; n++)
 		;
 	return n;
 }
@@ -223,6 +225,12 @@ memmove(void *dst, const void *src, size_t n)
 }
 
 void *
+mempcpy(void *dst, const void *src, size_t n)
+{
+	return memcpy(dst, src, n) + n;
+}
+
+void *
 memcpy(void *dst, const void *src, size_t n)
 {
 	if (n % 8 == 0)
@@ -230,10 +238,23 @@ memcpy(void *dst, const void *src, size_t n)
 	else
 		return movsb((uint8_t *)dst, (uint8_t *)src, n / sizeof(uint8_t));
 }
+
 char *
-strcat(char *dst, const char *src)
+stpcpy(char *restrict dst, const char *restrict src)
 {
-	return strncat(dst, src, strlen(src) + 1);
+	char *p;
+
+	p = mempcpy(dst, src, strlen(src));
+	*p = '\0';
+
+	return p;
+}
+
+char *
+strcat(char *restrict dst, const char *restrict src)
+{
+	stpcpy(dst + strlen(dst), src);
+	return dst;
 }
 
 char *

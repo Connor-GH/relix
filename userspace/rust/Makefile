@@ -4,7 +4,7 @@ FULL_BIN = $(realpath $(BIN))
 USER_RUST_MODULES = gui pci
 USER_RUST_OBJ = $(foreach module, $(USER_RUST_MODULES), $(FULL_BIN)/lib$(module).a)
 
-USERL_RUST_FLAGS =
+USER_RUST_FLAGS = -Ctarget-feature=sse,sse2
 
 CARGO_FLAGS = -Zunstable-options --target=x86_64-unknown-none
 

@@ -50,6 +50,16 @@ int
 dup(int);
 pid_t
 getpid(void);
+pid_t
+getppid(void);
+uid_t
+getuid(void);
+uid_t
+getgid(void);
+uid_t
+geteuid(void);
+uid_t
+getegid(void);
 void *
 sbrk(int);
 unsigned int

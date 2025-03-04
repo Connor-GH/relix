@@ -1,6 +1,7 @@
 #pragma once
 #ifndef USE_HOST_TOOLS
 #include <stdint.h>
+#include <stddef.h>
 #else
 #undef __always_inline
 #undef __nonnull
@@ -21,6 +22,8 @@ void
 acquire(struct spinlock *s) __acquires(s);
 void
 getcallerpcs(void *, uintptr_t *);
+void
+getcallerpcs_with_bp(uintptr_t pcs[], uintptr_t *rbp, size_t size);
 int
 holding(struct spinlock *);
 void

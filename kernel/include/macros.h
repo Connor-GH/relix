@@ -26,3 +26,6 @@
 	})
 #define _S(x) #x
 #define STRINGIFY(x) _S(x)
+
+#define ROUND_UP(x, round_to) (((x + (round_to - 1)) / round_to) * round_to)
+#define ROUND_DOWN(x, round_to) (x / round_to * round_to)

@@ -550,9 +550,9 @@ sys_execve(void)
 	memset(envp, 0, sizeof(envp));
 	for (size_t i = 0;; i++) {
 		if (i >= NELEM(argv))
-			return -ENOEXEC;
+			return -EINVAL;
 		if (fetchuintptr_t(uargv + sizeof(uintptr_t) * i, &uarg) < 0)
-			return -ENOEXEC;
+			return -EINVAL;
 		if (uarg == 0) {
 			argv[i] = 0;
 			break;
@@ -562,9 +562,9 @@ sys_execve(void)
 	}
 	for (size_t i = 0;; i++) {
 		if (i >= NELEM(envp))
-			return -ENOEXEC;
+			return -EINVAL;
 		if (fetchuintptr_t(uenvp + sizeof(uintptr_t) * i, &uenv) < 0)
-			return -ENOEXEC;
+			return -EINVAL;
 		if (uenv == 0) {
 			envp[i] = 0;
 			break;

@@ -12,6 +12,14 @@
 #define CR0_PE 0x00000001 // Protection Enable
 #define CR0_WP 0x00010000 // Write Protect
 #define CR0_PG 0x80000000 // Paging
+#define CR0_MP (1 << 1)
+#define CR0_EM (1 << 2)
+#define CR0_TS (1 << 3)
+#define CR0_NE (1 << 5)
+
+#define CR4_OSFXSR (1 << 9)
+#define CR4_OSXMMEXCPT (1 << 10)
+#define CR4_OSXSAVE (1 << 18)
 
 #define CR4_PSE 0x00000010 // Page size extension
 

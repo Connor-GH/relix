@@ -45,9 +45,6 @@ static uintptr_t *kpgdir0;
 static uintptr_t *kpgdir1;
 
 void
-wrmsr(uint32_t msr, uint64_t val);
-
-void
 tvinit(void)
 {
 }

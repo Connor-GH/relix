@@ -58,6 +58,16 @@ sys_getpid(void)
 }
 
 size_t
+sys_getppid(void)
+{
+	struct proc *proc = myproc();
+	if (proc != NULL && proc->parent != NULL)
+		return proc->parent->pid;
+	else
+		return 1;
+}
+
+size_t
 sys_sbrk(void)
 {
 	uintptr_t addr;
@@ -170,6 +180,19 @@ sys_setuid(void)
 	myproc()->cred = cred;
 	return 0;
 }
+
+size_t
+sys_getuid(void)
+{
+	return myproc()->cred.uid;
+}
+
+size_t
+sys_getgid(void)
+{
+	return myproc()->cred.gid;
+}
+
 
 size_t
 sys_ptrace(void)

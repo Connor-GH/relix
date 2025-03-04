@@ -227,6 +227,24 @@ cpuid(uint32_t id, uint32_t count, uint32_t *a, uint32_t *b, uint32_t *c,
 											 : "0"(id), "2"(count));
 }
 
+static __always_inline uint64_t
+rdmsr(uint32_t msr)
+{
+	uint32_t hi;
+	uint32_t lo;
+   __asm__ __volatile__("rdmsr" : "=a"(lo), "=d"(hi) : "c"(msr));
+	 return (uint64_t)hi << 32 | lo;
+}
+
+static __always_inline void
+wrmsr(uint32_t msr, uint64_t val)
+{
+	uint32_t lo, hi;
+	lo = val & 0xFFFFFFFF;
+	hi = val >> 32 & 0xFFFFFFFF;
+   __asm__ __volatile__("wrmsr" : : "a"(lo), "d"(hi), "c"(msr));
+}
+
 // Layout of the trap frame built on the stack by the
 // hardware and by trapasm.S, and passed to trap().
 #ifdef X86_64

@@ -1,5 +1,9 @@
 #pragma once
 #include "compiler_attributes.h"
+#include <stddef.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include "spinlock.h"
 
 extern int echo_out;
 
@@ -19,3 +23,9 @@ void
 consoleintr(int (*)(void));
 __noreturn void
 panic(const char *);
+int
+kernel_vprintf_template(void (*put_function)(char c, char *buf),
+								 size_t (*ansi_func)(const char *),
+								 char *restrict buf, const char *fmt, va_list argp,
+								 struct spinlock *lock, bool locking,
+								 size_t print_n_chars);

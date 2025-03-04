@@ -5,6 +5,7 @@
 #include <sys/param.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -114,11 +115,12 @@ runcmd(struct cmd *cmd)
 			char *s = strtok(path, ":");
 			while (s != NULL) {
 				sprintf(str, "%s/%s", s, ecmd->argv[0]);
+				errno = 0;
 				execve(str, ecmd->argv, environ);
 				s = strtok(NULL, ":");
 			}
 		}
-		fprintf(stderr, "exec %s failed\n", ecmd->argv[0]);
+		fprintf(stderr, "exec %s failed: %s\n", ecmd->argv[0], strerror(errno));
 		break;
 
 	case REDIR:

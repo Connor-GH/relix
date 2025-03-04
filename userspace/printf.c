@@ -1,5 +1,5 @@
 #include <stdarg.h>
-#include "print.h"
+#include "printf.h"
 #include <stdbool.h>
 #include <string.h>
 #include <stddef.h>
@@ -86,12 +86,57 @@ printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 	return ret;
 }
 
+static uint64_t
+pow_10(int n)
+{
+	uint64_t result = 1;
+	for (int i = 0; i < n; i++) {
+		result *= 10;
+	}
+	return result;
+}
+
+static void
+print_string(void (*put_function)(FILE *fp, char c, char *buf), char *s,
+						 int flags, FILE *fp, char *restrict buf, int str_pad)
+{
+	if (s == 0)
+		s = "(null)";
+	size_t len;
+	if (strcmp(s, "") == 0) {
+			len = 0;
+	} else
+			len = strlen(s);
+	while (len != 0 && *s != 0) {
+		put_function(fp, *s, buf);
+		s++;
+	}
+	if (IS_SET(flags, FLAG_LJUST) && len < str_pad) {
+		for (int _ = 0; _ < str_pad - len; _++)
+			put_function(fp, ' ', buf);
+	}
+}
+
+static void
+print_double(void (*put_function)(FILE *fp, char c, char *buf), double num,
+						 int flags, FILE *fp, char *restrict buf, int str_pad, int base)
+{
+	/* Print the num before the decimal point. */
+	printint(put_function, buf, fp, (uint64_t)num, base, true, flags, 0);
+	put_function(fp, '.', buf);
+
+	double fraction = (num - (uint64_t)num);
+	fraction *= pow_10(str_pad);
+	uint64_t fraction_as_integer = (uint64_t)(fraction + 0.5);
+	printf("%0*lu", str_pad, fraction_as_integer);
+}
+
+
 // Print to the given fd. Only understands %d, %x, %p, %s.
 int
-sharedlib_vprintf_template(void (*put_function)(FILE *fp, char c, char *buf),
+__libc_vprintf_template(void (*put_function)(FILE *fp, char c, char *buf),
 								 size_t (*ansi_func)(const char *), FILE *fp,
 								 char *restrict buf, const char *fmt, va_list argp,
-								 void (*acq)(void *), void (*rel)(void *), void *lock, bool locking,
 								 size_t print_n_chars)
 {
 	char *s;
@@ -99,10 +144,8 @@ sharedlib_vprintf_template(void (*put_function)(FILE *fp, char c, char *buf),
 	int flags = 0;
 	int str_pad = 0;
 
-	if (locking)
-		acq(lock);
 	for (; fmt[i]; i++) {
-		if (print_n_chars != (size_t)(-1) && i >= print_n_chars)
+		if (i >= print_n_chars)
 			break;
 		// 'floor' character down to bottom 255 chars
 		c = fmt[i] & 0xff;
@@ -139,6 +182,10 @@ numerical_padding:
 				// soon...
 				//if (IS_SET(flags, FLAG_PADZERO)) {}
 				// str_pad = c - '0';
+				goto skip_state_reset;
+				break;
+			case '*':
+				str_pad = va_arg(argp, int);
 				goto skip_state_reset;
 				break;
 			case '#':
@@ -185,6 +232,14 @@ numerical_padding:
 				}
 				break;
 			}
+			case 'g':
+			case 'f': {
+				double d = va_arg(argp, double);
+				print_double(put_function, d, flags, fp, buf,
+								 str_pad > 0 ? str_pad : 6,
+								 IS_SET(flags, FLAG_ALTFORM) ? 16 : 10);
+				break;
+			}
 			case 'u': {
 				if (IS_SET(flags, FLAG_LONG)) {
 					long lu = va_arg(argp, unsigned long);
@@ -218,21 +273,7 @@ numerical_padding:
 			}
 			case 's': {
 				s = va_arg(argp, char *);
-				if (s == 0)
-					s = "(null)";
-				size_t len;
-				if (strcmp(s, "") == 0) {
-						len = 0;
-				} else
-						len = strlen(s);
-				while (len != 0 && *s != 0) {
-					put_function(fp, *s, buf);
-					s++;
-				}
-				if (IS_SET(flags, FLAG_LJUST) && len < str_pad) {
-					for (int _ = 0; _ < str_pad - len; _++)
-						put_function(fp, ' ', buf);
-				}
+				print_string(put_function, s, flags, fp, buf, str_pad);
 				break;
 			}
 			case 'c': {
@@ -255,7 +296,5 @@ numerical_padding:
 skip_state_reset:; // state = '%' if set
 		}
 	}
-	if (locking)
-		rel(lock);
 	return i;
 }

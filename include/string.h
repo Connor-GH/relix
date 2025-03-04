@@ -17,6 +17,8 @@ strncasecmp(const char *p, const char *q, size_t n);
 char *
 strncpy(char *s, const char *t, size_t n);
 char *
+stpcpy(char *restrict dst, const char *restrict src);
+char *
 stpncpy(char *dst, const char *src, size_t n);
 char *
 __safestrcpy(char *s, const char *t, size_t n);
@@ -25,8 +27,6 @@ __strlcpy_nostrlen(char *dst, const char *src, size_t dst_len,
 								 size_t src_len);
 size_t
 strlen(const char *s);
-char *
-strrchr(const char *str, char c);
 char *
 strrchr(const char *str, char c);
 char *
@@ -51,6 +51,8 @@ void *
 memmove(void *dst, const void *src, size_t n);
 void *
 memcpy(void *dst, const void *src, size_t n);
+void *
+mempcpy(void *dst, const void *src, size_t n);
 char *
 strerror(int err_no);
 char *

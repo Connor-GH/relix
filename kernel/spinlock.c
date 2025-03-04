@@ -71,21 +71,27 @@ void
 getcallerpcs(void *v, uintptr_t pcs[])
 {
 	uintptr_t *ebp;
-	int i;
-
 #if X86_64
 	asm volatile("mov %%rbp, %0" : "=r"(ebp));
 #else
 	ebp = (uintptr_t *)v - 2;
 #endif
-	for (i = 0; i < 10; i++) {
+	getcallerpcs_with_bp(pcs, ebp, 10);
+
+}
+void
+getcallerpcs_with_bp(uintptr_t pcs[], uintptr_t *ebp, size_t size)
+{
+	int i;
+
+	for (i = 0; i < size; i++) {
 		if (ebp == 0 || ebp < (uintptr_t *)KERNBASE ||
 				ebp == (uintptr_t *)0xffffffff)
 			break;
 		pcs[i] = ebp[1]; // saved %eip
 		ebp = (uintptr_t *)ebp[0]; // saved %ebp
 	}
-	for (; i < 10; i++)
+	for (; i < size; i++)
 		pcs[i] = 0;
 }
 

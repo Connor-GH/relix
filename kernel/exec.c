@@ -7,8 +7,10 @@
 #include "log.h"
 #include "fs.h"
 #include "console.h"
+#include <errno.h>
 #include <string.h>
 #include "kernel_assert.h"
+#include "macros.h"
 #include "vm.h"
 #include "drivers/mmu.h"
 #include "compiler_attributes.h"
@@ -47,13 +49,14 @@ __nonnull(1, 2) int execve(const char *path, char *const *argv, char *const *env
 	struct inode *ip;
 	struct Elf64_Phdr ph;
 	uintptr_t *pgdir, *oldpgdir;
+	int return_errno = 0;
 	struct proc *curproc = myproc();
 
 	begin_op();
 
 	if ((ip = namei(path)) == 0) {
 		end_op();
-		return -1;
+		return -ENOENT;
 	}
 	inode_lock(ip);
 	pgdir = 0;
@@ -81,36 +84,48 @@ __nonnull(1, 2) int execve(const char *path, char *const *argv, char *const *env
 		end_op();
 		cprintf("exec: file is not executable\n");
 		inode_unlockput(ip);
-		return -1;
+		return -EACCES;
 	}
 
 ok:
 	// Check ELF header
-	if (inode_read(ip, (char *)&elf, 0, sizeof(elf)) != sizeof(elf))
+	if (inode_read(ip, (char *)&elf, 0, sizeof(elf)) != sizeof(elf)) {
 		goto bad;
-	if (elf.magic != ELF_MAGIC_NUMBER)
+	}
+	if (elf.magic != ELF_MAGIC_NUMBER) {
 		goto bad;
+	}
 
-	if ((pgdir = setupkvm()) == 0)
+	if ((pgdir = setupkvm()) == 0) {
+		return_errno = -ENOMEM;
 		goto bad;
+	}
 
 	// Load program into memory.
 	sz = 0;
 	for (i = 0, off = elf.e_phoff; i < elf.e_phnum; i++, off += sizeof(ph)) {
-		if (inode_read(ip, (char *)&ph, off, sizeof(ph)) != sizeof(ph))
+		if (inode_read(ip, (char *)&ph, off, sizeof(ph)) != sizeof(ph)) {
 			goto bad;
+		}
 		if (ph.p_type != PT_LOAD)
 			continue;
-		if (ph.p_memsz < ph.p_filesz)
+		if (ph.p_memsz < ph.p_filesz) {
 			goto bad;
-		if (ph.p_vaddr + ph.p_memsz < ph.p_vaddr)
+		}
+		if (ph.p_vaddr + ph.p_memsz < ph.p_vaddr) {
 			goto bad;
-		if ((sz = allocuvm(pgdir, sz, ph.p_vaddr + ph.p_memsz)) == 0)
+		}
+		if ((sz = allocuvm(pgdir, sz, ph.p_vaddr + ph.p_memsz)) == 0) {
+			return_errno = -ENOMEM;
 			goto bad;
-		if (ph.p_vaddr % PGSIZE != 0)
+		}
+		if (ph.p_vaddr % PGSIZE != 0) {
 			goto bad;
-		if (loaduvm(pgdir, (char *)ph.p_vaddr, ip, ph.p_offset, ph.p_filesz) < 0)
+		}
+		if (loaduvm(pgdir, (char *)ph.p_vaddr, ip, ph.p_offset, ph.p_filesz) < 0) {
+			return_errno = -ENOMEM;
 			goto bad;
+		}
 	}
 	inode_unlockput(ip);
 	end_op();
@@ -118,16 +133,22 @@ ok:
 	// Allocate two pages at the next page boundary.
 	// Make the first inaccessible.  Use the second as the user stack.
 	sz = PGROUNDUP(sz);
-	if ((sz = allocuvm(pgdir, sz, sz + 2 * PGSIZE)) == 0)
+	if ((sz = allocuvm(pgdir, sz, sz + 4 * PGSIZE)) == 0) {
+		return_errno = -ENOMEM;
 		goto bad;
-	clearpteu(pgdir, (char *)(sz - 2 * PGSIZE));
+	}
+	clearpteu(pgdir, (char *)(sz - 4 * PGSIZE));
 	sp = sz;
 
 	// Push argument strings, prepare rest of stack in ustack.
-	if (push_user_stack(&argc, argv, ustack, pgdir, &sp, 4) < 0)
+	if (push_user_stack(&argc, argv, ustack, pgdir, &sp, 4) < 0) {
+		return_errno = -EFAULT;
 		goto bad;
-	if (push_user_stack(&envc, envp, ustack, pgdir, &sp, argc + 4 + 1) < 0)
+	}
+	if (push_user_stack(&envc, envp, ustack, pgdir, &sp, argc + 4 + 1) < 0) {
+		return_errno = -EFAULT;
 		goto bad;
+	}
 
 	/*
 	* 0 = fake address
@@ -157,8 +178,10 @@ ok:
 	myproc()->tf->rdx = ustack[3];
 #endif
 	sp -= total_mainargs_size;
-	if (copyout(pgdir, sp, ustack, total_mainargs_size) < 0)
+	if (copyout(pgdir, sp, ustack, total_mainargs_size) < 0) {
+		return_errno = -EFAULT;
 		goto bad;
+	}
 
 	// Save program name for debugging.
 	for (last = s = path; *s; s++)
@@ -171,7 +194,9 @@ ok:
 	curproc->pgdir = pgdir;
 	curproc->sz = sz;
 	curproc->tf->eip = elf.e_entry; // main
-	curproc->tf->esp = sp;
+	// The "-8" is needed for alignment to 16 bytes.
+	// Without it, we are only aligned to 8 bytes.
+	curproc->tf->esp = sp - 8;
 	memset(curproc->mmap_info, 0, sizeof(curproc->mmap_info));
 	curproc->mmap_count = 0;
 	curproc->effective_largest_sz = sz;
@@ -189,5 +214,8 @@ bad:
 		inode_unlockput(ip);
 		end_op();
 	}
-	return -1;
+	if (return_errno == 0)
+		return -ENOEXEC;
+	else
+		return return_errno;
 }

@@ -18,3 +18,8 @@
 #define F_SETFL 0x008 // expects arg
 
 #define FD_CLOEXEC 0x01
+
+#define F_OK 0
+#define X_OK 1
+#define W_OK (1 << 1)
+#define R_OK (1 << 2)

@@ -26,14 +26,14 @@
 // in other words,
 // rwx rwx rwx
 // uid gid others
-#define S_IFMT 0170000 /* These bits determine file type */
-#define S_IFDIR 0040000 /* Directory */
-#define S_IFCHR 0020000 /* Character device */
-#define S_IFBLK 0060000 /* Block device */
-#define S_IFREG 0100000 /* Regular file */
-#define S_IFIFO 0010000 /* FIFO */
-#define S_IFLNK 0120000 /* sym link */
+#define S_IFIFO  0010000 /* FIFO */
+#define S_IFCHR  0020000 /* Character device */
+#define S_IFDIR  0040000 /* Directory */
+#define S_IFBLK  0060000 /* Block device */
+#define S_IFREG  0100000 /* Regular file */
+#define S_IFLNK  0120000 /* sym link */
 #define S_IFSOCK 0140000 /* socket */
+#define S_IFMT   0170000 /* These bits determine file type */
 #define S_ISTYPE(mode, mask) (((mode) & S_IFMT) == (mask))
 
 #define S_ISDIR(mode) S_ISTYPE((mode), S_IFDIR)
@@ -47,15 +47,25 @@
 	(_Bool)(S_ISDIR(mode) || S_ISCHR(mode) || S_ISBLK(mode) || S_ISREG(mode) || \
 					S_ISFIFO(mode) || S_ISLNK(mode) || S_ISSOCK(mode))
 
+#define S_ISUID 04000
+#define S_ISGID 02000
+#define S_ISVTX 01000
+
+#define S_IRWXU 00700
 #define S_IRUSR 00400
 #define S_IWUSR 00200
 #define S_IXUSR 00100
+
+#define S_IRWXG 00070
 #define S_IRGRP 00040
 #define S_IWGRP 00020
 #define S_IXGRP 00010
+
+#define S_IRWXO 00007
 #define S_IROTH 00004
 #define S_IWOTH 00002
 #define S_IXOTH 00001
+
 struct stat {
 	dev_t st_dev;  // File system's disk device
 	uint32_t st_ino; /* u32 or u64 */ // Inode number
@@ -70,11 +80,11 @@ struct stat {
 };
 #endif
 // 0700
-#define S_IAUSR (S_IRUSR | S_IWUSR | S_IXUSR)
+#define S_IAUSR S_IRWXU
 // 0070
-#define S_IAGRP (S_IRGRP | S_IWGRP | S_IXGRP)
+#define S_IAGRP S_IRWXG
 // 0007
-#define S_IAOTH (S_IROTH | S_IWOTH | S_IXOTH)
+#define S_IAOTH S_IRWXO
 #define S_HASPERM(mode, mask) (((mode) & (mask)) == (mask))
 // 0777
 #define S_ALLPRIVS (S_IAUSR | S_IAGRP | S_IAOTH)

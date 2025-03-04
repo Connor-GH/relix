@@ -45,7 +45,10 @@
 #define SYS_umask 42
 #define SYS_sigaction 43
 #define SYS_rename 44
-#define SYSCALL_AMT 44
+#define SYS_getuid 45
+#define SYS_getgid 46
+#define SYS_getppid 47
+#define SYSCALL_AMT 47
 #ifndef __ASSEMBLER__
 #include <stddef.h>
 #include "types.h"
@@ -94,6 +97,9 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_umask] = "umask",
 	[SYS_sigaction] = "sigaction",
 	[SYS_rename] = "rename",
+	[SYS_getuid] = "getuid",
+	[SYS_getgid] = "getgid",
+	[SYS_getppid] = "getppid",
 };
 #endif
 #if defined(__KERNEL__) && !defined(__ASSEMBLER__)

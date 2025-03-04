@@ -100,6 +100,7 @@ struct proc {
 	size_t effective_largest_sz; // Largest address when including mmap
 	sighandler_t sig_handlers[__SIG_last];
 	int last_signal;
+	uint8_t fpu_state[512] __attribute__((aligned(16)));
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -142,6 +143,8 @@ int
 wait(int *);
 void
 wakeup(void *);
+void
+sleep_on_ms(time_t ms);
 void
 yield(void);
 struct proc *

@@ -20,6 +20,7 @@
 #include "syscall.h"
 #include "file.h"
 #include "fs.h"
+#include "trap.h"
 #include "compiler_attributes.h"
 #include "types.h"
 #include "kernel_signal.h"
@@ -421,7 +422,9 @@ scheduler(void)
 			switchuvm(p);
 			p->state = RUNNING;
 
+			__asm__ __volatile__("fxsave %0" : "=m" (c->proc->fpu_state));
 			swtch(&(c->scheduler), p->context);
+			__asm__ __volatile__("fxrstor %0" : : "m" (c->proc->fpu_state));
 			switchkvm();
 
 			// Process is done running for now.
@@ -643,4 +646,16 @@ procdump(void)
 		}
 		vga_cprintf("\n");
 	}
+}
+
+void
+sleep_on_ms(time_t ms)
+{
+	time_t ticks0;
+	acquire(&tickslock);
+	ticks0 = ticks;
+	while (ticks - ticks0 < ms) {
+		sleep(&ticks, &tickslock);
+	}
+	release(&tickslock);
 }

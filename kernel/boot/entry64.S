@@ -182,12 +182,3 @@ entry64mp:
   mov -16(%rax), %rsp
   jmp mpenter
 
-.global wrmsr
-wrmsr:
-  mov %rdi, %rcx     # arg0 -> msrnum
-  mov %rsi, %rax     # val.low -> eax
-  shr $32, %rsi
-  mov %rsi, %rdx     # val.high -> edx
-  wrmsr
-  retq
-

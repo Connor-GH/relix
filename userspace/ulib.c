@@ -432,3 +432,15 @@ psignal(int sig, const char *s)
 {
 	fprintf(stderr, "%s: %s\n", s, strsignal(sig));
 }
+
+uid_t
+geteuid(void)
+{
+	return getuid();
+}
+
+uid_t
+getegid(void)
+{
+	return getgid();
+}

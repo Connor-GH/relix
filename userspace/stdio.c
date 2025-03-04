@@ -1,5 +1,5 @@
 #include "kernel/include/param.h"
-#include "lib/print.h"
+#include "printf.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <limits.h>
 #include <fcntl.h>
 #include <sys/uio.h>
 #include <sys/param.h>
@@ -138,7 +139,7 @@ bad_mode:
 FILE *
 fopen(const char *restrict pathname, const char *restrict mode)
 {
-	FILE *fp = malloc(sizeof(*fp));
+	FILE *fp = malloc(sizeof(FILE));
 	if (fp == NULL)
 		return NULL;
 	fp->mode = string_to_mode(mode);
@@ -199,7 +200,7 @@ fdopen(int fd, const char *restrict mode)
 		errno = EBADF;
 		return NULL;
 	}
-	FILE *fp = malloc(sizeof(*fp));
+	FILE *fp = malloc(sizeof(FILE));
 	if (fp == NULL)
 		return NULL;
 	fp->mode = string_to_mode(mode);
@@ -340,8 +341,8 @@ ansi_noop(const char *s)
 int
 vfprintf(FILE *restrict stream, const char *restrict fmt, va_list argp)
 {
-	int ret = sharedlib_vprintf_template(fd_putc, ansi_noop, stream, NULL, fmt, argp,
-														NULL, NULL, NULL, false, -1);
+	int ret = __libc_vprintf_template(fd_putc, ansi_noop, stream, NULL, fmt, argp,
+														SIZE_MAX);
 	if (stream && stream->stdio_flush)
 		flush(stream);
 	return ret;
@@ -351,16 +352,15 @@ int
 vsnprintf(char *restrict str, size_t n, const char *restrict fmt, va_list argp)
 {
 	global_idx = 0;
-	memset(str, '\0', n);
-	return sharedlib_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp,
-														NULL, NULL, NULL, false, n);
+	return __libc_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp,
+														 n);
 }
 int
 vsprintf(char *restrict str, const char *restrict fmt, va_list argp)
 {
 	global_idx = 0;
-	return sharedlib_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp,
-														NULL, NULL, NULL, false, -1);
+	return __libc_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp,
+														SIZE_MAX);
 }
 int
 snprintf(char *restrict str, size_t n, const char *restrict fmt, ...)
@@ -389,8 +389,8 @@ vfscanf(FILE *restrict stream, const char *restrict fmt, va_list argp)
 {
 	static char static_buffer[__DIRSIZ];
 	global_idx_fgetc = 0;
-	return sharedlib_vprintf_template(static_fgetc,
-														ansi_noop, stream, static_buffer, fmt, argp, NULL, NULL, NULL, false, -1);
+	return __libc_vprintf_template(static_fgetc,
+														ansi_noop, stream, static_buffer, fmt, argp, -1);
 }
 
 int

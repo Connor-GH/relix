@@ -78,3 +78,6 @@ SYSCALL(umask) # TODO
 SYSCALL(sigsuspend) # TODO
 SYSCALL(sigaction) # TODO
 SYSCALL(rename)
+SYSCALL(getuid)
+SYSCALL(getgid)
+SYSCALL(getppid)

@@ -211,6 +211,12 @@ extern size_t
 sys_sigaction(void);
 extern size_t
 sys_rename(void);
+extern size_t
+sys_getuid(void);
+extern size_t
+sys_getgid(void);
+extern size_t
+sys_getppid(void);
 
 static size_t (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,				 [SYS__exit] = sys__exit,
@@ -233,7 +239,8 @@ static size_t (*syscalls[])(void) = {
 	[SYS_munmap] = sys_munmap,		 [SYS_signal] = sys_signal,
 	[SYS_getcwd] = sys_getcwd,		 [SYS_sigprocmask] = sys_sigprocmask,
 	[SYS_umask] = sys_umask,			 [SYS_sigaction] = sys_sigaction,
-	[SYS_rename] = sys_rename,
+	[SYS_rename] = sys_rename, 		 [SYS_getuid] = sys_getuid,
+	[SYS_getgid] = sys_getgid, 		 [SYS_getppid] = sys_getppid,
 };
 
 void

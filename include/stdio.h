@@ -8,8 +8,9 @@
 #include <stddef.h>
 #include "kernel/include/fs.h"
 
-#if defined(__ONLY_SHARE_FILE_IMPL) || defined(__USER__)
+#if defined(__USER__)
 #include <sys/types.h>
+#include <unistd.h>
 struct _IO_FILE {
 	char *write_buffer;
 	size_t write_buffer_size;
@@ -31,9 +32,6 @@ struct _IO_FILE {
 #define _IOFBF BUFFER_MODE_BLOCK
 
 typedef struct _IO_FILE FILE;
-#endif
-#if defined(__USER__)
-#include <unistd.h>
 #define BUFSIZ 512
 extern FILE *stdin;
 extern FILE *stdout;
@@ -51,12 +49,14 @@ __attribute__((format(printf, 1, 2))) int
 printf(const char *restrict fmt, ...);
 __attribute__((format(printf, 2, 3))) int
 dprintf(int fd, const char *restrict fmt, ...);
+__attribute__((format(printf, 3, 4)))
 int
 snprintf(char *restrict str, size_t n, const char *restrict fmt, ...);
 int
 vsnprintf(char *restrict str, size_t n, const char *restrict fmt, va_list argp);
 int
 vsprintf(char *restrict str, const char *restrict fmt, va_list argp);
+__attribute__((format(printf, 2, 3)))
 int
 sprintf(char *restrict str, const char *restrict fmt, ...);
 char *

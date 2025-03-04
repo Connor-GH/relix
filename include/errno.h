@@ -3,7 +3,7 @@
 #ifndef __ASSEMBLER__
 extern int errno;
 #endif
-#define MAX_ERRNO 39
+#define MAX_ERRNO 40
 #define EPERM 1 /* Operation not permitted */
 #define ENOENT 2 /* No such file or directory */
 #define ESRCH 3 /* No such process */
@@ -47,6 +47,7 @@ extern int errno;
 #define ELOOP 40 /* Too many symbolic links */
 #if !defined(__KERNEL__) && !defined(__ASSEMBLER__)
 static const char *const errno_codes[] = {
+	[0] = "Success",
 	[EPERM] = "Operation not permitted",
 	[ENOENT] = "No such file or directory",
 	[ESRCH] = "No such process",

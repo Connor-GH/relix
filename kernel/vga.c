@@ -112,8 +112,6 @@ vga_write(uint32_t x, uint32_t y, uint32_t color)
 // You index into the width by (fb_char_index % width) / font_width
 // You index into the width by (fb_char_index % width)
 static uint32_t fb_char_index = 0;
-#define ROUND_UP(x, round_to) (((x + (round_to - 1)) / round_to) * round_to)
-#define ROUND_DOWN(x, round_to) (x / round_to * round_to)
 
 static uint32_t
 pixel_count_to_char_x_coord(uint32_t char_index, uint8_t font_width)

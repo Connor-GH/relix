@@ -113,12 +113,17 @@ trap(struct trapframe *tf)
 		uart_cprintf("Illegal instruction\n");
 		if ((tf->cs & 3) == DPL_USER) {
 			kill(myproc()->killed, SIGILL);
+		} else {
+			panic("Illegal instruction in the kernel!");
 		}
 		break;
 	case T_GPFLT:
 		uart_cprintf("General protection fault\n");
 		if ((tf->cs & 3) == DPL_USER) {
 			kill(myproc()->killed, SIGSEGV);
+			uart_cprintf("Process %s killed with SIGSEGV: sp=%#lx\n", myproc()->name, tf->esp);
+			uart_cprintf("from cpu %d eip %lx (cr2=%#lx)\n",
+							my_cpu_id(), tf->eip, rcr2());
 		} else {
 			uart_cprintf("BUG: General protection fault in the kernel!\n");
 			uart_cprintf("from cpu %d eip %lx (cr2=%#lx)\n",
@@ -126,9 +131,13 @@ trap(struct trapframe *tf)
 			// Skip over the faulting instruction and
 			// hope for the best.
 			tf->eip += 8;
-
 		}
 		break;
+	case 7: {
+		// We eagerly save FPU state so just clear the task switch bit.
+		__asm__ __volatile__("clts");
+		break;
+	}
 	// TODO handle pagefaults in a way that allows copy-on-write
 	case T_PGFLT:
 		uart_cprintf("Page fault at %#lx, ip=%#lx\n", rcr2(), tf->eip);
@@ -137,6 +146,11 @@ trap(struct trapframe *tf)
 			panic("trap");
 		} else {
 			uart_cprintf("Process %s killed with SIGSEGV: sp=%#lx\n", myproc()->name, tf->esp);
+			uintptr_t pcs[10];
+			getcallerpcs_with_bp(pcs, &tf->rbp, 10);
+			for (int i = 0; i < 10; i++)
+					uart_cprintf("%#lx ", pcs[i]);
+				uart_cprintf("\n");
 			kill(myproc()->pid, SIGSEGV);
 		}
 		break;

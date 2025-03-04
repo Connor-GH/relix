@@ -8,6 +8,7 @@
 #include "param.h"
 #include "proc.h"
 #include "x86.h"
+#include "cpu.h"
 #include "null.h"
 #include "console.h"
 #include "kalloc.h"
@@ -97,6 +98,7 @@ mpmain(void)
 {
 	vga_cprintf("\033[97;44mcpu%d: starting\033[m\n", my_cpu_id());
 	idtinit(); // load idt register
+	cpu_features_init();
 	xchg(&(mycpu()->started), 1); // tell startothers() we're up
 	scheduler(); // start running processes
 }

@@ -119,7 +119,7 @@ make_file(uint32_t currentino, const char *name, uint32_t parentino)
 static uint32_t
 make_dir(uint32_t parentino, const char *name)
 {
-	uint32_t currentino = ialloc(S_IFDIR | S_IAUSR);
+	uint32_t currentino = ialloc(S_IFDIR | S_IRWXU);
 
 	// creates dir
 	// parentino/name -> currentino

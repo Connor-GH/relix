@@ -22,7 +22,7 @@ endif
 
 QEMU = qemu-system-x86_64
 
-ARCHNOFLAGS = -mno-sse -mno-red-zone -mno-avx -mno-avx2
+ARCHNOFLAGS = -mno-sse -mno-red-zone -mno-avx -mno-avx2 -mno-mmx -mno-80387
 
 CC = $(TOOLPREFIX)gcc
 AS = $(TOOLPREFIX)gas

@@ -38,6 +38,7 @@ BITS = 64
 
 # llvm stuff
 ifneq ($(LLVM),)
+	LLVM = 1
 	CC = clang
 	AS = $(CC) -c
 	LD = ld.lld
@@ -46,6 +47,8 @@ ifneq ($(LLVM),)
 	AR = llvm-ar
 	RANLIB = llvm-ranlib
 	LINKER_FLAGS = -fuse-ld=lld
+else
+	LLVM = 0
 endif
 # we will support dmd-style D compilers only.
 

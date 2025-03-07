@@ -15,7 +15,7 @@
 size_t
 sys_fork(void)
 {
-	return fork();
+	return fork(false);
 }
 
 size_t
@@ -226,7 +226,7 @@ sys_sigprocmask(void)
 size_t
 sys_vfork(void)
 {
-	return sys_fork();
+	return fork(true);
 }
 
 size_t

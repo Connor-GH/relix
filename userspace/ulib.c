@@ -444,3 +444,13 @@ getegid(void)
 {
 	return getgid();
 }
+
+uid_t
+vfork(void)
+{
+	pid_t pid = fork();
+	if (pid > 0) {
+		wait(NULL);
+	}
+	return pid;
+}

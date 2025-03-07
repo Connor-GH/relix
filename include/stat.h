@@ -74,9 +74,12 @@ struct stat {
 	mode_t st_mode;
 	uid_t st_uid;
 	gid_t st_gid;
-	time_t st_ctime; // change
-	time_t st_atime; // access
-	time_t st_mtime; // modification
+	struct timespec st_ctim; // change
+	struct timespec st_atim; // access
+	struct timespec st_mtim; // modification
+#define st_atime st_atim.tv_sec
+#define st_mtime st_mtim.tv_sec
+#define st_ctime st_ctim.tv_sec
 };
 #endif
 // 0700

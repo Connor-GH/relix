@@ -6,5 +6,9 @@ edition = "2024"
 [lib]
 crate-type = ["staticlib"]
 [dependencies]
-pci-ids = "0.2.5"
+pci-ids = {version = "0.2.5", optional = true}
 userspace_bindings = { path = "../userspace_bindings", version = "0.1.0" }
+
+[features]
+default = []
+pci-ids = ["dep:pci-ids"]

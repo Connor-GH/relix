@@ -4,10 +4,67 @@ use core::ffi::c_char;
 use userspace_bindings::pci::PciConf;
 extern crate alloc;
 use alloc::ffi::CString;
-use pci_ids::Device;
-use pci_ids::FromId;
+#[cfg(feature = "pci-ids")]
+use pci_ids::{Device, FromId};
+
+#[cfg(not(feature = "pci-ids"))]
+fn internal_libpci_device_info_empty(
+    _vendor_id: u16,
+    _device_id: u16,
+    _subsystem_vendor_id: u16,
+    _subsystem_id: u16,
+    _base_class: u8,
+    _subclass: u8,
+    _prog_if: u8,
+) -> Option<*mut *mut c_char> {
+    let mut slice = alloc::vec::Vec::with_capacity(6);
+    slice.push(CString::new("").ok()?.into_raw());
+    slice.push(CString::new("").ok()?.into_raw());
+    slice.push(CString::new("").ok()?.into_raw());
+    slice.push(CString::new("").ok()?.into_raw());
+    slice.push(CString::new("").ok()?.into_raw());
+    slice.push(CString::new("").ok()?.into_raw());
+
+    // Important for freeing the memory later.
+    assert!(slice.len() == 6 && slice.capacity() == 6);
+    Some(slice.into_raw_parts().0)
+}
 
 fn internal_libpci_device_info(
+    vendor_id: u16,
+    device_id: u16,
+    subsystem_vendor_id: u16,
+    subsystem_id: u16,
+    base_class: u8,
+    subclass: u8,
+    prog_if: u8,
+) -> Option<*mut *mut c_char> {
+#[cfg(feature = "pci-ids")] {
+        internal_libpci_device_info_pci_ids(
+            vendor_id,
+            device_id,
+            subsystem_vendor_id,
+            subsystem_id,
+            base_class,
+            subclass,
+            prog_if,
+        )
+    }
+#[cfg(not(feature = "pci-ids"))] {
+        internal_libpci_device_info_empty(
+            vendor_id,
+            device_id,
+            subsystem_vendor_id,
+            subsystem_id,
+            base_class,
+            subclass,
+            prog_if,
+        )
+    }
+}
+
+#[cfg(feature = "pci-ids")]
+fn internal_libpci_device_info_pci_ids(
     vendor_id: u16,
     device_id: u16,
     subsystem_vendor_id: u16,
@@ -24,15 +81,18 @@ fn internal_libpci_device_info(
         "Vendor"
     };
 
-    let subsys_device =
-     if device.is_some() {
+    let subsys_device = if device.is_some() {
         device.unwrap().subsystems().find(|subsys| {
             subsys.subvendor() == subsystem_vendor_id && subsys.subdevice() == subsystem_id
         })
     } else {
-       None
+        None
     };
-    let subsys_device_name = if subsys_device.is_some() { subsys_device.unwrap().name() } else { "Subsystem Device" };
+    let subsys_device_name = if subsys_device.is_some() {
+        subsys_device.unwrap().name()
+    } else {
+        "Subsystem Device"
+    };
 
     let subsys_vendor = if subsys_device.is_some() {
         pci_ids::Vendor::from_id(subsys_device.unwrap().subvendor())
@@ -48,12 +108,14 @@ fn internal_libpci_device_info(
     let subclass = pci_ids::Subclass::from_cid_sid(base_class, subclass);
     let subclass_string = subclass.map_or_else(|| "Subclass", |subclass| subclass.name());
 
-    let prog_if = subclass
-        .map_or_else(|| "", |subclass| {
-            subclass.prog_ifs()
-            .find(|prog| prog.id() == prog_if)
-            .map_or_else(||  "" , |s| s.name())
-        }
+    let prog_if = subclass.map_or_else(
+        || "",
+        |subclass| {
+            subclass
+                .prog_ifs()
+                .find(|prog| prog.id() == prog_if)
+                .map_or_else(|| "", |s| s.name())
+        },
     );
     let mut slice = alloc::vec::Vec::with_capacity(6);
     slice.push(CString::new(device_vendor_name).ok()?.into_raw());

@@ -8,6 +8,7 @@
 #include "syscall.h"
 #include "types.h"
 #include <stdint.h>
+#include <stdbool.h>
 #include "../drivers/mmu.h"
 #include "../include/file.h"
 
@@ -114,7 +115,7 @@ my_cpu_id(void);
 void
 exit(int) __attribute__((noreturn));
 pid_t
-fork(void);
+fork(bool virtual);
 int
 growproc(int);
 int

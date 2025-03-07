@@ -17,6 +17,7 @@ const MSI_64BIT: u32 = 1 << 7;
 
 
 const CAPABILITY_MSI: u8 = 0x5;
+const CAPABILITY_MSI_X: u8 = 0x11;
 const CAPABILITY_SATA: u8 = 0x12;
 
 static PCI_CONFS: Mutex<Vec<PciConf>> = Mutex::new(Vec::new());
@@ -95,7 +96,7 @@ impl Msi {
     fn from_cap_ptr((bus, slot, func): (u8, u8, u8), offset: u8) -> Self {
         let tuple = (bus, slot, func);
         let cap_id = pci_config_read_word(tuple, offset) as u8;
-        assert!(cap_id == 0x05, "CapID does not match with MSI!");
+        assert!(cap_id == CAPABILITY_MSI, "CapID does not match with MSI!");
         let next_ptr = (pci_config_read_word(tuple, offset + 0x1) >> 8) as u8;
         let message_control = pci_config_read_word(tuple, offset + 0x2);
         assert!(message_control & MSI_64BIT as u16 != 0, "MSI is not 64 bit!");
@@ -127,7 +128,7 @@ impl MsiNoMask {
     fn from_cap_ptr((bus, slot, func): (u8, u8, u8), offset: u8) -> Self {
         let tuple = (bus, slot, func);
         let cap_id = pci_config_read_word(tuple, offset) as u8;
-        assert!(cap_id == 0x05, "CapID does not match with MSI!");
+        assert!(cap_id == CAPABILITY_MSI, "CapID does not match with MSI!");
         let next_ptr = (pci_config_read_word(tuple, offset + 0x1) >> 8) as u8;
         let message_control = pci_config_read_word(tuple, offset + 0x2);
         assert!(message_control & MSI_64BIT as u16 != 0, "MSI is not 64 bit!");
@@ -136,6 +137,34 @@ impl MsiNoMask {
         let message_data = pci_config_read_word(tuple, offset + 0xC);
         MsiNoMask { cap_id, next_ptr, message_control, message_address, message_upper_address, message_data }
 
+    }
+}
+#[derive(Debug, Clone, Copy)]
+#[allow(non_camel_case_types)]
+struct Msi_X {
+    cap_id: u8,
+    next_ptr: u8,
+    message_control: u16,
+
+    bir: u8,
+    table_offset : u32,
+    pending_bit_bir: u8,
+    pending_bit_offset : u32,
+}
+
+impl Msi_X {
+    fn from_cap_ptr((bus, slot, func): (u8, u8, u8), offset: u8) -> Self {
+        let tuple = (bus, slot, func);
+        let cap_id = pci_config_read_word(tuple, offset) as u8;
+        assert!(cap_id == CAPABILITY_MSI_X, "CapID does not match with MSI-X!");
+        let next_ptr = (pci_config_read_word(tuple, offset + 0x1) >> 8) as u8;
+        let message_control = pci_config_read_word(tuple, offset + 0x2);
+
+        let bir = pci_config_read_byte(tuple, offset + 4);
+        let table_offset = pci_config_read_long(tuple, offset + 4) >> 3;
+        let pending_bit_bir = pci_config_read_byte(tuple, offset + 0x8);
+        let pending_bit_offset = pci_config_read_long(tuple, offset + 0x8) >> 3;
+        Msi_X { cap_id, next_ptr, message_control, bir, table_offset, pending_bit_bir, pending_bit_offset }
     }
 }
 
@@ -158,6 +187,7 @@ struct Sata {
 impl Sata {
     fn from_cap_ptr(tuple: (u8, u8, u8), offset: u8) -> Self {
         let cap_id = pci_config_read_word(tuple, offset) as u8;
+        assert!(cap_id == CAPABILITY_SATA, "CapID does not match with SATA!");
         let next_ptr = (pci_config_read_word(tuple, offset + 0x1) >> 8) as u8;
         let minor_revision = pci_config_read_word(tuple, offset + 0x2) as u8 & SATAR0_MINOR_REVISION_MASK;
         let major_revision = pci_config_read_word(tuple, offset + 0x2) as u8 & SATAR0_MAJOR_REVISION_MASK;
@@ -187,7 +217,7 @@ impl Sata {
             0b0110 => (0x18, "BAR2"), // BAR2
             0b0111 => (0x1C, "BAR3"), // BAR3
             0b1000 => (0x20, "BAR4"), // BAR4
-            0b1001 => (0x18, "BAR5"), // BAR5
+            0b1001 => (0x24, "BAR5"), // BAR5
             0b1111 => (self.offset + 8, "After SATACR1"),
             _ => {
                 (0x10, "unknown (using BAR0)")
@@ -207,19 +237,19 @@ impl core::fmt::Debug for Sata {
             .finish()
     }
 }
-fn dispatch_init_from_id(hdr: &mut PCICommonHeader) {
+fn dispatch_sata(hdr: &mut PCICommonHeader, offset: u32) {
     if hdr.vendor_id == 0x8086 && hdr.device_id == 0x2922 && hdr.subsystem_vendor_id == 0x1af4 && hdr.subsystem_id == 0x1100 {
-        ahci_init(hdr);
+        println!("{:x}", hdr.base_address_registers[5] >> 0);
+        ahci_init(hdr, hdr.base_address_registers[5] >> 0);
     }
 }
 fn info_headers((bus, slot, func): (u8, u8, u8), offset: u8, hdr: &mut PCICommonHeader) {
     println!("{}", hdr);
     command_and_status_registers(hdr);
-    dispatch_init_from_id(hdr);
-    traverse_headers((bus, slot, func), offset);
+    traverse_headers((bus, slot, func), offset, hdr);
 }
 
-fn traverse_headers((bus, slot, func): (u8, u8, u8), offset: u8) {
+fn traverse_headers((bus, slot, func): (u8, u8, u8), offset: u8, hdr: &mut PCICommonHeader) {
     let tuple = (bus, slot, func);
 
     // Only things certain about a PCI configuration header.
@@ -241,15 +271,21 @@ fn traverse_headers((bus, slot, func): (u8, u8, u8), offset: u8) {
         CAPABILITY_SATA => {
             let sata = Sata::from_cap_ptr((bus, slot, func), offset);
             println!("{:#x?}", sata);
+            dispatch_sata(hdr, sata.bar_offset());
 
             sata.next_ptr
         },
+        CAPABILITY_MSI_X => {
+            let msi_x = Msi_X::from_cap_ptr((bus, slot, func), offset);
+            println!("{:x?}", msi_x);
+            msi_x.next_ptr
+        }
         _ => {
             0
         }
     };
     if offset != 0 {
-        traverse_headers((bus, slot, func), offset);
+        traverse_headers((bus, slot, func), offset, hdr);
     }
 }
 impl core::fmt::Display for PCICommonHeader {

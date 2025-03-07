@@ -2,6 +2,7 @@
 #![feature(string_remove_matches)]
 #![feature(ascii_char)]
 #![feature(vec_into_raw_parts)]
+#![feature(debug_closure_helpers)]
 pub mod allocator;
 pub mod ansi_escape;
 pub mod pci;

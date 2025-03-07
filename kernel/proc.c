@@ -226,7 +226,7 @@ growproc(int n)
 // Caller must set state of returned proc to RUNNABLE.
 // POSIX.1-2008: fork is a "signed integer type".
 pid_t
-fork(void)
+fork(bool virtual)
 {
 	int i;
 	pid_t pid;

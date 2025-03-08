@@ -1,3 +1,4 @@
+#include "kernel/include/x86.h"
 #include <umath.h>
 #include <stddef.h>
 
@@ -35,4 +36,10 @@ int
 abs(int j)
 {
 	return j < 0 ? -j : j;
+}
+
+double
+fabs(double x)
+{
+	return __fabs(x);
 }

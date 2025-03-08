@@ -352,8 +352,10 @@ int
 vsnprintf(char *restrict str, size_t n, const char *restrict fmt, va_list argp)
 {
 	global_idx = 0;
-	return __libc_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp,
+	int idx = __libc_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp,
 														 n);
+	str[idx] = '\0';
+	return idx;
 }
 int
 vsprintf(char *restrict str, const char *restrict fmt, va_list argp)

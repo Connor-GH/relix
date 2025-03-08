@@ -454,3 +454,40 @@ vfork(void)
 	}
 	return pid;
 }
+
+
+// Implmentation taken from the C Programming Language
+double
+atof(const char *nptr)
+{
+	double val, power;
+	int i, sign;
+	// Skip whitespace.
+	for (i = 0; isspace(nptr[i]); i++)
+		;
+
+	sign = (nptr[i] == '-') ? -1 : 1;
+
+	// Look at sign and determine whether it is positive or negative.
+	if (nptr[i] == '+' || nptr[i] == '-') {
+		i++;
+	}
+
+	// Next are the digits.
+	for (val = 0.0; isdigit(nptr[i]); i++)
+		val = 10.0 * val + (nptr[i] - '0');
+
+	// Decimal point.
+	if (nptr[i] == '.') {
+		i++;
+	}
+	// Build up the fraction part the same as the
+	// integer part, but divide by 'power' to account
+	// for it. e.g. 1.23 is internally represented as
+	// val = 123 and power = 100.
+	for (power = 1.0; isdigit(nptr[i]); i++) {
+		val = 10.0 * val + (nptr[i] - '0');
+		power *= 10.0;
+	}
+	return sign * val / power;
+}

@@ -31,6 +31,8 @@ long
 atol(const char *);
 long long
 atoll(const char *);
+double
+atof(const char *nptr);
 long
 strtol(const char *restrict s, char **restrict nptr, int base);
 long long

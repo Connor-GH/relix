@@ -96,39 +96,47 @@ pow_10(int n)
 	return result;
 }
 
-static void
+static int
 print_string(void (*put_function)(FILE *fp, char c, char *buf), char *s,
-						 int flags, FILE *fp, char *restrict buf, int str_pad)
+						 int flags, FILE *fp, char *restrict buf, int str_pad, size_t print_n_chars)
 {
 	if (s == 0)
 		s = "(null)";
 	size_t len;
+	int written = 0;
 	if (strcmp(s, "") == 0) {
 			len = 0;
 	} else
-			len = strlen(s);
+			len = strnlen(s, print_n_chars);
 	while (len != 0 && *s != 0) {
 		put_function(fp, *s, buf);
+		written++;
 		s++;
 	}
 	if (IS_SET(flags, FLAG_LJUST) && len < str_pad) {
-		for (int _ = 0; _ < str_pad - len; _++)
+		for (int _ = 0; _ < str_pad - len; _++) {
 			put_function(fp, ' ', buf);
+			written++;
+		}
 	}
+	return written;
 }
 
-static void
+static int
 print_double(void (*put_function)(FILE *fp, char c, char *buf), double num,
 						 int flags, FILE *fp, char *restrict buf, int str_pad, int base)
 {
+	int written = 0;
 	/* Print the num before the decimal point. */
-	printint(put_function, buf, fp, (uint64_t)num, base, true, flags, 0);
+	written = printint(put_function, buf, fp, (uint64_t)num, base, true, flags, 0);
 	put_function(fp, '.', buf);
+	written++;
 
 	double fraction = (num - (uint64_t)num);
 	fraction *= pow_10(str_pad);
 	uint64_t fraction_as_integer = (uint64_t)(fraction + 0.5);
-	printf("%0*lu", str_pad, fraction_as_integer);
+	written += printf("%0*lu", str_pad, fraction_as_integer);
+	return written;
 }
 
 
@@ -143,6 +151,7 @@ __libc_vprintf_template(void (*put_function)(FILE *fp, char c, char *buf),
 	int c = 0, i = 0, state = 0;
 	int flags = 0;
 	int str_pad = 0;
+	int count = 0;
 
 	for (; fmt[i]; i++) {
 		if (i >= print_n_chars)
@@ -157,6 +166,7 @@ __libc_vprintf_template(void (*put_function)(FILE *fp, char c, char *buf),
 				continue;
 			} else {
 				put_function(fp, c, buf);
+				count++;
 			}
 		} else if (state == '%') {
 			switch (c) {
@@ -215,27 +225,28 @@ numerical_padding:
 			case 'd': {
 				if (IS_SET(flags, FLAG_LONG)) {
 					long ld = va_arg(argp, long);
-					printint(put_function, buf, fp, ld, 10, true, flags, str_pad);
+					count += printint(put_function, buf, fp, ld, 10, true, flags, str_pad);
+
 				} else {
 					int d = va_arg(argp, int);
-					printint(put_function, buf, fp, d, 10, true, flags, str_pad);
+					count += printint(put_function, buf, fp, d, 10, true, flags, str_pad);
 				}
 				break;
 			}
 			case 'b': {
 				if (IS_SET(flags, FLAG_LONG)) {
 					long lb = va_arg(argp, unsigned long);
-					printint(put_function, buf, fp, lb, 2, false, flags, str_pad);
+					count += printint(put_function, buf, fp, lb, 2, false, flags, str_pad);
 				} else {
 					unsigned int b = va_arg(argp, unsigned int);
-					printint(put_function, buf, fp, b, 2, false, flags, str_pad);
+					count += printint(put_function, buf, fp, b, 2, false, flags, str_pad);
 				}
 				break;
 			}
 			case 'g':
 			case 'f': {
 				double d = va_arg(argp, double);
-				print_double(put_function, d, flags, fp, buf,
+				count += print_double(put_function, d, flags, fp, buf,
 								 str_pad > 0 ? str_pad : 6,
 								 IS_SET(flags, FLAG_ALTFORM) ? 16 : 10);
 				break;
@@ -243,51 +254,54 @@ numerical_padding:
 			case 'u': {
 				if (IS_SET(flags, FLAG_LONG)) {
 					long lu = va_arg(argp, unsigned long);
-					printint(put_function, buf, fp, lu, 10, false, flags, str_pad);
+					count += printint(put_function, buf, fp, lu, 10, false, flags, str_pad);
 				} else {
 					unsigned int u = va_arg(argp, unsigned int);
-					printint(put_function, buf, fp, u, 10, false, flags, str_pad);
+					count += printint(put_function, buf, fp, u, 10, false, flags, str_pad);
 				}
 				break;
 			}
 			case 'x': {
 				if (IS_SET(flags, FLAG_LONG)) {
 					unsigned long lx = va_arg(argp, unsigned long);
-					printint(put_function, buf, fp, lx, 16, false, flags, str_pad);
+					count += printint(put_function, buf, fp, lx, 16, false, flags, str_pad);
 				} else {
 					unsigned int x = va_arg(argp, unsigned int);
-					printint(put_function, buf, fp, x, 16, false, flags, str_pad);
+					count += printint(put_function, buf, fp, x, 16, false, flags, str_pad);
 				}
 				break;
 			}
 			case 'p': {
 				flags |= FLAG_ALTFORM;
 				uintptr_t x = (uintptr_t)va_arg(argp, void *);
-				printint(put_function, buf, fp, x, 16, false, flags, str_pad);
+				count += printint(put_function, buf, fp, x, 16, false, flags, str_pad);
 				break;
 			}
 			case 'o': {
 				int x = va_arg(argp, int);
-				printint(put_function, buf, fp, x, 8, false, flags, str_pad);
+				count += printint(put_function, buf, fp, x, 8, false, flags, str_pad);
 				break;
 			}
 			case 's': {
 				s = va_arg(argp, char *);
-				print_string(put_function, s, flags, fp, buf, str_pad);
+				count += print_string(put_function, s, flags, fp, buf, str_pad, print_n_chars);
 				break;
 			}
 			case 'c': {
 				int c_ = va_arg(argp, int);
 				put_function(fp, c_, buf);
+				count++;
 				break;
 			}
 			case '%':
 				put_function(fp, c, buf);
+				count++;
 				break;
 			// Unknown % sequence.  Print it to draw attention.
 			default:
 				put_function(fp, '%', buf);
 				put_function(fp, c, buf);
+				count++;
 				break;
 			}
 			str_pad = 0;
@@ -296,5 +310,5 @@ numerical_padding:
 skip_state_reset:; // state = '%' if set
 		}
 	}
-	return i;
+	return count;
 }

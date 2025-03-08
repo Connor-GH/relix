@@ -27,6 +27,8 @@ __strlcpy_nostrlen(char *dst, const char *src, size_t dst_len,
 								 size_t src_len);
 size_t
 strlen(const char *s);
+size_t
+strnlen(const char *s, size_t size);
 char *
 strrchr(const char *str, char c);
 char *

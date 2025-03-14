@@ -186,6 +186,7 @@ morecore(__attribute__((unused)) size_t nu)
 	return freep;
 }
 
+// TODO we should make an aligned malloc.
 void *
 kmalloc(size_t nbytes) __acquires(kmem)
 {

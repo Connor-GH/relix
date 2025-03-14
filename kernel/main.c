@@ -5,6 +5,7 @@
 #include "drivers/acpi.h"
 #include "drivers/lapic.h"
 #include "drivers/ps2mouse.h"
+#include "drivers/kbd.h"
 #include "param.h"
 #include "proc.h"
 #include "x86.h"
@@ -64,6 +65,7 @@ main(struct multiboot_info *mbinfo)
 	lapicinit(); // interrupt controller
 	seginit(); // segment descriptors
 	picinit(); // disable pic
+	kbdinit();
 	// /dev/console, not to be confused with VGA memory
 	consoleinit(); // console hardware
 	nulldrvinit();

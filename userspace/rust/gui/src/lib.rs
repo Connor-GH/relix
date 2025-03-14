@@ -1,5 +1,5 @@
 #![no_std]
-use core::ffi::{c_uint, c_int, c_void};
+use core::ffi::{c_int, c_void, CStr};
 use userspace_bindings::fcntl::{open, O_RDWR};
 use userspace_bindings::unistd::close;
 use userspace_bindings::mman::{mmap, munmap, MMAP_FAILED, PROT_READ, PROT_WRITE, MAP_SHARED};
@@ -21,12 +21,18 @@ impl<const WIDTH: usize, const HEIGHT: usize, const DEPTH: usize>
     FrameBuffer<WIDTH, HEIGHT, DEPTH>
 {
     fn new() -> Option<Self> {
-        let fd = unsafe { open(c"/dev/fb0".as_ptr(), O_RDWR)};
+        Self::with_filename(&c"/dev/fb0")
+    }
+    fn with_filename(filename: &CStr) -> Option<Self> {
+        let fd = unsafe { open(filename.as_ptr(), O_RDWR)};
         if fd == -1 {
             None
         } else {
             let ptr = unsafe { mmap(core::ptr::null_mut(),
             WIDTH * HEIGHT * (DEPTH/8), PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0) };
+            if ptr == (MMAP_FAILED as *mut c_void) {
+                return None;
+            }
             Some(FrameBuffer { fd, ptr })
         }
     }
@@ -83,7 +89,11 @@ pub extern "C" fn libgui_init(file: *const core::ffi::c_char) -> *mut c_void {
         let ptr = mmap(core::ptr::null_mut(),
             640 * 480 * 4, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0);
         close(fd);
-        ptr
+        if ptr == (MMAP_FAILED as *mut c_void) {
+            return core::ptr::null_mut();
+        } else {
+            return ptr;
+        }
     }
 
 }
@@ -99,6 +109,9 @@ pub extern "C" fn libgui_fill_rect(rect: *const Rectangle, hex_color: u32) {
     let fd = unsafe { open(c"/dev/fb0".as_ptr(), O_RDWR)};
     let ptr = unsafe { mmap(core::ptr::null_mut(),
         640 * 480 * 4, PROT_WRITE | PROT_READ, MAP_SHARED, fd, 0) };
+    if ptr == (MMAP_FAILED as *mut c_void) {
+        return;
+    }
 
     libgui_fill_rect_ptr(ptr, rect, hex_color);
     unsafe {

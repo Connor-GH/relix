@@ -3,7 +3,7 @@ use crate::printing::*;
 use bindings::x86::{inl, outl};
 use alloc::vec::Vec;
 use spin::Mutex;
-use crate::ahci::ahci_init;
+use core::ffi::c_void;
 const CONFIG_ADDRESS: u16 = 0xCF8;
 const CONFIG_DATA: u16 = 0xCFC;
 
@@ -237,10 +237,15 @@ impl core::fmt::Debug for Sata {
             .finish()
     }
 }
+
+unsafe extern "C" {
+    pub fn ahci_init(abar: u32) -> c_void;
+}
+
 fn dispatch_sata(hdr: &mut PCICommonHeader, offset: u32) {
     if hdr.vendor_id == 0x8086 && hdr.device_id == 0x2922 && hdr.subsystem_vendor_id == 0x1af4 && hdr.subsystem_id == 0x1100 {
-        println!("{:x}", hdr.base_address_registers[5] >> 0);
-        ahci_init(hdr, hdr.base_address_registers[5] >> 0);
+        println!("sata at {:x}", hdr.base_address_registers[5] >> 0);
+        unsafe { ahci_init(hdr.base_address_registers[5]) };
     }
 }
 fn info_headers((bus, slot, func): (u8, u8, u8), offset: u8, hdr: &mut PCICommonHeader) {

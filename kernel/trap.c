@@ -60,6 +60,36 @@ decipher_page_fault_error_code(uint64_t error_code)
 		uart_cprintf("Caused by an SGX violation.\n");
 	}
 }
+static void
+decipher_error_code_nonpagefault(uint64_t error_code)
+{
+	uart_cprintf("This error code was caused for the following reasons: \n");
+	if (error_code % 2 != 0) {
+		uart_cprintf("- happened due to external hardware (outside of processor)\n");
+	}
+	uart_cprintf("- selector index references a descriptor in the ");
+
+	// 0b11 in binary
+	switch ((error_code >> 1) & 3) {
+	case 0:
+		uart_cprintf("GDT (0b00)\n");
+		break;
+	case 1:
+		uart_cprintf("IDT (0b01)\n");
+		break;
+	case 2:
+		uart_cprintf("LDT (0b10)\n");
+		break;
+	case 3:
+		uart_cprintf("IDT (0b11)\n");
+		break;
+	default:
+		break;
+	}
+	uart_cprintf("In the index: %lu\n", (error_code & 0x0000FFFF) >> 3);
+}
+
+
 
 void
 trap(struct trapframe *tf)
@@ -74,6 +104,8 @@ trap(struct trapframe *tf)
 		return;
 	}
 
+void
+display_queue(struct queue *q);
 	switch (tf->trapno) {
 	case T_IRQ0 + IRQ_TIMER:
 		if (my_cpu_id() == 0) {
@@ -98,6 +130,9 @@ trap(struct trapframe *tf)
 	case T_IRQ0 + IRQ_COM1:
 		uartintr();
 		lapiceoi();
+		break;
+	case T_IRQ0 + IRQ_SATA:
+		panic("SATA IRQ should not be reached (currently)");
 		break;
 	case T_IRQ0 + IRQ_PS2_MOUSE:
 		ps2mouseintr();
@@ -128,9 +163,7 @@ trap(struct trapframe *tf)
 			uart_cprintf("BUG: General protection fault in the kernel!\n");
 			uart_cprintf("from cpu %d eip %lx (cr2=%#lx)\n",
 							my_cpu_id(), tf->eip, rcr2());
-			// Skip over the faulting instruction and
-			// hope for the best.
-			tf->eip += 8;
+			panic("kernel general protection fault");
 		}
 		break;
 	case 7: {

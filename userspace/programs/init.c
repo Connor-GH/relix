@@ -1,5 +1,6 @@
 // init: The initial user-level program
 
+#include "kernel/include/fcntl_constants.h"
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/types.h>
@@ -11,6 +12,15 @@
 
 extern char *const *environ;
 char *const argv[] = { "/bin/sh", NULL };
+
+static void
+make_file_device(const char *filename, dev_t dev_no, int flags)
+{
+	if (open(filename, flags) < 0) {
+		mknod(filename, 0700, dev_no);
+	}
+	fprintf(stdout, "%s created\n", filename);
+}
 
 int
 main(void)
@@ -29,14 +39,11 @@ main(void)
 	(void)dup(fd); // stdout
 	(void)dup(fd); // stderr
 	fprintf(stdout, "/dev/console created\n");
-	if (open("/dev/null", O_RDWR) < 0) {
-		mknod("/dev/null", 0700, makedev(2, 1));
-	}
-	fprintf(stdout, "/dev/null created\n");
-	if (open("/dev/fb0", O_RDWR) < 0) {
-		mknod("/dev/fb0", 0700, makedev(3, 0));
-	}
-	fprintf(stdout, "/dev/fb0 created\n");
+
+	make_file_device("/dev/null", makedev(2, 1), O_RDWR);
+	make_file_device("/dev/fb0", makedev(3, 0), O_RDWR);
+	make_file_device("/dev/kbd0", makedev(4, 0), O_RDONLY | O_NONBLOCK);
+
 	for (;;) {
 		fprintf(stdout, "init: starting sh service\n");
 		int pid = fork();

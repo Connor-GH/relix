@@ -32,6 +32,19 @@ nulldrvmmap_noop(size_t length, uintptr_t addr)
 {
 	return (struct mmap_info){};
 }
+
+static int
+nulldrvopen_noop(int flags)
+{
+	return 0;
+}
+
+static int
+nulldrvclose_noop(void)
+{
+	return 0;
+}
+
 void
 nulldrvinit(void)
 {
@@ -39,5 +52,7 @@ nulldrvinit(void)
 	devsw[NULLDRV].write = nulldrvwrite;
 	devsw[NULLDRV].read = nulldrvread;
 	devsw[NULLDRV].mmap = nulldrvmmap_noop;
+	devsw[NULLDRV].open = nulldrvopen_noop;
+	devsw[NULLDRV].close = nulldrvclose_noop;
 	nulldrv.locking = 1;
 }

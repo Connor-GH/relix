@@ -376,8 +376,9 @@ fileopen(char *path, int flags)
 		if ((ip = namei(path)) != 0) {
 			// if it's a block device, possibly do something special.
 			inode_lock(ip);
-			if (S_ISBLK(ip->mode))
+			if (S_ISBLK(ip->mode)) {
 				goto get_fd;
+			}
 			// if it's not a block device, just exit.
 			inode_unlockput(ip);
 			end_op();
@@ -408,6 +409,15 @@ fileopen(char *path, int flags)
 			inode_unlockput(ip);
 			end_op();
 			return -EISDIR;
+		}
+		if (S_ISBLK(ip->mode)) {
+			if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].open) {
+				inode_unlockput(ip);
+				end_op();
+				return -ENODEV;
+			}
+			// Run device-specific opening code, if any.
+			devsw[ip->major].open(flags);
 		}
 	}
 	// By this line, both branches above are holding a lock to ip.

@@ -17,6 +17,9 @@ enum {
 #define IS_SET(x, flag) (bool)((x & flag) == flag)
 
 static int
+print_string(void (*put_function)(FILE *fp, char c, char *buf), char *s,
+						 int flags, FILE *fp, char *restrict buf, int str_pad, size_t print_n_chars);
+static int
 printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 				 FILE *fp, int64_t xx, int base, bool sgn, int flags, int padding)
 {
@@ -25,7 +28,6 @@ printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 	int i = 0;
 	int neg = 0;
 	uint64_t x;
-	int ret;
 
 	if (sgn && xx < 0) {
 		neg = 1;
@@ -79,11 +81,10 @@ printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 			buf[i++] = ' ';
 		}
 	}
-	ret = i;
 
 	while (--i >= 0)
 		put_function(fp, buf[i], put_func_buf);
-	return ret;
+	return padding > numlen ? padding : numlen;
 }
 
 static uint64_t
@@ -154,7 +155,7 @@ __libc_vprintf_template(void (*put_function)(FILE *fp, char c, char *buf),
 	int count = 0;
 
 	for (; fmt[i]; i++) {
-		if (i >= print_n_chars)
+		if (count >= print_n_chars)
 			break;
 		// 'floor' character down to bottom 255 chars
 		c = fmt[i] & 0xff;

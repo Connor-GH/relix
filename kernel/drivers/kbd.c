@@ -2,6 +2,16 @@
 #include "kbd.h"
 #include "x86.h"
 #include "console.h"
+#include "fs.h"
+#include "mman.h"
+#include "ioapic.h"
+#include "kalloc.h"
+#include "traps.h"
+#include "string.h"
+#include "lib/queue.h"
+
+
+struct queue *g_kbd_queue;
 
 // PC keyboard interface constants
 
@@ -312,17 +322,24 @@ const uint8_t ctlmap[256] = { NO,
 															[0xCF] = KEY_END,
 															[0xD2] = KEY_INS,
 															[0xD3] = KEY_DEL };
-int
-kbdgetc(void)
+static int
+kbdgetc_raw(void)
 {
-	static uint32_t shift;
-	const uint8_t *charcode[4] = { normalmap, shiftmap, ctlmap, ctlmap };
-	uint32_t st, data, c;
+	uint32_t st, data;
 
 	st = inb(KBSTATP);
 	if ((st & KBS_DIB) == 0)
 		return -1;
 	data = inb(KBDATAP);
+	return data;
+}
+
+int
+kbd_scancode_into_char(uint32_t data)
+{
+	static uint32_t shift;
+	const uint8_t *charcode[4] = { normalmap, shiftmap, ctlmap, ctlmap };
+	uint32_t st, c;
 
 	if (data == 0xE0) {
 		shift |= E0ESC;
@@ -351,7 +368,82 @@ kbdgetc(void)
 }
 
 void
+display_queue(struct queue *q)
+{
+	if (q == NULL)
+		return;
+	uart_cprintf("elements: ");
+	int data = dequeue(q, kfree);
+	while (data != -1) {
+		uart_cprintf("%d (%c)", data, data);
+		data = dequeue(q, kfree);
+	}
+	uart_cprintf("\n");
+}
+
+void
 kbdintr(void)
 {
-	consoleintr(kbdgetc);
+	consoleintr(kbdgetc_raw);
+}
+
+__nonnull(1, 2) static int
+kbdread(struct inode *ip, char *dst, int n)
+{
+	int ret = dequeue(g_kbd_queue, kfree);
+	if (ret == -1)
+		return -1;
+	memcpy(dst, &ret, sizeof(ret));
+	return n;
+}
+
+/* clang-format off */
+__nonnull(1, 2) static int
+kbdwrite(__attribute__((unused)) struct inode *ip,
+																		 char *buf, int n)
+{
+	return n;
+}
+/* clang-format on */
+
+static struct mmap_info
+kbdmmap_noop(size_t length, uintptr_t addr)
+{
+	return (struct mmap_info){};
+}
+
+static int kbd_file_ref = 0;
+
+static int
+kbdopen(int flags)
+{
+	if (kbd_file_ref == 0) {
+		clean_queue(g_kbd_queue, kfree);
+		kbd_file_ref++;
+	}
+	return 0;
+}
+
+static int
+kbdclose(void)
+{
+	kbd_file_ref--;
+	return 0;
+}
+
+void
+kbdinit(void)
+{
+	g_kbd_queue = create_queue(kmalloc);
+	if (g_kbd_queue == NULL) {
+		panic("Could not create kbd_queue");
+	}
+
+	devsw[KBD].write = kbdwrite;
+	devsw[KBD].read = kbdread;
+	devsw[KBD].mmap = kbdmmap_noop;
+	devsw[KBD].open = kbdopen;
+	devsw[KBD].close = kbdclose;
+
+	ioapicenable(IRQ_KBD, 0);
 }

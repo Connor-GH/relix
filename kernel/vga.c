@@ -60,6 +60,18 @@ vgawrite(struct inode *ip, char *buf, int n)
 	return 0;
 }
 
+static int
+vgaopen_noop(int flags)
+{
+	return 0;
+}
+
+static int
+vgaclose_noop(void)
+{
+	return 0;
+}
+
 static struct mmap_info
 vgammap(size_t length, uintptr_t addr)
 {
@@ -89,6 +101,8 @@ vga_init(struct multiboot_tag_framebuffer *tag, struct fb_rgb rgb,
 	devsw[FB].read = vgaread;
 	devsw[FB].write = vgawrite;
 	devsw[FB].mmap = vgammap;
+	devsw[FB].open = vgaopen_noop;
+	devsw[FB].close = vgaclose_noop;
 }
 
 // The color is in hex: 0xRRGGBB

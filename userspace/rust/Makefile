@@ -7,7 +7,11 @@ USER_RUST_OBJ = $(foreach module, $(USER_RUST_MODULES), $(FULL_BIN)/lib$(module)
 USER_RUST_FLAGS = -Ctarget-feature=+sse,+sse2
 ifneq ($(RELEASE),)
   ifeq ($(LLVM),1)
-	  USER_RUST_FLAGS += -Clinker-plugin-lto -Clinker-flavor=ld.lld
+		CLANG_LLVM_MAJOR = $(clang --version | sed -nE "s/clang version \([0-9]+\).\([0-9]+\).\([0-9]+\)/\1/p")
+		RUSTC_LLVM_MAJOR = $(shell rustc -vV | sed -nE "s/clang version \([0-9]+\).\([0-9]+\).\([0-9]+\)/\1/p")
+		ifeq ($(CLANG_LLVM_MAJOR),$(RUSTC_LLVM_MAJOR))
+	  	USER_RUST_FLAGS += -Clinker-plugin-lto -Clinker-flavor=ld.lld
+		endif
   endif
 	USER_RUST_FLAGS += -Copt-level=3
 endif

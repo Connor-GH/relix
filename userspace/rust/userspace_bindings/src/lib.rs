@@ -11,13 +11,9 @@ pub mod ioctl;
 pub mod pci;
 
 extern crate alloc;
-use alloc::ffi::CString;
-use alloc::format;
-use alloc::string::ToString;
-use stdio::{putc, fprintf, stdout};
+use stdio::putc;
 use stdlib::{exit, malloc, free};
 use spin::Mutex;
-
 
 
 #[panic_handler]

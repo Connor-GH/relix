@@ -17,11 +17,16 @@
 #include "proc.h"
 #include "spinlock.h"
 #include "traps.h"
+#include "lib/queue.h"
 #include "uart.h"
 #include "x86.h"
+#include "kbd.h"
+#include "kalloc.h"
 #include "drivers/lapic.h"
 #include "compiler_attributes.h"
 #include "macros.h"
+
+#define KEYBOARD_QUEUE_SIZE 16
 
 extern size_t
 let_rust_handle_it(const char *fmt);
@@ -254,7 +259,8 @@ consputc3(int c, uint32_t foreg, uint32_t backg)
 	} else {
 		uartputc(c);
 	}
-	vga_write_char(c, static_foreg, static_backg);
+	if (echo_out)
+		vga_write_char(c, static_foreg, static_backg);
 }
 
 #define INPUT_BUF 128
@@ -274,6 +280,10 @@ consoleintr(int (*getc)(void))
 
 	acquire(&cons.lock);
 	while ((c = getc()) >= 0) {
+		if (enqueue(g_kbd_queue, c, kmalloc, KEYBOARD_QUEUE_SIZE) == 0) {
+			panic("Cannot allocate memory for kbd queue");
+		}
+		c = kbd_scancode_into_char(c);
 		switch (c) {
 		case C('P'): // Process listing.
 			// procdump() locks cons.lock indirectly; invoke later
@@ -283,7 +293,8 @@ consoleintr(int (*getc)(void))
 			while (input.e != input.w &&
 						 input.buf[(input.e - 1) % INPUT_BUF] != '\n') {
 				input.e--;
-				vga_write_char(BACKSPACE, static_foreg, static_backg);
+				if (echo_out)
+					vga_write_char(BACKSPACE, static_foreg, static_backg);
 			}
 			break;
 		case C('H'):
@@ -298,10 +309,12 @@ consoleintr(int (*getc)(void))
 				c = (c == '\r') ? '\n' : c;
 				input.buf[input.e++ % INPUT_BUF] = c;
 				if (c != C('D'))
-					vga_write_char(c, static_foreg, static_backg);
+					if (echo_out)
+						vga_write_char(c, static_foreg, static_backg);
 				if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF) {
 					if (c == C('D'))
-						vga_write_char('\n', static_foreg, static_backg);
+						if (echo_out)
+							vga_write_char('\n', static_foreg, static_backg);
 					input.w = input.e;
 					wakeup(&input.r);
 				} else if (c == C('C')) {
@@ -405,6 +418,20 @@ consolemmap_noop(size_t length, uintptr_t addr)
 	return (struct mmap_info){};
 }
 
+static int
+consoleopen_noop(int flags)
+{
+	return 0;
+}
+
+static int
+consoleclose_noop(void)
+{
+	return 0;
+}
+
+
+
 void
 consoleinit(void)
 {
@@ -413,7 +440,9 @@ consoleinit(void)
 	devsw[CONSOLE].write = consolewrite;
 	devsw[CONSOLE].read = consoleread;
 	devsw[CONSOLE].mmap = consolemmap_noop;
+	devsw[CONSOLE].open = consoleopen_noop;
+	devsw[CONSOLE].close = consoleclose_noop;
 	cons.locking = 1;
 
-	ioapicenable(IRQ_KBD, 0);
+	//ioapicenable(IRQ_KBD, 0);
 }

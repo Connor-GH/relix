@@ -32,10 +32,9 @@ index 503e0dc..561ac69 100644
  all:	 $(OUTPUT)
 diff --git a/doomgeneric/doomgeneric_relix.c b/doomgeneric/doomgeneric_relix.c
 new file mode 100644
-index 0000000..b2e1c04
 --- /dev/null
 +++ b/doomgeneric/doomgeneric_relix.c
-@@ -0,0 +1,113 @@
+@@ -0,0 +1,192 @@
 +
 +#include "doomkeys.h"
 +#include "ext.h"
@@ -43,8 +42,10 @@ index 0000000..b2e1c04
 +#include "doomgeneric.h"
 +
 +#include "userspace/include/gui.h"
++#include <stdlib.h>
 +#include <stdio.h>
 +#include <unistd.h>
++#include <fcntl.h>
 +
 +#include <stdbool.h>
 +
@@ -56,11 +57,54 @@ index 0000000..b2e1c04
 +
 +static time_t time_since_start = 0;
 +static void *fb;
++static int fd = -1;
 +
-+unsigned char
-+keycode_to_doom_key(unsigned int keycode)
++static unsigned char keycode_to_doom_key(unsigned char scancode)
 +{
-+	return keycode;
++    unsigned char key = 0;
++
++    switch (scancode)
++    {
++    case 0x9C:
++    case 0x1C:
++        key = KEY_ENTER;
++        break;
++    case 0x01:
++        key = KEY_ESCAPE;
++        break;
++    case 0xCB:
++    case 0x4B:
++        key = KEY_LEFTARROW;
++        break;
++    case 0xCD:
++    case 0x4D:
++        key = KEY_RIGHTARROW;
++        break;
++    case 0xC8:
++    case 0x48:
++        key = KEY_UPARROW;
++        break;
++    case 0xD0:
++    case 0x50:
++        key = KEY_DOWNARROW;
++        break;
++    case 0x1D:
++        key = KEY_FIRE;
++        break;
++    case 0x39:
++        key = KEY_USE;
++        break;
++    case 0x2A:
++    case 0x36:
++        key = KEY_RSHIFT;
++        break;
++    case 0x15:
++        key = 'y';
++    default:
++        break;
++    }
++
++    return key;
 +}
 +
 +static void
@@ -79,23 +123,50 @@ index 0000000..b2e1c04
 +DG_Init()
 +{
 +	time_since_start = uptime();
++	fd = open("/dev/kbd0", O_RDONLY | O_NONBLOCK);
++	if (fd < 0) {
++		perror("open");
++		exit(EXIT_FAILURE);
++	}
 +	fb = libgui_init("/dev/fb0");
 +	if (fb == NULL) {
 +		perror("libgui_init");
 +		exit(EXIT_FAILURE);
 +	}
++	// Turn off keyboard echoing.
++	echoout(0);
 +}
 +
 +void
 +handle_key_input(void)
 +{
++	char buf[4];
++	if (fd < 0) {
++		return;
++	}
++
++	unsigned char scancode = 0;
++
++	if (read(fd, buf, 4) > 0) {
++		scancode = buf[0];
++		unsigned char keyRelease = (0x80 & scancode);
++
++		scancode = (0x7F & scancode);
++
++		if (0 == keyRelease) {
++			add_key_to_queue(1, scancode);
++		} else {
++			add_key_to_queue(0, scancode);
++		}
++	}
 +}
 +void
 +DG_DrawFrame()
 +{
 +	for (uint32_t y = 0; y < DOOMGENERIC_RESY; y++) {
 +		for (uint32_t x = 0; x < DOOMGENERIC_RESX; x++) {
-+			libgui_pixel_write_ptr(fb, x, y, *DG_ScreenBuffer);
++			libgui_pixel_write_ptr(fb, x, y,
++														 DG_ScreenBuffer[y * DOOMGENERIC_RESX + x]);
 +		}
 +	}
 +	handle_key_input();
@@ -138,11 +209,18 @@ index 0000000..b2e1c04
 +{
 +}
 +
++static void
++echo_on(void)
++{
++	echoout(1);
++}
++
 +int
 +main(int argc, char **argv)
 +{
 +	doomgeneric_Create(argc, argv);
 +
++	atexit(echo_on);
 +	while (1) {
 +		doomgeneric_Tick();
 +	}

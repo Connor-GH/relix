@@ -16,6 +16,8 @@ struct file {
 // table mapping major device number to
 // device functions
 struct devsw {
+	int (*open)(int);
+	int (*close)(void);
 	int (*read)(struct inode *, char *, int);
 	int (*write)(struct inode *, char *, int);
 	struct mmap_info (*mmap)(size_t length, uintptr_t addr);
@@ -23,7 +25,7 @@ struct devsw {
 
 extern struct devsw devsw[];
 
-enum { CONSOLE = 1, NULLDRV = 2, FB = 3, };
+enum { CONSOLE = 1, NULLDRV = 2, FB = 3, KBD = 4, };
 
 struct file *
 filealloc(void);

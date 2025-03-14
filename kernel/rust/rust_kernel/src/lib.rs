@@ -10,7 +10,6 @@ pub mod printing;
 pub mod time;
 pub mod ubsanitizer;
 pub mod ksyms;
-pub mod ahci;
 
 extern crate alloc;
 use alloc::ffi::CString;

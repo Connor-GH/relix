@@ -76,6 +76,14 @@ fileclose(struct file *f)
 		release(&ftable.lock);
 		return;
 	}
+	if (S_ISBLK(f->ip->mode)) {
+		if (f->ip->major < 0 || f->ip->major >= NDEV || !devsw[f->ip->major].open) {
+			inode_unlockput(f->ip);
+			end_op();
+		}
+		// Run device-specific opening code, if any.
+		devsw[f->ip->major].close();
+	}
 	ff = *f;
 	f->ref = 0;
 	f->type = FD_NONE;

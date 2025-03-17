@@ -14,9 +14,19 @@ __attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *,
 __attribute__((format(printf, 1, 2)))
 __nonnull(1) void vga_cprintf(const char *fmt, ...);
 __attribute__((format(printf, 1, 2)))
-__nonnull(1) void uart_cprintf(const char *fmt, ...);
+__nonnull(1) void uart_printf(const char *fmt, ...);
 __attribute__((format(printf, 2, 3)))
 __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...);
+
+#if __KERNEL_DEBUG__
+#define pr_debug_file(...) uart_printf(__FILE_NAME__ ": " __VA_ARGS__)
+#define pr_debug(...) uart_printf(__VA_ARGS__)
+#else
+#define pr_debug(...) {}
+#define pr_debug_file(...) {}
+#endif
+
+
 void
 consputc(int);
 void

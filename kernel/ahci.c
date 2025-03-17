@@ -83,17 +83,15 @@ find_cmdslot(HBAPort *port)
 		if ((slots & (1 << i)) == 0)
 			return i;
 	}
-	uart_cprintf("Cannot find free command list entry\n");
+	uart_printf("Cannot find free command list entry\n");
 	return -1;
 }
 
 void
 ahci_init(uint32_t abar_)
 {
-	uart_cprintf("Enabled Ahci\n");
+	pr_debug_file("Found AHCI device at %#x\n", abar_);
 	abar = (HBAMem *)IO2V((uintptr_t)abar_);
-	// We don't want SATA interrupts yet.
-	//ioapicenable(IrqSata, 0);
 	probe_port(abar);
 }
 
@@ -193,7 +191,7 @@ wait_on_disk(HBAPort *port, int slot)
 		spin++;
 	}
 	if (spin == 1000000) {
-		uart_cprintf("Port has hung\n");
+		uart_printf("Port has hung\n");
 		return false;
 	}
 
@@ -209,13 +207,13 @@ wait_on_disk(HBAPort *port, int slot)
 		// Task file error status
 		if (port->is & HBA_PxIS_TFES)
 		{
-			uart_cprintf("Read disk error\n");
+			uart_printf("Read disk error\n");
 			return false;
 		}
 	}
 	// Check again
 	if (port->is & HBA_PxIS_TFES) {
-		uart_cprintf("Read disk error\n");
+		uart_printf("Read disk error\n");
 		return false;
 	}
 	return true;
@@ -367,12 +365,16 @@ ata_string_to_cstring(char *buf, size_t size)
 static void
 ata_parse_identify_device_info(IdentifyDevicePIO info)
 {
+	// Assures that ATA_CMD_READ_DMA_EX and ATA_CMD_WRITE_DMA_EX are aupported.
+	kernel_assert(info.commands_feature_sets_supported2 & (1 << 10));
+
+
 	char model_num_buf[41];
 	memcpy(model_num_buf, info.model_number, 40);
 	ata_string_to_cstring(model_num_buf, 40);
 	model_num_buf[40] = '\0';
 
-	uart_cprintf("SATA disk name: %s\n", model_num_buf);
+	uart_printf("SATA disk name: %s\n", model_num_buf);
 
 	char additional_product_id[9];
 	memcpy(additional_product_id, info.additional_product_id, 8);
@@ -381,51 +383,51 @@ ata_parse_identify_device_info(IdentifyDevicePIO info)
 
 	// This field is optional.
 	if (additional_product_id[0] != '\0')
-		uart_cprintf("Additional id: %s\n", additional_product_id);
+		pr_debug_file("Additional id: %s\n", additional_product_id);
 
 
 	// Trivial disk info
-	uart_cprintf("is_ata_device=(%s), %d:1 logical:physical sectors\n",
+	pr_debug_file("is_ata_device=(%s), %d:1 logical:physical sectors\n",
 							BOOL_STRING(IS_ATA_DEVICE(info.general_configuration)),
 					 		1 << (info.physical_or_logical_sector_size & 0xF)
 	);
 
 #if defined(SATA_MAJOR_AND_MINOR) && SATA_MAJOR_AND_MINOR
-	uart_cprintf("Transport Major: ");
+	pr_debug_file("Transport Major: ");
 	switch (info.transport_major_version_number & (0b1111 << 12)) {
 	// Parallel
 	case 0x0: {
 		if (info.transport_major_version_number & (1 << 0)) {
-			uart_cprintf("ATA8-APT");
+			pr_debug("ATA8-APT");
 		} else if (info.transport_major_version_number & (1 << 1)) {
-			uart_cprintf("ATA/ATAPI-7");
+			pr_debug("ATA/ATAPI-7");
 		} else {
-			uart_cprintf("(unknown PATA %x)", info.transport_major_version_number & ~(0b1111 << 12));
+			pr_debug("(unknown PATA %x)", info.transport_major_version_number & ~(0b1111 << 12));
 		}
 		break;
 	}
 	// Serial
 	case 0x1: {
 		if (info.transport_major_version_number & (1 << 0)) {
-			uart_cprintf("ATA8-AST");
+			pr_debug("ATA8-AST");
 		} else if (info.transport_major_version_number & (1 << 1)) {
-			uart_cprintf("SATA 1.0a");
+			pr_debug("SATA 1.0a");
 		} else if (info.transport_major_version_number & (1 << 2)) {
-			uart_cprintf("SATA II: Extensions");
+			pr_debug("SATA II: Extensions");
 		} else if (info.transport_major_version_number & (1 << 3)) {
-			uart_cprintf("SATA 2.5");
+			pr_debug("SATA 2.5");
 		} else if (info.transport_major_version_number & (1 << 4)) {
-			uart_cprintf("SATA 2.6");
+			pr_debug("SATA 2.6");
 		} else if (info.transport_major_version_number & (1 << 5)) {
-			uart_cprintf("SATA 3.0");
+			pr_debug("SATA 3.0");
 		} else if (info.transport_major_version_number & (1 << 6)) {
-			uart_cprintf("SATA 3.1");
+			pr_debug("SATA 3.1");
 		} else if (info.transport_major_version_number & (1 << 7)) {
-			uart_cprintf("SATA 3.2");
+			pr_debug("SATA 3.2");
 		} else if (info.transport_major_version_number & (1 << 8)) {
-			uart_cprintf("SATA 3.3");
+			pr_debug("SATA 3.3");
 		} else {
-			uart_cprintf("(unknown SATA)");
+			pr_debug("(unknown SATA)");
 		}
 		break;
 	}
@@ -434,48 +436,48 @@ ata_parse_identify_device_info(IdentifyDevicePIO info)
 		break;
 	}
 	default: {
-		uart_cprintf("Unknown");
+		pr_debug("Unknown");
 		break;
 	}
 	}
-	uart_cprintf("\n");
+	pr_debug("\n");
 
-	uart_cprintf("ACS Major: ");
+	pr_debug_file("ACS Major: ");
 	if (info.major_version_number & (1 << 11)) {
-		uart_cprintf("ACS-4");
+		pr_debug_file("ACS-4");
 	} else if (info.major_version_number & (1 << 10)) {
-		uart_cprintf("ACS-3");
+		pr_debug_file("ACS-3");
 	} else if (info.major_version_number & (1 << 9)) {
-		uart_cprintf("ACS-2");
+		pr_debug_file("ACS-2");
 	} else if (info.major_version_number & (1 << 8)) {
-		uart_cprintf("ATA8-ACS");
+		pr_debug_file("ATA8-ACS");
 	} else {
-		uart_cprintf("(unknown)");
+		pr_debug_file("(unknown)");
 	}
-	uart_cprintf("\n");
+	pr_debug_file("\n");
 
-	uart_cprintf("ACS Minor: ");
+	pr_debug_file("ACS Minor: ");
 	switch (info.minor_version_number) {
-	case 0xFFFF: case 0: uart_cprintf("(not reported)"); break;
-	case 0x1F: uart_cprintf("ACS-3 revision 3b"); break;
-	case 0x27: uart_cprintf("ATA8-ACS version 3c"); break;
-	case 0x28: uart_cprintf("ATA8-ACS version 6"); break;
-	case 0x29: uart_cprintf("ATA8-ACS version 4"); break;
-	case 0x31: uart_cprintf("ACS-2 revision 2"); break;
-	case 0x33: uart_cprintf("ATA8-ACS version 3e"); break;
-	case 0x39: uart_cprintf("ATA8-ACS version 4c"); break;
-	case 0x42: uart_cprintf("ATA8-ACS version 3f"); break;
-	case 0x52: uart_cprintf("ATA8-ACS version 3b"); break;
-	case 0x5e: uart_cprintf("ACS-4 revision 5"); break;
-	case 0x6d: uart_cprintf("ACS-3 revision 5"); break;
-	case 0x82: uart_cprintf("ACS-2 ANSI INCITS 482-2012"); break;
-	case 0x107: uart_cprintf("ATA8-ACS version 2d"); break;
-	case 0x10a: uart_cprintf("ACS-3 ANSI INCITS 522-2014"); break;
-	case 0x110: uart_cprintf("ACS-2 revision 3"); break;
-	case 0x11b: uart_cprintf("ACS-3 revision 4"); break;
-	default: uart_cprintf("(unknown)"); break;
+	case 0xFFFF: case 0: pr_debug_file("(not reported)"); break;
+	case 0x1F: pr_debug_file("ACS-3 revision 3b"); break;
+	case 0x27: pr_debug_file("ATA8-ACS version 3c"); break;
+	case 0x28: pr_debug_file("ATA8-ACS version 6"); break;
+	case 0x29: pr_debug_file("ATA8-ACS version 4"); break;
+	case 0x31: pr_debug_file("ACS-2 revision 2"); break;
+	case 0x33: pr_debug_file("ATA8-ACS version 3e"); break;
+	case 0x39: pr_debug_file("ATA8-ACS version 4c"); break;
+	case 0x42: pr_debug_file("ATA8-ACS version 3f"); break;
+	case 0x52: pr_debug_file("ATA8-ACS version 3b"); break;
+	case 0x5e: pr_debug_file("ACS-4 revision 5"); break;
+	case 0x6d: pr_debug_file("ACS-3 revision 5"); break;
+	case 0x82: pr_debug_file("ACS-2 ANSI INCITS 482-2012"); break;
+	case 0x107: pr_debug_file("ATA8-ACS version 2d"); break;
+	case 0x10a: pr_debug_file("ACS-3 ANSI INCITS 522-2014"); break;
+	case 0x110: pr_debug_file("ACS-2 revision 3"); break;
+	case 0x11b: pr_debug_file("ACS-3 revision 4"); break;
+	default: pr_debug_file("(unknown)"); break;
 	}
-	uart_cprintf("\n");
+	pr_debug_file("\n");
 #endif
 
 
@@ -490,25 +492,28 @@ probe_port(HBAMem *abar_)
 		if ((pi & (1 << i)) == (1 << i)) {
 			int dt = check_type(&abar_->ports[i]);
 			if (dt == AHCI_DEV_SATA) {
-				uart_cprintf("Sata drive found at port %d\n", i);
+				uart_printf("Sata drive found at port %d\n", i);
 				port_rebase(&abar_->ports[i], i);
 				IdentifyDevicePIO pio = {0};
 				disk_identify(&abar->ports[i], &pio);
 				ata_parse_identify_device_info(pio);
 
+#if __KERNEL_DEBUG__
 				uint16_t buf[256] = {1, 2, 3, 0};
+				pr_debug_file("Reading first 512 bytes...\n");
 				read_port(&abar_->ports[i], 0, 1, buf);
-				for (int j = 0; j < 256; j++) {
-					uart_cprintf("%#x ", buf[j]);
-				}
-				uart_cprintf("\n");
 
+				for (int j = 0; j < 256; j++) {
+					pr_debug("%#x ", buf[j]);
+				}
+				pr_debug("\n");
+#endif
 			} else if (dt == AHCI_DEV_SATAPI) {
-				uart_cprintf("Satapi drive found at port %d\n", i);
+				uart_printf("Satapi drive found at port %d\n", i);
 			} else if (dt == AHCI_DEV_SEMB) {
-				uart_cprintf("Semb drive found at port %d\n", i);
+				uart_printf("Semb drive found at port %d\n", i);
 			} else if (dt == AHCI_DEV_PM) {
-				uart_cprintf("Pm drive found at port %d\n", i);
+				uart_printf("Pm drive found at port %d\n", i);
 			} else {
 				// No drive found here, we should not log it.
 			}

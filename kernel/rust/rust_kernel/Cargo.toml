@@ -3,6 +3,9 @@ name = "rust_kernel"
 version = "0.1.0"
 edition = "2024"
 
+[lib]
+crate-type = ["staticlib"]
+
 [dependencies]
 anstyle-parse = { version = "0.2.6", features = ["utf8", "core"]}
 bindings = { path = "../bindings", version = "0.1.0" }

@@ -58,7 +58,7 @@ WNOFLAGS = -Wno-unused-parameter -Wno-infinite-recursion -Wno-pointer-arith -Wno
 
 CFLAGS = -std=gnu11 -pipe -fno-pic -static -fno-builtin -ffreestanding \
 				 -fno-strict-aliasing -nostdlib -Og -ggdb -fno-omit-frame-pointer \
-				 -nostdinc -fno-builtin $(ARCHNOFLAGS) $(WFLAGS) $(WNOFLAGS) $(WNOGCC)
+				 -nostdinc -fno-builtin -Werror $(ARCHNOFLAGS) $(WFLAGS) $(WNOFLAGS) $(WNOGCC)
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 RUSTFLAGS = -Ctarget-feature=-avx,-sse -Crelocation-model=static -Cpanic=abort -Copt-level=0 -Ccode-model=kernel -Cno-redzone -Cincremental=true -Zthreads=4
 ifneq ($(RELEASE),)
@@ -67,8 +67,7 @@ ifneq ($(RELEASE),)
 	RUSTFLAGS += -C opt-level=2
 	KCFLAGS += -D__KERNEL_DEBUG__=0
 else
-	RUSTFLAGS += -C opt-level=s
-	CFLAGS += -Werror
+	RUSTFLAGS += -C opt-level=s --cfg kernel_debug
 	KCFLAGS += -D__KERNEL_DEBUG__=1
 endif
 ASFLAGS = -gdwarf-2 -Wa,-divide --mx86-used-note=no

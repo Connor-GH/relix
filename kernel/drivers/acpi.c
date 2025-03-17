@@ -72,7 +72,7 @@ scan_rsdp(uint32_t base, uint32_t len)
 	}
 	return (struct acpi_rsdp *)0;
 }
-#define acpi_cprintf(...) vga_cprintf("acpi: " __VA_ARGS__)
+
 static void
 dump_rsdp(struct acpi_rsdp *rsdp)
 {
@@ -80,8 +80,8 @@ dump_rsdp(struct acpi_rsdp *rsdp)
 	__strlcpy_nostrlen(rsdp_oem_id, (char *)rsdp->oem_id, sizeof(rsdp_oem_id),
 									 sizeof(rsdp->oem_id));
 
-	acpi_cprintf("oem id: %s\n", rsdp_oem_id);
-	acpi_cprintf("revision: %d\n", rsdp->revision + 1);
+	pr_debug_file("oem id: %s\n", rsdp_oem_id);
+	pr_debug_file("revision: %d\n", rsdp->revision + 1);
 }
 
 // the rsdp can either be in the EBDA area
@@ -98,7 +98,7 @@ find_rsdp(void)
 	rsdp = scan_rsdp(pa, 1 * kiB);
 	if (pa && (rsdp != NULL))
 		return rsdp;
-	acpi_cprintf("rsdp not in EDBA; trying BIOS memory.\n");
+	pr_debug_file("rsdp not in EDBA; trying BIOS memory.\n");
 	return scan_rsdp(0xE0000, 0x20000);
 }
 
@@ -133,7 +133,7 @@ acpi_config_smp(struct acpi_madt *madt)
 				break;
 			if (!(madt_lapic->flags & APIC_LAPIC_ENABLED))
 				break;
-			acpi_cprintf("cpu#%d apicid %d\n", ncpu, madt_lapic->apic_id);
+			pr_debug_file("cpu#%d apicid %d\n", ncpu, madt_lapic->apic_id);
 			cpus[ncpu].apicid = madt_lapic->apic_id;
 			ncpu++;
 			break;
@@ -142,10 +142,10 @@ acpi_config_smp(struct acpi_madt *madt)
 			struct madt_ioapic *ioapic = (void *)p;
 			if (len < sizeof(*ioapic))
 				break;
-			acpi_cprintf("ioapic#%d @%x id=%d base=%d\n", nioapic, ioapic->addr,
+			pr_debug_file("ioapic#%d @%x id=%d base=%d\n", nioapic, ioapic->addr,
 									 ioapic->id, ioapic->interrupt_base);
 			if (nioapic) {
-				acpi_cprintf("warning: multiple ioapics are not supported");
+				pr_debug_file("warning: multiple ioapics are not supported");
 			} else {
 				ioapicid = ioapic->id;
 			}
@@ -169,7 +169,7 @@ setup_fadt(struct acpi_fadt *fadt)
 {
 	if (!fadt)
 		return;
-	acpi_cprintf("Century: %d\n", fadt->century);
+	pr_debug_file("Century: %d\n", fadt->century);
 }
 
 static int
@@ -192,7 +192,7 @@ try_setup_headers_xsdt(struct acpi_xsdt *xsdt)
 		tableid[8] = '\0';
 		memmove(creator, hdr->creator_id, 4);
 		creator[4] = '\0';
-		acpi_cprintf("%s %s %s %x %s %x\n", sig, id, tableid, hdr->oem_revision,
+		pr_debug_file("%s %s %s %x %s %x\n", sig, id, tableid, hdr->oem_revision,
 								 creator, hdr->creator_revision);
 
 		if (memcmp(hdr->signature, SIG_MADT, 4) == 0)
@@ -206,7 +206,7 @@ try_setup_headers_xsdt(struct acpi_xsdt *xsdt)
 	return acpi_config_smp(madt);
 
 notmapped:
-	acpi_cprintf("rsdt entry pointer above %#llx\n", PHYSLIMIT);
+	pr_debug_file("rsdt entry pointer above %#llx\n", PHYSLIMIT);
 	return -1;
 }
 
@@ -230,7 +230,7 @@ try_setup_headers_rsdt(struct acpi_rsdt *rsdt)
 		tableid[8] = '\0';
 		memmove(creator, hdr->creator_id, 4);
 		creator[4] = '\0';
-		acpi_cprintf("%s %s %s %x %s %x\n", sig, id, tableid, hdr->oem_revision,
+		pr_debug_file("%s %s %s %x %s %x\n", sig, id, tableid, hdr->oem_revision,
 								 creator, hdr->creator_revision);
 
 		if (memcmp(hdr->signature, SIG_MADT, 4) == 0)
@@ -244,7 +244,7 @@ try_setup_headers_rsdt(struct acpi_rsdt *rsdt)
 	return acpi_config_smp(madt);
 
 notmapped:
-	acpi_cprintf("rsdt entry pointer above %#llx\n", PHYSLIMIT);
+	pr_debug_file("rsdt entry pointer above %#llx\n", PHYSLIMIT);
 	return -1;
 }
 
@@ -265,22 +265,22 @@ acpiinit(void)
 		goto notmapped_xsdt;
 	if (rsdp->revision + 1 > 1) {
 		xsdt = p2v(rsdp->xsdt_addr_phys);
-		acpi_cprintf("xsdt physical address: P%#lx\n", rsdp->xsdt_addr_phys);
+		pr_debug_file("xsdt physical address: P%#lx\n", rsdp->xsdt_addr_phys);
 		kernel_assert(do_checksum(&xsdt->header) == 1);
 		kernel_assert(memcmp(xsdt->header.signature, "XSDT", 4) == 0);
 		return try_setup_headers_xsdt(xsdt);
 	} else {
 		rsdt = p2v(rsdp->rsdt_addr_phys);
-		acpi_cprintf("rsdt physical address: P%#x\n", rsdp->rsdt_addr_phys);
+		pr_debug_file("rsdt physical address: P%#x\n", rsdp->rsdt_addr_phys);
 		kernel_assert(do_checksum(&rsdt->header) == 1);
 		kernel_assert(memcmp(rsdt->header.signature, "RSDT", 4) == 0);
 		return try_setup_headers_rsdt(rsdt);
 	}
 
 notmapped_rsdt:
-	acpi_cprintf("rsdt_addr_phs %#x > %#llx\n", rsdp->rsdt_addr_phys, PHYSLIMIT);
+	pr_debug_file("rsdt_addr_phs %#x > %#llx\n", rsdp->rsdt_addr_phys, PHYSLIMIT);
 	return -1;
 notmapped_xsdt:
-	acpi_cprintf("xsdt_addr_phs %#lx > %#llx\n", rsdp->xsdt_addr_phys, PHYSLIMIT);
+	pr_debug_file("xsdt_addr_phs %#lx > %#llx\n", rsdp->xsdt_addr_phys, PHYSLIMIT);
 	return -1;
 }

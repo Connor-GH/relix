@@ -372,13 +372,13 @@ display_queue(struct queue *q)
 {
 	if (q == NULL)
 		return;
-	uart_cprintf("elements: ");
+	uart_printf("elements: ");
 	int data = dequeue(q, kfree);
 	while (data != -1) {
-		uart_cprintf("%d (%c)", data, data);
+		uart_printf("%d (%c)", data, data);
 		data = dequeue(q, kfree);
 	}
-	uart_cprintf("\n");
+	uart_printf("\n");
 }
 
 void

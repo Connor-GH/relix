@@ -141,7 +141,7 @@ uartputc_wrapper(char c, char *buf)
 	uartputc3(c, 0, 0);
 }
 __attribute__((format(printf, 1, 2)))
-__nonnull(1) void uart_cprintf(const char *fmt, ...)
+__nonnull(1) void uart_printf(const char *fmt, ...)
 {
 	va_list argp;
 	va_start(argp, fmt);
@@ -157,7 +157,7 @@ vga_write_char_wrapper(char c, char *buf)
 	vga_write_char(c, static_foreg, static_backg);
 }
 
-__attribute__((deprecated("Use vga_cprintf or uart_cprintf")))
+__attribute__((deprecated("Use vga_cprintf or uart_printf")))
 __attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *fmt,
 																																...)
 {
@@ -207,12 +207,12 @@ panic(const char *s)
 	cli();
 	cons.locking = 0;
 	// use lapiccpunum so that we can call panic from mycpu()
-	uart_cprintf("lapicid %d: panic: ", lapicid());
-	uart_cprintf("%s", s);
-	uart_cprintf("\n");
+	uart_printf("lapicid %d: panic: ", lapicid());
+	uart_printf("%s", s);
+	uart_printf("\n");
 	getcallerpcs(&s, pcs);
 	for (i = 0; i < 10; i++) {
-		uart_cprintf(" %#lx", pcs[i]);
+		uart_printf(" %#lx", pcs[i]);
 	}
 	panicked = 1; // freeze other CPU
 #if !defined(__clang__)

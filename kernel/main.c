@@ -37,8 +37,6 @@ extern char end[]; // first address after kernel loaded from ELF file
 uint64_t available_memory;
 uint64_t top_memory;
 
-extern void
-rust_hello_world(void);
 
 int
 main(struct multiboot_info *mbinfo)
@@ -76,7 +74,6 @@ main(struct multiboot_info *mbinfo)
 	ideinit(); // disk
 	ps2mouseinit();
 	//timerinit();
-	rust_hello_world();
 	pci_init();
 	startothers(); // start other processors
 	kinit2(P2V(4UL * 1024 * 1024), P2V(available_memory)); // must come after startothers()

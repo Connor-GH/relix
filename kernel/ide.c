@@ -76,7 +76,7 @@ idestart(struct buf *b)
 	if (unlikely(b == 0))
 		panic("idestart");
 	if (b->blockno >= FSSIZE) {
-		uart_cprintf("blockno: %ld\n", b->blockno);
+		uart_printf("blockno: %ld\n", b->blockno);
 		panic("incorrect blockno");
 	}
 	const int sector_per_block = BSIZE / SECTOR_SIZE;

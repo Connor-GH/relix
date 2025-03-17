@@ -17,37 +17,37 @@ struct Log;
 
 impl Perform for Log {
     fn print(&mut self, c: char) {
-        println!("[print] {:?}", c);
+        debugln!("[print] {:?}", c);
     }
 
     fn execute(&mut self, byte: u8) {
-        println!("[execute] {:02x}", byte);
+        debugln!("[execute] {:02x}", byte);
     }
 
     fn hook(&mut self, params: &Params, intermediates: &[u8], ignore: bool, c: u8) {
-        println!(
+        debugln!(
             "[hook] params={:?}, intermediates={:?}, ignore={:?}, char={:?}",
             params, intermediates, ignore, c
         );
     }
 
     fn put(&mut self, byte: u8) {
-        println!("[put] {:02x}", byte);
+        debugln!("[put] {:02x}", byte);
     }
 
     fn unhook(&mut self) {
-        println!("[unhook]");
+        debugln!("[unhook]");
     }
 
     fn osc_dispatch(&mut self, params: &[&[u8]], bell_terminated: bool) {
-        println!(
+        debugln!(
             "[osc_dispatch] params={:?} bell_terminated={}",
             params, bell_terminated
         );
     }
 
     fn csi_dispatch(&mut self, params: &Params, intermediates: &[u8], ignore: bool, c: u8) {
-        println!(
+        debugln!(
             "[hook] params={:?}, intermediates={:?}, ignore={:?}, char={:?}",
             params,
             intermediates,
@@ -118,7 +118,7 @@ impl Perform for Log {
     }
 
     fn esc_dispatch(&mut self, intermediates: &[u8], ignore: bool, byte: u8) {
-        println!(
+        debugln!(
             "[esc_dispatch] intermediates={:?}, ignore={:?}, byte={:02x}",
             intermediates, ignore, byte
         );

@@ -284,6 +284,11 @@ fgets(char *buf, int max, FILE *restrict stream)
 	int i;
 	char c;
 
+	if (stream == NULL) {
+		errno = EINVAL;
+		return NULL;
+	}
+
 	for (i = 0; i + 1 < max;) {
 		c = getc(stream);
 		if (c == EOF) {

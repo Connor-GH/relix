@@ -106,28 +106,28 @@ cpuflags(uint32_t cpu_vendor[static 3])
 static void
 do_ryzen_discovery(uint32_t ebx)
 {
-	uart_cprintf("Socket ");
+	pr_debug("Socket ");
 	/*
 	 * Bits 0-27 are reserved. 28-31 indicate the socket type.
 	 */
 	switch (ebx >> 28) {
 	case 0x0:
-		uart_cprintf("FP6");
+		pr_debug("FP6");
 		break;
 	case 0x2:
-		uart_cprintf("AM4");
+		pr_debug("AM4");
 		break;
 	case 0x4:
-		uart_cprintf("SP5");
+		pr_debug("SP5");
 		break;
 	case 0x8:
-		uart_cprintf("SP6");
+		pr_debug("SP6");
 		break;
 	default:
-		uart_cprintf("Unknown %d", ebx);
+		pr_debug("Unknown %d", ebx);
 		break;
 	}
-	uart_cprintf("\n");
+	pr_debug("\n");
 }
 
 #define PROCESSOR_STRING_UNPACK_U32(arr, idx, reg) \
@@ -152,8 +152,6 @@ model_family_stepping(void)
 	if (family == 0xF || family == 0x6) {
 		model += (((a >> 16) & 0xFF) << 4); // extended model
 	}
-	uart_cprintf("CPU Model=%x Family=%x Stepping=%x\n", model, family,
-							 processor_stepping);
 
 	switch (family) {
 	case 0x19:
@@ -169,7 +167,8 @@ model_family_stepping(void)
 		PROCESSOR_STRING_UNPACK_U32(bytes, 12 + i*16, d);
 	}
 	bytes[48] = '\0';
-	uart_cprintf("[%s]\n", bytes);
+	uart_printf("Cpu is \"%s\" (model=%x family=%x stepping=%x)\n", bytes, model, family,
+							 processor_stepping);
 
 }
 static void
@@ -271,11 +270,11 @@ remaining_features(CpuFeatures *cpu_features)
 		{0}
 	};
 
-	uart_cprintf("Cpu features: ");
+	pr_debug("Cpu features: ");
 	cpuid(CPUID_EAX_GETFEATURES, 0, &a, &b, &c, &d);
 	for (size_t i = 0; i < 31; i++) {
 		if (c & cpuidstruct_ecx_1[i].feature && cpuidstruct_ecx_1[i].feature_string != NULL) {
-			uart_cprintf("%s ", cpuidstruct_ecx_1[i].feature_string);
+			pr_debug("%s ", cpuidstruct_ecx_1[i].feature_string);
 			switch (cpuidstruct_ecx_1[i].feature) {
 			case CPUID_FEAT_ECX_SSE3: cpu_features->sse |= SSE3; break;
 			case CPUID_FEAT_ECX_SSE4_1: cpu_features->sse |= SSE4_1; break;
@@ -287,7 +286,7 @@ remaining_features(CpuFeatures *cpu_features)
 	}
 	for (size_t i = 0; i < 31; i++) {
 		if (d & cpuidstruct_edx_1[i].feature && cpuidstruct_edx_1[i].feature_string != NULL) {
-			uart_cprintf("%s ", cpuidstruct_edx_1[i].feature_string);
+			pr_debug("%s ", cpuidstruct_edx_1[i].feature_string);
 			switch (cpuidstruct_edx_1[i].feature) {
 			case CPUID_FEAT_EDX_FPU: cpu_features->fpu_misc.fpu = true; break;
 			case CPUID_FEAT_EDX_SSE: cpu_features->sse |= SSE; break;
@@ -298,7 +297,7 @@ remaining_features(CpuFeatures *cpu_features)
 	cpuid(CPUID_EAX_GETFEATURES + 0x80000000, 0, &a, &b, &c, &d);
 	for (size_t i = 0; i < 31; i++) {
 		if (c & cpuidstruct_ecx_0x80000001[i].feature && cpuidstruct_ecx_0x80000001[i].feature_string != NULL) {
-			uart_cprintf("%s ", cpuidstruct_ecx_0x80000001[i].feature_string);
+			pr_debug("%s ", cpuidstruct_ecx_0x80000001[i].feature_string);
 			switch (cpuidstruct_ecx_1[i].feature) {
 			case CPUID_FEAT_ECX_EXT_SSE4A: cpu_features->sse |= SSE4A; break;
 			case CPUID_FEAT_ECX_EXT_MISALIGNED_SSE: cpu_features->sse |= SSE_MISALIGNED; break;
@@ -307,7 +306,7 @@ remaining_features(CpuFeatures *cpu_features)
 	}
 	for (size_t i = 0; i < 31; i++) {
 		if (d & cpuidstruct_edx_0x80000001[i].feature && cpuidstruct_edx_0x80000001[i].feature_string != NULL) {
-			uart_cprintf("%s ", cpuidstruct_edx_0x80000001[i].feature_string);
+			pr_debug("%s ", cpuidstruct_edx_0x80000001[i].feature_string);
 			switch (cpuidstruct_edx_0x80000001[i].feature) {
 			case CPUID_FEAT_EDX_EXT_FPU: cpu_features->fpu_misc.fpu = true; break;
 			case CPUID_FEAT_EDX_EXT_FXSR: cpu_features->fxsr |= FXSR; break;
@@ -315,7 +314,7 @@ remaining_features(CpuFeatures *cpu_features)
 			}
 		}
 	}
-	uart_cprintf("\n");
+	pr_debug("\n");
 }
 
 static CpuFeatures *
@@ -358,7 +357,7 @@ cpu_features_init(void)
 	char cpu_vendor_name[13];
 	uint32_t cpu_vendor[3];
 	CpuFeatures *cpu_features = set_cpu_vendor_name(cpu_vendor_name, cpu_vendor);
-	uart_cprintf("CPU Vendor: %s\n", cpu_vendor_name);
+	pr_debug_file("CPU Vendor: %s\n", cpu_vendor_name);
 
 	// We MUST have cpuid.
 	kernel_assert(cpu_features->fpu_misc.cpuid);

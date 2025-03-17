@@ -1,7 +1,7 @@
 KERNEL_RUST_DIR = $(KERNELDIR)/rust
 
 FULL_BIN = $(realpath $(BIN))
-KERNEL_RUST_MODULES = kernel_example
+KERNEL_RUST_MODULES = rust_kernel
 KERNEL_RUST_OBJ = $(foreach module, $(KERNEL_RUST_MODULES), $(FULL_BIN)/lib$(module).a)
 
 KERNEL_RUST_FLAGS = -Ccode-model=kernel

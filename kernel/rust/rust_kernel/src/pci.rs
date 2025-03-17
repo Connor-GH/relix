@@ -244,12 +244,12 @@ unsafe extern "C" {
 
 fn dispatch_sata(hdr: &mut PCICommonHeader, offset: u32) {
     if hdr.vendor_id == 0x8086 && hdr.device_id == 0x2922 && hdr.subsystem_vendor_id == 0x1af4 && hdr.subsystem_id == 0x1100 {
-        println!("sata at {:x}", hdr.base_address_registers[5] >> 0);
+        debugln!("sata at {:x}", hdr.base_address_registers[5] >> 0);
         unsafe { ahci_init(hdr.base_address_registers[5]) };
     }
 }
 fn info_headers((bus, slot, func): (u8, u8, u8), offset: u8, hdr: &mut PCICommonHeader) {
-    println!("{}", hdr);
+    debugln!("{}", hdr);
     command_and_status_registers(hdr);
     traverse_headers((bus, slot, func), offset, hdr);
 }
@@ -265,24 +265,24 @@ fn traverse_headers((bus, slot, func): (u8, u8, u8), offset: u8, hdr: &mut PCICo
             // Per-vector masking.
             if control & MSI_PER_VECTOR_MASKING as u16 != 0 {
                 let msi = Msi::from_cap_ptr((bus, slot, func), offset);
-                println!("{:#x?}", msi);
+                debugln!("{:#x?}", msi);
                 msi.next_ptr
             } else {
                 let msi = MsiNoMask::from_cap_ptr((bus, slot, func), offset);
-                println!("{:#x?}", msi);
+                debugln!("{:#x?}", msi);
                 msi.next_ptr
             }
         },
         CAPABILITY_SATA => {
             let sata = Sata::from_cap_ptr((bus, slot, func), offset);
-            println!("{:#x?}", sata);
+            debugln!("{:#x?}", sata);
             dispatch_sata(hdr, sata.bar_offset());
 
             sata.next_ptr
         },
         CAPABILITY_MSI_X => {
             let msi_x = Msi_X::from_cap_ptr((bus, slot, func), offset);
-            println!("{:x?}", msi_x);
+            debugln!("{:x?}", msi_x);
             msi_x.next_ptr
         }
         _ => {
@@ -495,7 +495,7 @@ macro_rules! bit {
 
 
 fn pci_status(status: u16) {
-    println!("Cap: {} 66MHz: {} FastB2B: {} MParityErr: {} DEVSEL={} SifTAbort: {} RecTAbort: {} RecMAbort: {} SigSysError: {} ParityErr {}",
+    debugln!("Cap: {} 66MHz: {} FastB2B: {} MParityErr: {} DEVSEL={} SifTAbort: {} RecTAbort: {} RecMAbort: {} SigSysError: {} ParityErr {}",
     bit!(status, 4),
     bit!(status, 5),
     bit!(status, 7),
@@ -516,27 +516,27 @@ fn pci_status(status: u16) {
 
 // Also known as the command register.
 fn pci_control(control: u16) {
-    println!("I/O space: {}", bit!(control, 0));
-    println!("MemSpace: {}", bit!(control, 1));
-    println!("BusMaster: {}", bit!(control, 2));
-    println!("SpecCycle: {}", bit!(control, 3));
-    println!("memory WInv: {}", bit!(control, 4));
-    println!("VGASnoop: {}", bit!(control, 5));
-    println!("ParErr: {}", bit!(control, 6));
-    println!("SERR#: {}", bit!(control, 8));
-    println!("FastB2B: {}", bit!(control, 9));
-    println!("IntOff: {}", bit!(control, 10));
+    debugln!("I/O space: {}", bit!(control, 0));
+    debugln!("MemSpace: {}", bit!(control, 1));
+    debugln!("BusMaster: {}", bit!(control, 2));
+    debugln!("SpecCycle: {}", bit!(control, 3));
+    debugln!("memory WInv: {}", bit!(control, 4));
+    debugln!("VGASnoop: {}", bit!(control, 5));
+    debugln!("ParErr: {}", bit!(control, 6));
+    debugln!("SERR#: {}", bit!(control, 8));
+    debugln!("FastB2B: {}", bit!(control, 9));
+    debugln!("IntOff: {}", bit!(control, 10));
 }
 
 
 fn command_and_status_registers(hdr: &mut PCICommonHeader) {
-    println!("Cap ptr: {:x}", hdr.capabilities_pointer);
-    println!("== Command Register ==");
+    debugln!("Cap ptr: {:x}", hdr.capabilities_pointer);
+    debugln!("== Command Register ==");
     pci_control(hdr.command);
-    println!("== Status Register ==");
+    debugln!("== Status Register ==");
     pci_status(hdr.status);
-    println!("intr: line {} pin {}", hdr.interrupt_line, hdr.interrupt_pin);
-    println!("HDR {:#x?}", hdr);
+    debugln!("intr: line {} pin {}", hdr.interrupt_line, hdr.interrupt_pin);
+    debugln!("HDR {:#x?}", hdr);
 }
 
 fn check_device(bus: u8, device: u8) {

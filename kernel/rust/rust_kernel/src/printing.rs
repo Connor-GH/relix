@@ -35,5 +35,22 @@ macro_rules! print {
 macro_rules! println {
     ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)))
 }
+
+pub fn debug(args: core::fmt::Arguments) {
+    if cfg!(kernel_debug) {
+        print(args);
+    }
+}
+
+#[macro_export]
+macro_rules! debug {
+    ($($arg:tt)*) => ($crate::printing::debug(format_args!($($arg)*)))
+}
+#[macro_export]
+macro_rules! debugln {
+    ($($arg:tt)*) => ($crate::debug!("{}\n", format_args!($($arg)*)))
+}
 pub use super::print;
 pub use super::println;
+pub use super::debug;
+pub use super::debugln;

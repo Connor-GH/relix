@@ -174,7 +174,7 @@ strtoll(const char *restrict s, char **restrict endptr, int base)
 	if (base <= 10) {
 		while ('0' <= s[i] && s[i] <= '9')
 			num = num * base + s[i++] - '0';
-		if (*endptr != NULL) {
+		if (endptr != NULL && *endptr != NULL) {
 			*endptr = (char *)(s + i + 1);
 		}
 		return num;
@@ -190,7 +190,7 @@ strtoll(const char *restrict s, char **restrict endptr, int base)
 				num = num * base + s[i++] - 'A';
 			}
 		}
-		if (*endptr != NULL) {
+		if (endptr != NULL && *endptr != NULL) {
 			*endptr = (char *)(s + i + 1);
 		}
 		return num;

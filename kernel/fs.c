@@ -583,7 +583,7 @@ inode_read(struct inode *ip, char *dst, uint64_t off, uint64_t n) __must_hold(&i
 	if (S_ISBLK(ip->mode)) {
 		if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].read)
 			return -ENODEV;
-		return devsw[ip->major].read(ip, dst, n);
+		return devsw[ip->major].read(ip->minor, ip, dst, n);
 	}
 
 	if (off > ip->size || off + n < off)
@@ -612,7 +612,7 @@ inode_write(struct inode *ip, char *src, uint64_t off, uint64_t n) __must_hold(&
 	if (S_ISBLK(ip->mode)) {
 		if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].write)
 			return -ENODEV;
-		return devsw[ip->major].write(ip, src, n);
+		return devsw[ip->major].write(ip->minor, ip, src, n);
 	}
 
 	if (off > ip->size || off + n < off)

@@ -82,7 +82,7 @@ fileclose(struct file *f)
 			end_op();
 		}
 		// Run device-specific opening code, if any.
-		devsw[f->ip->major].close();
+		devsw[f->ip->major].close(f->ip->minor);
 	}
 	ff = *f;
 	f->ref = 0;

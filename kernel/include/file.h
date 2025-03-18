@@ -3,6 +3,7 @@
 #include <stat.h>
 #include "fs.h"
 #include "mman.h"
+#include "param.h"
 struct file {
 	enum { FD_NONE, FD_PIPE, FD_INODE } type;
 	int ref; // reference count
@@ -16,16 +17,29 @@ struct file {
 // table mapping major device number to
 // device functions
 struct devsw {
-	int (*open)(int);
-	int (*close)(void);
-	int (*read)(struct inode *, char *, int);
-	int (*write)(struct inode *, char *, int);
-	struct mmap_info (*mmap)(size_t length, uintptr_t addr);
+	int (*open)(short minor, int);
+	int (*close)(short minor);
+	ssize_t (*read)(short minor, struct inode *, char *, size_t);
+	ssize_t (*write)(short minor, struct inode *, char *, size_t);
+	struct mmap_info (*mmap)(short minor, size_t length, uintptr_t addr);
 };
 
-extern struct devsw devsw[];
+enum {
+	// The console that the user sees. /dev/console
+	CONSOLE = 1,
+	// /dev/null
+	NULLDRV = 2,
+	// The screen framebuffer(s). /dev/fb[0-9]*
+	FB = 3,
+	// The keyboard scancodes. /dev/kbd
+	KBD = 4,
+	// The disk device and partitions. /dev/sd[a-z]+(p[0-9]+)?
+	SD = 5,
+	__DEVSW_last,
+};
 
-enum { CONSOLE = 1, NULLDRV = 2, FB = 3, KBD = 4, };
+_Static_assert(__DEVSW_last <= NDEV, "Too many devices; adjust NDEV in param.h");
+extern struct devsw devsw[];
 
 struct file *
 filealloc(void);

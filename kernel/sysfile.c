@@ -417,7 +417,7 @@ fileopen(char *path, int flags)
 				return -ENODEV;
 			}
 			// Run device-specific opening code, if any.
-			devsw[ip->major].open(flags);
+			devsw[ip->major].open(ip->minor, flags);
 		}
 	}
 	// By this line, both branches above are holding a lock to ip.
@@ -859,7 +859,7 @@ sys_mmap(void)
 		if (file->ip->major < 0 || file->ip->major >= NDEV ||
 				!devsw[file->ip->major].mmap)
 			return -ENODEV;
-		info = devsw[file->ip->major].mmap(length, (uintptr_t)addr);
+		info = devsw[file->ip->major].mmap(file->ip->minor, length, (uintptr_t)addr);
 		info.file = file;
 	} else {
 		info = (struct mmap_info){ length, (uintptr_t)addr, 0/* virtual address */, NULL};

@@ -43,6 +43,7 @@ main(void)
 	make_file_device("/dev/null", makedev(2, 1), O_RDWR);
 	make_file_device("/dev/fb0", makedev(3, 0), O_RDWR);
 	make_file_device("/dev/kbd0", makedev(4, 0), O_RDONLY | O_NONBLOCK);
+	make_file_device("/dev/sda", makedev(5, 0), O_RDWR);
 
 	for (;;) {
 		fprintf(stdout, "init: starting sh service\n");

@@ -334,9 +334,9 @@ consoleintr(int (*getc)(void))
 		procdump(); // now call procdump() wo. cons.lock held
 	}
 }
-__nonnull(1, 2) static int consoleread(struct inode *ip, char *dst, int n)
+__nonnull(2, 3) static ssize_t consoleread(short minor, struct inode *ip, char *dst, size_t n)
 {
-	uint32_t target;
+	size_t target;
 	int c;
 
 	inode_unlock(ip);
@@ -398,9 +398,9 @@ console_height_text(void)
 	return __multiboot_console_height_text();
 }
 /* clang-format off */
-__nonnull(1, 2) static int
-consolewrite(__attribute__((unused)) struct inode *ip,
-																		 char *buf, int n)
+__nonnull(2, 3) static ssize_t
+consolewrite(short minor, __attribute__((unused)) struct inode *ip,
+																		 char *buf, size_t n)
 {
 	acquire(&cons.lock);
 	for (int i = 0; i < n; i++) {
@@ -413,19 +413,19 @@ consolewrite(__attribute__((unused)) struct inode *ip,
 /* clang-format on */
 
 static struct mmap_info
-consolemmap_noop(size_t length, uintptr_t addr)
+consolemmap_noop(short minor, size_t length, uintptr_t addr)
 {
 	return (struct mmap_info){};
 }
 
 static int
-consoleopen_noop(int flags)
+consoleopen_noop(short minor, int flags)
 {
 	return 0;
 }
 
 static int
-consoleclose_noop(void)
+consoleclose_noop(short minor)
 {
 	return 0;
 }

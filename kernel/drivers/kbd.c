@@ -387,8 +387,8 @@ kbdintr(void)
 	consoleintr(kbdgetc_raw);
 }
 
-__nonnull(1, 2) static int
-kbdread(struct inode *ip, char *dst, int n)
+__nonnull(2, 3) static ssize_t
+kbdread(short minor, struct inode *ip, char *dst, size_t n)
 {
 	int ret = dequeue(g_kbd_queue, kfree);
 	if (ret == -1)
@@ -398,16 +398,16 @@ kbdread(struct inode *ip, char *dst, int n)
 }
 
 /* clang-format off */
-__nonnull(1, 2) static int
-kbdwrite(__attribute__((unused)) struct inode *ip,
-																		 char *buf, int n)
+__nonnull(2, 3) static ssize_t
+kbdwrite(short minor, __attribute__((unused)) struct inode *ip,
+																		 char *buf, size_t n)
 {
 	return n;
 }
 /* clang-format on */
 
 static struct mmap_info
-kbdmmap_noop(size_t length, uintptr_t addr)
+kbdmmap_noop(short minor, size_t length, uintptr_t addr)
 {
 	return (struct mmap_info){};
 }
@@ -415,7 +415,7 @@ kbdmmap_noop(size_t length, uintptr_t addr)
 static int kbd_file_ref = 0;
 
 static int
-kbdopen(int flags)
+kbdopen(short minor, int flags)
 {
 	if (kbd_file_ref == 0) {
 		clean_queue(g_kbd_queue, kfree);
@@ -425,7 +425,7 @@ kbdopen(int flags)
 }
 
 static int
-kbdclose(void)
+kbdclose(short minor)
 {
 	kbd_file_ref--;
 	return 0;

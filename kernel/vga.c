@@ -48,32 +48,32 @@ const uint32_t COLOR_RED;
 	INTERNAL_COLOR_BLUE | INTERNAL_COLOR_GREEN | INTERNAL_COLOR_RED
 #define INTERNAL_COLOR_BLACK 0
 
-static int
-vgaread(struct inode *ip, char *buf, int n)
+static ssize_t
+vgaread(short minor, struct inode *ip, char *buf, size_t n)
+{
+	return 0;
+}
+
+static ssize_t
+vgawrite(short minor, struct inode *ip, char *buf, size_t n)
 {
 	return 0;
 }
 
 static int
-vgawrite(struct inode *ip, char *buf, int n)
+vgaopen_noop(short minor, int flags)
 {
 	return 0;
 }
 
 static int
-vgaopen_noop(int flags)
-{
-	return 0;
-}
-
-static int
-vgaclose_noop(void)
+vgaclose_noop(short minor)
 {
 	return 0;
 }
 
 static struct mmap_info
-vgammap(size_t length, uintptr_t addr)
+vgammap(short minor, size_t length, uintptr_t addr)
 {
 	// A hack for now until we can better determine where to put this.
 	return (struct mmap_info){WIDTH*HEIGHT*(BPP_DEPTH/8), fb_common.framebuffer_addr, 0x3f000000, NULL};

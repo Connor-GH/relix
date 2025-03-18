@@ -1,5 +1,6 @@
 // Simple PIO-based (non-DMA) IDE driver code.
 
+#include "mman.h"
 #include "param.h"
 #include "proc.h"
 #include "sleeplock.h"
@@ -7,6 +8,7 @@
 #include "traps.h"
 #include "spinlock.h"
 #include "fs.h"
+#include "file.h"
 #include "buf.h"
 #include "ioapic.h"
 #include "console.h"
@@ -47,10 +49,40 @@ idewait(int checkerr)
 	return 0;
 }
 
+static int
+ideopen(short minor, int flags)
+{
+	return 0;
+}
+
+static int
+ideclose(short minor)
+{
+	return 0;
+}
+
+static ssize_t
+ideread(short minor, struct inode *ip, char *buf, size_t len)
+{
+	return len;
+}
+
+static ssize_t
+idewrite(short minor, struct inode *ip, char *buf, size_t len)
+{
+	return len;
+}
+
+static struct mmap_info
+idemmap(short minor, size_t length, uintptr_t addr)
+{
+	return (struct mmap_info){};
+}
+
+
 __cold void
 ideinit(void)
 {
-	int i;
 
 	initlock(&idelock, "ide");
 	ioapicenable(IRQ_IDE, ncpu - 1);
@@ -58,12 +90,18 @@ ideinit(void)
 
 	// Check if disk 1 is present
 	outb(0x1f6, 0xe0 | (1 << 4));
-	for (i = 0; i < 1000; i++) {
+	for (int i = 0; i < 1000; i++) {
 		if (inb(0x1f7) != 0) {
 			havedisk1 = 1;
 			break;
 		}
 	}
+
+	devsw[SD].open = ideopen;
+	devsw[SD].close = ideclose;
+	devsw[SD].read = ideread;
+	devsw[SD].write = idewrite;
+	devsw[SD].mmap = idemmap;
 
 	// Switch back to disk 0.
 	outb(0x1f6, 0xe0 | (0 << 4));
@@ -165,3 +203,5 @@ iderw(struct buf *b)
 
 	release(&idelock);
 }
+
+

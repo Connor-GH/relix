@@ -252,6 +252,31 @@ getenv(const char *name)
 	return NULL;
 }
 
+static size_t
+get_env_index(const char *name)
+{
+	for (size_t i = 0; environ[i] != NULL; i++) {
+		char *equals = strchr(environ[i], '=');
+		if (equals == NULL)
+			continue; // Resilient. (Is this in the spec?)
+		size_t this_env_length = equals - environ[i];
+		// If it's not the same length, we don't even bother comparing.
+		if (strlen(name) != this_env_length)
+			continue;
+		if (strncmp(name, environ[i], this_env_length) == 0) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+// TODO implement setenv
+int
+setenv(const char *name, const char *value, int replace)
+{
+	return -1;
+}
+
 // Duplicate a string
 // Caller frees the string.
 char *

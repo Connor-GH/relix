@@ -1,1 +1,1 @@
-extern char *const *environ;
+extern char **environ;

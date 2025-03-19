@@ -7,12 +7,33 @@
 #include <unistd.h>
 #include <stddef.h>
 
+extern char **environ;
+
 int
-main(void)
+main(int argc, char **argv)
 {
 	char username[MAX_USERNAME];
 	char passwd[MAX_PASSWD];
 	int uid = -1;
+
+	char c;
+	bool fflag = false;
+	while ((c = getopt(argc, argv, "f:")) != -1) {
+		switch (c) {
+		case 'f':
+			fflag = true;
+			memcpy(username, optarg, sizeof(username));
+			break;
+		default:
+			break;
+		}
+	}
+	argc -= optind;
+	argv -= optind;
+	if (fflag) {
+		uid = usertouid(username);
+		goto autologin;
+	}
 try_again:
 	memset(username, 0, MAX_USERNAME);
 	memset(passwd, 0, MAX_PASSWD);
@@ -47,9 +68,10 @@ try_again:
 	if (strcmp(passwd, actual_password) == 0) {
 		fprintf(stdout, "Password is correct!\n");
 		free(actual_password);
+autologin:;
 		setuid(uid);
-		char *const sh_argv[] = { "/bin/sh", 0 };
-		execv("/bin/sh", sh_argv);
+		char *const sh_argv[] = { "/bin/sh", NULL };
+		execve("/bin/sh", sh_argv, environ);
 		printf("execv sh failed\n");
 		return 1;
 	} else {

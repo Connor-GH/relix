@@ -15,7 +15,7 @@ nulldrvread(short minor, struct inode *ip, char *buf, size_t n)
 }
 
 static struct mmap_info
-nulldrvmmap_noop(short minor, size_t length, uintptr_t addr)
+nulldrvmmap_noop(short minor, size_t length, uintptr_t addr, int perm)
 {
 	return (struct mmap_info){};
 }

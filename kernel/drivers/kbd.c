@@ -407,7 +407,7 @@ kbdwrite(short minor, __attribute__((unused)) struct inode *ip,
 /* clang-format on */
 
 static struct mmap_info
-kbdmmap_noop(short minor, size_t length, uintptr_t addr)
+kbdmmap_noop(short minor, size_t length, uintptr_t addr, int perm)
 {
 	return (struct mmap_info){};
 }

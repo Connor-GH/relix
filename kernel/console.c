@@ -413,7 +413,7 @@ consolewrite(short minor, __attribute__((unused)) struct inode *ip,
 /* clang-format on */
 
 static struct mmap_info
-consolemmap_noop(short minor, size_t length, uintptr_t addr)
+consolemmap_noop(short minor, size_t length, uintptr_t addr, int perm)
 {
 	return (struct mmap_info){};
 }
@@ -431,6 +431,94 @@ consoleclose_noop(short minor)
 }
 
 
+__nonnull(2, 3) static ssize_t
+uartread(short minor, __attribute__((unused)) struct inode *ip,
+																		 char *buf, size_t n)
+{
+	return n;
+}
+
+
+/* clang-format off */
+__nonnull(2, 3) static ssize_t
+uartwrite(short minor, __attribute__((unused)) struct inode *ip,
+																		 char *buf, size_t n)
+{
+	for (int i = 0; i < n; i++) {
+		uartputc(buf[i]);
+	}
+	return n;
+}
+/* clang-format on */
+
+static struct mmap_info
+uartmmap_noop(short minor, size_t length, uintptr_t addr, int perm)
+{
+	return (struct mmap_info){};
+}
+
+static int
+uartopen_noop(short minor, int flags)
+{
+	return 0;
+}
+
+static int
+uartclose_noop(short minor)
+{
+	return 0;
+}
+
+__nonnull(2, 3) static ssize_t
+ttyread(short minor, __attribute__((unused)) struct inode *ip,
+																		 char *buf, size_t n)
+{
+	if (minor >= MINOR_TTY_SERIAL)
+		return uartread(minor, ip, buf, n);
+	else
+		return consoleread(minor, ip, buf, n);
+}
+
+
+/* clang-format off */
+__nonnull(2, 3) static ssize_t
+ttywrite(short minor, __attribute__((unused)) struct inode *ip,
+																		 char *buf, size_t n)
+{
+	if (minor >= MINOR_TTY_SERIAL)
+		return uartwrite(minor, ip, buf, n);
+	else
+		return consolewrite(minor, ip, buf, n);
+}
+/* clang-format on */
+
+static struct mmap_info
+ttymmap_noop(short minor, size_t length, uintptr_t addr, int perm)
+{
+	if (minor >= MINOR_TTY_SERIAL)
+		return uartmmap_noop(minor, length, addr, perm);
+	else
+		return consolemmap_noop(minor, length, addr, perm);
+}
+
+static int
+ttyopen_noop(short minor, int flags)
+{
+	if (minor >= MINOR_TTY_SERIAL)
+		return uartopen_noop(minor, flags);
+	else
+		return consoleopen_noop(minor, flags);
+}
+
+static int
+ttyclose_noop(short minor)
+{
+	if (minor >= MINOR_TTY_SERIAL)
+		return uartclose_noop(minor);
+	else
+		return consoleclose_noop(minor);
+}
+
 
 void
 consoleinit(void)
@@ -442,7 +530,12 @@ consoleinit(void)
 	devsw[CONSOLE].mmap = consolemmap_noop;
 	devsw[CONSOLE].open = consoleopen_noop;
 	devsw[CONSOLE].close = consoleclose_noop;
+
+	devsw[TTY].write = ttywrite;
+	devsw[TTY].read = ttyread;
+	devsw[TTY].mmap = ttymmap_noop;
+	devsw[TTY].open = ttyopen_noop;
+	devsw[TTY].close = ttyclose_noop;
 	cons.locking = 1;
 
-	//ioapicenable(IRQ_KBD, 0);
 }

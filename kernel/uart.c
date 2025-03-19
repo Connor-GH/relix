@@ -7,6 +7,8 @@
 #include "ioapic.h"
 #include "drivers/lapic.h"
 #include "console.h"
+#include "types.h"
+#include "file.h"
 
 #define COM1 0x3f8
 

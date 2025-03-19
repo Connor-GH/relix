@@ -14,6 +14,7 @@
 #include <sys/uio.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <gui.h>
 
 FILE *stdin;
 FILE *stdout;
@@ -26,6 +27,7 @@ static size_t global_idx = 0;
 static size_t global_idx_fgetc = 0;
 
 #define WRITE_BUFFER_SIZE 256
+// This runs on all processes besides init.
 void
 __init_stdio(void)
 {
@@ -310,6 +312,8 @@ fgets(char *buf, int max, FILE *restrict stream)
 static void
 fd_putc(FILE *fp, char c, char *__attribute__((unused)) buf)
 {
+	if (fp == NULL)
+		return;
 	fp->write_buffer[fp->write_buffer_index++] = c;
 	if (fp &&
 		((fp->buffer_mode == BUFFER_MODE_BLOCK &&

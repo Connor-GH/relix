@@ -859,10 +859,10 @@ sys_mmap(void)
 		if (file->ip->major < 0 || file->ip->major >= NDEV ||
 				!devsw[file->ip->major].mmap)
 			return -ENODEV;
-		info = devsw[file->ip->major].mmap(file->ip->minor, length, (uintptr_t)addr);
+		info = devsw[file->ip->major].mmap(file->ip->minor, length, (uintptr_t)addr, perm);
 		info.file = file;
 	} else {
-		info = (struct mmap_info){ length, (uintptr_t)addr, 0/* virtual address */, NULL};
+		info = (struct mmap_info){ length, (uintptr_t)addr, 0/* virtual address */, NULL, perm};
 	}
 	struct proc *proc = myproc();
 	if (proc->mmap_count > NMMAP)
@@ -872,18 +872,19 @@ sys_mmap(void)
 		if (info.virt_addr == 0)
 			info.virt_addr = PGROUNDUP(proc->effective_largest_sz);
 		if (mappages(myproc()->pgdir, (void *)info.virt_addr,
-								 info.length, info.addr, perm) < 0) {
+								 info.length, info.addr, info.perm) < 0) {
 			return -ENOMEM;
 		}
 		myproc()->effective_largest_sz += info.length;
 		proc->mmap_info[proc->mmap_count++] = info;
 		return (size_t)info.virt_addr;
 	} else {
-		if (mappages(proc->pgdir, addr, info.length, info.addr, perm) < 0) {
+		if (mappages(proc->pgdir, addr, info.length, info.addr, info.perm) < 0) {
 			void *ptr = kmalloc(info.length);
 			if (ptr == NULL)
 				return -ENOMEM;
-			if (mappages(proc->pgdir, addr, info.length, V2P(ptr), perm) < 0) {
+			info.addr = V2P(ptr);
+			if (mappages(proc->pgdir, addr, info.length, info.addr, info.perm) < 0) {
 				kfree(ptr);
 				return -ENOMEM;
 			}

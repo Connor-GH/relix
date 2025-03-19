@@ -14,5 +14,6 @@ struct mmap_info {
 	// VIRTUAL address of the thing.
 	uintptr_t virt_addr;
 	struct file *file;
+	int perm;
 };
 

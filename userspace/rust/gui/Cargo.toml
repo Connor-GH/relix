@@ -9,3 +9,6 @@ crate-type = ["staticlib"]
 [dependencies]
 userspace_bindings = { path = "../userspace_bindings", version = "0.1.0" }
 spin = "0.9.8"
+
+[profile.release]
+lto = true

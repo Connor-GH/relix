@@ -205,6 +205,8 @@ ok:
 	curproc->mmap_count = 0;
 	curproc->effective_largest_sz = sz;
 	// If parent is NULL, it's also possible we are init.
+
+	// TODO this needs to be a copy, not a reference
 	if (curproc->parent != NULL)
 		curproc->cred = curproc->parent->cred;
 	switchuvm(curproc);

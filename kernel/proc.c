@@ -247,8 +247,18 @@ fork(bool virtual)
 	}
 	np->sz = curproc->sz;
 	np->effective_largest_sz = curproc->effective_largest_sz;
-	np->mmap_count = curproc->mmap_count;
-	memcpy(np->mmap_info, curproc->mmap_info, sizeof(np->mmap_info));
+	// Only do this for regular fork().
+	if (!virtual) {
+		np->mmap_count = curproc->mmap_count;
+		memcpy(np->mmap_info, curproc->mmap_info, sizeof(np->mmap_info));
+		// Copying the info isn't enough. We also need to map it.
+		for (int j = 0; np->mmap_info[j].file != NULL; j++) {
+			struct mmap_info info = np->mmap_info[j];
+			if (mappages(np->pgdir, (void *)info.virt_addr, info.length, info.addr, info.perm) < 0) {
+				panic("Could not map page");
+			}
+		}
+	}
 	np->parent = curproc;
 	*np->tf = *curproc->tf;
 

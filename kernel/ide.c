@@ -74,7 +74,7 @@ idewrite(short minor, struct inode *ip, char *buf, size_t len)
 }
 
 static struct mmap_info
-idemmap(short minor, size_t length, uintptr_t addr)
+idemmap(short minor, size_t length, uintptr_t addr, int perm)
 {
 	return (struct mmap_info){};
 }

@@ -21,6 +21,8 @@ qsort(void *base, size_t nmemb, size_t size,
 			int (*)(const void *, const void *));
 char *
 getenv(const char *name);
+int
+setenv(const char *name, const char *value, int replace);
 // POSIX.1 requires at least 32 atexit handlers.
 #define ATEXIT_MAX 32
 int

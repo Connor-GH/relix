@@ -21,11 +21,13 @@ struct devsw {
 	int (*close)(short minor);
 	ssize_t (*read)(short minor, struct inode *, char *, size_t);
 	ssize_t (*write)(short minor, struct inode *, char *, size_t);
-	struct mmap_info (*mmap)(short minor, size_t length, uintptr_t addr);
+	struct mmap_info (*mmap)(short minor, size_t length, uintptr_t addr, int perm);
 };
 
+#define MINOR_TTY_SERIAL 64
+
 enum {
-	// The console that the user sees. /dev/console
+	// The system console for kernel logging. /dev/console
 	CONSOLE = 1,
 	// /dev/null
 	NULLDRV = 2,
@@ -35,6 +37,8 @@ enum {
 	KBD = 4,
 	// The disk device and partitions. /dev/sd[a-z]+(p[0-9]+)?
 	SD = 5,
+	// /dev/tty[0-9]+ (0-63) and /dev/ttyS[0-9]+ (64-127)
+	TTY = 6,
 	__DEVSW_last,
 };
 

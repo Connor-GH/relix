@@ -82,7 +82,7 @@ block_alloc(dev_t dev)
 		}
 		block_release(bp);
 	}
-	panic("block_alloc: out of blocks");
+	return -ENOSPC;
 }
 
 // Free a disk block.
@@ -592,7 +592,10 @@ inode_read(struct inode *ip, char *dst, uint64_t off, uint64_t n) __must_hold(&i
 		n = ip->size - off;
 
 	for (tot = 0; tot < n; tot += m, off += m, dst += m) {
-		bp = block_read(ip->dev, bmap(ip, off / BSIZE));
+		uintptr_t map = bmap(ip, off / BSIZE);
+		if (map == 0)
+			return -ENOSPC;
+		bp = block_read(ip->dev, map);
 		m = min(n - tot, BSIZE - off % BSIZE);
 		memmove(dst, bp->data + off % BSIZE, m);
 		block_release(bp);
@@ -621,7 +624,10 @@ inode_write(struct inode *ip, char *src, uint64_t off, uint64_t n) __must_hold(&
 		return -EDOM;
 
 	for (tot = 0; tot < n; tot += m, off += m, src += m) {
-		bp = block_read(ip->dev, bmap(ip, off / BSIZE));
+		uintptr_t map = bmap(ip, off / BSIZE);
+		if (map == 0)
+			return -ENOSPC;
+		bp = block_read(ip->dev, map);
 		m = min(n - tot, BSIZE - off % BSIZE);
 		memmove(bp->data + off % BSIZE, src, m);
 		log_write(bp);

@@ -163,7 +163,12 @@ kernel_vprintf_template(void (*put_function)(char c, char *buf),
 			if (c == '%') {
 				state = '%';
 			} else if (c == '\033') {
-				i += ansi_func(fmt + i);
+
+				if (ansi_func != NULL) {
+					i += ansi_func(fmt + i);
+				} else {
+					put_function(c, buf);
+				}
 				continue;
 			} else {
 				put_function(c, buf);

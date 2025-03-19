@@ -31,20 +31,10 @@ is_empty_and_initialized(struct queue *q)
 	return q->size == 0;
 }
 
-__attribute__((nonnull(1)))
 int
 is_empty(struct queue *q)
 {
-	return q->size == 0;
-}
-
-size_t
-queue_length(struct queue *q)
-{
-	size_t i = 0;
-	for (struct queue_node *qp = q->front; qp != NULL; qp = qp->next, i++)
-		;
-	return i;
+	return q == NULL || q->size == 0;
 }
 
 int
@@ -53,7 +43,7 @@ enqueue(struct queue *q, int value, void *(*allocator)(size_t), size_t limit)
 	if (is_empty_and_initialized(q) == QUEUE_UNINITIALIZED)
 		return QUEUE_UNINITIALIZED;
 
-	if (queue_length(q) >= limit)
+	if (q->size >= limit)
 		return true;
 
 	struct queue_node *new_node = allocator(sizeof(*new_node));
@@ -76,12 +66,9 @@ enqueue(struct queue *q, int value, void *(*allocator)(size_t), size_t limit)
 void
 clean_queue(struct queue *q, void (*deallocator)(void *))
 {
-	if (q == NULL)
-		return;
-	int ret;
-	do {
-		ret = dequeue(q, deallocator);
-	} while (ret != -1);
+	while (!is_empty(q)) {
+		dequeue(q, deallocator);
+	}
 }
 
 int
@@ -100,15 +87,14 @@ dequeue(struct queue *q, void (*deallocator)(void *))
 	}
 	if (temp != NULL)
 		deallocator(temp);
-	q->size--;
+	if ((signed)q->size > 0)
+		q->size--;
 	return result;
 }
 
 void
 free_queue(struct queue *q, void (*deallocator)(void *))
 {
-	while (!is_empty(q)) {
-		dequeue(q, deallocator);
-	}
+	clean_queue(q, deallocator);
 	deallocator(q);
 }

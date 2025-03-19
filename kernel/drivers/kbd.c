@@ -1,3 +1,4 @@
+#include "spinlock.h"
 #include <stdint.h>
 #include "kbd.h"
 #include "x86.h"
@@ -11,7 +12,6 @@
 #include "lib/queue.h"
 
 
-struct queue *g_kbd_queue;
 
 // PC keyboard interface constants
 
@@ -381,16 +381,35 @@ display_queue(struct queue *q)
 	uart_printf("\n");
 }
 
+#define KEYBOARD_QUEUE_SIZE 16
+
 void
 kbdintr(void)
 {
 	consoleintr(kbdgetc_raw);
 }
 
+struct {
+	struct spinlock lock;
+	struct queue *kbd_queue;
+} kbdlock;
+
+int
+kbd_enqueue(int value)
+{
+	int val;
+	acquire(&kbdlock.lock);
+	val = enqueue(kbdlock.kbd_queue, value, kmalloc, KEYBOARD_QUEUE_SIZE);
+	release(&kbdlock.lock);
+	return val;
+}
+
 __nonnull(2, 3) static ssize_t
 kbdread(short minor, struct inode *ip, char *dst, size_t n)
 {
-	int ret = dequeue(g_kbd_queue, kfree);
+	acquire(&kbdlock.lock);
+	int ret = dequeue(kbdlock.kbd_queue, kfree);
+	release(&kbdlock.lock);
 	if (ret == -1)
 		return -1;
 	memcpy(dst, &ret, sizeof(ret));
@@ -418,7 +437,9 @@ static int
 kbdopen(short minor, int flags)
 {
 	if (kbd_file_ref == 0) {
-		clean_queue(g_kbd_queue, kfree);
+		acquire(&kbdlock.lock);
+		clean_queue(kbdlock.kbd_queue, kfree);
+		release(&kbdlock.lock);
 		kbd_file_ref++;
 	}
 	return 0;
@@ -434,11 +455,14 @@ kbdclose(short minor)
 void
 kbdinit(void)
 {
-	g_kbd_queue = create_queue(kmalloc);
-	if (g_kbd_queue == NULL) {
+	acquire(&kbdlock.lock);
+	kbdlock.kbd_queue = create_queue(kmalloc);
+	if (kbdlock.kbd_queue == NULL) {
 		panic("Could not create kbd_queue");
 	}
+	release(&kbdlock.lock);
 
+	initlock(&kbdlock.lock, "kbdread");
 	devsw[KBD].write = kbdwrite;
 	devsw[KBD].read = kbdread;
 	devsw[KBD].mmap = kbdmmap_noop;

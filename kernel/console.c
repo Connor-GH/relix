@@ -26,7 +26,6 @@
 #include "compiler_attributes.h"
 #include "macros.h"
 
-#define KEYBOARD_QUEUE_SIZE 16
 
 extern size_t
 let_rust_handle_it(const char *fmt);
@@ -140,14 +139,15 @@ uartputc_wrapper(char c, char *buf)
 {
 	uartputc3(c, 0, 0);
 }
+size_t ansi_noop(const char *s) { return 0; }
 __attribute__((format(printf, 1, 2)))
 __nonnull(1) void uart_printf(const char *fmt, ...)
 {
 	va_list argp;
 	va_start(argp, fmt);
 	kernel_vprintf_template(uartputc_wrapper,
-														let_rust_handle_it, NULL, fmt, argp,
-														&cons.lock, true, -1);
+														NULL, NULL, fmt, argp,
+														&cons.lock, false, -1);
 	va_end(argp);
 }
 
@@ -184,7 +184,6 @@ string_putc_wrapper(char c, char *buf)
 {
 	buf[global_string_index++] = c;
 }
-size_t ansi_noop(const char *s) { return 0; }
 
 __attribute__((format(printf, 2, 3)))
 __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...)
@@ -280,7 +279,7 @@ consoleintr(int (*getc)(void))
 
 	acquire(&cons.lock);
 	while ((c = getc()) >= 0) {
-		if (enqueue(g_kbd_queue, c, kmalloc, KEYBOARD_QUEUE_SIZE) == 0) {
+		if (kbd_enqueue(c) == 0) {
 			panic("Cannot allocate memory for kbd queue");
 		}
 		c = kbd_scancode_into_char(c);

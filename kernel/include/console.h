@@ -18,7 +18,7 @@ __nonnull(1) void uart_printf(const char *fmt, ...);
 __attribute__((format(printf, 2, 3)))
 __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...);
 
-#if __KERNEL_DEBUG__
+#if __KERNEL_DEBUG__ && defined(__FILE_NAME__)
 #define pr_debug_file(...) uart_printf(__FILE_NAME__ ": " __VA_ARGS__)
 #define pr_debug(...) uart_printf(__VA_ARGS__)
 #else

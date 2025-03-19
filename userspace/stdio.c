@@ -63,11 +63,12 @@ flush(FILE *stream)
 		errno = EBADF;
 		return -1;
 	}
-	fwrite(stream->write_buffer, 1, stream->write_buffer_index, stream);
-	//writev(stream->fd,
-	//			 &(const struct iovec){ stream->write_buffer,
-	//															stream->write_buffer_index },
-	//			 1);
+
+	//fwrite(stream->write_buffer, 1, stream->write_buffer_index, stream);
+	writev(stream->fd,
+				 &(const struct iovec){ stream->write_buffer,
+																stream->write_buffer_index },
+				 1);
 	stream->write_buffer_index = 0;
 	return 0;
 }
@@ -158,7 +159,7 @@ fopen(const char *restrict pathname, const char *restrict mode)
 	fp->write_buffer_size = WRITE_BUFFER_SIZE;
 	fp->write_buffer_index = 0;
 	fp->stdio_flush = true;
-	fp->buffer_mode = BUFFER_MODE_BLOCK;
+	fp->buffer_mode = _IOFBF;
 	if (open_files_index < NFILE) {
 		fp->static_table_index = open_files_index;
 		open_files[open_files_index++] = fp;
@@ -217,7 +218,7 @@ fdopen(int fd, const char *restrict mode)
 	fp->write_buffer_size = WRITE_BUFFER_SIZE;
 	fp->write_buffer_index = 0;
 	fp->stdio_flush = true;
-	fp->buffer_mode = BUFFER_MODE_BLOCK;
+	fp->buffer_mode = _IOFBF;
 	if (open_files_index < NFILE) {
 		fp->static_table_index = open_files_index;
 		open_files[open_files_index++] = fp;
@@ -238,7 +239,6 @@ fclose(FILE *stream)
 {
 	if (stream == NULL) {
 		errno = EBADF;
-		stream->error = true;
 		return EOF;
 	}
 	fflush(stream);
@@ -316,10 +316,10 @@ fd_putc(FILE *fp, char c, char *__attribute__((unused)) buf)
 		return;
 	fp->write_buffer[fp->write_buffer_index++] = c;
 	if (fp &&
-		((fp->buffer_mode == BUFFER_MODE_BLOCK &&
+		((fp->buffer_mode == _IOFBF &&
 		fp->write_buffer_index >= fp->write_buffer_size - 1) ||
-	(fp->buffer_mode == BUFFER_MODE_UNBUFFERED) ||
-	(fp->buffer_mode == BUFFER_MODE_LINE && c == '\n'))) {
+	(fp->buffer_mode == _IONBF) ||
+	(fp->buffer_mode == _IOLBF && c == '\n'))) {
 		flush(fp);
 	}
 }
@@ -534,6 +534,12 @@ void
 setlinebuf(FILE *restrict stream)
 {
 	setvbuf(stream, NULL, _IOLBF, 0);
+}
+
+void
+setbuf(FILE *restrict stream, char *restrict buf)
+{
+	setvbuf(stream, buf, buf ? _IOFBF : _IONBF, BUFSIZ);
 }
 
 void

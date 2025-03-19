@@ -24,12 +24,9 @@ struct _IO_FILE {
 	bool error;
 	bool stdio_flush;
 };
-#define BUFFER_MODE_LINE 0x1
-#define BUFFER_MODE_BLOCK 0x2
-#define BUFFER_MODE_UNBUFFERED 0x3
-#define _IONBF BUFFER_MODE_UNBUFFERED
-#define _IOLBF BUFFER_MODE_LINE
-#define _IOFBF BUFFER_MODE_BLOCK
+#define _IOLBF 0x1
+#define _IOFBF 0x2
+#define _IONBF 0x3
 
 typedef struct _IO_FILE FILE;
 #define BUFSIZ 512
@@ -69,6 +66,8 @@ void
 setlinebuf(FILE *restrict stream);
 int
 setvbuf(FILE *restrict stream, char *restrict buf, int modes, size_t n);
+void
+setbuf(FILE *restrict stream, char *restrict buf);
 int
 getc(FILE *stream);
 int

@@ -21,9 +21,9 @@
 	}
 
 // User code makes a system call with INT T_SYSCALL.
-// System call number in %eax.
+// System call number in %rax.
 // Arguments on the stack, from the user call to the C
-// library system call function. The saved user %esp points
+// library system call function. The saved user %rsp points
 // to a saved program counter, and then the first argument.
 
 SYSCALL_ARG_FETCH(int);
@@ -274,25 +274,25 @@ syscall(void)
 	int num;
 	struct proc *curproc = myproc();
 
-	num = curproc->tf->eax;
+	num = curproc->tf->rax;
 	if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
 		if (curproc->ptrace_mask_ptr[num] == 1) {
 			size_t xticks, yticks;
 			acquire(&tickslock);
 			xticks = ticks;
 			release(&tickslock);
-			curproc->tf->eax = syscalls[num]();
+			curproc->tf->rax = syscalls[num]();
 			acquire(&tickslock);
 			yticks = ticks;
 			release(&tickslock);
 
 			cprintf("pid %d: syscall %s => %ld (%lu ticks)\n", curproc->pid,
-							syscall_names[num], curproc->tf->eax, yticks - xticks);
+							syscall_names[num], curproc->tf->rax, yticks - xticks);
 		} else {
-			curproc->tf->eax = syscalls[num]();
+			curproc->tf->rax = syscalls[num]();
 		}
 	} else {
 		cprintf("%d %s: unknown sys call %d\n", curproc->pid, curproc->name, num);
-		curproc->tf->eax = -1;
+		curproc->tf->rax = -1;
 	}
 }

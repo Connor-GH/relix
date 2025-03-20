@@ -89,7 +89,7 @@ cpuflags(uint32_t cpu_vendor[static 3])
 		.fxsr = (enum FXSR){ 0 },
 		.fpu_misc = {{0}},
 	};
-	/* Check whether the ID bit in eflags is supported. Support means
+	/* Check whether the ID bit in rflags is supported. Support means
 	 * that use of cpuid is available. */
 	if (has_eflag(0x200000)) {
 		cpu_features.fpu_misc.cpuid = true;

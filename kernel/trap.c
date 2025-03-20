@@ -141,7 +141,7 @@ display_queue(struct queue *q);
 	case T_IRQ0 + 7:
 	case T_IRQ0 + IRQ_SPURIOUS:
 		uart_printf("cpu%d: spurious interrupt at %#lx:%#lx\n", my_cpu_id(), tf->cs,
-						tf->eip);
+						tf->rip);
 		lapiceoi();
 		break;
 	case T_ILLOP:
@@ -156,13 +156,13 @@ display_queue(struct queue *q);
 		uart_printf("General protection fault\n");
 		if ((tf->cs & 3) == DPL_USER) {
 			kill(myproc()->killed, SIGSEGV);
-			uart_printf("Process %s killed with SIGSEGV: sp=%#lx\n", myproc()->name, tf->esp);
-			uart_printf("from cpu %d eip %lx (cr2=%#lx)\n",
-							my_cpu_id(), tf->eip, rcr2());
+			uart_printf("Process %s killed with SIGSEGV: sp=%#lx\n", myproc()->name, tf->rsp);
+			uart_printf("from cpu %d rip %lx (cr2=%#lx)\n",
+							my_cpu_id(), tf->rip, rcr2());
 		} else {
 			uart_printf("BUG: General protection fault in the kernel!\n");
-			uart_printf("from cpu %d eip %lx (cr2=%#lx)\n",
-							my_cpu_id(), tf->eip, rcr2());
+			uart_printf("from cpu %d rip %lx (cr2=%#lx)\n",
+							my_cpu_id(), tf->rip, rcr2());
 			panic("kernel general protection fault");
 		}
 		break;
@@ -173,12 +173,12 @@ display_queue(struct queue *q);
 	}
 	// TODO handle pagefaults in a way that allows copy-on-write
 	case T_PGFLT:
-		uart_printf("Page fault at %#lx, ip=%#lx\n", rcr2(), tf->eip);
+		uart_printf("Page fault at %#lx, ip=%#lx\n", rcr2(), tf->rip);
 		decipher_page_fault_error_code(tf->err);
 		if ((tf->cs & DPL_USER) == 0) {
 			panic("trap");
 		} else {
-			uart_printf("Process %s killed with SIGSEGV: sp=%#lx\n", myproc()->name, tf->esp);
+			uart_printf("Process %s killed with SIGSEGV: sp=%#lx\n", myproc()->name, tf->rsp);
 			uintptr_t pcs[10];
 			getcallerpcs_with_bp(pcs, &tf->rbp, 10);
 			for (int i = 0; i < 10; i++)
@@ -188,26 +188,26 @@ display_queue(struct queue *q);
 		}
 		break;
 	case T_DIVIDE:
-		uart_printf("%s[%d]: trap divide by zero error: %#lx\n", myproc()->name, myproc()->pid, tf->eip);
+		uart_printf("%s[%d]: trap divide by zero error: %#lx\n", myproc()->name, myproc()->pid, tf->rip);
 		kill(myproc()->pid, SIGFPE);
 		break;
 	case T_SIMDERR:
 	case T_FPERR:
-		uart_printf("%s[%d]: floating point error: %#lx\n", myproc()->name, myproc()->pid, tf->eip);
+		uart_printf("%s[%d]: floating point error: %#lx\n", myproc()->name, myproc()->pid, tf->rip);
 		kill(myproc()->pid, SIGFPE);
 		break;
 	default:
 		if (myproc() == 0 || (tf->cs & 3) == 0) {
 			// In kernel, it must be our mistake.
-			uart_printf("unexpected trap %ld from cpu %d eip %lx (cr2=%#lx)\n",
-							tf->trapno, my_cpu_id(), tf->eip, rcr2());
+			uart_printf("unexpected trap %ld from cpu %d rip %lx (cr2=%#lx)\n",
+							tf->trapno, my_cpu_id(), tf->rip, rcr2());
 			panic("trap");
 		}
 		// In user space, assume process misbehaved.
 		uart_printf("pid %d %s: trap %ld err %ld on cpu %d "
-						"eip %#lx addr %#lx--kill proc\n",
+						"rip %#lx addr %#lx--kill proc\n",
 						myproc()->pid, myproc()->name, tf->trapno, tf->err, my_cpu_id(),
-						tf->eip, rcr2());
+						tf->rip, rcr2());
 		myproc()->killed = 1;
 	}
 

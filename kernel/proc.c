@@ -67,7 +67,7 @@ mycpu(void)
 {
 	int apicid, i;
 
-	if (readeflags() & FL_IF)
+	if (readrflags() & FL_IF)
 		panic("mycpu called with interrupts enabled\n");
 
 	apicid = lapicid();
@@ -145,7 +145,7 @@ found:
 	sp -= sizeof *p->context;
 	p->context = (struct context *)sp;
 	memset(p->context, 0, sizeof *p->context);
-	p->context->eip = (uintptr_t)forkret;
+	p->context->rip = (uintptr_t)forkret;
 
 	p->cred.uid = 0;
 	p->cred.gid = 0;
@@ -180,9 +180,9 @@ userinit(void)
 	memset(p->tf, 0, sizeof(*p->tf));
 	p->tf->cs = (SEG_UCODE << 3) | DPL_USER;
 	p->tf->ds = (SEG_UDATA << 3) | DPL_USER;
-	p->tf->eflags = FL_IF;
-	p->tf->esp = PGSIZE;
-	p->tf->eip = 0; // beginning of initcode.S
+	p->tf->rflags = FL_IF;
+	p->tf->rsp = PGSIZE;
+	p->tf->rip = 0; // beginning of initcode.S
 
 	__safestrcpy(p->name, "initcode", sizeof(p->name));
 	p->cwd = namei("/");
@@ -262,8 +262,8 @@ fork(bool virtual)
 	np->parent = curproc;
 	*np->tf = *curproc->tf;
 
-	// Clear %eax so that fork returns 0 in the child.
-	np->tf->eax = 0;
+	// Clear %rax so that fork returns 0 in the child.
+	np->tf->rax = 0;
 
 	for (i = 0; i < NOFILE; i++)
 		if (curproc->ofile[i])
@@ -467,7 +467,7 @@ sched(void)
 		panic("sched locks");
 	if (p->state == RUNNING)
 		panic("sched running");
-	if (readeflags() & FL_IF)
+	if (readrflags() & FL_IF)
 		panic("sched interruptible");
 	intena = mycpu()->intena;
 	swtch(&p->context, mycpu()->scheduler);
@@ -565,20 +565,24 @@ wakeup(void *chan)
 	release(&ptable.lock);
 }
 
+// When we enter the signal handler, we SHOULDN'T have to
+// pop anything off of the stack. %rdi will contain the one
+// argument, and so we put the signal in there. %rip should
+// point to the signal handler so that we can go there. The
+// stack should contain the return address (%rip).
 static void
 copy_signal_to_stack(struct proc *proc, int signal)
 {
-	uintptr_t sp = proc->tf->esp;
-	uintptr_t ustack[2];
-	ustack[0] = proc->tf->eip;
-	ustack[1] = (uintptr_t)proc->sig_handlers[signal];
-	sp -= sizeof(sighandler_t (*)(int));
-	if (copyout(proc->pgdir, sp, ustack, sizeof(ustack)) < 0) {
+	uintptr_t sp = proc->tf->rsp;
+	uintptr_t ustack = proc->tf->rip;
+
+	sp -= sizeof(uintptr_t);
+	if (copyout(proc->pgdir, sp, &ustack, sizeof(ustack)) < 0) {
 		panic("failed to copyout");
 	}
 	proc->tf->rdi = signal;
-	proc->tf->eip = ustack[1];
-	proc->tf->esp = sp;
+	proc->tf->rip = (uintptr_t)proc->sig_handlers[signal];
+	proc->tf->rsp = sp;
 }
 
 // Send the process with the given pid the given signal.
@@ -650,7 +654,7 @@ procdump(void)
 			state = "???";
 		vga_cprintf("%d %s %s", p->pid, state, p->name);
 		if (p->state == SLEEPING) {
-			getcallerpcs((uintptr_t *)p->context->ebp, pc);
+			getcallerpcs((uintptr_t *)p->context->rbp, pc);
 			for (i = 0; i < 10 && pc[i] != 0; i++)
 				vga_cprintf(" %lx", pc[i]);
 		}

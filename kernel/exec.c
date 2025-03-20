@@ -193,14 +193,14 @@ ok:
 	oldpgdir = curproc->pgdir;
 	curproc->pgdir = pgdir;
 	curproc->sz = sz;
-	curproc->tf->eip = elf.e_entry; // main
+	curproc->tf->rip = elf.e_entry; // main
 
 	// FIXME does this corrupt the stack?
 	// Round up because we might not always have an already-rounded
 	// stack here.
 	// The "-8" is needed for alignment to 16 bytes.
 	// Without it, we are only aligned to 8 bytes.
-	curproc->tf->esp = ROUND_UP(sp, 16) - 8;
+	curproc->tf->rsp = ROUND_UP(sp, 16) - 8;
 	memset(curproc->mmap_info, 0, sizeof(curproc->mmap_info));
 	curproc->mmap_count = 0;
 	curproc->effective_largest_sz = sz;

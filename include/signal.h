@@ -6,6 +6,8 @@ int
 kill(pid_t pid, int signal);
 sighandler_t
 signal(int signum, sighandler_t handler);
+// Seems strange, but everyone defines it this way.
+// Int modifications, at least on x86, are an atomic transaction.
 typedef int sig_atomic_t;
 int
 sigemptyset(sigset_t *set);

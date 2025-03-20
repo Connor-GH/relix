@@ -183,11 +183,11 @@ ltr(uint16_t sel)
 }
 
 static __always_inline uintptr_t
-readeflags(void)
+readrflags(void)
 {
-	uintptr_t eflags;
-	__asm__ __volatile__("pushf; pop %0" : "=r"(eflags));
-	return eflags;
+	uintptr_t rflags;
+	__asm__ __volatile__("pushf; pop %0" : "=r"(rflags));
+	return rflags;
 }
 
 static __always_inline void
@@ -271,9 +271,9 @@ wrmsr(uint32_t msr, uint64_t val)
 
 // Layout of the trap frame built on the stack by the
 // hardware and by trapasm.S, and passed to trap().
-#ifdef X86_64
 struct trapframe {
-	uint64_t eax; // rax
+#ifdef X86_64
+	uint64_t rax;
 	uint64_t rbx;
 	uint64_t rcx;
 	uint64_t rdx;
@@ -292,45 +292,10 @@ struct trapframe {
 	uint64_t trapno;
 	uint64_t err;
 
-	uint64_t eip; // rip
+	uint64_t rip;
 	uint64_t cs;
-	uint64_t eflags; // rflags
-	uint64_t esp; // rsp
+	uint64_t rflags;
+	uint64_t rsp;
 	uint64_t ds; // ss
-};
-#else
-struct trapframe {
-	// registers as pushed by pusha
-	uint32_t edi;
-	uint32_t esi;
-	uint32_t ebp;
-	uint32_t oesp; // useless & ignored
-	uint32_t ebx;
-	uint32_t edx;
-	uint32_t ecx;
-	uint32_t eax;
-
-	// rest of trap frame
-	uint16_t gs;
-	uint16_t padding1;
-	uint16_t fs;
-	uint16_t padding2;
-	uint16_t es;
-	uint16_t padding3;
-	uint16_t ds;
-	uint16_t padding4;
-	uint32_t trapno;
-
-	// below here defined by x86 hardware
-	uint32_t err;
-	uint32_t eip;
-	uint16_t cs;
-	uint16_t padding5;
-	uint32_t eflags;
-
-	// below here only when crossing rings, such as from user to kernel
-	uint32_t esp;
-	uint16_t ss;
-	uint16_t padding6;
-};
 #endif
+};

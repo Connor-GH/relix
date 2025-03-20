@@ -66,30 +66,30 @@ release(struct spinlock *lk) __releases(lk)
 	popcli();
 }
 
-// Record the current call stack in pcs[] by following the %ebp chain.
+// Record the current call stack in pcs[] by following the %rbp chain.
 void
 getcallerpcs(void *v, uintptr_t pcs[])
 {
-	uintptr_t *ebp;
+	uintptr_t *rbp;
 #if X86_64
-	asm volatile("mov %%rbp, %0" : "=r"(ebp));
+	asm volatile("mov %%rbp, %0" : "=r"(rbp));
 #else
-	ebp = (uintptr_t *)v - 2;
+	rbp = (uintptr_t *)v - 2;
 #endif
-	getcallerpcs_with_bp(pcs, ebp, 10);
+	getcallerpcs_with_bp(pcs, rbp, 10);
 
 }
 void
-getcallerpcs_with_bp(uintptr_t pcs[], uintptr_t *ebp, size_t size)
+getcallerpcs_with_bp(uintptr_t pcs[], uintptr_t *rbp, size_t size)
 {
 	int i;
 
 	for (i = 0; i < size; i++) {
-		if (ebp == 0 || ebp < (uintptr_t *)KERNBASE ||
-				ebp == (uintptr_t *)0xffffffff)
+		if (rbp == 0 || rbp < (uintptr_t *)KERNBASE ||
+				rbp == (uintptr_t *)0xffffffff)
 			break;
-		pcs[i] = ebp[1]; // saved %eip
-		ebp = (uintptr_t *)ebp[0]; // saved %ebp
+		pcs[i] = rbp[1]; // saved %rip
+		rbp = (uintptr_t *)rbp[0]; // saved %rbp
 	}
 	for (; i < size; i++)
 		pcs[i] = 0;
@@ -113,19 +113,19 @@ holding(struct spinlock *lock)
 void
 pushcli(void)
 {
-	int eflags;
+	int rflags;
 
-	eflags = readeflags();
+	rflags = readrflags();
 	cli();
 	if (mycpu()->ncli == 0)
-		mycpu()->intena = eflags & FL_IF;
+		mycpu()->intena = rflags & FL_IF;
 	mycpu()->ncli += 1;
 }
 
 void
 popcli(void)
 {
-	if (readeflags() & FL_IF)
+	if (readrflags() & FL_IF)
 		panic("popcli - interruptible");
 	if (--mycpu()->ncli < 0)
 		panic("popcli");

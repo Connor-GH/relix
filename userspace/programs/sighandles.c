@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <setjmp.h>
 
-static int num = 1;
+static volatile sig_atomic_t num = 1;
 jmp_buf buf;
 
 // On Ctrl-C, exit with status 32.
@@ -18,7 +18,6 @@ void
 sigint_handle2(int _)
 {
 	num++;
-	longjmp(buf, 1);
 }
 
 
@@ -29,7 +28,6 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 	while (true) {
-		setjmp(buf);
 		printf("Got: %d\n", num);
 		sleep(100);
 	}

@@ -30,7 +30,7 @@
 /* The magic field should contain this.  */
 #define MULTIBOOT2_HEADER_MAGIC 0xe85250d6
 
-/* This should be in %eax.  */
+/* This should be in %rax.  */
 #define MULTIBOOT2_BOOTLOADER_MAGIC 0x36d76289
 
 /* Alignment of multiboot modules.  */

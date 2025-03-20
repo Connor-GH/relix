@@ -1,0 +1,26 @@
+diff --git a/src/bltin/test.c b/src/bltin/test.c
+index c7fc479..4c31366 100644
+--- a/src/bltin/test.c
++++ b/src/bltin/test.c
+@@ -684,15 +684,17 @@ static int test_access(const struct stat64 *sp, int stmode)
+ 	else {
+ 		/* XXX stolen almost verbatim from ksh93.... */
+ 		/* on some systems you can be in several groups */
+-		maxgroups = getgroups(0, NULL);
++		//maxgroups = getgroups(0, NULL);
++		maxgroups = 1;
+ 		groups = stalloc(maxgroups * sizeof(*groups));
+-		n = getgroups(maxgroups, groups);
+-		while (--n >= 0) {
++		//n = getgroups(maxgroups, groups);
++		memset(groups, 0, sizeof(gid_t));
++		/*while (--n >= 0) {
+ 			if (groups[n] == sp->st_gid) {
+ 				stmode <<= 3;
+ 				break;
+ 			}
+-		}
++		}*/
+ 	}
+ 
+ 	return sp->st_mode & stmode;

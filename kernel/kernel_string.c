@@ -83,7 +83,7 @@ strlen(const char *s)
 	return n;
 }
 char *
-strchr(const char *s, char c)
+strchr(const char *s, int c)
 {
 	for (; *s; s++)
 		if (*s == c)
@@ -91,7 +91,7 @@ strchr(const char *s, char c)
 	return 0;
 }
 char *
-strrchr(const char *s, char c)
+strrchr(const char *s, int c)
 {
 	for (int i = strlen(s) - 1; i >= 0; i--)
 		if (s[i] == c)

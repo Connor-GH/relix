@@ -245,3 +245,13 @@ sys_sigaction(void)
 {
 	return -ENOSYS;
 }
+
+size_t
+sys_times(void)
+{
+	struct tms *tms;
+	if (argptr(0, (char **)&tms, sizeof(struct tms *)) < 0)
+		return -EFAULT;
+
+	return 1;
+}

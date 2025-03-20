@@ -22,10 +22,9 @@ strcpy(char *s, const char *t)
 int
 strcmp(const char *p, const char *q)
 {
-	size_t n = strlen(p);
-	if (n != strlen(q))
-		return -1;
-	return strncmp(p, q, n);
+	size_t np = strlen(p);
+	size_t nq = strlen(q);
+	return strncmp(p, q, (np > nq ? nq : np) + 1);
 }
 
 char *
@@ -93,7 +92,7 @@ strnlen(const char *s, size_t size)
 }
 
 char *
-strchr(const char *s, char c)
+strchr(const char *s, int c)
 {
 	for (; *s; s++)
 		if (*s == c)
@@ -101,7 +100,7 @@ strchr(const char *s, char c)
 	return 0;
 }
 char *
-strrchr(const char *s, char c)
+strrchr(const char *s, int c)
 {
 	for (int i = strlen(s) - 1; i >= 0; i--)
 		if (s[i] == c)

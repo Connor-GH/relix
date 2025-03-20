@@ -48,7 +48,8 @@
 #define SYS_getuid 45
 #define SYS_getgid 46
 #define SYS_getppid 47
-#define SYSCALL_AMT 47
+#define SYS_times 48
+#define SYSCALL_AMT 48
 #ifndef __ASSEMBLER__
 #include <stddef.h>
 #include "types.h"
@@ -100,6 +101,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_getuid] = "getuid",
 	[SYS_getgid] = "getgid",
 	[SYS_getppid] = "getppid",
+	[SYS_times] = "times",
 };
 #endif
 #if defined(__KERNEL__) && !defined(__ASSEMBLER__)

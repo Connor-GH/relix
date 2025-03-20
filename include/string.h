@@ -3,7 +3,9 @@
 char *
 strcpy(char *, const char *);
 char *
-strchr(const char *, char c);
+strchr(const char *, int c);
+char *
+strrchr(const char *str, int c);
 char *
 strcat(char *dst, const char *src);
 int
@@ -29,8 +31,6 @@ size_t
 strlen(const char *s);
 size_t
 strnlen(const char *s, size_t size);
-char *
-strrchr(const char *str, char c);
 char *
 strstr(const char *s1, const char *s2);
 char *

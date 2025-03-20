@@ -1,3 +1,4 @@
+#include "kernel/include/kernel_signal.h"
 #include "stat.h"
 #include <errno.h>
 #include <setjmp.h>
@@ -312,16 +313,17 @@ atexit(void (*function)(void))
 }
 
 int
-setjmp(jmp_buf env)
+__sigsetjmp_tail(sigjmp_buf env, int ret)
 {
-	return 0;
+	void *p = env->__saved_mask;
+	sigprocmask(SIG_SETMASK, ret ? p : 0, ret ? 0 : p);
+	return ret;
 }
 
-void __attribute__((noreturn))
-longjmp(jmp_buf env, int val)
+__attribute__((noreturn)) void
+siglongjmp(jmp_buf env, int val)
 {
-	while (1) {
-	}
+	longjmp(env, val);
 }
 
 __attribute__((noreturn)) void

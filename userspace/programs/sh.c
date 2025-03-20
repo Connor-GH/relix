@@ -245,7 +245,7 @@ main(void)
 			runcmd(parsecmd(buf));
 		pid = wait(&status);
 		if (WIFSIGNALED(status)) {
-			fprintf(stderr, "pid %d: %s\n", pid, strsignal(WTERMSIG(status)));
+			fprintf(stderr, "pid %d: %s (%d)\n", pid, strsignal(WTERMSIG(status)), WEXITSTATUS(status));
 		} else if (WEXITSTATUS(status) != 0 && buf[0] != '\n') {
 			fprintf(stderr, "ERROR: pid %d returned with status %d\n", pid,
 							WEXITSTATUS(status));

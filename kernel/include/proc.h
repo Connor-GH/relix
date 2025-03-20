@@ -63,7 +63,6 @@ struct context {
 	uintptr_t r14;
 	uintptr_t r13;
 	uintptr_t r12;
-	uintptr_t r11;
 	uintptr_t rbx;
 	uintptr_t ebp;
 	uintptr_t eip;

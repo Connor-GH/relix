@@ -5,6 +5,7 @@
 //
 
 #include "fb.h"
+#include "fcntl_constants.h"
 #include "memlayout.h"
 #include "mmu.h"
 #include "pci.h"
@@ -310,10 +311,14 @@ create(char *path, mode_t mode, short major, short minor)
 		inode_unlockput(dp);
 		inode_lock(ip);
 		if (S_ISREG(ip->mode) && S_ISREG(mode)) {
-			ip->mode = mode; // TODO limit permissions
+			ip->mode = mode;
 			return ip;
 		}
 		if (S_ISLNK(ip->mode) && S_ISLNK(mode)) {
+			ip->mode = mode;
+			return ip;
+		}
+		if (S_ISREG(ip->mode) && S_ISREG(mode)) {
 			ip->mode = mode;
 			return ip;
 		}
@@ -360,7 +365,7 @@ create(char *path, mode_t mode, short major, short minor)
 }
 
 int
-fileopen(char *path, int flags)
+fileopen(char *path, int flags, mode_t mode)
 {
 	int fd;
 	struct file *f;
@@ -386,10 +391,13 @@ fileopen(char *path, int flags)
 		}
 		// create() holds a lock on this inode pointer,
 		// but only if it succeeds.
-		ip = create(path, S_IFREG | S_IAUSR, 0, 0);
+		ip = create(path, mode, 0, 0);
 		if (ip == 0) {
 			end_op();
 			return -EIO;
+		}
+		if (!S_ISANY(ip->mode)) {
+			ip->mode |= S_IFREG;
 		}
 	} else {
 		if ((ip = namei(path)) == 0) {
@@ -447,12 +455,22 @@ sys_open(void)
 {
 	char *path;
 	int flags;
+	mode_t mode;
 
 	if (argstr(0, &path) < 0 || argint(1, &flags) < 0)
 		return -EINVAL;
-	/* TODO ignoring mode flag */
+	if (((flags & O_CREAT) == O_CREAT) || ((flags & O_TMPFILE) == O_TMPFILE)) {
+		if (argmode_t(2, &mode) < 0)
+			return -EINVAL;
+	} else {
+		mode = 0777; // mode is ignored.
+	}
 
-	return fileopen(path, flags);
+	// Myproc is NULL? Uh, ask it to try again later...
+	if (myproc() == NULL)
+		return -EAGAIN;
+
+	return fileopen(path, flags, mode & ~(myproc()->umask));
 }
 
 size_t
@@ -465,8 +483,10 @@ sys_mkdir(void)
 	if (argstr(0, &path) < 0 || argint(1, &mode) < 0) {
 		return -EINVAL;
 	}
+	if (myproc() == NULL)
+		return -EAGAIN;
 	begin_op();
-	if ((ip = create(path, S_IFDIR | mode, 0, 0)) == 0) {
+	if ((ip = create(path, (S_IFDIR | mode) & ~myproc()->umask, 0, 0)) == 0) {
 		end_op();
 		return -ENOENT;
 	}
@@ -947,10 +967,13 @@ size_t
 sys_umask(void)
 {
 	mode_t mask;
+	// The default is S_IWGRP | S_IWOTH (022).
+	// This function is said to never fail, so
+	// we must return something useful.
 	if (argint(0, &mask) < 0) {
-		return 0;
+			return S_IWGRP | S_IWOTH;
 	}
-	return mask;
+	return myproc() ? myproc()->umask : (S_IWGRP | S_IWOTH);
 }
 
 size_t

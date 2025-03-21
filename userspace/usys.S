@@ -74,7 +74,7 @@ SYSCALL_PRIVATE(getcwd)
 SYSCALL(sigprocmask) # TODO
 SYSCALL_PRIVATE(vfork) # TODO
 SYSCALL(wait3) # TODO
-SYSCALL(umask) # TODO
+SYSCALL(umask)
 SYSCALL(sigsuspend) # TODO
 SYSCALL(sigaction) # TODO
 SYSCALL(rename)

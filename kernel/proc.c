@@ -1,4 +1,5 @@
 #include "mman.h"
+#include "stat.h"
 #include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -150,6 +151,8 @@ found:
 	p->cred.uid = 0;
 	p->cred.gid = 0;
 
+	p->umask = S_IWGRP | S_IWOTH;
+
 	memset(p->ptrace_mask_ptr, 0, SYSCALL_AMT);
 
 	for (int i = 0; i < __SIG_last; i++) {
@@ -269,6 +272,8 @@ fork(bool virtual)
 		if (curproc->ofile[i])
 			np->ofile[i] = filedup(curproc->ofile[i]);
 	np->cwd = inode_dup(curproc->cwd);
+	np->cred = curproc->cred;
+	np->umask = curproc->umask;
 
 	__safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 

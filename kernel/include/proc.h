@@ -95,6 +95,7 @@ struct proc {
 	sighandler_t sig_handlers[__SIG_last];
 	int last_signal;
 	uint8_t fpu_state[512] __attribute__((aligned(16)));
+	mode_t umask;
 };
 
 // Process memory is laid out contiguously, low addresses first:

@@ -41,7 +41,7 @@ struct redircmd {
 	struct cmd *cmd;
 	char *file;
 	char *efile;
-	int mode;
+	int flags;
 	int fd;
 };
 
@@ -127,7 +127,7 @@ runcmd(struct cmd *cmd)
 		rcmd = (struct redircmd *)cmd;
 		close(rcmd->fd);
 		int rcmd_fd;
-		if ((rcmd_fd = open(rcmd->file, rcmd->mode)) < 0) {
+		if ((rcmd_fd = open(rcmd->file, rcmd->flags, 0777)) < 0) {
 			fprintf(stderr, "open %s failed\n", rcmd->file);
 			perror("open");
 			exit(1);
@@ -286,7 +286,7 @@ execcmd(void)
 }
 
 struct cmd *
-redircmd(struct cmd *subcmd, char *file, char *efile, int mode, int fd)
+redircmd(struct cmd *subcmd, char *file, char *efile, int flags, int fd)
 {
 	struct redircmd *cmd;
 
@@ -296,7 +296,7 @@ redircmd(struct cmd *subcmd, char *file, char *efile, int mode, int fd)
 	cmd->cmd = subcmd;
 	cmd->file = file;
 	cmd->efile = efile;
-	cmd->mode = mode;
+	cmd->flags = flags;
 	cmd->fd = fd;
 	return (struct cmd *)cmd;
 }

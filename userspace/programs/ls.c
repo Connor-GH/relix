@@ -211,7 +211,7 @@ fmtname(char *path, int fmt_flag)
 }
 
 static char *
-mode_to_perm(uint32_t mode, char ret[static 11])
+mode_to_perm(mode_t mode, char ret[static 11])
 {
 	ret[0] = (mode & S_IFREG) ? '-' :
 					 S_ISDIR(mode)		? 'd' :
@@ -281,7 +281,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag, bool hflag)
 	struct stat st;
 	char buf[512];
 
-	if ((fd = open(path, 0)) < 0) {
+	if ((fd = open(path, O_RDONLY)) < 0) {
 		fprintf(stderr, "ls: cannot open %s\n", path);
 		perror("open");
 		return;

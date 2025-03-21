@@ -124,6 +124,8 @@ int
 argsize_t(int n, size_t *sp);
 int
 argoff_t(int n, off_t *sp);
+int
+argmode_t(int n, mode_t *sp);
 
 int
 fetchint(uintptr_t, int *);

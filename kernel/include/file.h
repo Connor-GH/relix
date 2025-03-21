@@ -50,7 +50,7 @@ filealloc(void);
 void
 fileclose(struct file *);
 int
-fileopen(char *path, int flags);
+fileopen(char *path, int flags, mode_t mode);
 struct file *
 filedup(struct file *);
 void

@@ -18,7 +18,7 @@
 #define __NDINDIRECT_PER_ENTRY __NDIRECT
 #define __NDINDIRECT_ENTRY __NDIRECT
 #define __BSIZE 2048 // block size
-#if !defined(__USER__) || defined(USE_HOST_TOOLS)
+#if __KERNEL__ || defined(USE_HOST_TOOLS)
 #define NDIRECT __NDIRECT
 #define NINDIRECT __NINDIRECT
 #define MAXFILE __MAXFILE
@@ -93,7 +93,7 @@ struct dinode {
 // Directory is a file containing a sequence of dirent structures.
 #define ROOTINO 1U // root i-number
 
-#ifndef USE_HOST_TOOLS
+#if !defined(USE_HOST_TOOLS) || __KERNEL__
 #include "stat.h"
 void
 read_superblock(dev_t dev, struct superblock *sb);

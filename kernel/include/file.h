@@ -4,6 +4,7 @@
 #include "fs.h"
 #include "mman.h"
 #include "param.h"
+#if __KERNEL__
 struct file {
 	enum { FD_NONE, FD_PIPE, FD_INODE } type;
 	int ref; // reference count
@@ -23,6 +24,7 @@ struct devsw {
 	ssize_t (*write)(short minor, struct inode *, char *, size_t);
 	struct mmap_info (*mmap)(short minor, size_t length, uintptr_t addr, int perm);
 };
+#endif
 
 #define MINOR_TTY_SERIAL 64
 
@@ -43,6 +45,7 @@ enum {
 };
 
 _Static_assert(__DEVSW_last <= NDEV, "Too many devices; adjust NDEV in param.h");
+#if __KERNEL__
 extern struct devsw devsw[];
 
 struct file *
@@ -67,3 +70,4 @@ struct file *
 fd_to_struct_file(int fd);
 char *
 inode_to_path(char *buf, size_t n, struct inode *ip);
+#endif

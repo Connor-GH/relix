@@ -1,4 +1,5 @@
 #pragma once
+#if __KERNEL__
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define swap(a, b) \
 		do { \
@@ -38,3 +39,4 @@
 
 #define ROUND_UP(x, round_to) (((x + (round_to - 1)) / round_to) * round_to)
 #define ROUND_DOWN(x, round_to) (x / round_to * round_to)
+#endif

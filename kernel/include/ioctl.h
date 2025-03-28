@@ -1,4 +1,5 @@
 #pragma once
+/* Exported to userspace */
 #include <pci.h>
 #include "fb.h"
 #define _IOC_RW 0b11

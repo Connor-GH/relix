@@ -68,7 +68,7 @@
 
 struct stat {
 	dev_t st_dev;  // File system's disk device
-	uint32_t st_ino; /* u32 or u64 */ // Inode number
+	ino_t st_ino; // Inode number
 	short st_nlink; /* u32 or u64 */ // Number of links to file
 	off_t st_size; // Size of file in bytes
 	mode_t st_mode;

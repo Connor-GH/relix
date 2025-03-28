@@ -1,4 +1,5 @@
 #pragma once
+#if __KERNEL__
 #include <stdint.h>
 #include "types.h"
 #include "compiler_attributes.h"
@@ -11,3 +12,4 @@ void
 block_release(struct buf *b) __releases(&b->lock);
 void
 block_write(struct buf *b) __must_hold(&b->lock);
+#endif

@@ -1,5 +1,6 @@
 #include "kernel/include/param.h"
 #include "printf.h"
+#include "stat.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -77,8 +78,9 @@ int
 fflush(FILE *stream)
 {
 	if (stream == NULL) {
-		fflush(stdout);
-		fflush(stderr);
+		for (size_t i = 0; i < open_files_index; i++) {
+			fflush(open_files[i]);
+		}
 	}
 	return flush(stream);
 }
@@ -93,86 +95,58 @@ fileno(FILE *stream)
 }
 
 static int
-string_to_mode(const char *restrict mode)
+string_to_flags(const char *restrict mode)
 {
 	if (mode == NULL) {
 		goto bad_mode;
 	}
-	int mode_val = -1;
+	int flags_val = -1;
 	switch (mode[0]) {
 	case 'w': {
 		if (mode[1] != '\0') {
 			if (mode[1] == '+') {
-				mode_val = O_RDWR | O_CREATE /*| O_TRUNC*/;
+				flags_val = O_RDWR | O_CREATE | O_TRUNC;
 				break;
 			}
 		}
-		mode_val = O_WRONLY | O_CREATE /*| O_TRUNC*/;
+		flags_val = O_WRONLY | O_CREATE | O_TRUNC;
 		break;
 	}
 	case 'r': {
 		if (mode[1] != '\0') {
 			if (mode[1] == '+') {
-				mode_val = O_RDWR;
+				flags_val = O_RDWR;
 				break;
 			}
 		}
-		mode_val = O_RDONLY;
+		flags_val = O_RDONLY;
 		break;
 	}
 	case 'a': {
 		if (mode[1] != '\0') {
 			if (mode[1] == '+') {
-				mode_val = O_RDWR | O_CREATE | O_APPEND;
+				flags_val = O_RDWR | O_CREATE | O_APPEND;
 				break;
 			}
 		}
-		mode_val = O_WRONLY | O_CREATE | O_APPEND;
+		flags_val = O_WRONLY | O_CREATE | O_APPEND;
 		break;
 	}
 	default:
 		goto bad_mode;
 	}
-	return mode_val;
+	return flags_val;
 bad_mode:
 	errno = EINVAL;
 	return -1;
 }
 
+// The "mode" is the "file open mode", not the "permissions mode".
 FILE *
 fopen(const char *restrict pathname, const char *restrict mode)
 {
-	FILE *fp = malloc(sizeof(FILE));
-	if (fp == NULL)
-		return NULL;
-	fp->mode = string_to_mode(mode);
-	if (fp->mode == -1)
-		return NULL;
-	fp->fd = open(pathname, fp->mode);
-	if (fp->fd == -1)
-		return NULL;
-	fp->eof = false;
-	fp->error = false;
-	fp->write_buffer = malloc(WRITE_BUFFER_SIZE);
-	if (fp->write_buffer == NULL)
-		return NULL;
-	fp->write_buffer_size = WRITE_BUFFER_SIZE;
-	fp->write_buffer_index = 0;
-	fp->stdio_flush = true;
-	fp->buffer_mode = _IOFBF;
-	if (open_files_index < NFILE) {
-		fp->static_table_index = open_files_index;
-		open_files[open_files_index++] = fp;
-	} else {
-		for (size_t i = 0; i < NFILE; i++) {
-			if (open_files[i] == NULL) {
-				fp->static_table_index = i;
-				open_files[i] = fp;
-			}
-		}
-		return NULL;
-	}
-	return fp;
+	const mode_t file_mode = S_IWGRP | S_IRGRP | S_IWOTH | S_IROTH | S_IWUSR | S_IRUSR;
+	return fdopen(open(pathname, string_to_flags(mode), file_mode), mode);
 }
 
 FILE *
@@ -206,9 +180,10 @@ fdopen(int fd, const char *restrict mode)
 	FILE *fp = malloc(sizeof(FILE));
 	if (fp == NULL)
 		return NULL;
-	fp->mode = string_to_mode(mode);
-	if (fp->mode == -1)
+	fp->flags = string_to_flags(mode);
+	if (fp->flags == -1)
 		return NULL;
+	fp->mode = S_IWGRP | S_IRGRP | S_IWOTH | S_IROTH | S_IWUSR | S_IRUSR;
 	fp->fd = fd;
 	fp->eof = false;
 	fp->error = false;
@@ -218,6 +193,7 @@ fdopen(int fd, const char *restrict mode)
 	fp->write_buffer_size = WRITE_BUFFER_SIZE;
 	fp->write_buffer_index = 0;
 	fp->stdio_flush = true;
+	fp->previous_char = EOF;
 	fp->buffer_mode = _IOFBF;
 	if (open_files_index < NFILE) {
 		fp->static_table_index = open_files_index;
@@ -261,13 +237,19 @@ ferror(FILE *stream)
 }
 
 int
+ungetc(int c, FILE *stream)
+{
+	return stream->previous_char;
+}
+
+int
 getc(FILE *stream)
 {
 	int c;
 	if (read(fileno(stream), &c, 1) != 1) {
 		return EOF;
 	}
-	fflush(stream);
+	stream->previous_char = c;
 	return c;
 }
 
@@ -338,7 +320,7 @@ fputc(int c, FILE *stream)
 int
 putchar(int c)
 {
-	return putc(c, stdout);
+	return fputc(c, stdout);
 }
 
 static size_t
@@ -590,7 +572,7 @@ fwrite(void *ptr, size_t size, size_t nmemb, FILE *restrict stream)
 		stream->error = true;
 		return 0;
 	}
-	stream->file_offset = count;
+	stream->file_offset += count;
 	return ret / size;
 }
 
@@ -604,7 +586,7 @@ fread(void *ptr, size_t size, size_t nmemb, FILE *restrict stream)
 		stream->error = true;
 		return 0;
 	}
-	stream->file_offset = count;
+	stream->file_offset += count;
 	return ret / size;
 }
 

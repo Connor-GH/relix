@@ -1,4 +1,5 @@
 #pragma once
+#if __KERNEL__
 #include "compiler_attributes.h"
 #include <stddef.h>
 #include <stdarg.h>
@@ -39,3 +40,4 @@ kernel_vprintf_template(void (*put_function)(char c, char *buf),
 								 char *restrict buf, const char *fmt, va_list argp,
 								 struct spinlock *lock, bool locking,
 								 size_t print_n_chars);
+#endif

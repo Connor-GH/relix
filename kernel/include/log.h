@@ -1,4 +1,5 @@
 #pragma once
+#if __KERNEL__
 #include <buf.h>
 #include "compiler_attributes.h"
 void
@@ -9,3 +10,4 @@ void
 begin_op(void) __acquires(op);
 void
 end_op(void) __releases(op);
+#endif

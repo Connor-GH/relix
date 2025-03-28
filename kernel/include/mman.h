@@ -1,11 +1,13 @@
 #pragma once
-#include <stddef.h>
-#include <stdint.h>
-#include "file.h"
+/* Exported to userspace */
 #define PROT_READ 0x1
 #define PROT_WRITE 0x2
 #define MAP_SHARED 0x1
 
+#if __KERNEL__
+#include "file.h"
+#include <stddef.h>
+#include <stdint.h>
 // Stuff returned by block devices as "recommendations" if it is a block device.
 struct mmap_info {
 	size_t length;
@@ -17,3 +19,4 @@ struct mmap_info {
 	int perm;
 };
 
+#endif

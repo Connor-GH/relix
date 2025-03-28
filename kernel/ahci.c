@@ -488,8 +488,8 @@ probe_port(HBAMem *abar_)
 {
 	// Search disk in implemented ports
 	uint32_t pi = abar_->pi;
-	for (int i = 0; i < 32; i++) {
-		if ((pi & (1 << i)) == (1 << i)) {
+	for (unsigned int i = 0; i < 32; i++) {
+		if ((pi & (1U << i)) == (1U << i)) {
 			int dt = check_type(&abar_->ports[i]);
 			if (dt == AHCI_DEV_SATA) {
 				uart_printf("Sata drive found at port %d\n", i);

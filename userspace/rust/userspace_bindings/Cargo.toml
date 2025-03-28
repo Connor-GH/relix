@@ -3,11 +3,11 @@ name = "userspace_bindings"
 version = "0.1.0"
 edition = "2021"
 
-[profile.release]
-lto = true
-
 [lib]
 crate-type = ["rlib"]
 
 [dependencies]
 spin = "0.9.8"
+
+[build-dependencies]
+bindgen = { version = "0.71.1", default-features = false}

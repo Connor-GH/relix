@@ -1,4 +1,5 @@
 #pragma once
+/* Exported to userspace */
 
 #include <stdint.h>
 #ifndef USE_HOST_TOOLS
@@ -12,6 +13,7 @@ typedef int64_t ssize_t;
 typedef int pid_t;
 typedef int uid_t;
 typedef int gid_t;
+typedef uint32_t ino_t;
 typedef int id_t;
 typedef uint64_t dev_t;
 

@@ -1,4 +1,5 @@
 #pragma once
+#if __KERNEL__
 // Per-CPU state
 #include "fs.h"
 #include "kernel_signal.h"
@@ -94,8 +95,10 @@ struct proc {
 	size_t effective_largest_sz; // Largest address when including mmap
 	sighandler_t sig_handlers[__SIG_last];
 	int last_signal;
-	uint8_t fpu_state[512] __attribute__((aligned(16)));
 	mode_t umask;
+	uint8_t legacy_fpu_state[512] __attribute__((aligned(16)));
+	uint8_t fpu_header[64] __attribute__((aligned(16)));
+	uint8_t extended_fpu_state[0] __attribute__((aligned(16)));
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -128,10 +131,8 @@ void
 sched(void);
 void
 setproc(struct proc *);
-#ifdef __KERNEL__
 void
 sleep(void *, struct spinlock *);
-#endif
 void
 userinit(void);
 int
@@ -144,3 +145,4 @@ void
 yield(void);
 struct proc *
 last_proc_ran(void);
+#endif

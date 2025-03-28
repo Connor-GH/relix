@@ -21,3 +21,4 @@ mkfs
 /dist/*
 !**/*.patch
 *.wad
+/userspace/rust/userspace_bindings/src/bindings.rs

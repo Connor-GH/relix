@@ -12,6 +12,7 @@ struct sleeplock {
 	char *name; // Name of lock.
 	int pid; // Process holding lock
 };
+#if __KERNEL__
 void
 acquiresleep(struct sleeplock *s) __acquires(s);
 void
@@ -20,3 +21,4 @@ int
 holdingsleep(struct sleeplock *);
 void
 initsleeplock(struct sleeplock *, char *);
+#endif

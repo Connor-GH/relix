@@ -1,7 +1,7 @@
 #![no_std]
 #![feature(vec_into_raw_parts)]
 use core::ffi::c_char;
-use userspace_bindings::pci::PciConf;
+use userspace_bindings::bindings::pci_conf;
 extern crate alloc;
 use alloc::ffi::CString;
 #[cfg(feature = "pci-ids")]
@@ -130,7 +130,7 @@ fn internal_libpci_device_info_pci_ids(
     Some(slice.into_raw_parts().0)
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn libpci_device_info_alloc(pci: PciConf) -> *mut *mut c_char {
+pub extern "C" fn libpci_device_info_alloc(pci: pci_conf) -> *mut *mut c_char {
     let ret = internal_libpci_device_info(
         pci.vendor_id,
         pci.device_id,

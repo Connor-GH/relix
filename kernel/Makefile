@@ -14,7 +14,7 @@ KERNEL_DRIVERS = $(KERNELDIR)/drivers/kbd.c \
 								 $(KERNELDIR)/drivers/ps2mouse.c
 KERNEL_OBJS = $(KERNEL_SRC:$(KERNELDIR)/%.c=$(BIN)/%.o) $(KERNEL_ASM:$(KERNELDIR)/%.S=$(BIN)/%.o) \
 	$(KERNEL_DRIVERS:$(KERNELDIR)/drivers/%.c=$(BIN)/%.o)
-KERNEL_EXTRAS = -D__KERNEL__ -D__relix__
+KERNEL_EXTRAS = -D__KERNEL__=1 -D__relix__=1
 
 ifneq ($(KUBSAN),)
 	KUBSAN_FLAGS = -fsanitize=undefined

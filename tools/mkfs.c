@@ -16,6 +16,7 @@
 #define gid_t relix_gid_t
 #define id_t relix_id_t
 #define mode_t relix_mode_t
+#define ino_t relix_ino_t
 #define USE_HOST_TOOLS
 #include "../kernel/include/fs.h"
 #include "../include/stat.h"

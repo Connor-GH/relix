@@ -1,5 +1,5 @@
 #pragma once
-#include <stdint.h>
+/* Exported to userspace */
 #include "types.h"
 enum {
 	SIGHUP = 1,
@@ -71,7 +71,7 @@ struct sigaction {
 
 #define SIG_SETMASK 0x1
 
-#ifdef __KERNEL__
+#if __KERNEL__
 sighandler_t
 kernel_attach_signal(int signum, sighandler_t handler);
 #endif

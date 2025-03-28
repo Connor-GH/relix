@@ -1,4 +1,5 @@
 #pragma once
+#if __KERNEL__
 #include <stddef.h>
 #include "compiler_attributes.h"
 char *
@@ -21,3 +22,4 @@ void
 kinit1(void *, void *);
 void
 kinit2(void *, void *);
+#endif

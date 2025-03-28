@@ -1,4 +1,5 @@
 #pragma once
+#if __KERNEL__
 #include <stdint.h>
 // See MultiProcessor Specification Version 1.[14]
 
@@ -63,3 +64,4 @@ struct mpbus {
 
 void
 mpinit(void);
+#endif

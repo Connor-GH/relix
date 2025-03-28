@@ -13,6 +13,12 @@
 #define _UL(x) ((unsigned long)x)
 #define _BITUL(x) (_UL(1) << (x))
 
+// I called this "XBV" instead of "xgetbv" or "xsetbv".
+#define XBV_XCR0 0
+enum {
+	XCR0_SSE = 1 << 1,
+	XCR0_AVX = 1 << 2,
+};
 
 static uint8_t clean_fpu[512];
 static void
@@ -72,7 +78,7 @@ sse_init(CpuFeatures *features)
 	uint64_t cr4 = read_cr4();
 	cr4 |= CR4_OSFXSR;
 	cr4 |= CR4_OSXMMEXCPT;
-	if (features->fpu_misc.osxsave)
+	if (features->fpu_misc.xsave)
 		cr4 |= CR4_OSXSAVE;
 	write_cr4(cr4);
 }
@@ -301,6 +307,7 @@ remaining_features(CpuFeatures *cpu_features)
 			switch (cpuidstruct_ecx_1[i].feature) {
 			case CPUID_FEAT_ECX_EXT_SSE4A: cpu_features->sse |= SSE4A; break;
 			case CPUID_FEAT_ECX_EXT_MISALIGNED_SSE: cpu_features->sse |= SSE_MISALIGNED; break;
+			case CPUID_FEAT_ECX_XSAVE: cpu_features->fpu_misc.xsave = true; break;
 			}
 		}
 	}
@@ -369,6 +376,18 @@ cpu_features_init(void)
 	fpu_init();
 	kernel_assert(cpu_features->sse >= SSE && cpu_features->fxsr >= FXSR);
 	sse_init(cpu_features);
+	if (read_cr4() & CR4_OSXSAVE) {
+		xsetbv(XBV_XCR0, xgetbv(XBV_XCR0) | XCR0_SSE);
+	}
+
+	// Wait on enabling AVX reg saving for a later date.
+	#if 0
+	if (cpu_features->avx >= AVX) {
+		xsetbv(XBV_XCR0, xgetbv(XBV_XCR0) | XCR0_AVX);
+	}
+	#endif
+
+
 
 
 	model_family_stepping();

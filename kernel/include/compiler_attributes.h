@@ -1,5 +1,4 @@
 #pragma once
-
 #if defined(__GNUC__) && !defined(__clang__)
 #include "gcc.h"
 #elif defined(__clang__)

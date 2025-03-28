@@ -67,6 +67,27 @@ outsl(int port, const void *addr, int cnt)
 											 : "cc");
 }
 
+
+static __always_inline uint64_t
+xgetbv(uint32_t ecx)
+{
+	uint32_t eax, edx;
+	__asm__ __volatile__("xgetbv"
+											 : "=a"(eax), "=d"(edx)
+											 : "c" (ecx));
+	return (uint64_t)edx << 32 | (uint64_t)eax;
+}
+
+static __always_inline void
+xsetbv(uint32_t ecx, uint64_t value)
+{
+	uint32_t edx = value >> 32;
+	uint32_t eax = (uint32_t)value;
+	__asm__ __volatile__("xsetbv"
+											 :
+											 : "a" (eax), "c" (ecx), "d" (edx));
+}
+
 static __always_inline uint64_t
 read_cr4(void)
 {

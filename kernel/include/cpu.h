@@ -1,5 +1,5 @@
-#ifndef CPU_H
-#define CPU_H
+#pragma once
+#if __KERNEL__
 #include <inttypes.h>
 #include <stdbool.h>
 enum SSE {
@@ -33,9 +33,7 @@ typedef struct cpu_features_struct {
 			uint32_t fpu : 1;
 			uint32_t cpuid : 1;
 			uint32_t mmx : 1;
-			uint32_t xsave : 1;
-			uint32_t osxsave : 1;
-
+			uint32_t xsave: 1;
 		};
 		uint32_t bits;
 	} fpu_misc;

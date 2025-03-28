@@ -404,6 +404,12 @@ last_proc_ran(void)
 	release(&ptable.lock);
 	return NULL;
 }
+#define GET(reg) \
+({ \
+	uintptr_t reg; \
+	__asm__ __volatile__("mov %%" # reg ", %0" : "=r" (reg)); \
+	reg; \
+})
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -437,9 +443,10 @@ scheduler(void)
 			switchuvm(p);
 			p->state = RUNNING;
 
-			__asm__ __volatile__("fxsave %0" : "=m" (c->proc->fpu_state));
+			// Depending on the bits set, this may also set the extended state.
+			__asm__ __volatile__("fxsave %0" : "=m" (c->proc->legacy_fpu_state));
 			swtch(&(c->scheduler), p->context);
-			__asm__ __volatile__("fxrstor %0" : : "m" (c->proc->fpu_state));
+			__asm__ __volatile__("fxrstor %0" : : "m" (c->proc->legacy_fpu_state));
 			switchkvm();
 
 			// Process is done running for now.

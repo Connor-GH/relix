@@ -16,14 +16,17 @@ struct _IO_FILE {
 	size_t write_buffer_size;
 	size_t write_buffer_index;
 	size_t static_table_index;
+	int previous_char;
 	int fd;
 	int mode;
+	int flags;
 	int buffer_mode;
 	off_t file_offset;
 	bool eof;
 	bool error;
 	bool stdio_flush;
 };
+
 #define _IOLBF 0x1
 #define _IOFBF 0x2
 #define _IONBF 0x3
@@ -70,6 +73,8 @@ void
 setbuf(FILE *restrict stream, char *restrict buf);
 int
 getc(FILE *stream);
+int
+ungetc(int c, FILE *stream);
 int
 fileno(FILE *stream);
 void

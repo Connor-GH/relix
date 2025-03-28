@@ -27,6 +27,7 @@ enum {
 	VGA_COLOR_BRIGHT_CYAN = R(85) | G(255) | B(255),
 	VGA_COLOR_BRIGHT_WHITE = R(255) | G(255) | B(255),
 };
+#if __KERNEL__
 struct vga_rectangle {
 	uint32_t x;
 	uint32_t y;
@@ -55,4 +56,5 @@ void
 ansi_set_cursor_location(uint16_t x, uint16_t y);
 struct multiboot_tag_framebuffer_common
 get_fb_common(void);
+#endif
 #endif

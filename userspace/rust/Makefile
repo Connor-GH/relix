@@ -2,9 +2,11 @@ USER_RUST_DIR = $(UDIR)/rust
 
 FULL_BIN = $(realpath $(BIN))
 USER_RUST_MODULES = gui pci
-USER_RUST_OBJ = $(foreach module, $(USER_RUST_MODULES), $(FULL_BIN)/lib$(module).a)
+UR2 = $(foreach module, $(USER_RUST_MODULES), $(realpath $(USER_RUST_DIR))/$(module))
 
-USER_RUST_FLAGS = -Ctarget-feature=+sse,+sse2
+URUST = $(UR2:$(USER_RUST_DIR)/%=$(FULL_BIN)/lib%.a)
+
+USER_RUST_FLAGS = -Ctarget-feature=+sse,+sse2,-avx,-avx2
 ifneq ($(RELEASE),)
   ifeq ($(LLVM),1)
 		CLANG_LLVM_MAJOR = $(clang --version | sed -nE "s/clang version \([0-9]+\).\([0-9]+\).\([0-9]+\)/\1/p")
@@ -13,13 +15,13 @@ ifneq ($(RELEASE),)
 	  	USER_RUST_FLAGS += -Clinker-plugin-lto -Clinker-flavor=ld.lld
 		endif
   endif
-	USER_RUST_FLAGS += -Copt-level=3
+	USER_RUST_FLAGS += -Copt-level=3 -Cembed-bitcode=yes -Clto
 endif
 
-CARGO_FLAGS = -Zunstable-options --target=x86_64-unknown-none
+USER_CARGO_FLAGS = $(CARGO_FLAGS)
 
-$(USER_RUST_OBJ):
-	@for mod in $(USER_RUST_MODULES); do RUSTFLAGS="$(RUSTFLAGS) $(USER_RUST_FLAGS)" $(CARGO) build --manifest-path=$(USER_RUST_DIR)/$$mod/Cargo.toml $(CARGO_FLAGS) --artifact-dir=$(FULL_BIN) $(CARGO_RELEASE); done
+$(FULL_BIN)/lib%.a: $(USER_RUST_DIR)/%
+	RUSTFLAGS="$(RUSTFLAGS) $(USER_RUST_FLAGS)" $(CARGO) build --manifest-path=$^/Cargo.toml $(USER_CARGO_FLAGS) --artifact-dir=$(FULL_BIN) $(CARGO_RELEASE)
 
 user_cargo_clean:
 	@for mod in $(USER_RUST_MODULES); do $(CARGO) clean --manifest-path=$(USER_RUST_DIR)/$$mod/Cargo.toml; done

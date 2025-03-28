@@ -18,6 +18,7 @@ struct spinlock {
 	uintptr_t pcs[10]; // The call stack (an array of program counters)
 		// that locked the lock.
 };
+#if __KERNEL__
 void
 acquire(struct spinlock *s) __acquires(s);
 void
@@ -34,3 +35,4 @@ void
 pushcli(void);
 void
 popcli(void);
+#endif

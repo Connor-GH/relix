@@ -1,4 +1,5 @@
 #pragma once
+#if __KERNEL__
 #include <stdint.h>
 #include "sleeplock.h"
 #include "fs.h"
@@ -15,3 +16,4 @@ struct buf {
 };
 #define B_VALID 0x2 // buffer has been read from disk
 #define B_DIRTY 0x4 // buffer needs to be written to disk
+#endif

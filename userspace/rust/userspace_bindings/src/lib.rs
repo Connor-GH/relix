@@ -1,25 +1,21 @@
 #![no_std]
 #![feature(c_variadic)]
-pub mod fcntl;
-pub mod stdio;
-pub mod stdlib;
-pub mod unistd;
-pub mod string;
-pub mod mman;
-pub mod sys_types;
-pub mod ioctl;
-pub mod pci;
-
-extern crate alloc;
-use stdio::putc;
-use stdlib::{exit, malloc, free};
+#![feature(ptr_metadata)]
+#![feature(layout_for_ptr)]
+#![allow(non_snake_case,non_upper_case_globals)]
+#![allow(non_camel_case_types)]
+pub mod bindings;
+use self::bindings::putchar;
+use self::bindings::printf;
+use self::bindings::{exit, malloc, free};
 use spin::Mutex;
 
 
 #[panic_handler]
 fn rs_panic(info: &core::panic::PanicInfo) -> ! {
 
-    println!("{info}");
+    //println!("{info}");
+    unsafe { printf(c"Rust panic [no other information]\n".as_ptr()); }
     unsafe {
         exit(1);
     }
@@ -31,7 +27,7 @@ impl core::fmt::Write for ConsoleWriter {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         for c in s.as_bytes() {
             unsafe {
-                putc(*c as core::ffi::c_int);
+                putchar((*c) as core::ffi::c_int);
             }
         }
         Ok(())
@@ -46,15 +42,15 @@ pub fn print(args: core::fmt::Arguments) {
 }
 pub mod printing {
 #[macro_export]
+#[deprecated]
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::printing::print(format_args!($($arg)*)))
+    ($($arg:tt)*) => ($crate::print(format_args!($($arg)*)))
 }
 #[macro_export]
+#[deprecated]
 macro_rules! println {
     ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)))
 }
-pub use super::print;
-pub use super::println;
 }
 use core::alloc::{GlobalAlloc, Layout};
 use core::ffi::c_void;

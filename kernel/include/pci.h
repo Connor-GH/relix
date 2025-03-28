@@ -1,5 +1,4 @@
 #pragma once
-#include <stddef.h>
 #include <stdint.h>
 /*
  * Same as the PCI spec for the common header,
@@ -27,7 +26,8 @@ struct pci_conf {
 };
 
 // Kernel implementation details
-#ifdef __KERNEL__
+#if __KERNEL__
+#include <stddef.h>
 struct FatPointerArray_pci_conf {
     struct pci_conf *ptr;
     size_t len;

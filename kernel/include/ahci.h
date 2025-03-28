@@ -1,4 +1,5 @@
 #pragma once
+#if __KERNEL__
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -525,3 +526,4 @@ bool
 write_port(HBAPort *port, uint64_t start, uint16_t count, uint16_t *buf);
 void
 ahci_init(uint32_t abar_);
+#endif

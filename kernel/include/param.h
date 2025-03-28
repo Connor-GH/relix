@@ -1,4 +1,5 @@
 #pragma once
+/* Exported to userspace */
 #define NPROC 64 // maximum number of processes
 #define KSTACKSIZE 4096 // size of per-process kernel stack
 #define NCPU 128 // maximum number of CPUs

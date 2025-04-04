@@ -379,15 +379,15 @@ fileopen(char *path, int flags, mode_t mode)
 	if ((flags & O_CREATE) == O_CREATE) {
 		// try to create a file and it exists.
 		if ((ip = namei(path)) != 0) {
-			// if it's a block device, possibly do something special.
+			// if it's a char device, possibly do something special.
 			inode_lock(ip);
-			if (S_ISBLK(ip->mode)) {
+			if (S_ISCHR(ip->mode)) {
 				goto get_fd;
 			}
-			// if it's not a block device, just exit.
+			// if it's not a char device, just exit.
 			inode_unlockput(ip);
 			end_op();
-			return -ENOTBLK;
+			return -EEXIST;
 		}
 		// create() holds a lock on this inode pointer,
 		// but only if it succeeds.
@@ -418,7 +418,7 @@ fileopen(char *path, int flags, mode_t mode)
 			end_op();
 			return -EISDIR;
 		}
-		if (S_ISBLK(ip->mode)) {
+		if (S_ISCHR(ip->mode)) {
 			if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].open) {
 				inode_unlockput(ip);
 				end_op();
@@ -509,7 +509,7 @@ sys_mknod(void)
 		return -EINVAL;
 	}
 	begin_op();
-	if ((ip = create(path, S_IFBLK | mode, major(dev), minor(dev))) == 0) {
+	if ((ip = create(path, mode, major(dev), minor(dev))) == 0) {
 		end_op();
 		return -ENOENT;
 	}
@@ -801,8 +801,8 @@ sys_ioctl(void)
 	if (argfd(0, &fd, &file) < 0 || argunsigned_long(1, &request) < 0)
 		return -EINVAL;
 
-	// The file needs to be a block device.
-	if (!S_ISBLK(file->ip->mode))
+	// The file needs to be a char device.
+	if (!S_ISCHR(file->ip->mode))
 		return -ENOTTY;
 
 	switch (request) {
@@ -875,7 +875,7 @@ sys_mmap(void)
 		return -EINVAL;
 	int perm = mmap_prot_to_perm(prot);
 	struct mmap_info info;
-	if (S_ISBLK(file->ip->mode)) {
+	if (S_ISCHR(file->ip->mode)) {
 		if (file->ip->major < 0 || file->ip->major >= NDEV ||
 				!devsw[file->ip->major].mmap)
 			return -ENODEV;
@@ -932,7 +932,7 @@ sys_munmap(void)
 	for (int i = 0; i < NMMAP; i++) {
 		if ((proc->mmap_info[i].virt_addr == (uintptr_t)addr) &&
         ((proc->mmap_info[i].length == length) ||
-        (proc->mmap_info[i].file && S_ISBLK(proc->mmap_info[i].file->ip->mode)))) {
+        (proc->mmap_info[i].file && S_ISCHR(proc->mmap_info[i].file->ip->mode)))) {
 			j = i;
 		}
 	}

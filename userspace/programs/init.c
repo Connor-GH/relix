@@ -16,7 +16,7 @@ static void
 make_file_device_with_logging(const char *filename, dev_t dev_no, int flags, bool verbose)
 {
 	if (open(filename, flags) < 0) {
-		mknod(filename, 0700, dev_no);
+		mknod(filename, 0700 | S_IFCHR, dev_no);
 	}
 	if (verbose)
 		fprintf(stdout, "%s created\n", filename);
@@ -42,7 +42,7 @@ main(void)
 	int fd;
 
 	if ((fd = open("/dev/tty0", O_RDWR)) < 0) {
-		mknod("/dev/tty0", 0700, makedev(6, 0));
+		mknod("/dev/tty0", 0700 | S_IFCHR, makedev(6, 0));
 		fd = open("/dev/tty0", O_RDWR);
 	}
 	if (fd == -1) {

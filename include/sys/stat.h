@@ -15,3 +15,5 @@ int
 lstat(const char *n, struct stat *st);
 mode_t
 umask(mode_t mask);
+int
+mkfifo(const char *pathname, mode_t mode);

@@ -519,3 +519,9 @@ atof(const char *nptr)
 	}
 	return sign * val / power;
 }
+
+int
+mkfifo(const char *pathname, mode_t mode)
+{
+	return mknod(pathname, mode | S_IFIFO, 0);
+}

@@ -76,7 +76,7 @@ fileclose(struct file *f)
 		release(&ftable.lock);
 		return;
 	}
-	if (S_ISBLK(f->ip->mode)) {
+	if (S_ISCHR(f->ip->mode)) {
 		if (f->ip->major < 0 || f->ip->major >= NDEV || !devsw[f->ip->major].open) {
 			inode_unlockput(f->ip);
 			end_op();

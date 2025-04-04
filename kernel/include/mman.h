@@ -8,7 +8,7 @@
 #include "file.h"
 #include <stddef.h>
 #include <stdint.h>
-// Stuff returned by block devices as "recommendations" if it is a block device.
+// Stuff returned by the VFS as "recommendations".
 struct mmap_info {
 	size_t length;
 	// PHYSICAL address of the thing.

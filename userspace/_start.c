@@ -7,13 +7,22 @@
 
 void
 __fini_stdio(void);
-void
+static void
 cleanup(void)
 {
 	__fini_stdio();
 }
+
 void
 __init_stdio(void);
+
+static void
+startup(void)
+{
+	__init_stdio();
+}
+
+
 char *const *environ;
 void
 _start(int argc, char *const *argv, char *const *envp)
@@ -24,7 +33,7 @@ _start(int argc, char *const *argv, char *const *envp)
 	opterr = 1;
 	if (argc >= 1 && strcmp(argv[0], "init") == 0)
 		goto skip_init_and_atexit;
-	__init_stdio();
+	startup();
 	atexit(cleanup);
 skip_init_and_atexit:
 // Standard says that main can't have a prototype.

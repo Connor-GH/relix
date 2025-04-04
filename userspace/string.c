@@ -141,9 +141,6 @@ static char *restrict __strtok_token = NULL;
 char *
 strtok(char *restrict str, const char *restrict delimeter)
 {
-	if (str == NULL && __strtok_token)
-		return NULL;
-
 	if (str != NULL) {
 		__strtok_token = str;
 	}

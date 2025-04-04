@@ -572,7 +572,6 @@ fwrite(void *ptr, size_t size, size_t nmemb, FILE *restrict stream)
 		stream->error = true;
 		return 0;
 	}
-	stream->file_offset += count;
 	return ret / size;
 }
 
@@ -586,7 +585,6 @@ fread(void *ptr, size_t size, size_t nmemb, FILE *restrict stream)
 		stream->error = true;
 		return 0;
 	}
-	stream->file_offset += count;
 	return ret / size;
 }
 
@@ -594,9 +592,18 @@ long
 ftell(FILE *stream)
 {
 	if (stream) {
-		return stream->file_offset;
+		return lseek(stream->fd, 0L, SEEK_CUR);
 	} else {
 		errno = -EBADF;
 		return -1;
 	}
+}
+
+void
+rewind(FILE *stream)
+{
+	if (stream == NULL)
+		return;
+	(void)fseek(stream, 0L, SEEK_SET);
+	clearerr(stream);
 }

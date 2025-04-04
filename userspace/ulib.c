@@ -402,6 +402,7 @@ int
 fseek(FILE *stream, long offset, int whence)
 {
 	if (stream) {
+		clearerr(stream);
 		return lseek(stream->fd, offset, whence);
 	} else {
 		errno = EBADF;

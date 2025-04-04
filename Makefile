@@ -149,7 +149,7 @@ $(BIN)/mkfs: $(TOOLSDIR)/mkfs.c
 .PRECIOUS: $(BIN)/%.o
 
 
-$(BIN)/fs.img: $(BIN)/mkfs $(UPROGS)  bin/kernel
+$(BIN)/fs.img: $(BIN)/mkfs $(UPROGS) bin/kernel
 	./$(BIN)/mkfs $@ README.md sysroot/test.sh $(wildcard sysroot/etc/*) $(UPROGS)
 
 clean: user_cargo_clean kernel_cargo_clean
@@ -189,7 +189,6 @@ QEMUOPTS = -drive file=$(BIN)/fs.img,index=1,media=disk,format=raw,if=ide,aio=na
 ifdef CONSOLE_LOG
 	QEMUOPTS += -serial mon:stdio
 endif
-# qemu-system-x86_64 -cdrom os.iso -m 2G -drive file=bin/fs.img,index=1,media=disk,format=raw,if=ide,aio=native,cache.direct=on  -smp 2,cores=1,threads=1,sockets=2
 ISO = relix
 iso: default
 	cp $(BIN)/kernel iso/boot/

@@ -1,11 +1,11 @@
 #include <sys/param.h>
-#include <auth.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <ext.h>
 #include <unistd.h>
 #include <stddef.h>
+#include <pwd.h>
 
 extern char **environ;
 
@@ -14,6 +14,7 @@ main(int argc, char **argv)
 {
 	char username[MAX_USERNAME];
 	char passwd[MAX_PASSWD];
+	struct passwd *entry;
 	int uid = -1;
 
 	char c;
@@ -31,7 +32,10 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv -= optind;
 	if (fflag) {
-		uid = usertouid(username);
+		entry = getpwnam(username);
+
+		if (entry != NULL)
+			uid = entry->pw_uid;
 		goto autologin;
 	}
 try_again:
@@ -53,21 +57,20 @@ try_again:
 	passwd[strlen(passwd) - 1] = '\0';
 	echoout(1);
 	if (uid == -1) {
-		uid = usertouid(username);
+		entry = getpwnam(username);
+
+		if (entry != NULL)
+			uid = entry->pw_uid;
 		if (uid == -1) {
 			fprintf(stderr, "User does not exist!\n");
 			goto try_again;
 		}
 	}
-	// usertopasswd allocates memory
-	char *actual_password = userto_allocated_passwd(username);
-	if (actual_password == NULL) {
-		fprintf(stderr, "actual_password is NULL\n");
-		exit(-1);
-	}
+
+	char *actual_password = "x";
+
 	if (strcmp(passwd, actual_password) == 0) {
 		fprintf(stdout, "Password is correct!\n");
-		free(actual_password);
 autologin:;
 		setuid(uid);
 		char *const sh_argv[] = { "/bin/sh", NULL };

@@ -21,7 +21,6 @@ struct _IO_FILE {
 	int mode;
 	int flags;
 	int buffer_mode;
-	off_t file_offset;
 	bool eof;
 	bool error;
 	bool stdio_flush;
@@ -110,6 +109,9 @@ int
 ferror(FILE *stream);
 void
 clearerr(FILE *stream);
+void
+rewind(FILE *stream);
+
 int
 remove(const char *pathname);
 int

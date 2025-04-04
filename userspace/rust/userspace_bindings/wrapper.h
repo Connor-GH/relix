@@ -3,11 +3,9 @@
 #include <alloca.h>
 #include <assert.h>
 #include <ctype.h>
-#include <date.h>
 #include <dirent.h>
 #include <elf.h>
 #include <errno.h>
-#include <ext.h>
 #include <fcntl.h>
 #include <float.h>
 #include <getopt.h>

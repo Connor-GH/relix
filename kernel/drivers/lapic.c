@@ -3,17 +3,16 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <date.h>
+#include <time.h>
 #include "traps.h"
 #include "x86.h"
 #include "memlayout.h"
 #include "stdbool.h"
 #include "compiler_attributes.h"
+#include "kernel_assert.h"
 #include "lapic.h"
 #include <string.h>
-#include "console.h"
 #include "spinlock.h"
-
 
 volatile uint32_t *lapic; // Initialized in mp.c
 
@@ -166,35 +165,65 @@ static uint8_t
 cmos_read(uint8_t reg)
 {
 	outb(CMOS_PORT, reg);
-	microdelay(200);
-
 	return inb(CMOS_RETURN);
 }
 
-static void
-fill_rtcdate(struct rtcdate *r)
-{
-	r->second = cmos_read(SECS);
-	r->minute = cmos_read(MINS);
-	r->hour = cmos_read(HOURS);
-	r->day = cmos_read(DAY);
-	r->month = cmos_read(MONTH);
-	r->year = cmos_read(YEAR);
-}
 static uint8_t
 bcd_to_binary(uint8_t bcd)
 {
 	return ((bcd >> 4) * 10) + (bcd & 0xf);
 }
 
-// qemu seems to use 24-hour GWT and the values are BCD encoded
-void
-cmostime(struct rtcdate *r)
+static inline bool
+is_leap_year(unsigned year)
 {
-	struct rtcdate t1;
+	return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+}
+
+static inline unsigned
+days_in_year(unsigned year)
+{
+	return is_leap_year(year) ? 366 : 365;
+}
+
+// `month`: January is 1
+
+static inline unsigned
+days_in_month(unsigned year, unsigned month)
+{
+	static const unsigned table[] = { 31, 28, 31, 30, 31, 30,
+																		31, 31, 30, 31, 30, 31 };
+	if (month == 2 && is_leap_year(year))
+		return 29;
+	return table[month - 1];
+}
+
+static inline unsigned
+day_of_year(unsigned year, unsigned month, unsigned day)
+{
+	unsigned result = day - 1;
+	for (unsigned m = 1; m < month; ++m)
+		result += days_in_month(year, m);
+	return result;
+}
+static unsigned
+days_since_epoch(unsigned year, unsigned month, unsigned day)
+{
+	kernel_assert(year >= 1970);
+	unsigned days = day_of_year(year, month, day);
+	for (unsigned y = 1970; y < year; ++y)
+		days += days_in_year(y);
+	return days;
+}
+
+// qemu seems to use 24-hour GWT and the values are BCD encoded
+time_t
+rtc_now(void)
+{
 	int sb, bcd;
 
 	sb = cmos_read(CMOS_STATB);
+	time_t year, month, day, hour, minute, second;
 
 	// find out if the cmos is bcd-encoded
 	bcd = (sb & (1 << 2)) == 0;
@@ -210,36 +239,40 @@ cmostime(struct rtcdate *r)
 		microdelay(1000);
 		time_passed_in_ms++;
 	}
-	acquire(&rtc_lock);
-	if (!update_in_progress_ended_successfully) {
-		t1.year = 1970;
-		t1.month = 1;
-		t1.day = 1;
-		t1.hour = 0;
-		t1.minute = 0;
-		t1.second = 0;
-		release(&rtc_lock);
-		return;
-	}
-	fill_rtcdate(&t1);
+	if (update_in_progress_ended_successfully) {
+		second = cmos_read(SECS);
+		minute = cmos_read(MINS);
+		hour = cmos_read(HOURS);
+		day = cmos_read(DAY);
+		month = cmos_read(MONTH);
+		year = cmos_read(YEAR);
 
-	bool is_pm = t1.hour & 0x80;
-	// convert
-	if (bcd) {
-		t1.second = bcd_to_binary(t1.second);
-		t1.minute = bcd_to_binary(t1.minute);
-		t1.hour = bcd_to_binary(t1.hour & 0x7F);
-		t1.day = bcd_to_binary(t1.day);
-		t1.month = bcd_to_binary(t1.month);
-		t1.year = bcd_to_binary(t1.year);
+		bool is_pm = hour & 0x80;
+		// convert
+		if (bcd) {
+			second = bcd_to_binary(second);
+			minute = bcd_to_binary(minute);
+			hour = bcd_to_binary(hour & 0x7F);
+			day = bcd_to_binary(day);
+			month = bcd_to_binary(month);
+			year = bcd_to_binary(year);
+		}
+		if ((sb & (1 << 1)) == 0) {
+			hour %= 12;
+			if (is_pm)
+				hour += 12;
+		}
+		year += 2000;
+	} else {
+		year = 1970;
+		month = 1;
+		day = 1;
+		hour = 0;
+		minute = 0;
+		second = 0;
 	}
-	if ((sb & (1 << 1)) == 0) {
-		t1.hour %= 12;
-		if (is_pm)
-			t1.hour += 12;
-	}
-	t1.year += 2000;
-	release(&rtc_lock);
-
-	*r = t1;
+	time_t days = days_since_epoch(year, month, day);
+	time_t hours = days * 24 + hour;
+	time_t minutes = hours * 60 + minute;
+	return minutes * 60 + second;
 }

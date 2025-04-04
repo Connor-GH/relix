@@ -13,7 +13,6 @@
 #include <stdint.h>
 #include <stat.h>
 #include <dirent.h>
-#include <date.h>
 #include <time.h>
 #include <errno.h>
 #include "fs.h"
@@ -217,11 +216,9 @@ inode_alloc(dev_t dev, mode_t mode)
 			dip->mode = mode;
 			dip->gid = DEFAULT_GID;
 			dip->uid = DEFAULT_UID;
-			struct rtcdate rtc;
-			cmostime(&rtc);
-			dip->ctime = RTC_TO_UNIX(rtc);
-			dip->atime = RTC_TO_UNIX(rtc);
-			dip->mtime = RTC_TO_UNIX(rtc);
+			dip->ctime = rtc_now();
+			dip->atime = rtc_now();
+			dip->mtime = rtc_now();
 			log_write(bp); // mark it allocated on the disk
 			block_release(bp);
 			return inode_get(dev, inum);
@@ -248,10 +245,8 @@ inode_update(struct inode *ip)
 	dip->nlink = ip->nlink;
 	dip->size = ip->size;
 	dip->mode = ip->mode;
-	struct rtcdate rtc;
-	cmostime(&rtc);
-	dip->mtime = RTC_TO_UNIX(rtc);
-	dip->atime = RTC_TO_UNIX(rtc);
+	dip->mtime = rtc_now();
+	dip->atime = rtc_now();
 	dip->ctime = ip->ctime;
 
 	memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));

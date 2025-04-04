@@ -1,16 +1,15 @@
 #include <stdint.h>
-#include <date.h>
 #include <errno.h>
 #include <sys/reboot.h>
+#include <time.h>
+#include <string.h>
 #include "x86.h"
 #include "proc.h"
 #include "syscall.h"
 #include "trap.h"
-#include <string.h>
 #include "kernel_signal.h"
 #include "drivers/lapic.h"
 #include "console.h"
-#include "time.h"
 
 size_t
 sys_fork(void)
@@ -116,13 +115,20 @@ sys_uptime(void)
 }
 
 size_t
-sys_date(void)
+sys_time(void)
 {
-	struct rtcdate *r;
-	if (argptr(0, (char **)&r, sizeof(*r)) < 0)
+	time_t *time;
+	if (argptr(0, (char **)&time, sizeof(*time)) < 0) {
+		// Not in the POSIX definition, but I am not sure of
+		// what to return in case we can't get the arg here.
 		return -EINVAL;
-	cmostime(r);
-	return 0;
+	}
+
+	time_t cur_time = rtc_now();
+	if (time != NULL) {
+		*time = cur_time;
+	}
+	return cur_time;
 }
 
 static void __attribute__((noreturn))

@@ -1,9 +1,18 @@
 #pragma once
-#include <date.h>
-#include <stdint.h>
-#include "kernel/include/time.h"
-typedef uint64_t time_t;
+#include <stddef.h>
+#include <sys/types.h>
 
+typedef size_t time_t;
+typedef size_t useconds_t;
+typedef ssize_t suseconds_t;
+struct timeval {
+	time_t tv_sec;
+	suseconds_t tv_usec;
+};
+struct timespec {
+	time_t tv_sec;
+	long tv_nsec;
+};
 struct tm {
 	int tm_sec;
 	int tm_min;
@@ -19,9 +28,9 @@ struct tm {
 };
 time_t
 time(time_t *tloc);
+struct tm *
+localtime(const time_t *timep);
 
-// clang-format off
-// this is a workaround for now.
-extern uint64_t rtc_to_epoch(struct rtcdate rtc);
-#define RTC_TO_UNIX(rtc) rtc_to_epoch(rtc)
-// clang-format on
+extern int daylight;
+extern long timezone;
+extern char *tzname[2];

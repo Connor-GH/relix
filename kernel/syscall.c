@@ -167,7 +167,7 @@ sys_write(void);
 extern size_t
 sys_uptime(void);
 extern size_t
-sys_date(void);
+sys_time(void);
 extern size_t
 sys_chmod(void);
 extern size_t
@@ -243,7 +243,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_link] = sys_link,
 	[SYS_mkdir] = sys_mkdir,
 	[SYS_close] = sys_close,
-	[SYS_date] = sys_date,
+	[SYS_time] = sys_time,
 	[SYS_chmod] = sys_chmod,
 	[SYS_reboot] = sys_reboot,
 	[SYS_echoout] = sys_echoout,

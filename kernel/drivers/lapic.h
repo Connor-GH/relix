@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include <date.h>
+#include <time.h>
 #include "compiler_attributes.h"
 extern volatile uint32_t *lapic;
 
@@ -40,8 +40,8 @@ extern volatile uint32_t *lapic;
 #define TICR (0x0380 / 4) // Timer Initial Count
 #define TCCR (0x0390 / 4) // Timer Current Count
 #define TDCR (0x03E0 / 4) // Timer Divide Configuration
-void
-cmostime(struct rtcdate *r);
+time_t
+rtc_now(void);
 int
 lapicid(void);
 void

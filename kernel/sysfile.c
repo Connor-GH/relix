@@ -16,7 +16,6 @@
 #include <stdlib.h>
 #include <sys/uio.h>
 #include <dirent.h>
-#include <date.h>
 #include <time.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -307,6 +306,7 @@ create(char *path, mode_t mode, short major, short minor)
 		return 0;
 	inode_lock(dp);
 
+	// /dp/name is present
 	if ((ip = dirlookup(dp, name, 0)) != 0) {
 		inode_unlockput(dp);
 		inode_lock(ip);
@@ -426,6 +426,14 @@ fileopen(char *path, int flags, mode_t mode)
 			}
 			// Run device-specific opening code, if any.
 			devsw[ip->major].open(ip->minor, flags);
+		}
+		if (S_ISFIFO(ip->mode)) {
+			// [Process 1]{ PUSH(1) PUSH(2) PUSH(3) }
+			// [Process 2]{
+			// POP() == 1
+			// POP() == 2
+			// POP() == 3
+			// }
 		}
 	}
 	// By this line, both branches above are holding a lock to ip.

@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef USE_HOST_TOOLS
-#include <stdint.h>
+#include <time.h>
 #include <sys/types.h>
 /* fields do not begin with "st_" if they are nonstandard. */
 //

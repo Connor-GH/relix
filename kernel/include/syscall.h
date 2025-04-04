@@ -22,7 +22,7 @@
 #define SYS_link 19
 #define SYS_mkdir 20
 #define SYS_close 21
-#define SYS_date 22
+#define SYS_time 22
 #define SYS_chmod 23
 #define SYS_reboot 24
 #define SYS_echoout 25
@@ -75,7 +75,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_link] = "link",
 	[SYS_mkdir] = "mkdir",
 	[SYS_close] = "close",
-	[SYS_date] = "date",
+	[SYS_time] = "time",
 	[SYS_chmod] = "chmod",
 	[SYS_reboot] = "reboot",
 	[SYS_echoout] = "echoout",

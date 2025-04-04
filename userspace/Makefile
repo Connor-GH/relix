@@ -1,6 +1,6 @@
 UDIR = userspace
 ULIB = $(wildcard $(UDIR)/*.c)
-ULIB_OBJ = $(ULIB:$(UDIR)/%.c=$(BIN)/%.o)
+ULIB_OBJ = $(ULIB:$(UDIR)/%.c=$(BIN)/ulib_%.o)
 ULIB_ASM = $(wildcard $(UDIR)/*.S)
 ULIB_ASM_OBJ = $(ULIB_ASM:$(UDIR)/%.S=$(BIN)/asm_%.o)
 
@@ -13,7 +13,7 @@ ifneq ($(RELEASE),)
 	UCFLAGS += -flto -O3
 endif
 
-$(ULIB_OBJ): $(BIN)/%.o : $(UDIR)/%.c
+$(ULIB_OBJ): $(BIN)/ulib_%.o : $(UDIR)/%.c
 	$(CC) $(CFLAGS) $(UCFLAGS) -c -o $@ $^
 
 $(ULIB_ASM_OBJ): $(BIN)/asm_%.o : $(UDIR)/%.S

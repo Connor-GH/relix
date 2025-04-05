@@ -412,7 +412,7 @@ kbdread(short minor, struct inode *ip, char *dst, size_t n)
 	unsigned char data;
 	int ret = dequeue_unsigned_char(kbdlock.kbd_queue, &data, kfree);
 	release(&kbdlock.lock);
-	if (ret == -1)
+	if (ret != QUEUE_SUCCESS)
 		return -1;
 	memcpy(dst, &data, sizeof(data));
 	return n;

@@ -134,42 +134,49 @@ kpage_alloc(void) __acquires(kpage)
 typedef long Align;
 
 struct header {
-		struct header *ptr;
+		struct header *ptr; // Next free list.
 		size_t size;
 } __attribute__((aligned(8)));
 
 typedef struct header Header;
 
-static Header base;
-static Header *freep;
+#define MORECORE_MAX 4096
+static Header base; // Empty list to get started.
+static Header *freep; // Start of free list.
+
+#define ptr_to_header(ptr) (((Header *)ptr) - 1)
+#define header_to_ptr(hdr) ((void *)(hdr + 1))
 
 void
 kfree(void *ap) __releases(kmem)
 {
 	Header *bp, *p;
 
-	bp = (Header *)ap - 1;
+	bp = ptr_to_header(ap);
 	for (p = freep; p && !(bp > p && bp < p->ptr); p = p->ptr)
 		if (p >= p->ptr && (bp > p || bp < p->ptr))
 			break;
 
 	if (!p)
 		return;
+
 	if (bp + bp->size == p->ptr) {
 		bp->size += p->ptr->size;
 		bp->ptr = p->ptr->ptr;
 	} else {
 		bp->ptr = p->ptr;
 	}
+
 	if (p + p->size == bp) {
 		p->size += bp->size;
 		p->ptr = bp->ptr;
 	} else {
 		p->ptr = bp;
-	freep = p;
 	}
+	freep = p;
 	__release(kmem);
 }
+
 
 static Header *
 morecore(__attribute__((unused)) size_t nu)
@@ -177,12 +184,15 @@ morecore(__attribute__((unused)) size_t nu)
 	char *p;
 	Header *hp;
 
+	if (nu < MORECORE_MAX)
+		nu = MORECORE_MAX;
+
 	p = kpage_alloc();
 	if (p == 0)
 		return 0;
 	hp = (Header *)p;
 	hp->size = 4096 / sizeof(Header); // kalloc always allocates 4096 bytes
-	kfree((void *)(hp + 1));
+	kfree(header_to_ptr(hp));
 	return freep;
 }
 
@@ -194,28 +204,36 @@ kmalloc(size_t nbytes) __acquires(kmem)
 	size_t nunits;
 
 	nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
-	if ((prevp = freep) == 0) {
+
+	// No free list.
+	if ((prevp = freep) == NULL) {
 		base.ptr = freep = prevp = &base;
 		base.size = 0;
 	}
 	for (p = prevp->ptr;; prevp = p, p = p->ptr) {
 		if (!p)
 			return 0;
+		// We found a size that can fit the amount of bytes we want.
 		if (p->size >= nunits) {
-			if (p->size == nunits)
+			// It is exactly the right size.
+			if (p->size == nunits) {
 				prevp->ptr = p->ptr;
-			else {
+			} else {
+				// Too large? Okay, split it into chunks
+				// and give ourselves the larger piece.
 				p->size -= nunits;
+				// Go to the header we just said is ours.
 				p += p->size;
+				// Assign our size.
 				p->size = nunits;
 			}
 			freep = prevp;
 			__acquire(kmem);
-			return (void *)(p + 1);
+			return header_to_ptr(p);
 		}
 		if (p == freep)
-			if ((p = morecore(nunits)) == 0)
-				return 0;
+			if ((p = morecore(nunits)) == NULL)
+				return NULL;
 	}
 }
 __attribute__((malloc)) __nonnull(1) void *krealloc(void *ptr, size_t size)
@@ -223,7 +241,7 @@ __attribute__((malloc)) __nonnull(1) void *krealloc(void *ptr, size_t size)
 	void *newptr = kmalloc(size);
 	if (!newptr)
 		return NULL;
-	Header *hdr = (Header *)ptr - 1;
+	Header *hdr = ptr_to_header(ptr);
 	memcpy(newptr, ptr, min(hdr->size, size));
 	kfree(ptr);
 

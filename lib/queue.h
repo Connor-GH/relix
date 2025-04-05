@@ -12,8 +12,7 @@ create_queue_##T(void *(*allocator)(size_t)); \
 int \
 enqueue_##T(struct queue_##T *q, T value, void *(*allocator)(size_t), size_t limit); \
 \
-/* Dequeue an element. Returns NULL on error. */ \
-/* Otherwise, returns a pointer to the element. */ \
+/* Dequeue an element. Returns true on success. */ \
 int \
 dequeue_##T(struct queue_##T *q, T *data, void (*deallocator)(void *)); \
 \
@@ -22,11 +21,17 @@ free_queue_##T(struct queue_##T *q, void (*deallocator)(void *)); \
 \
 /* Removes everything in the queue. */ \
 void \
-clean_queue_##T(struct queue_##T *q, void (*deallocator)(void *));
+clean_queue_##T(struct queue_##T *q, void (*deallocator)(void *)); \
+int \
+is_empty_##T(struct queue_##T *q);
 
-#define QUEUE_UNINITIALIZED (-1)
-#define QUEUE_EMPTY (1)
-#define QUEUE_POPULATED (0)
+enum {
+	QUEUE_UNINITIALIZED = -1,
+	QUEUE_SUCCESS = 0,
+	QUEUE_EMPTY = 1,
+	QUEUE_OOM = 2,
+	QUEUE_FULL = 3,
+};
 
 typedef unsigned char unsigned_char;
 QUEUE_T_HEADER(int)

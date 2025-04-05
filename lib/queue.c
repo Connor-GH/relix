@@ -56,11 +56,11 @@ enqueue_##T(struct queue_##T *q, T value, void *(*allocator)(size_t), size_t lim
 		return QUEUE_UNINITIALIZED; \
 \
 	if (q->size >= limit) \
-		return true; \
+		return QUEUE_FULL; \
  \
 	struct queue_##T##_node *new_node = allocator(sizeof(*new_node)); \
 	if (new_node == NULL) { \
-		return false; \
+		return QUEUE_OOM; \
 	} \
 	new_node->data = value; \
 	new_node->next = NULL; \
@@ -72,7 +72,7 @@ enqueue_##T(struct queue_##T *q, T value, void *(*allocator)(size_t), size_t lim
 	} \
 	q->rear = new_node; \
 	q->size++; \
-	return true; \
+	return QUEUE_SUCCESS; \
 } \
  \
 void \
@@ -87,7 +87,7 @@ int \
 dequeue_##T(struct queue_##T *q, T *data, void (*deallocator)(void *)) \
 { \
 	if (is_empty_and_initialized_##T(q) == QUEUE_UNINITIALIZED || q->front == NULL) { \
-		return false; \
+		return QUEUE_UNINITIALIZED; \
 	} \
  \
 	struct queue_##T##_node *temp = q->front; \
@@ -99,12 +99,15 @@ dequeue_##T(struct queue_##T *q, T *data, void (*deallocator)(void *)) \
 	} \
 	if (temp != NULL) \
 		deallocator(temp); \
-	if ((signed)q->size > 0) \
+	if ((signed)q->size > 0) {\
 		q->size--; \
+	} else { \
+		return QUEUE_EMPTY; \
+	} \
 	if (data != NULL) { \
 		*data = result; \
 	} \
-	return true; \
+	return QUEUE_SUCCESS; \
 } \
  \
 void \

@@ -279,7 +279,7 @@ consoleintr(int (*getc)(void))
 
 	acquire(&cons.lock);
 	while ((c = getc()) >= 0) {
-		if (kbd_enqueue(c) == 0) {
+		if (kbd_enqueue(c) == QUEUE_OOM) {
 			panic("Cannot allocate memory for kbd queue");
 		}
 		c = kbd_scancode_into_char(c);

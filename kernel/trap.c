@@ -104,8 +104,6 @@ trap(struct trapframe *tf)
 		return;
 	}
 
-void
-display_queue(struct queue *q);
 	switch (tf->trapno) {
 	case T_IRQ0 + IRQ_TIMER:
 		if (my_cpu_id() == 0) {

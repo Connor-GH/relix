@@ -368,15 +368,16 @@ kbd_scancode_into_char(uint32_t data)
 }
 
 void
-display_queue(struct queue *q)
+display_queue(struct queue_unsigned_char *q)
 {
 	if (q == NULL)
 		return;
 	uart_printf("elements: ");
-	int data = dequeue(q, kfree);
-	while (data != -1) {
+	unsigned char data;
+	int ret = dequeue_unsigned_char(q, &data, kfree);
+	while (ret != -1) {
 		uart_printf("%d (%c)", data, data);
-		data = dequeue(q, kfree);
+		data = dequeue_unsigned_char(q, &data, kfree);
 	}
 	uart_printf("\n");
 }
@@ -391,15 +392,15 @@ kbdintr(void)
 
 struct {
 	struct spinlock lock;
-	struct queue *kbd_queue;
+	struct queue_unsigned_char *kbd_queue;
 } kbdlock;
 
 int
-kbd_enqueue(int value)
+kbd_enqueue(unsigned char value)
 {
 	int val;
 	acquire(&kbdlock.lock);
-	val = enqueue(kbdlock.kbd_queue, value, kmalloc, KEYBOARD_QUEUE_SIZE);
+	val = enqueue_unsigned_char(kbdlock.kbd_queue, value, kmalloc, KEYBOARD_QUEUE_SIZE);
 	release(&kbdlock.lock);
 	return val;
 }
@@ -408,11 +409,12 @@ __nonnull(2, 3) static ssize_t
 kbdread(short minor, struct inode *ip, char *dst, size_t n)
 {
 	acquire(&kbdlock.lock);
-	int ret = dequeue(kbdlock.kbd_queue, kfree);
+	unsigned char data;
+	int ret = dequeue_unsigned_char(kbdlock.kbd_queue, &data, kfree);
 	release(&kbdlock.lock);
 	if (ret == -1)
 		return -1;
-	memcpy(dst, &ret, sizeof(ret));
+	memcpy(dst, &data, sizeof(data));
 	return n;
 }
 
@@ -438,7 +440,7 @@ kbdopen(short minor, int flags)
 {
 	if (kbd_file_ref == 0) {
 		acquire(&kbdlock.lock);
-		clean_queue(kbdlock.kbd_queue, kfree);
+		clean_queue_unsigned_char(kbdlock.kbd_queue, kfree);
 		release(&kbdlock.lock);
 		kbd_file_ref++;
 	}
@@ -456,7 +458,7 @@ void
 kbdinit(void)
 {
 	acquire(&kbdlock.lock);
-	kbdlock.kbd_queue = create_queue(kmalloc);
+	kbdlock.kbd_queue = create_queue_unsigned_char(kmalloc);
 	if (kbdlock.kbd_queue == NULL) {
 		panic("Could not create kbd_queue");
 	}

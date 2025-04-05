@@ -9,4 +9,4 @@ int
 kbd_scancode_into_char(uint32_t data);
 
 int
-kbd_enqueue(int value);
+kbd_enqueue(unsigned char value);

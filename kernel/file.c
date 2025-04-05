@@ -3,7 +3,6 @@
 //
 
 #include "fs.h"
-#include "include/sleeplock.h"
 #include <errno.h>
 #include <string.h>
 #include <dirent.h>

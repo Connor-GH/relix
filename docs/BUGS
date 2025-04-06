@@ -1,4 +1,6 @@
 sh:
 	can't always runcmd in child -- breaks cd.
 
+a race condition/resource contention in the process of creating and deleting files. createdelete in usertests triggers this.
+
 

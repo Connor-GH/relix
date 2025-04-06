@@ -174,7 +174,7 @@ runcmd(struct cmd *cmd)
 			runcmd(bcmd->cmd);
 		break;
 	}
-	exit(1);
+	exit(0);
 }
 
 int

@@ -370,6 +370,7 @@ fileopen(char *path, int flags, mode_t mode)
 	int fd;
 	struct file *f;
 	struct inode *ip;
+	int file_type = 0;
 
 	if (path == NULL)
 		return -EFAULT;
@@ -434,6 +435,7 @@ fileopen(char *path, int flags, mode_t mode)
 			// POP() == 2
 			// POP() == 3
 			// }
+			file_type = FD_FIFO;
 		}
 	}
 	// By this line, both branches above are holding a lock to ip.
@@ -450,7 +452,7 @@ get_fd:
 	inode_unlock(ip);
 	end_op();
 
-	f->type = FD_INODE;
+	f->type = file_type ? file_type : FD_INODE;
 	f->ip = ip;
 	f->off = (flags & O_APPEND) == O_APPEND ? f->ip->size : 0;
 	f->readable = !(flags & O_WRONLY);

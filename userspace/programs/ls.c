@@ -119,6 +119,7 @@ mode_to_perm(mode_t mode, char ret[static 11])
 					 S_ISBLK(mode)		? 'b' :
 					 S_ISCHR(mode)		? 'c' :
 					 S_ISLNK(mode)		? 'l' :
+					 S_ISFIFO(mode)   ? 'p' :
 															'?';
 	ret[1] = mode & S_IRUSR ? 'r' : '-';
 	ret[2] = mode & S_IWUSR ? 'w' : '-';

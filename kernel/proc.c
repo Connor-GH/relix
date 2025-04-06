@@ -610,8 +610,9 @@ kill(pid_t pid, int signal)
 		if (p->pid == pid) {
 			p->last_signal = signal;
 
-			if (signal == SIGFPE || signal == SIGSEGV || signal == SIGBUS ||
-				signal == SIGILL || signal == SIGKILL || p->sig_handlers[signal] == SIG_DFL) {
+			if ((signal == SIGFPE || signal == SIGSEGV || signal == SIGBUS ||
+				signal == SIGILL || signal == SIGKILL || signal == SIGPIPE)
+				&& p->sig_handlers[signal] == SIG_DFL) {
 				p->killed = 1;
 			} else {
 				copy_signal_to_stack(p, signal);

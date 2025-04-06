@@ -1,20 +1,23 @@
-#include <stdint.h>
+#include "errno.h"
+#include "kernel_signal.h"
 #include "proc.h"
 #include "spinlock.h"
 #include "file.h"
 #include "pipe.h"
 #include "kalloc.h"
+#include <limits.h>
+#include "lib/ring_buffer.h"
 
-#define PIPESIZE 512
+#define PIPESIZE PIPE_BUF
+
 
 struct pipe {
 	struct spinlock lock;
-	char data[PIPESIZE];
-	uint32_t nread; // number of bytes read
-	uint32_t nwrite; // number of bytes written
 	int readopen; // read fd is still open
 	int writeopen; // write fd is still open
+	struct ring_buf *ring_buffer;
 };
+
 
 int
 pipealloc(struct file **f0, struct file **f1)
@@ -23,14 +26,14 @@ pipealloc(struct file **f0, struct file **f1)
 
 	p = 0;
 	*f0 = *f1 = 0;
-	if ((*f0 = filealloc()) == 0 || (*f1 = filealloc()) == 0)
+	if ((*f0 = filealloc()) == NULL || (*f1 = filealloc()) == NULL)
 		goto bad;
-	if ((p = (struct pipe *)kpage_alloc()) == 0)
+	if ((p = kmalloc(sizeof(*p))) == NULL)
+		goto bad;
+	if ((p->ring_buffer = ring_buffer_create(PIPESIZE, kmalloc)) == NULL)
 		goto bad;
 	p->readopen = 1;
 	p->writeopen = 1;
-	p->nwrite = 0;
-	p->nread = 0;
 	initlock(&p->lock, "pipe");
 	(*f0)->type = FD_PIPE;
 	(*f0)->readable = 1;
@@ -43,8 +46,10 @@ pipealloc(struct file **f0, struct file **f1)
 	return 0;
 
 bad:
-	if (p)
-		kpage_free((char *)p);
+	if (p) {
+		ring_buffer_destroy(p->ring_buffer, kfree);
+		kfree(p);
+	}
 	if (*f0)
 		fileclose(*f0);
 	if (*f1)
@@ -58,16 +63,18 @@ pipeclose(struct pipe *p, int writable)
 	acquire(&p->lock);
 	if (writable) {
 		p->writeopen = 0;
-		wakeup(&p->nread);
+		wakeup(&p->ring_buffer->nread);
 	} else {
 		p->readopen = 0;
-		wakeup(&p->nwrite);
+		wakeup(&p->ring_buffer->nwrite);
 	}
 	if (p->readopen == 0 && p->writeopen == 0) {
 		release(&p->lock);
-		kpage_free((char *)p);
-	} else
+		ring_buffer_destroy(p->ring_buffer, kfree);
+		kfree(p);
+	} else {
 		release(&p->lock);
+	}
 }
 
 int
@@ -77,17 +84,19 @@ pipewrite(struct pipe *p, char *addr, int n)
 
 	acquire(&p->lock);
 	for (i = 0; i < n; i++) {
-		while (p->nwrite == p->nread + PIPESIZE) { //DOC: pipewrite-full
+		while (p->ring_buffer->nwrite == p->ring_buffer->nread + p->ring_buffer->size) {
+			// The pipe is not open for reading and we are trying to write to it. (Broken pipe)
 			if (p->readopen == 0 || myproc()->killed) {
 				release(&p->lock);
-				return -1;
+				kill(myproc()->pid, SIGPIPE);
+				return -EPIPE;
 			}
-			wakeup(&p->nread);
-			sleep(&p->nwrite, &p->lock); //DOC: pipewrite-sleep
+			wakeup(&p->ring_buffer->nread);
+			sleep(&p->ring_buffer->nwrite, &p->lock);
 		}
-		p->data[p->nwrite++ % PIPESIZE] = addr[i];
+		p->ring_buffer->data[p->ring_buffer->nwrite++ % p->ring_buffer->size] = addr[i];
 	}
-	wakeup(&p->nread); //DOC: pipewrite-wakeup1
+	wakeup(&p->ring_buffer->nread);
 	release(&p->lock);
 	return n;
 }
@@ -98,19 +107,19 @@ piperead(struct pipe *p, char *addr, int n)
 	int i;
 
 	acquire(&p->lock);
-	while (p->nread == p->nwrite && p->writeopen) { //DOC: pipe-empty
+	 while (p->ring_buffer->nread == p->ring_buffer->nwrite && p->writeopen) {
 		if (myproc()->killed) {
 			release(&p->lock);
 			return -1;
 		}
-		sleep(&p->nread, &p->lock); //DOC: piperead-sleep
+		sleep(&p->ring_buffer->nread, &p->lock);
 	}
-	for (i = 0; i < n; i++) { //DOC: piperead-copy
-		if (p->nread == p->nwrite)
+	for (i = 0; i < n; i++) {
+		if (p->ring_buffer->nread == p->ring_buffer->nwrite)
 			break;
-		addr[i] = p->data[p->nread++ % PIPESIZE];
+		addr[i] = p->ring_buffer->data[p->ring_buffer->nread++ % p->ring_buffer->size];
 	}
-	wakeup(&p->nwrite); //DOC: piperead-wakeup
+	wakeup(&p->ring_buffer->nwrite);
 	release(&p->lock);
 	return i;
 }

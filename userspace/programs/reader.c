@@ -20,9 +20,9 @@ main(void)
 	int ret = 0;
 	while (c <= 'Z') {
 		if ((ret = read(fd, &c, 1)) < 0) {
-			perror("failed to read");
+			break;
 		} else {
-			printf("recieved %c\n", c);
+			printf("received %c\n", c);
 		}
 	}
 	close(fd);

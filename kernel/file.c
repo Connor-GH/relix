@@ -11,6 +11,7 @@
 #include "file.h"
 #include "console.h"
 #include "pipe.h"
+#include "lib/ring_buffer.h"
 #include "log.h"
 #include "proc.h"
 #include "lseek.h"
@@ -89,8 +90,12 @@ fileclose(struct file *f)
 	f->type = FD_NONE;
 	release(&ftable.lock);
 
-	if (ff.type == FD_PIPE) {
+	if (ff.type == FD_PIPE || ff.type == FD_FIFO) {
 		pipeclose(ff.pipe, ff.writable);
+		if (ff.type == FD_FIFO) {
+			ff.ip->rf->ref = 0;
+			ff.ip->wf->ref = 0;
+		}
 	} else if (ff.type == FD_INODE) {
 		begin_op();
 		inode_put(ff.ip);
@@ -192,7 +197,8 @@ filewrite(struct file *f, char *addr, uint64_t n)
 }
 
 static int
-name_of_inode(struct inode *ip, struct inode *parent, char buf[static DIRSIZ], size_t n)
+name_of_inode(struct inode *ip, struct inode *parent, char buf[static DIRSIZ],
+							size_t n)
 {
 	off_t off;
 	struct dirent de;
@@ -200,13 +206,12 @@ name_of_inode(struct inode *ip, struct inode *parent, char buf[static DIRSIZ], s
 		if (inode_read(parent, (char *)&de, off, sizeof(de)) != sizeof(de))
 			panic("name_of_inode: can't read dir entry");
 		if (de.d_ino == ip->inum) {
-			strncpy(buf, de.d_name, n-1);
+			strncpy(buf, de.d_name, n - 1);
 			return 0;
 		}
 	}
 	return -1;
 }
-
 
 // Write n bytes to buf, including the null terminator.
 // Returns the number of bytes written.

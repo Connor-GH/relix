@@ -15,15 +15,15 @@ main(void)
 		perror("open");
 		exit(EXIT_FAILURE);
 	}
-  char data = 'A';
-  while (data <= 'Z') {
-
-    if (write(fd, &data, sizeof(data)) < 0) {
-			fprintf(stdout, "Write failed\n");
+	char data = 'A';
+	while (data <= 'Z') {
+		if (write(fd, &data, sizeof(data)) < 0) {
+			break;
 		} else {
 			fprintf(stdout, "Wrote %c from pid %d\n", data, getpid());
 		}
 		data++;
-  }
-  return 0;
+	}
+	close(fd);
+	return 0;
 }

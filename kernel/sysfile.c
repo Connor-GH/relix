@@ -45,8 +45,8 @@
  * 0 is treated as "success", and less than zero is failure.
  * Propogates the error, if any, similar to Rust's "?" operator.
  */
-#define PROPOGATE_ERR(x) \
-	{                      \
+#define PROPOGATE_ERR(x)   \
+	{                        \
 		int __ret;             \
 		if ((__ret = (x)) < 0) \
 			return __ret;        \
@@ -502,12 +502,18 @@ fileopen(char *path, int flags, mode_t mode)
 				return fd;
 			}
 			inode_unlock(ip);
+			acquire(&(ip->wf->pipe)->lock);
+			while (!(ip->wf->pipe)->readopen) {
+				wakeup(&(ip->wf->pipe)->ring_buffer->nread);
+				sleep(&(ip->wf->pipe)->ring_buffer->nwrite, &(ip->wf->pipe)->lock);
+			}
+			wakeup(&(ip->wf->pipe)->ring_buffer->nread);
+			release(&(ip->wf->pipe)->lock);
 
 			end_op();
 			return fd;
 
 		} else if ((flags & O_ACCMODE) == O_RDONLY) {
-
 			ip->rf->pipe->readopen++;
 			ip->rf->ref++;
 			if ((fd = fdalloc(ip->rf)) < 0) {

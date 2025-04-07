@@ -59,10 +59,10 @@ pipeclose(struct pipe *p, int writable)
 {
 	acquire(&p->lock);
 	if (writable) {
-		p->writeopen = 0;
+		p->writeopen--;
 		wakeup(&p->ring_buffer->nread);
 	} else {
-		p->readopen = 0;
+		p->readopen--;
 		wakeup(&p->ring_buffer->nwrite);
 	}
 	if (p->readopen == 0 && p->writeopen == 0) {

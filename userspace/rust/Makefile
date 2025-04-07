@@ -24,4 +24,4 @@ $(FULL_BIN)/lib%.a: $(USER_RUST_DIR)/%
 	RUSTFLAGS="$(RUSTFLAGS) $(USER_RUST_FLAGS)" $(CARGO) build --manifest-path=$^/Cargo.toml $(USER_CARGO_FLAGS) --artifact-dir=$(FULL_BIN) $(CARGO_RELEASE)
 
 user_cargo_clean:
-	@for mod in $(USER_RUST_MODULES); do $(CARGO) clean --manifest-path=$(USER_RUST_DIR)/$$mod/Cargo.toml; done
+	@for mod in $(USER_RUST_MODULES); do $(CARGO) clean -p $$mod --manifest-path=$(USER_RUST_DIR)/$$mod/Cargo.toml; done

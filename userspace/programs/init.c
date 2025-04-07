@@ -13,7 +13,8 @@ extern char **environ;
 char *const argv[] = { "/bin/getty", "-a", "root", "tty0", NULL };
 
 static void
-make_file_device_with_logging(const char *filename, dev_t dev_no, int flags, bool verbose)
+make_file_device_with_logging(const char *filename, dev_t dev_no, int flags,
+															bool verbose)
 {
 	if (open(filename, flags) < 0) {
 		mknod(filename, 0700 | S_IFCHR, dev_no);
@@ -31,9 +32,34 @@ static void
 make_file_device(const char *filename, dev_t dev_no, int flags)
 {
 	make_file_device_with_logging(filename, dev_no, flags, true);
-
 }
 
+void
+execute_program(const char *program, char *const args[], char **env)
+{
+	pid_t pid = fork(); // Create a new process
+
+	if (pid < 0) { // Check for fork error
+		perror("fork failed");
+		exit(EXIT_FAILURE);
+	}
+
+	if (pid == 0) { // Child process
+		execve(program, args, env); // Execute the program
+		// If execvp is successful, this line will not be executed
+		perror("execvp failed"); // Print error if execvp fails
+		exit(EXIT_FAILURE);
+	} else { // Parent process
+		int status;
+		wait(&status); // Wait for the child to finish
+
+		if (WIFEXITED(status)) {
+			printf("Child exited with status %d\n", WEXITSTATUS(status));
+		} else {
+			printf("Child did not terminate normally\n");
+		}
+	}
+}
 
 int
 main(void)
@@ -69,9 +95,7 @@ main(void)
 			return 1;
 		}
 		if (pid == 0) {
-			execve("/bin/getty", argv, environ);
-			perror("execve");
-			fprintf(stderr, "init: exec() sh failed\n");
+			execute_program("/bin/getty", argv, environ);
 			return 1;
 		}
 		int wpid;

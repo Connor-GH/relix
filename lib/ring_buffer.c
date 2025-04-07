@@ -1,4 +1,5 @@
 #include "ring_buffer.h"
+#include "stdbool.h"
 #include <stddef.h>
 
 
@@ -56,4 +57,14 @@ ring_buffer_destroy(struct ring_buf *rb, void (*deallocator)(void *))
 	}
 }
 
+bool
+ring_buffer_is_empty(struct ring_buf *rb)
+{
+	return (rb && rb->nread == rb->nwrite);
+}
 
+bool
+ring_buffer_is_full(struct ring_buf *rb)
+{
+	return (rb && rb->nwrite + 1) % rb->size == rb->nread;
+}

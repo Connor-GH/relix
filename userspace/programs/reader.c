@@ -1,0 +1,30 @@
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+int
+main(void)
+{
+	int fd;
+	// Opens FIFO in blocking mode.
+	// This will wait until there is a reader on the other end.
+	fd = open("fifo1", O_RDONLY);
+	if (fd < 0) {
+		perror("open");
+		exit(EXIT_FAILURE);
+	}
+	char c = 0;
+	int ret = 0;
+	while (c <= 'Z') {
+		if ((ret = read(fd, &c, 1)) < 0) {
+			perror("failed to read");
+		} else {
+			printf("recieved %c\n", c);
+		}
+	}
+	close(fd);
+	return 0;
+}

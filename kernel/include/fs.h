@@ -44,6 +44,9 @@ struct superblock {
 // in-memory copy of an inode
 struct inode {
 	dev_t dev; // Device number
+	// Write and read files for FIFO. They share a `struct pipe *`.
+	struct file *rf;
+	struct file *wf;
 	uint32_t inum; // Inode number
 	int ref; // Reference count
 	struct sleeplock lock; // protects everything below here

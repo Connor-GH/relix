@@ -11,14 +11,6 @@
 #define PIPESIZE PIPE_BUF
 
 
-struct pipe {
-	struct spinlock lock;
-	int readopen; // read fd is still open
-	int writeopen; // write fd is still open
-	struct ring_buf *ring_buffer;
-};
-
-
 int
 pipealloc(struct file **f0, struct file **f1)
 {
@@ -32,12 +24,17 @@ pipealloc(struct file **f0, struct file **f1)
 		goto bad;
 	if ((p->ring_buffer = ring_buffer_create(PIPESIZE, kmalloc)) == NULL)
 		goto bad;
+	// This creates a pipe like in pipe(2), but we reuse this
+	// function to make FIFOs.
 	p->readopen = 1;
 	p->writeopen = 1;
 	initlock(&p->lock, "pipe");
 	(*f0)->type = FD_PIPE;
 	(*f0)->readable = 1;
 	(*f0)->writable = 0;
+
+	// Notice here how f0 and f1 both assign the same pipe.
+	// The pipe is aliased here.
 	(*f0)->pipe = p;
 	(*f1)->type = FD_PIPE;
 	(*f1)->readable = 0;
@@ -76,19 +73,24 @@ pipeclose(struct pipe *p, int writable)
 		release(&p->lock);
 	}
 }
-
 int
 pipewrite(struct pipe *p, char *addr, int n)
 {
 	int i;
 
 	acquire(&p->lock);
+
+	// The pipe is not open for reading and
+	// we are trying to write to it. (Broken pipe)
+	if (p->readopen == 0 || myproc()->killed) {
+		release(&p->lock);
+		kill(myproc()->pid, SIGPIPE);
+		return -EPIPE;
+	}
 	for (i = 0; i < n; i++) {
 		while (p->ring_buffer->nwrite == p->ring_buffer->nread + p->ring_buffer->size) {
-			// The pipe is not open for reading and we are trying to write to it. (Broken pipe)
 			if (p->readopen == 0 || myproc()->killed) {
 				release(&p->lock);
-				kill(myproc()->pid, SIGPIPE);
 				return -EPIPE;
 			}
 			wakeup(&p->ring_buffer->nread);

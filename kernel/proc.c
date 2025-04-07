@@ -257,7 +257,8 @@ fork(bool virtual)
 		// Copying the info isn't enough. We also need to map it.
 		for (int j = 0; np->mmap_info[j].file != NULL; j++) {
 			struct mmap_info info = np->mmap_info[j];
-			if (mappages(np->pgdir, (void *)info.virt_addr, info.length, info.addr, info.perm) < 0) {
+			if (mappages(np->pgdir, (void *)info.virt_addr, info.length, info.addr,
+									 info.perm) < 0) {
 				panic("Could not map page");
 			}
 		}
@@ -392,24 +393,24 @@ wait(int *wstatus)
 struct proc *
 last_proc_ran(void)
 {
-
 	struct proc *p;
 	acquire(&ptable.lock);
-	for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-    if (p != initproc && p->pid != 2 && (p->state == RUNNING || p->state == SLEEPING)) {
+	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+		if (p != initproc && p->pid != 2 &&
+				(p->state == RUNNING || p->state == SLEEPING)) {
 			release(&ptable.lock);
 			return p;
-    }
-  }
+		}
+	}
 	release(&ptable.lock);
 	return NULL;
 }
-#define GET(reg) \
-({ \
-	uintptr_t reg; \
-	__asm__ __volatile__("mov %%" # reg ", %0" : "=r" (reg)); \
-	reg; \
-})
+#define GET(reg)                                            \
+	({                                                        \
+		uintptr_t reg;                                          \
+		__asm__ __volatile__("mov %%" #reg ", %0" : "=r"(reg)); \
+		reg;                                                    \
+	})
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
 // Scheduler never returns.  It loops, doing:
@@ -444,9 +445,9 @@ scheduler(void)
 			p->state = RUNNING;
 
 			// Depending on the bits set, this may also set the extended state.
-			__asm__ __volatile__("fxsave %0" : "=m" (c->proc->legacy_fpu_state));
+			__asm__ __volatile__("fxsave %0" : "=m"(c->proc->legacy_fpu_state));
 			swtch(&(c->scheduler), p->context);
-			__asm__ __volatile__("fxrstor %0" : : "m" (c->proc->legacy_fpu_state));
+			__asm__ __volatile__("fxrstor %0" : : "m"(c->proc->legacy_fpu_state));
 			switchkvm();
 
 			// Process is done running for now.
@@ -610,11 +611,46 @@ kill(pid_t pid, int signal)
 		if (p->pid == pid) {
 			p->last_signal = signal;
 
-			if ((signal == SIGFPE || signal == SIGSEGV || signal == SIGBUS ||
-				signal == SIGILL || signal == SIGKILL || signal == SIGPIPE)
-				&& p->sig_handlers[signal] == SIG_DFL) {
-				p->killed = 1;
+			if (p->sig_handlers[signal] == SIG_DFL) {
+				switch (signal) {
+				case SIGABRT:
+				case SIGALRM:
+				case SIGHUP:
+				case SIGQUIT:
+				case SIGSYS:
+				case SIGTERM:
+				case SIGTRAP:
+				case SIGUSR1:
+				case SIGUSR2:
+				case SIGVTALRM:
+				case SIGXCPU:
+				case SIGXFSZ:
+				case SIGSEGV:
+				case SIGBUS:
+				case SIGILL:
+				case SIGKILL:
+				case SIGPIPE:
+				case SIGINT:
+					p->killed = 1;
+					break;
+				case SIGTSTP:
+				case SIGTTIN:
+				case SIGTTOU:
+				case SIGSTOP:
+					p->state = STOPPED;
+					break;
+				case SIGCONT:
+					// Continue
+					p->state = RUNNABLE;
+					break;
+				default:
+				// Ignore signals
+				case SIGURG:
+				case SIGWINCH:
+					break;
+				}
 			} else {
+				uart_printf("Not a default handler... %s\n", p->name);
 				copy_signal_to_stack(p, signal);
 			}
 			// Wake process from sleep if necessary.
@@ -628,12 +664,11 @@ kill(pid_t pid, int signal)
 	return -1;
 }
 
-
 sighandler_t
 kernel_attach_signal(int signum, sighandler_t handler)
 {
 	if (signum == SIGFPE || signum == SIGSEGV || signum == SIGBUS ||
-		signum == SIGILL)
+			signum == SIGILL)
 		return SIG_ERR;
 	if (signum >= __SIG_last || signum < 0) {
 		return SIG_ERR;
@@ -650,10 +685,10 @@ void
 procdump(void)
 {
 	static char *states[] = {
-		[UNUSED] = "unused",	 [EMBRYO] = "embryo",	 [SLEEPING] = "sleep ",
-		[RUNNABLE] = "runble", [RUNNING] = "run   ", [ZOMBIE] = "zombie"
+		[UNUSED] = "unused",		 [EMBRYO] = "embryo",		[SLEEPING] = "sleep",
+		[RUNNABLE] = "runnable", [RUNNING] = "running", [ZOMBIE] = "zombie",
+		[STOPPED] = "stopped",
 	};
-	int i;
 	struct proc *p;
 	char *state;
 	uintptr_t pc[10];
@@ -668,7 +703,7 @@ procdump(void)
 		vga_cprintf("%d %s %s", p->pid, state, p->name);
 		if (p->state == SLEEPING) {
 			getcallerpcs((uintptr_t *)p->context->rbp, pc);
-			for (i = 0; i < 10 && pc[i] != 0; i++)
+			for (int i = 0; i < 10 && pc[i] != 0; i++)
 				vga_cprintf(" %lx", pc[i]);
 		}
 		vga_cprintf("\n");

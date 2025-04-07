@@ -18,7 +18,7 @@ validate_data(const char *original, const char *received, size_t size)
 }
 
 void
-run_tests()
+run_tests(void)
 {
 	int pipefd[2];
 	pid_t p;
@@ -79,7 +79,7 @@ run_tests()
 }
 
 int
-main()
+main(void)
 {
 	run_tests();
 	return 0;

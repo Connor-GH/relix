@@ -114,7 +114,7 @@ fmtname(char *path, int fmt_flag)
 static char *
 mode_to_perm(mode_t mode, char ret[static 11])
 {
-	ret[0] = (mode & S_IFREG) ? '-' :
+	ret[0] = S_ISREG(mode) 		? '-' :
 					 S_ISDIR(mode)		? 'd' :
 					 S_ISBLK(mode)		? 'b' :
 					 S_ISCHR(mode)		? 'c' :
@@ -147,8 +147,14 @@ ls_format(char *buf, struct stat st, bool pflag, bool lflag, bool hflag,
 		case S_IFLNK:
 			fmt_ret = FMT_LINK;
 			break;
+		case S_IFIFO:
+			fmt_ret = FMT_FIFO;
+			break;
 		default:
 			break;
+		}
+		if (fmt_ret == 0 && st.st_mode & 0111) {
+			fmt_ret = FMT_EXE;
 		}
 	}
 	if (lflag) {
@@ -168,7 +174,7 @@ ls_format(char *buf, struct stat st, bool pflag, bool lflag, bool hflag,
 					lt->tm_hour, lt->tm_min);
 
 		if (S_ISLNK(st.st_mode)) {
-			fprintf(stdout, "%s\n", fmtname(buf, true));
+			fprintf(stdout, "%s\n", fmtname(buf, FMT_LINK));
 		} else {
 			fprintf(stdout, "%s\n", fmtname(buf, pflag ? fmt_ret : 0));
 		}
@@ -186,7 +192,7 @@ ls(char *path, bool lflag, bool iflag, bool pflag, bool hflag)
 	struct stat st;
 	char buf[512];
 
-	if ((fd = open(path, O_RDONLY)) < 0) {
+	if ((fd = open(path, O_RDONLY | O_NONBLOCK)) < 0) {
 		fprintf(stderr, "ls: cannot open %s\n", path);
 		perror("open");
 		return;

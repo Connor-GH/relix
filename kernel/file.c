@@ -14,6 +14,7 @@
 #include "log.h"
 #include "proc.h"
 #include "lseek.h"
+#include <stdbool.h>
 
 struct devsw devsw[NDEV];
 struct {
@@ -88,9 +89,9 @@ fileclose(struct file *f)
 	f->type = FD_NONE;
 	release(&ftable.lock);
 
-	if (ff.type == FD_PIPE)
+	if (ff.type == FD_PIPE) {
 		pipeclose(ff.pipe, ff.writable);
-	else if (ff.type == FD_INODE) {
+	} else if (ff.type == FD_INODE) {
 		begin_op();
 		inode_put(ff.ip);
 		end_op();
@@ -101,7 +102,7 @@ fileclose(struct file *f)
 int
 filestat(struct file *f, struct stat *st)
 {
-	if (f->type == FD_INODE) {
+	if (f->type == FD_INODE || f->type == FD_FIFO) {
 		inode_lock(f->ip);
 		inode_stat(f->ip, st);
 		inode_unlock(f->ip);
@@ -118,7 +119,7 @@ fileread(struct file *f, char *addr, uint64_t n)
 
 	if (f->readable == 0)
 		return -EINVAL;
-	if (f->type == FD_PIPE) {
+	if (f->type == FD_PIPE || f->type == FD_FIFO) {
 		return piperead(f->pipe, addr, n);
 	} else if (f->type == FD_INODE) {
 		inode_lock(f->ip);
@@ -126,8 +127,6 @@ fileread(struct file *f, char *addr, uint64_t n)
 			f->off += r;
 		inode_unlock(f->ip);
 		return r;
-	} else if (f->type == FD_FIFO) {
-		//return fiforead(f, addr);
 	}
 	panic("fileread");
 }
@@ -158,7 +157,7 @@ filewrite(struct file *f, char *addr, uint64_t n)
 
 	if (f->writable == 0)
 		return -EROFS;
-	if (f->type == FD_PIPE)
+	if (f->type == FD_PIPE || f->type == FD_FIFO)
 		return pipewrite(f->pipe, addr, n);
 	if (f->type == FD_INODE) {
 		// write a few blocks at a time to avoid exceeding

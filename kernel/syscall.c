@@ -2,6 +2,7 @@
 #include "spinlock.h"
 #include "memlayout.h"
 #include "trap.h"
+#include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <defs.h>
@@ -15,7 +16,7 @@
 	{                                                            \
 		struct proc *curproc = myproc();                           \
 		if (addr >= curproc->sz || addr + sizeof(T) > curproc->sz) \
-			return -1;                                               \
+			return -EFAULT;                                          \
 		*ip = *(T *)(addr);                                        \
 		return 0;                                                  \
 	}
@@ -43,7 +44,7 @@ fetchstr(uintptr_t addr, char **pp)
 	struct proc *curproc = myproc();
 
 	if (addr >= curproc->sz)
-		return -1;
+		return -EFAULT;
 	*pp = (char *)addr;
 	ep = (char *)curproc->sz;
 	for (s = *pp; s < ep; s++) {
@@ -101,11 +102,11 @@ argptr(int n, char **pp, int size)
 	struct proc *curproc = myproc();
 
 	if (arguintptr_t(n, &ptr) < 0)
-		return -1;
+		return -EINVAL;
 
 	if (size < 0 || ((uintptr_t)ptr >= curproc->effective_largest_sz ||
 									 (uintptr_t)ptr + size > curproc->effective_largest_sz)) {
-		return -1;
+		return -EFAULT;
 	}
 	*pp = (char *)ptr;
 	return 0;
@@ -220,6 +221,8 @@ extern size_t
 sys_getppid(void);
 extern size_t
 sys_times(void);
+extern size_t
+sys_stat(void);
 
 static size_t (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,
@@ -270,6 +273,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_getgid] = sys_getgid,
 	[SYS_getppid] = sys_getppid,
 	[SYS_times] = sys_times,
+	[SYS_stat] = sys_stat,
 };
 
 void

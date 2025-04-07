@@ -22,13 +22,6 @@ char buf[8192];
 char name[3];
 char *echoargv[] = { "/bin/echo", "ALL", "TESTS", "PASSED", 0 };
 
-static unsigned long randstate = 1;
-static unsigned int
-rand(void)
-{
-	randstate = randstate * 1664525 + 1013904223;
-	return randstate;
-}
 // does chdir() call iput(p->cwd) in a transaction?
 void
 iputtest(void)
@@ -457,7 +450,7 @@ largemem(void)
 		perror("largemem malloc");
 		exit(EXIT_FAILURE);
 	}
-	randstate = (unsigned long)ptr;
+	srand((unsigned long)ptr);
 	for (int i = 0; i < 20 * 1024 * 1024; i++)
 		ptr[i] = rand();
 	fprintf(stderr, "%d %d %d\n", ptr[1], ptr[5], ptr[200010]);

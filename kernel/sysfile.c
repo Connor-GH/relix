@@ -7,6 +7,7 @@
 #include "fb.h"
 #include "fcntl_constants.h"
 #include "memlayout.h"
+#include "kernel_assert.h"
 #include "mmu.h"
 #include "pci.h"
 #include "vga.h"
@@ -33,10 +34,23 @@
 #include "ioctl.h"
 #include "kalloc.h"
 #include "mman.h"
+#include "pipe.h"
+#include "lib/ring_buffer.h"
 #include <string.h>
 #include "drivers/lapic.h"
 #include "vm.h"
 
+/*
+ * Designed for functions that return int, where
+ * 0 is treated as "success", and less than zero is failure.
+ * Propogates the error, if any, similar to Rust's "?" operator.
+ */
+#define PROPOGATE_ERR(x) \
+	{                      \
+		int __ret;             \
+		if ((__ret = (x)) < 0) \
+			return __ret;        \
+	}
 static struct inode *
 link_dereference(struct inode *ip, char *buff);
 // Fetch the nth word-sized system call argument as a file descriptor
@@ -47,8 +61,7 @@ argfd(int n, int *pfd, struct file **pf)
 	int fd;
 	struct file *f;
 
-	if (argint(n, &fd) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argint(n, &fd));
 	if (fd < 0 || (f = myproc()->ofile[fd]) == 0)
 		return -EBADF;
 	if (fd >= NOFILE)
@@ -74,7 +87,7 @@ fdalloc(struct file *f)
 			return fd;
 		}
 	}
-	return -1;
+	return -EMFILE;
 }
 
 size_t
@@ -155,12 +168,35 @@ sys_fstat(void)
 {
 	struct file *f;
 	struct stat *st;
+	PROPOGATE_ERR(argfd(0, 0, &f));
+	PROPOGATE_ERR(argptr(1, (void *)&st, sizeof(*st)));
 
-	if (argfd(0, 0, &f) < 0 || argptr(1, (void *)&st, sizeof(*st)) < 0)
-		return -EINVAL;
 	if (st == NULL)
-		return -EINVAL;
+		return -EFAULT;
 	return filestat(f, st);
+}
+
+size_t
+sys_stat(void)
+{
+	struct stat *st;
+	char *path;
+	struct inode *ip = NULL;
+	PROPOGATE_ERR(argstr(0, &path));
+	PROPOGATE_ERR(argptr(1, (void *)&st, sizeof(*st)));
+
+	// Find the inode from the name.
+	if ((ip = namei(path)) == NULL) {
+		return -ENOENT;
+	}
+	if (st == NULL)
+		return -EFAULT;
+
+	// Everything that can use stat is an inode.
+	inode_lock(ip);
+	inode_stat(ip, st);
+	inode_unlock(ip);
+	return 0;
 }
 
 // Create the path new as a link to the same inode as old.
@@ -318,7 +354,7 @@ create(char *path, mode_t mode, short major, short minor)
 			ip->mode = mode;
 			return ip;
 		}
-		if (S_ISREG(ip->mode) && S_ISREG(mode)) {
+		if (S_ISFIFO(ip->mode) && S_ISFIFO(mode)) {
 			ip->mode = mode;
 			return ip;
 		}
@@ -370,7 +406,6 @@ fileopen(char *path, int flags, mode_t mode)
 	int fd;
 	struct file *f;
 	struct inode *ip;
-	int file_type = 0;
 
 	if (path == NULL)
 		return -EFAULT;
@@ -414,7 +449,7 @@ fileopen(char *path, int flags, mode_t mode)
 				return -EINVAL;
 			}
 		}
-		if (S_ISDIR(ip->mode) && flags != O_RDONLY) {
+		if (S_ISDIR(ip->mode) && ((flags & O_ACCMODE) != O_RDONLY)) {
 			inode_unlockput(ip);
 			end_op();
 			return -EISDIR;
@@ -428,14 +463,72 @@ fileopen(char *path, int flags, mode_t mode)
 			// Run device-specific opening code, if any.
 			devsw[ip->major].open(ip->minor, flags);
 		}
-		if (S_ISFIFO(ip->mode)) {
-			// [Process 1]{ PUSH(1) PUSH(2) PUSH(3) }
-			// [Process 2]{
-			// POP() == 1
-			// POP() == 2
-			// POP() == 3
-			// }
-			file_type = FD_FIFO;
+	}
+	if (S_ISFIFO(ip->mode) && (flags & O_NONBLOCK) != O_NONBLOCK) {
+		if (ip->rf == 0 && ip->wf == 0) {
+			if (pipealloc(&ip->rf, &ip->wf) < 0) {
+				inode_unlockput(ip);
+				end_op();
+				return -1;
+			}
+			ip->rf->type = FD_FIFO;
+			ip->wf->type = FD_FIFO;
+			ip->rf->ip = ip;
+			ip->wf->ip = ip;
+
+			// As explained in pipealloc, writing to one pipe
+			// affects the other one because they are pointing
+			// to the same one. For example, writing to rf's
+			// pipe changes wf's pipe.
+			ip->rf->pipe->writeopen = 0;
+			ip->rf->pipe->readopen = 0;
+		}
+		if ((flags & O_ACCMODE) == O_WRONLY) {
+			// O_WRONLY is special for FIFOs.
+			// If there is no reader open, then we
+			// have to exit with this errno value.
+			if (ip->wf->pipe->readopen == 0) {
+				inode_unlock(ip);
+				end_op();
+				return -ENXIO;
+			}
+
+			ip->wf->pipe->writeopen++;
+			ip->wf->ref++;
+
+			if ((fd = fdalloc(ip->wf)) < 0) {
+				inode_unlock(ip);
+				end_op();
+				return fd;
+			}
+			inode_unlock(ip);
+
+			end_op();
+			return fd;
+
+		} else if ((flags & O_ACCMODE) == O_RDONLY) {
+
+			ip->rf->pipe->readopen++;
+			ip->rf->ref++;
+			if ((fd = fdalloc(ip->rf)) < 0) {
+				inode_unlock(ip);
+				end_op();
+				return fd;
+			}
+			inode_unlock(ip);
+
+			acquire(&(ip->rf->pipe)->lock);
+			// Wait for a write side to be opened.
+			// Skips around and goes into the scheduler to avoid spinning on this.
+			while (!(ip->rf->pipe)->writeopen) {
+				wakeup(&(ip->rf->pipe)->ring_buffer->nwrite);
+				sleep(&(ip->rf->pipe)->ring_buffer->nread, &(ip->rf->pipe)->lock);
+			}
+			wakeup(&(ip->rf->pipe)->ring_buffer->nwrite);
+			release(&(ip->rf->pipe)->lock);
+
+			end_op();
+			return fd;
 		}
 	}
 	// By this line, both branches above are holding a lock to ip.
@@ -452,11 +545,12 @@ get_fd:
 	inode_unlock(ip);
 	end_op();
 
-	f->type = file_type ? file_type : FD_INODE;
+	f->type = FD_INODE;
 	f->ip = ip;
-	f->off = (flags & O_APPEND) == O_APPEND ? f->ip->size : 0;
-	f->readable = !(flags & O_WRONLY);
-	f->writable = (flags & O_WRONLY) || (flags & O_RDWR);
+	f->off = (flags & O_APPEND) ? f->ip->size : 0;
+	f->readable = !((flags & O_ACCMODE) == O_WRONLY);
+	f->writable = ((flags & O_ACCMODE) == O_WRONLY) ||
+								((flags & O_ACCMODE) == O_RDWR);
 	return fd;
 }
 
@@ -467,11 +561,10 @@ sys_open(void)
 	int flags;
 	mode_t mode;
 
-	if (argstr(0, &path) < 0 || argint(1, &flags) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argstr(0, &path));
+	PROPOGATE_ERR(argint(1, &flags));
 	if (((flags & O_CREAT) == O_CREAT) || ((flags & O_TMPFILE) == O_TMPFILE)) {
-		if (argmode_t(2, &mode) < 0)
-			return -EINVAL;
+		PROPOGATE_ERR(argmode_t(2, &mode));
 	} else {
 		mode = 0777; // mode is ignored.
 	}
@@ -830,13 +923,14 @@ sys_ioctl(void)
 		break;
 	}
 	case FBIOGET_VSCREENINFO: {
-		if (argptr(2, (char **)&last_optional_arg, sizeof(struct fb_var_screeninfo *)) < 0)
-				return -EINVAL;
+		if (argptr(2, (char **)&last_optional_arg,
+							 sizeof(struct fb_var_screeninfo *)) < 0)
+			return -EINVAL;
 
 		if (last_optional_arg == NULL)
 			return -EFAULT;
 
-		struct fb_var_screeninfo info = {WIDTH, HEIGHT, BPP_DEPTH};
+		struct fb_var_screeninfo info = { WIDTH, HEIGHT, BPP_DEPTH };
 		memcpy(last_optional_arg, &info, sizeof(struct fb_var_screeninfo));
 		return 0;
 		break;
@@ -889,10 +983,12 @@ sys_mmap(void)
 		if (file->ip->major < 0 || file->ip->major >= NDEV ||
 				!devsw[file->ip->major].mmap)
 			return -ENODEV;
-		info = devsw[file->ip->major].mmap(file->ip->minor, length, (uintptr_t)addr, perm);
+		info = devsw[file->ip->major].mmap(file->ip->minor, length, (uintptr_t)addr,
+																			 perm);
 		info.file = file;
 	} else {
-		info = (struct mmap_info){ length, (uintptr_t)addr, 0/* virtual address */, NULL, perm};
+		info = (struct mmap_info){ length, (uintptr_t)addr, 0 /* virtual address */,
+															 NULL, perm };
 	}
 	struct proc *proc = myproc();
 	if (proc->mmap_count > NMMAP)
@@ -901,8 +997,8 @@ sys_mmap(void)
 	if (addr == NULL) {
 		if (info.virt_addr == 0)
 			info.virt_addr = PGROUNDUP(proc->effective_largest_sz);
-		if (mappages(myproc()->pgdir, (void *)info.virt_addr,
-								 info.length, info.addr, info.perm) < 0) {
+		if (mappages(myproc()->pgdir, (void *)info.virt_addr, info.length,
+								 info.addr, info.perm) < 0) {
 			return -ENOMEM;
 		}
 		myproc()->effective_largest_sz += info.length;
@@ -934,22 +1030,23 @@ sys_munmap(void)
 
 	struct proc *proc = myproc();
 	if (argptr(0, (char **)&addr, sizeof(void *)) < 0 ||
-			 argsize_t(1, &length) < 0)
+			argsize_t(1, &length) < 0)
 		return -EINVAL;
 	if (length == 0)
 		return -EINVAL;
 	int j = -1;
 	for (int i = 0; i < NMMAP; i++) {
 		if ((proc->mmap_info[i].virt_addr == (uintptr_t)addr) &&
-        ((proc->mmap_info[i].length == length) ||
-        (proc->mmap_info[i].file && S_ISCHR(proc->mmap_info[i].file->ip->mode)))) {
+				((proc->mmap_info[i].length == length) ||
+				 (proc->mmap_info[i].file &&
+					S_ISCHR(proc->mmap_info[i].file->ip->mode)))) {
 			j = i;
 		}
 	}
 	if (j == -1)
 		return -EINVAL;
-	for (int i = 0; i < PGROUNDUP(proc->mmap_info[j].length); i+= PGSIZE) {
-    unmap_user_page(proc->pgdir, (char *)proc->mmap_info[j].virt_addr);
+	for (int i = 0; i < PGROUNDUP(proc->mmap_info[j].length); i += PGSIZE) {
+		unmap_user_page(proc->pgdir, (char *)proc->mmap_info[j].virt_addr);
 	}
 	if (addr != NULL && V2P(addr) < KERNBASE)
 		kfree(addr);
@@ -981,7 +1078,7 @@ sys_umask(void)
 	// This function is said to never fail, so
 	// we must return something useful.
 	if (argint(0, &mask) < 0) {
-			return S_IWGRP | S_IWOTH;
+		return S_IWGRP | S_IWOTH;
 	}
 	return myproc() ? myproc()->umask : (S_IWGRP | S_IWOTH);
 }
@@ -1050,7 +1147,6 @@ sys_rename(void)
 			}
 			if (new_dp != dp)
 				inode_unlockput(new_dp);
-
 
 			// Commit to disk.
 			inode_unlockput(dp);

@@ -4,6 +4,12 @@
 #ifndef __KERNEL__
 #include <stddef.h>
 #include <stdint.h>
+
+#define RAND_MAX 32767 // Minimum via POSIX.
+int
+rand(void);
+void
+srand(unsigned int seed);
 __attribute__((noreturn)) void
 exit(int status);
 __attribute__((malloc)) void *

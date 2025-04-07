@@ -20,20 +20,6 @@
 int errno;
 extern char **environ;
 
-// fill in st from pathname n
-__attribute__((nonnull(2))) int
-stat(const char *n, struct stat *st)
-{
-	int fd;
-	int r;
-
-	fd = open(n, O_RDONLY);
-	if (fd < 0)
-		return -1;
-	r = fstat(fd, st);
-	close(fd);
-	return r;
-}
 // This should probably be moved into the kernel, because
 // we have more symbolic link information there. It might
 // be possible, however, to keep this in userspace if we
@@ -483,7 +469,6 @@ vfork(void)
 	return pid;
 }
 
-
 // Implmentation taken from the C Programming Language
 double
 atof(const char *nptr)
@@ -524,4 +509,22 @@ int
 mkfifo(const char *pathname, mode_t mode)
 {
 	return mknod(pathname, mode | S_IFIFO, 0);
+}
+
+static uint64_t s_next_rand = 1;
+
+// https://pubs.opengroup.org/onlinepubs/9699919799/functions/rand.html
+// POSIX implementation.
+int
+rand(void)
+{
+	s_next_rand = s_next_rand * 1103515245 + 12345;
+	return ((unsigned int)(s_next_rand / ((RAND_MAX + 1) * 2)) % (RAND_MAX + 1));
+}
+
+// https://pubs.opengroup.org/onlinepubs/9699919799/functions/srand.html
+void
+srand(unsigned int seed)
+{
+	s_next_rand = seed;
 }

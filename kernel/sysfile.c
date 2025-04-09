@@ -338,6 +338,10 @@ create(char *path, mode_t mode, short major, short minor)
 	struct inode *ip, *dp;
 	char name[DIRSIZ];
 
+	// POSIX says that creat(2) makes an IFREG if IFMT is 0.
+	if ((mode & S_IFMT) == 0)
+		mode |= S_IFREG;
+
 	// get inode of path, and put the name in name.
 	if ((dp = nameiparent(path, name)) == 0)
 		return 0;

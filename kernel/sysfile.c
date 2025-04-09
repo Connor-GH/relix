@@ -863,6 +863,8 @@ sys_readlink(void)
 
 // Follows a symbolic link until we either resolve it or recurse too much.
 // Caller must hold lock.
+// On success, we return a new locked inode, unlocking the first one.
+// On failure, we return NULL, and the inode is no longer locked.
 struct inode *
 link_dereference(struct inode *ip, char *buff) __must_hold(&ip->lock)
 {
@@ -871,15 +873,21 @@ link_dereference(struct inode *ip, char *buff) __must_hold(&ip->lock)
 	while (S_ISLNK(new_ip->mode)) {
 		ref_count--;
 		if (ref_count == 0)
-			return NULL;
+			goto bad;
 
 		if (inode_read(new_ip, buff, 0, new_ip->size) < 0)
-			return NULL;
+			goto bad;
 
-		if ((new_ip = namei(buff)) == 0)
-			return NULL;
+		inode_unlock(new_ip);
+
+		if ((new_ip = namei(buff)) == NULL)
+			goto bad;
+		inode_lock(new_ip);
 	}
 	return new_ip;
+bad:
+	inode_unlock(new_ip);
+	return NULL;
 }
 
 size_t

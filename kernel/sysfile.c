@@ -4,6 +4,7 @@
 // user code, and calls into file.c and fs.c.
 //
 
+#include "compiler_attributes.h"
 #include "fb.h"
 #include "fcntl_constants.h"
 #include "memlayout.h"
@@ -644,8 +645,10 @@ sys_chdir(void)
 	inode_lock(ip);
 	if (S_ISLNK(ip->mode)) {
 		if ((ip = link_dereference(ip, path)) == 0) {
+			inode_unlockput(ip);
 			end_op();
-			panic("open link_dereference");
+			// POSIX says to return this if there is a "dangling symbolic link".
+			return -ENOENT;
 		}
 	}
 	if (!S_ISDIR(ip->mode)) {
@@ -858,30 +861,25 @@ sys_readlink(void)
 	return 0;
 }
 
+// Follows a symbolic link until we either resolve it or recurse too much.
+// Caller must hold lock.
 struct inode *
-link_dereference(struct inode *ip, char *buff)
+link_dereference(struct inode *ip, char *buff) __must_hold(&ip->lock)
 {
 	int ref_count = NLINK_DEREF;
 	struct inode *new_ip = ip;
 	while (S_ISLNK(new_ip->mode)) {
 		ref_count--;
 		if (ref_count == 0)
-			goto bad;
+			return NULL;
 
 		if (inode_read(new_ip, buff, 0, new_ip->size) < 0)
-			goto bad;
+			return NULL;
 
-		inode_unlock(new_ip);
 		if ((new_ip = namei(buff)) == 0)
-			return 0;
-
-		inode_lock(new_ip);
+			return NULL;
 	}
 	return new_ip;
-
-bad:
-	inode_unlock(new_ip);
-	return 0;
 }
 
 size_t

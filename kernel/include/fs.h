@@ -48,6 +48,7 @@ struct inode {
 	struct file *rf;
 	struct file *wf;
 	uint32_t inum; // Inode number
+	int flags; // Flags when file is opened (e.g. O_RDONLY)
 	int ref; // Reference count
 	struct sleeplock lock; // protects everything below here
 	int valid; // inode has been read from disk?
@@ -127,10 +128,10 @@ namei(const char *);
 struct inode *
 nameiparent(const char *, char *);
 ssize_t
-inode_read(struct inode *ip, char *, uint64_t, uint64_t) __must_hold(&ip->lock);
+inode_read(struct inode *ip, char *, off_t off, uint64_t n) __must_hold(&ip->lock);
 void
 inode_stat(struct inode *ip, struct stat *) __must_hold(&ip->lock);
 ssize_t
-inode_write(struct inode *ip, char *, uint64_t, uint64_t) __must_hold(&ip->lock);
+inode_write(struct inode *ip, char *, off_t off, uint64_t n) __must_hold(&ip->lock);
 #endif
 #endif

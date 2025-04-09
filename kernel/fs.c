@@ -569,7 +569,7 @@ inode_stat(struct inode *ip, struct stat *st) __must_hold(&ip->lock)
 // Read data from inode.
 // Caller must hold ip->lock.
 ssize_t
-inode_read(struct inode *ip, char *dst, uint64_t off, uint64_t n) __must_hold(&ip->lock)
+inode_read(struct inode *ip, char *dst, off_t off, uint64_t n) __must_hold(&ip->lock)
 {
 	kernel_assert(holdingsleep(&ip->lock));
 	uint64_t tot, m;
@@ -601,7 +601,7 @@ inode_read(struct inode *ip, char *dst, uint64_t off, uint64_t n) __must_hold(&i
 // Write data to inode.
 // Caller must hold ip->lock.
 ssize_t
-inode_write(struct inode *ip, char *src, uint64_t off, uint64_t n) __must_hold(&ip->lock)
+inode_write(struct inode *ip, char *src, off_t off, uint64_t n) __must_hold(&ip->lock)
 {
 	kernel_assert(holdingsleep(&ip->lock));
 	uint64_t tot, m;

@@ -1,3 +1,4 @@
+#include "proc.h"
 #include "spinlock.h"
 #include <stdint.h>
 #include "kbd.h"
@@ -10,6 +11,7 @@
 #include "traps.h"
 #include "string.h"
 #include "lib/queue.h"
+#include "fcntl_constants.h"
 
 
 
@@ -408,12 +410,21 @@ kbd_enqueue(unsigned char value)
 __nonnull(2, 3) static ssize_t
 kbdread(short minor, struct inode *ip, char *dst, size_t n)
 {
+get_element:;
 	acquire(&kbdlock.lock);
 	unsigned char data;
 	int ret = dequeue_unsigned_char(kbdlock.kbd_queue, &data, kfree);
 	release(&kbdlock.lock);
-	if (ret != QUEUE_SUCCESS)
-		return -1;
+	if (ret != QUEUE_SUCCESS) {
+		if ((ip->flags & O_NONBLOCK) == O_NONBLOCK) {
+			return -1;
+		} else {
+			// Let other processes do stuff while we sit here and spin.
+			yield();
+			// The default is spinning on the kbd queue.
+			goto get_element;
+		}
+	}
 	memcpy(dst, &data, sizeof(data));
 	return n;
 }

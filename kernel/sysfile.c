@@ -372,6 +372,7 @@ create(char *path, mode_t mode, short major, short minor)
 	ip->mode = mode;
 	ip->gid = DEFAULT_GID;
 	ip->uid = DEFAULT_UID;
+	ip->flags = 0;
 	// atime, mtime, etc. get handled in inode_update()
 	inode_update(ip);
 	// Create . and .. entries.
@@ -441,6 +442,7 @@ fileopen(char *path, int flags, mode_t mode)
 			return -ENOENT;
 		}
 		inode_lock(ip);
+		ip->flags = flags;
 
 		if (S_ISLNK(ip->mode)) {
 			if ((ip = link_dereference(ip, path)) == 0) {

@@ -1,3 +1,5 @@
+#ifndef _FS_H
+#define _FS_H
 #pragma once
 // On-disk file system format.
 // Both the kernel and user programs use this header file.
@@ -135,3 +137,4 @@ ssize_t
 inode_write(struct inode *ip, char *, off_t off, uint64_t n) __must_hold(&ip->lock);
 #endif
 #endif
+#endif // !_FS_H

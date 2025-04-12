@@ -43,7 +43,7 @@ mpsearch1(uint32_t a, int len)
 		// https://web.archive.org/web/20121002210153/http://download.intel.com/design/archives/processors/pro/docs/24201606.pdf
 		if (memcmp(p, "_MP_", 4) == 0 && sum(p, sizeof(struct mp)) == 0)
 			return (struct mp *)p;
-	return 0;
+	return NULL;
 }
 
 // Search for the MP Floating Pointer Structure, which according to the
@@ -80,15 +80,15 @@ __nonnull(1) static struct mpconf *mpconfig(struct mp **pmp)
 	struct mpconf *conf;
 	struct mp *mp;
 
-	if ((mp = mpsearch()) == 0 || mp->physaddr == 0)
-		return 0;
+	if ((mp = mpsearch()) == NULL || mp->physaddr == NULL)
+		return NULL;
 	conf = (struct mpconf *)p2v((uintptr_t)mp->physaddr);
 	if (memcmp(conf, "PCMP", 4) != 0)
-		return 0;
+		return NULL;
 	if (conf->version != 1 && conf->version != 4)
-		return 0;
+		return NULL;
 	if (sum((uint8_t *)conf, conf->length) != 0)
-		return 0;
+		return NULL;
 	*pmp = mp;
 	return conf;
 }
@@ -104,7 +104,7 @@ mpinit(void)
 	struct mpioapic *ioapic;
 	struct mpbus *bus;
 
-	if ((conf = mpconfig(&mp)) == 0)
+	if ((conf = mpconfig(&mp)) == NULL)
 		panic("Expect to run on an SMP");
 	ismp = 1;
 	lapic = IO2V((uintptr_t)conf->lapicaddr);

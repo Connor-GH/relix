@@ -15,6 +15,7 @@
 #include <dirent.h>
 #include <time.h>
 #include <errno.h>
+#include <stdatomic.h>
 #include "fs.h"
 #include "param.h"
 #include "proc.h"
@@ -319,9 +320,6 @@ struct inode *
 inode_dup(struct inode *ip)
 {
 	__sync_add_and_fetch(&ip->ref, 1);
-	//acquire(&inode_cache.lock);
-	//ip->ref++;
-	//release(&inode_cache.lock);
 	return ip;
 }
 
@@ -397,10 +395,7 @@ inode_put(struct inode *ip)
 	}
 	releasesleep(&ip->lock);
 
-	//acquire(&inode_cache.lock);
 	__sync_sub_and_fetch(&ip->ref, 1);
-	//ip->ref--;
-	//release(&inode_cache.lock);
 }
 
 // Common idiom: unlock, then put.
@@ -764,6 +759,9 @@ namex(const char *path, int nameiparent, char *name)
 {
 	struct inode *ip, *next;
 
+	// If the path string starts with a '/', it is
+	// an absolute path.
+	// Otherwise, it is treated as a relative path.
 	if (*path == '/')
 		ip = inode_get(ROOTDEV, ROOTINO);
 	else

@@ -119,7 +119,7 @@ allocproc(void)
 			goto found;
 
 	release(&ptable.lock);
-	return 0;
+	return NULL;
 
 found:
 	p->state = EMBRYO;
@@ -128,9 +128,9 @@ found:
 	release(&ptable.lock);
 
 	// Allocate kernel stack.
-	if ((p->kstack = kpage_alloc()) == 0) {
+	if ((p->kstack = kpage_alloc()) == NULL) {
 		p->state = UNUSED;
-		return 0;
+		return NULL;
 	}
 	sp = p->kstack + KSTACKSIZE;
 
@@ -175,7 +175,7 @@ userinit(void)
 		panic("userinit: allocproc failed");
 
 	initproc = p;
-	if ((p->pgdir = setupkvm()) == 0)
+	if ((p->pgdir = setupkvm()) == NULL)
 		panic("userinit: out of memory?");
 	inituvm(p->pgdir, _binary_bin_initcode_start,
 					(uintptr_t)_binary_bin_initcode_size);
@@ -237,14 +237,14 @@ fork(bool virtual)
 	struct proc *curproc = myproc();
 
 	// Allocate process.
-	if ((np = allocproc()) == 0) {
+	if ((np = allocproc()) == NULL) {
 		return -ENOMEM;
 	}
 
 	// Copy process state from proc.
-	if ((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0) {
+	if ((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == NULL) {
 		kpage_free(np->kstack);
-		np->kstack = 0;
+		np->kstack = NULL;
 		np->state = UNUSED;
 		return -EIO;
 	}
@@ -308,14 +308,14 @@ exit(int status)
 	for (fd = 0; fd < NOFILE; fd++) {
 		if (curproc->ofile[fd]) {
 			fileclose(curproc->ofile[fd]);
-			curproc->ofile[fd] = 0;
+			curproc->ofile[fd] = NULL;
 		}
 	}
 
 	begin_op();
 	inode_put(curproc->cwd);
 	end_op();
-	curproc->cwd = 0;
+	curproc->cwd = NULL;
 	curproc->status = status;
 
 	acquire(&ptable.lock);
@@ -362,12 +362,12 @@ wait(int *wstatus)
 					*wstatus = W_EXITCODE(p->status, p->last_signal);
 				pid = p->pid;
 				kpage_free(p->kstack);
-				p->kstack = 0;
+				p->kstack = NULL;
 				memset(p->mmap_info, 0, sizeof(p->mmap_info));
 				p->mmap_count = 0;
 				freevm(p->pgdir);
 				p->pid = 0;
-				p->parent = 0;
+				p->parent = NULL;
 				p->name[0] = 0;
 				p->killed = 0;
 				p->last_signal = 0;
@@ -452,7 +452,7 @@ scheduler(void)
 
 			// Process is done running for now.
 			// It should have changed its p->state before coming back.
-			c->proc = 0;
+			c->proc = NULL;
 		}
 		release(&ptable.lock);
 		if (ran == 0) {
@@ -525,10 +525,10 @@ sleep(void *chan, struct spinlock *lk)
 {
 	struct proc *p = myproc();
 
-	if (p == 0)
+	if (p == NULL)
 		panic("sleep");
 
-	if (lk == 0)
+	if (lk == NULL)
 		panic("sleep without lk");
 
 	// Must acquire ptable.lock in order to
@@ -548,7 +548,7 @@ sleep(void *chan, struct spinlock *lk)
 	sched();
 
 	// Tidy up.
-	p->chan = 0;
+	p->chan = NULL;
 
 	// Reacquire original lock.
 	if (lk != &ptable.lock) { //DOC: sleeplock2
@@ -674,7 +674,7 @@ kernel_attach_signal(int signum, sighandler_t handler)
 		return SIG_ERR;
 	} else {
 		myproc()->sig_handlers[signum] = handler;
-		return 0;
+		return NULL;
 	}
 }
 

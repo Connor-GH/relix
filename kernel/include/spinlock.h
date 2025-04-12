@@ -1,4 +1,6 @@
 #pragma once
+#ifndef _SPINLOCK_H
+#define _SPINLOCK_H
 #ifndef USE_HOST_TOOLS
 #include <stdint.h>
 #include <stddef.h>
@@ -36,3 +38,4 @@ pushcli(void);
 void
 popcli(void);
 #endif
+#endif /* _SPINLOCK_H */

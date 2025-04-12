@@ -49,7 +49,7 @@ filealloc(void)
 		}
 	}
 	release(&ftable.lock);
-	return 0;
+	return NULL;
 }
 
 // Increment ref count for file f.
@@ -232,10 +232,11 @@ inode_to_path(char *buf, size_t n, struct inode *ip)
 		return buf;
 	} else if (isdir) {
 		inode_lock(ip);
-		parent = dirlookup(ip, "..", 0);
+		parent = dirlookup(ip, "..", NULL);
 		inode_unlock(ip);
 		inode_lock(parent);
 		if (name_of_inode(ip, parent, node_name, n) < 0) {
+			inode_unlock(parent);
 			return NULL;
 		}
 		inode_unlock(parent);

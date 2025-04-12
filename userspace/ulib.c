@@ -302,7 +302,7 @@ int
 __sigsetjmp_tail(sigjmp_buf env, int ret)
 {
 	void *p = env->__saved_mask;
-	sigprocmask(SIG_SETMASK, ret ? p : 0, ret ? 0 : p);
+	sigprocmask(SIG_SETMASK, ret ? p : NULL, ret ? NULL : p);
 	return ret;
 }
 

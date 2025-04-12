@@ -111,7 +111,7 @@ ideinit(void)
 static void
 idestart(struct buf *b)
 {
-	if (unlikely(b == 0))
+	if (unlikely(b == NULL))
 		panic("idestart");
 	if (b->blockno >= FSSIZE) {
 		uart_printf("blockno: %ld\n", b->blockno);
@@ -146,7 +146,7 @@ ideintr(void)
 	// First queued buffer is the active request.
 	acquire(&idelock);
 
-	if ((b = idequeue) == 0) {
+	if ((b = idequeue) == NULL) {
 		release(&idelock);
 		return;
 	}
@@ -162,7 +162,7 @@ ideintr(void)
 	wakeup(b);
 
 	// Start disk on next buf in queue.
-	if (idequeue != 0)
+	if (idequeue != NULL)
 		idestart(idequeue);
 
 	release(&idelock);
@@ -186,7 +186,7 @@ iderw(struct buf *b)
 	acquire(&idelock); //DOC:acquire-lock
 
 	// Append b to idequeue.
-	b->qnext = 0;
+	b->qnext = NULL;
 	for (pp = &idequeue; *pp; pp = &(*pp)->qnext) //DOC:insert-queue
 		;
 	*pp = b;

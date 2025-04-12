@@ -63,7 +63,7 @@ argfd(int n, int *pfd, struct file **pf)
 	struct file *f;
 
 	PROPOGATE_ERR(argint(n, &fd));
-	if (fd < 0 || (f = myproc()->ofile[fd]) == 0)
+	if (fd < 0 || (f = myproc()->ofile[fd]) == NULL)
 		return -EBADF;
 	if (fd >= NOFILE)
 		return -ENFILE;
@@ -83,7 +83,7 @@ fdalloc(struct file *f)
 	struct proc *curproc = myproc();
 
 	for (fd = 0; fd < NOFILE; fd++) {
-		if (curproc->ofile[fd] == 0) {
+		if (curproc->ofile[fd] == NULL) {
 			curproc->ofile[fd] = f;
 			return fd;
 		}
@@ -97,7 +97,7 @@ sys_dup(void)
 	struct file *f;
 	int fd;
 
-	if (argfd(0, 0, &f) < 0)
+	if (argfd(0, NULL, &f) < 0)
 		return -1;
 	if ((fd = fdalloc(f)) < 0)
 		return -EBADF;
@@ -113,7 +113,7 @@ sys_read(void)
 	char *p;
 
 	// do not rearrange, because then 'n' will be undefined.
-	if (argfd(0, 0, &f) < 0 || arguintptr_t(2, &n) < 0 || argptr(1, &p, n) < 0)
+	if (argfd(0, NULL, &f) < 0 || arguintptr_t(2, &n) < 0 || argptr(1, &p, n) < 0)
 		return -EINVAL;
 	return fileread(f, p, n);
 }
@@ -125,7 +125,7 @@ sys_write(void)
 	uint64_t n;
 	char *p;
 
-	if (argfd(0, 0, &f) < 0 || arguintptr_t(2, &n) < 0 || argptr(1, &p, n) < 0)
+	if (argfd(0, NULL, &f) < 0 || arguintptr_t(2, &n) < 0 || argptr(1, &p, n) < 0)
 		return -EINVAL;
 	return filewrite(f, p, n);
 }
@@ -159,7 +159,7 @@ sys_close(void)
 
 	if (argfd(0, &fd, &f) < 0)
 		return -EINVAL;
-	myproc()->ofile[fd] = 0;
+	myproc()->ofile[fd] = NULL;
 	fileclose(f);
 	return 0;
 }
@@ -169,7 +169,7 @@ sys_fstat(void)
 {
 	struct file *f;
 	struct stat *st;
-	PROPOGATE_ERR(argfd(0, 0, &f));
+	PROPOGATE_ERR(argfd(0, NULL, &f));
 	PROPOGATE_ERR(argptr(1, (void *)&st, sizeof(*st)));
 
 	if (st == NULL)
@@ -212,7 +212,7 @@ sys_link(void)
 		return -EINVAL;
 
 	begin_op();
-	if ((ip = namei(old)) == 0) {
+	if ((ip = namei(old)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
@@ -228,7 +228,7 @@ sys_link(void)
 	inode_update(ip);
 	inode_unlock(ip);
 
-	if ((dp = nameiparent(new, name)) == 0) {
+	if ((dp = nameiparent(new, name)) == NULL) {
 		retflag = ENOENT;
 		goto bad;
 	}
@@ -282,7 +282,7 @@ sys_unlink(void)
 		return -EINVAL;
 
 	begin_op();
-	if ((dp = nameiparent(path, name)) == 0) {
+	if ((dp = nameiparent(path, name)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
@@ -293,10 +293,11 @@ sys_unlink(void)
 	if (namecmp(name, ".") == 0 || namecmp(name, "..") == 0)
 		goto bad;
 
-	if ((ip = dirlookup(dp, name, &off)) == 0) {
+	if ((ip = dirlookup(dp, name, &off)) == NULL) {
 		error = ENOENT;
 		goto bad;
 	}
+	kernel_assert(ip != dp);
 
 	inode_lock(ip);
 
@@ -343,12 +344,12 @@ create(char *path, mode_t mode, short major, short minor)
 		mode |= S_IFREG;
 
 	// get inode of path, and put the name in name.
-	if ((dp = nameiparent(path, name)) == 0)
-		return 0;
+	if ((dp = nameiparent(path, name)) == NULL)
+		return NULL;
 	inode_lock(dp);
 
 	// /dp/name is present
-	if ((ip = dirlookup(dp, name, 0)) != 0) {
+	if ((ip = dirlookup(dp, name, NULL)) != NULL) {
 		inode_unlockput(dp);
 		inode_lock(ip);
 		if (S_ISREG(ip->mode) && S_ISREG(mode)) {
@@ -364,10 +365,10 @@ create(char *path, mode_t mode, short major, short minor)
 			return ip;
 		}
 		inode_unlockput(ip);
-		return 0;
+		return NULL;
 	}
 
-	if ((ip = inode_alloc(dp->dev, mode)) == 0)
+	if ((ip = inode_alloc(dp->dev, mode)) == NULL)
 		panic("create: inode_alloc");
 
 	inode_lock(ip);
@@ -420,7 +421,7 @@ fileopen(char *path, int flags, mode_t mode)
 
 	if ((flags & O_CREATE) == O_CREATE) {
 		// try to create a file and it exists.
-		if ((ip = namei(path)) != 0) {
+		if ((ip = namei(path)) != NULL) {
 			// if it's a char device, possibly do something special.
 			inode_lock(ip);
 			if (S_ISCHR(ip->mode)) {
@@ -434,15 +435,12 @@ fileopen(char *path, int flags, mode_t mode)
 		// create() holds a lock on this inode pointer,
 		// but only if it succeeds.
 		ip = create(path, mode, 0, 0);
-		if (ip == 0) {
+		if (ip == NULL) {
 			end_op();
 			return -EIO;
 		}
-		if (!S_ISANY(ip->mode)) {
-			ip->mode |= S_IFREG;
-		}
 	} else {
-		if ((ip = namei(path)) == 0) {
+		if ((ip = namei(path)) == NULL) {
 			end_op();
 			return -ENOENT;
 		}
@@ -450,7 +448,7 @@ fileopen(char *path, int flags, mode_t mode)
 		ip->flags = flags;
 
 		if (S_ISLNK(ip->mode)) {
-			if ((ip = link_dereference(ip, path)) == 0) {
+			if ((ip = link_dereference(ip, path)) == NULL) {
 				inode_unlockput(ip);
 				end_op();
 				return -EINVAL;
@@ -472,7 +470,7 @@ fileopen(char *path, int flags, mode_t mode)
 		}
 	}
 	if (S_ISFIFO(ip->mode) && (flags & O_NONBLOCK) != O_NONBLOCK) {
-		if (ip->rf == 0 && ip->wf == 0) {
+		if (ip->rf == NULL && ip->wf == NULL) {
 			if (pipealloc(&ip->rf, &ip->wf) < 0) {
 				inode_unlockput(ip);
 				end_op();
@@ -548,7 +546,7 @@ fileopen(char *path, int flags, mode_t mode)
 	// That is why it is released down here.
 get_fd:
 
-	if ((f = filealloc()) == 0 || (fd = fdalloc(f)) < 0) {
+	if ((f = filealloc()) == NULL || (fd = fdalloc(f)) < 0) {
 		if (f)
 			fileclose(f);
 		inode_unlockput(ip);
@@ -602,7 +600,7 @@ sys_mkdir(void)
 	if (myproc() == NULL)
 		return -EAGAIN;
 	begin_op();
-	if ((ip = create(path, (S_IFDIR | mode) & ~myproc()->umask, 0, 0)) == 0) {
+	if ((ip = create(path, (S_IFDIR | mode) & ~myproc()->umask, 0, 0)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
@@ -702,7 +700,7 @@ sys_execve(void)
 		if (fetchuintptr_t(uargv + sizeof(uintptr_t) * i, &uarg) < 0)
 			return -EINVAL;
 		if (uarg == 0) {
-			argv[i] = 0;
+			argv[i] = NULL;
 			break;
 		}
 		if (fetchstr(uarg, &argv[i]) < 0)
@@ -714,7 +712,7 @@ sys_execve(void)
 		if (fetchuintptr_t(uenvp + sizeof(uintptr_t) * i, &uenv) < 0)
 			return -EINVAL;
 		if (uenv == 0) {
-			envp[i] = 0;
+			envp[i] = NULL;
 			break;
 		}
 		if (fetchstr(uenv, &envp[i]) < 0)
@@ -737,7 +735,7 @@ sys_pipe(void)
 	fd0 = -1;
 	if ((fd0 = fdalloc(rf)) < 0 || (fd1 = fdalloc(wf)) < 0) {
 		if (fd0 >= 0)
-			myproc()->ofile[fd0] = 0;
+			myproc()->ofile[fd0] = NULL;
 		fileclose(rf);
 		fileclose(wf);
 		return -EBADF;
@@ -755,7 +753,7 @@ sys_chmod(void)
 	struct inode *ip;
 	begin_op();
 	if (argstr(0, &path) < 0 || argint(1, (mode_t *)&mode) < 0 ||
-			(ip = namei(path)) == 0) {
+			(ip = namei(path)) == NULL) {
 		end_op();
 		return -EINVAL;
 	}
@@ -793,11 +791,11 @@ sys_symlink(void)
 		return -EINVAL;
 
 	begin_op();
-	if ((eexist = namei(linkpath)) != 0) {
+	if ((eexist = namei(linkpath)) != NULL) {
 		end_op();
 		return -EEXIST;
 	}
-	if ((eexist = nameiparent(linkpath, dir)) == 0) {
+	if ((eexist = nameiparent(linkpath, dir)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
@@ -805,14 +803,14 @@ sys_symlink(void)
 	// Dirlookup's first arg needs a lock.
 	inode_lock(eexist);
 
-	if ((ip = dirlookup(eexist, dir, &poff)) != 0) {
+	if ((ip = dirlookup(eexist, dir, &poff)) != NULL) {
 		inode_unlockput(eexist);
 		end_op();
 		return -EEXIST;
 	}
 	inode_unlock(eexist);
 
-	if ((ip = create(linkpath, S_IFLNK | S_IAUSR, 0, 0)) == 0) {
+	if ((ip = create(linkpath, S_IFLNK | S_IAUSR, 0, 0)) == NULL) {
 		end_op();
 		return -ENOSPC;
 	}
@@ -836,7 +834,7 @@ sys_readlink(void)
 	}
 	struct inode *ip;
 	begin_op();
-	if ((ip = namei(target)) == 0) {
+	if ((ip = namei(target)) == NULL) {
 		return -ENOENT;
 	}
 
@@ -1120,17 +1118,17 @@ sys_rename(void)
 	const char *newpath = newpath_;
 
 	begin_op();
-	if ((ip1 = namei(oldpath)) == 0) {
+	if ((ip1 = namei(oldpath)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
-	if ((ip2 = nameiparent(newpath, newelem)) == 0) {
+	if ((ip2 = nameiparent(newpath, newelem)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
 	struct inode *dp = nameiparent(oldpath, dir);
 	struct inode *new_dp = nameiparent(newpath, newdir);
-	if (dp == 0 || new_dp == 0) {
+	if (dp == NULL || new_dp == NULL) {
 		end_op();
 		return -ENOENT;
 	}

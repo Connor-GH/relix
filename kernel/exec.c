@@ -54,12 +54,12 @@ __nonnull(1, 2) int execve(const char *path, char *const *argv, char *const *env
 
 	begin_op();
 
-	if ((ip = namei(path)) == 0) {
+	if ((ip = namei(path)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
 	inode_lock(ip);
-	pgdir = 0;
+	pgdir = NULL;
 
 	// hold back on GID/UID protection right now
 	/*if (ip->gid != curproc->cred.gid && ip->uid != curproc->cred.uid) {
@@ -96,7 +96,7 @@ ok:
 		goto bad;
 	}
 
-	if ((pgdir = setupkvm()) == 0) {
+	if ((pgdir = setupkvm()) == NULL) {
 		return_errno = -ENOMEM;
 		goto bad;
 	}
@@ -129,7 +129,7 @@ ok:
 	}
 	inode_unlockput(ip);
 	end_op();
-	ip = 0;
+	ip = NULL;
 	// Allocate two pages at the next page boundary.
 	// Make the first inaccessible.  Use the second as the user stack.
 	sz = PGROUNDUP(sz);

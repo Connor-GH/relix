@@ -7,6 +7,7 @@
 #include "proc.h"
 #include "spinlock.h"
 #include "console.h"
+#include <string.h>
 #include "kernel_assert.h"
 
 void
@@ -14,7 +15,7 @@ initlock(struct spinlock *lk, char *name)
 {
 	lk->name = name;
 	lk->locked = 0;
-	lk->cpu = 0;
+	lk->cpu = NULL;
 }
 
 // Acquire the lock.
@@ -48,7 +49,7 @@ release(struct spinlock *lk) __releases(lk)
 	kernel_assert(holding(lk));
 
 	lk->pcs[0] = 0;
-	lk->cpu = 0;
+	lk->cpu = NULL;
 
 	// Tell the C compiler and the processor to not move loads or stores
 	// past this point, to ensure that all the stores in the critical
@@ -85,7 +86,7 @@ getcallerpcs_with_bp(uintptr_t pcs[], uintptr_t *rbp, size_t size)
 	int i;
 
 	for (i = 0; i < size; i++) {
-		if (rbp == 0 || rbp < (uintptr_t *)KERNBASE ||
+		if (rbp == NULL || rbp < (uintptr_t *)KERNBASE ||
 				rbp == (uintptr_t *)0xffffffff)
 			break;
 		pcs[i] = rbp[1]; // saved %rip

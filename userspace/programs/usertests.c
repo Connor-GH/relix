@@ -20,7 +20,7 @@
 #pragma GCC diagnostic ignored "-Wshadow"
 char buf[8192];
 char name[3];
-char *echoargv[] = { "/bin/echo", "ALL", "TESTS", "PASSED", 0 };
+char *echoargv[] = { "/bin/echo", "ALL", "TESTS", "PASSED", NULL };
 
 // does chdir() call iput(p->cwd) in a transaction?
 void
@@ -466,8 +466,8 @@ mem(void)
 	fprintf(stdout, "mem test\n");
 	ppid = getpid();
 	if ((pid = fork()) == 0) {
-		m1 = 0;
-		while ((m2 = malloc(10001)) != 0) {
+		m1 = NULL;
+		while ((m2 = malloc(10001)) != NULL) {
 			*(char **)m2 = m1;
 			m1 = m2;
 		}
@@ -477,7 +477,7 @@ mem(void)
 			m1 = m2;
 		}
 		m1 = malloc(1024 * 20);
-		if (m1 == 0) {
+		if (m1 == NULL) {
 			fprintf(stdout, "couldn't allocate mem?!!\n");
 			kill(ppid, SIGKILL);
 			exit(0);
@@ -498,7 +498,7 @@ void
 sharedfd(void)
 {
 	int fd, pid, i, n, nc, np;
-	char buf[10];
+	char sharedfd_buf[10];
 
 	fprintf(stdout, "sharedfd test\n");
 
@@ -509,9 +509,9 @@ sharedfd(void)
 		return;
 	}
 	pid = fork();
-	memset(buf, pid == 0 ? 'c' : 'p', sizeof(buf));
+	memset(sharedfd_buf, pid == 0 ? 'c' : 'p', sizeof(sharedfd_buf));
 	for (i = 0; i < 1000; i++) {
-		if (write(fd, buf, sizeof(buf)) != sizeof(buf)) {
+		if (write(fd, sharedfd_buf, sizeof(sharedfd_buf)) != sizeof(sharedfd_buf)) {
 			fprintf(stdout, "fstests: write sharedfd failed\n");
 			break;
 		}
@@ -527,11 +527,11 @@ sharedfd(void)
 		return;
 	}
 	nc = np = 0;
-	while ((n = read(fd, buf, sizeof(buf))) > 0) {
-		for (i = 0; i < sizeof(buf); i++) {
-			if (buf[i] == 'c')
+	while ((n = read(fd, sharedfd_buf, sizeof(sharedfd_buf))) > 0) {
+		for (i = 0; i < sizeof(sharedfd_buf); i++) {
+			if (sharedfd_buf[i] == 'c')
 				nc++;
-			if (buf[i] == 'p')
+			if (sharedfd_buf[i] == 'p')
 				np++;
 		}
 	}
@@ -621,7 +621,7 @@ createdelete(void)
 {
 	enum { N = 20 };
 	int pid, i, fd, pi;
-	char name[32];
+	char createdelete_name[32];
 
 	fprintf(stdout, "createdelete test\n");
 
@@ -633,19 +633,19 @@ createdelete(void)
 		}
 
 		if (pid == 0) {
-			name[0] = 'p' + pi;
-			name[2] = '\0';
+			createdelete_name[0] = 'p' + pi;
+			createdelete_name[2] = '\0';
 			for (i = 0; i < N; i++) {
-				name[1] = '0' + i;
-				fd = open(name, O_CREATE | O_RDWR, 0777);
+				createdelete_name[1] = '0' + i;
+				fd = open(createdelete_name, O_CREATE | O_RDWR, 0777);
 				if (fd < 0) {
 					fprintf(stdout, "create failed\n");
 					exit(0);
 				}
 				close(fd);
 				if (i > 0 && (i % 2) == 0) {
-					name[1] = '0' + (i / 2);
-					if (unlink(name) < 0) {
+					createdelete_name[1] = '0' + (i / 2);
+					if (unlink(createdelete_name) < 0) {
 						fprintf(stdout, "unlink failed\n");
 						exit(0);
 					}
@@ -659,17 +659,17 @@ createdelete(void)
 		wait(NULL);
 	}
 
-	name[0] = name[1] = name[2] = 0;
+	createdelete_name[0] = name[1] = name[2] = 0;
 	for (i = 0; i < N; i++) {
 		for (pi = 0; pi < 4; pi++) {
-			name[0] = 'p' + pi;
-			name[1] = '0' + i;
-			fd = open(name, 0);
+			createdelete_name[0] = 'p' + pi;
+			createdelete_name[1] = '0' + i;
+			fd = open(createdelete_name, 0);
 			if ((i == 0 || i >= N / 2) && fd < 0) {
-				fprintf(stdout, "oops createdelete %s didn't exist\n", name);
+				fprintf(stdout, "oops createdelete %s didn't exist\n", createdelete_name);
 				exit(0);
 			} else if ((i >= 1 && i < N / 2) && fd >= 0) {
-				fprintf(stdout, "oops createdelete %s did exist\n", name);
+				fprintf(stdout, "oops createdelete %s did exist\n", createdelete_name);
 				exit(0);
 			}
 			if (fd >= 0)
@@ -679,9 +679,9 @@ createdelete(void)
 
 	for (i = 0; i < N; i++) {
 		for (pi = 0; pi < 4; pi++) {
-			name[0] = 'p' + i;
-			name[1] = '0' + i;
-			unlink(name);
+			createdelete_name[0] = 'p' + i;
+			createdelete_name[1] = '0' + i;
+			unlink(createdelete_name);
 		}
 	}
 
@@ -928,7 +928,7 @@ void
 bigdir(void)
 {
 	int i, fd;
-	char name[10];
+	char bigdir_name[10];
 
 	fprintf(stdout, "bigdir test\n");
 	unlink("bd");
@@ -941,11 +941,11 @@ bigdir(void)
 	close(fd);
 
 	for (i = 0; i < 500; i++) {
-		name[0] = 'x';
-		name[1] = '0' + (i / 64);
-		name[2] = '0' + (i % 64);
-		name[3] = '\0';
-		if (link("bd", name) != 0) {
+		bigdir_name[0] = 'x';
+		bigdir_name[1] = '0' + (i / 64);
+		bigdir_name[2] = '0' + (i % 64);
+		bigdir_name[3] = '\0';
+		if (link("bd", bigdir_name) != 0) {
 			fprintf(stdout, "bigdir link failed\n");
 			exit(0);
 		}
@@ -953,11 +953,11 @@ bigdir(void)
 
 	unlink("bd");
 	for (i = 0; i < 500; i++) {
-		name[0] = 'x';
-		name[1] = '0' + (i / 64);
-		name[2] = '0' + (i % 64);
-		name[3] = '\0';
-		if (unlink(name) != 0) {
+		bigdir_name[0] = 'x';
+		bigdir_name[1] = '0' + (i / 64);
+		bigdir_name[2] = '0' + (i % 64);
+		bigdir_name[3] = '\0';
+		if (unlink(bigdir_name) != 0) {
 			fprintf(stdout, "bigdir unlink failed");
 			exit(0);
 		}
@@ -1672,7 +1672,7 @@ bigargtest(void)
 		for (i = 0; i < MAXARG - 1; i++)
 			args[i] =
 				"bigargs test: failed\n                                                                                                                                                                                                       ";
-		args[MAXARG - 1] = 0;
+		args[MAXARG - 1] = NULL;
 		fprintf(stdout, "bigarg test\n");
 		exec("echo", args);
 		fprintf(stdout, "bigarg test ok\n");
@@ -1703,17 +1703,17 @@ fsfull(void)
 	fprintf(stdout, "fsfull test\n");
 
 	for (nfiles = 0;; nfiles++) {
-		char name[64];
-		name[0] = 'f';
-		name[1] = '0' + nfiles / 1000;
-		name[2] = '0' + (nfiles % 1000) / 100;
-		name[3] = '0' + (nfiles % 100) / 10;
-		name[4] = '0' + (nfiles % 10);
-		name[5] = '\0';
-		fprintf(stdout, "writing %s\n", name);
-		int fd = open(name, O_CREATE | O_RDWR, 0777);
+		char fsfull_name[64];
+		fsfull_name[0] = 'f';
+		fsfull_name[1] = '0' + nfiles / 1000;
+		fsfull_name[2] = '0' + (nfiles % 1000) / 100;
+		fsfull_name[3] = '0' + (nfiles % 100) / 10;
+		fsfull_name[4] = '0' + (nfiles % 10);
+		fsfull_name[5] = '\0';
+		fprintf(stdout, "writing %s\n", fsfull_name);
+		int fd = open(fsfull_name, O_CREATE | O_RDWR, 0777);
 		if (fd < 0) {
-			fprintf(stdout, "open %s failed\n", name);
+			fprintf(stdout, "open %s failed\n", fsfull_name);
 			break;
 		}
 		int total = 0;
@@ -1730,14 +1730,14 @@ fsfull(void)
 	}
 
 	while (nfiles >= 0) {
-		char name[64];
-		name[0] = 'f';
-		name[1] = '0' + nfiles / 1000;
-		name[2] = '0' + (nfiles % 1000) / 100;
-		name[3] = '0' + (nfiles % 100) / 10;
-		name[4] = '0' + (nfiles % 10);
-		name[5] = '\0';
-		unlink(name);
+		char fsfull_name[64];
+		fsfull_name[0] = 'f';
+		fsfull_name[1] = '0' + nfiles / 1000;
+		fsfull_name[2] = '0' + (nfiles % 1000) / 100;
+		fsfull_name[3] = '0' + (nfiles % 100) / 10;
+		fsfull_name[4] = '0' + (nfiles % 10);
+		fsfull_name[5] = '\0';
+		unlink(fsfull_name);
 		nfiles--;
 	}
 

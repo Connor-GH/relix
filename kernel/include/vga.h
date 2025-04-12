@@ -1,3 +1,5 @@
+#ifndef _VGA_H
+#define _VGA_H
 #pragma once
 #define WIDTH 640U
 #define HEIGHT 480U
@@ -58,3 +60,4 @@ struct multiboot_tag_framebuffer_common
 get_fb_common(void);
 #endif
 #endif
+#endif // !_VGA_H

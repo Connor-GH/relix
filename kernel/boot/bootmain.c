@@ -5,6 +5,8 @@
 // bootmain() loads an ELF kernel image from the disk starting at
 // sector 1 and then jumps to the kernel entry routine.
 
+// Note that this code only gets run when we do not use a multiboot loader.
+
 #include <stdint.h>
 #include <elf.h>
 #include "x86.h"
@@ -35,7 +37,7 @@ bootmain(void)
 	ph = (struct Elf32_Phdr *)((uint8_t *)elf + elf->e_phoff);
 	eph = ph + elf->e_phnum;
 	for (uint8_t *pa; ph < eph; ph++) {
-		pa = (uint8_t *)ph->p_paddr;
+		pa = (uint8_t *)(uintptr_t)ph->p_paddr;
 		readseg(pa, ph->p_filesz, ph->p_offset);
 		if (ph->p_memsz > ph->p_filesz)
 			stosb(pa + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);

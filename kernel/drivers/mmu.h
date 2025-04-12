@@ -1,3 +1,5 @@
+#ifndef _MMU_H
+#define _MMU_H
 #pragma once
 #ifndef __ASSEMBLER__
 #include <stdint.h>
@@ -239,3 +241,4 @@ struct gatedesc {
 	}
 
 #endif
+#endif // !_MMU_H

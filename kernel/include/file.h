@@ -1,3 +1,5 @@
+#ifndef _FILE_H
+#define _FILE_H
 #pragma once
 #include <stdint.h>
 #include <stat.h>
@@ -71,3 +73,4 @@ fd_to_struct_file(int fd);
 char *
 inode_to_path(char *buf, size_t n, struct inode *ip);
 #endif
+#endif // !_FILE_H

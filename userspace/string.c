@@ -97,7 +97,7 @@ strchr(const char *s, int c)
 	for (; *s; s++)
 		if (*s == c)
 			return (char *)s;
-	return 0;
+	return NULL;
 }
 char *
 strrchr(const char *s, int c)
@@ -105,7 +105,7 @@ strrchr(const char *s, int c)
 	for (int i = strlen(s) - 1; i >= 0; i--)
 		if (s[i] == c)
 			return (char *)s + i;
-	return 0;
+	return NULL;
 }
 char *
 strncpy(char *dst, const char *src, size_t n)

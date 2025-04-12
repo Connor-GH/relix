@@ -1,3 +1,5 @@
+#ifndef _MMAN_H
+#define _MMAN_H
 #pragma once
 /* Exported to userspace */
 #define PROT_READ 0x1
@@ -20,3 +22,4 @@ struct mmap_info {
 };
 
 #endif
+#endif // !_MMAN_H

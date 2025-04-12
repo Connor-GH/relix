@@ -27,8 +27,8 @@ walkpgdir(uintptr_t *pgdir, const void *va, int alloc)
 
 		// Not present? We need to allocate. But if we aren't allocating,
 		// this makes no sense to do.
-		if (!alloc || (pgtab = (pte_t *)kpage_alloc()) == 0)
-			return 0;
+		if (!alloc || (pgtab = (pte_t *)kpage_alloc()) == NULL)
+			return NULL;
 		// Make sure all those PTE_P bits are zero.
 		memset(pgtab, 0, PGSIZE);
 		// The permissions here are overly generous, but they can
@@ -51,7 +51,7 @@ mappages(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm)
 	a = (char *)PGROUNDDOWN((uintptr_t)va);
 	last = (char *)PGROUNDDOWN(((uintptr_t)va) + size - 1);
 	for (;;) {
-		if ((pte = walkpgdir(pgdir, a, 1)) == 0)
+		if ((pte = walkpgdir(pgdir, a, 1)) == NULL)
 			return -1;
 		if (*pte & PTE_P)
 			panic("remap");
@@ -75,7 +75,7 @@ inituvm(uintptr_t *pgdir, char *init, uint32_t sz)
 		panic("inituvm: more than a page");
 	mem = kpage_alloc();
 	memset(mem, 0, PGSIZE);
-	mappages(pgdir, 0, PGSIZE, V2P(mem), PTE_W | PTE_U);
+	mappages(pgdir, NULL, PGSIZE, V2P(mem), PTE_W | PTE_U);
 	memmove(mem, init, sz);
 }
 
@@ -91,7 +91,7 @@ loaduvm(uintptr_t *pgdir, char *addr, struct inode *ip, uint32_t offset,
 	if ((uintptr_t)addr % PGSIZE != 0)
 		panic("loaduvm: addr must be page aligned");
 	for (i = 0; i < sz; i += PGSIZE) {
-		if ((pte = walkpgdir(pgdir, addr + i, 0)) == 0)
+		if ((pte = walkpgdir(pgdir, addr + i, 0)) == NULL)
 			panic("loaduvm: address should exist");
 		pa = PTE_ADDR(*pte);
 		if (sz - i < PGSIZE)
@@ -120,7 +120,7 @@ allocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 	a = PGROUNDUP(oldsz);
 	for (; a < newsz; a += PGSIZE) {
 		mem = kpage_alloc();
-		if (mem == 0) {
+		if (mem == NULL) {
 			cprintf("allocuvm out of memory\n");
 			deallocuvm(pgdir, newsz, oldsz);
 			return 0;
@@ -179,7 +179,7 @@ freevm(uintptr_t *pgdir)
 {
 	uint32_t i;
 
-	if (pgdir == 0)
+	if (pgdir == NULL)
 		panic("freevm: no pgdir");
 	deallocuvm(pgdir, /*KERNBASE*/ 0x3fa00000, 0);
 	// "- 2" because of the page back pointers.
@@ -200,7 +200,7 @@ clearpteu(uintptr_t *pgdir, char *uva)
 	pte_t *pte;
 
 	pte = walkpgdir(pgdir, uva, 0);
-	if (pte == 0)
+	if (pte == NULL)
 		panic("clearpteu");
 	*pte &= ~PTE_U;
 }
@@ -211,7 +211,7 @@ unmap_user_page(uintptr_t *pgdir, char *user_va)
 	pte_t *pte;
 
 	pte = walkpgdir(pgdir, user_va, 0);
-	if (pte == 0) {
+	if (pte == NULL) {
 		panic("unmap_user_page: no page found");
 	}
 	// Clear all bits in the PTE.
@@ -228,16 +228,16 @@ copyuvm(uintptr_t *pgdir, uint32_t sz)
 	uintptr_t pa, i, flags;
 	char *mem;
 
-	if ((d = setupkvm()) == 0)
-		return 0;
+	if ((d = setupkvm()) == NULL)
+		return NULL;
 	for (i = 0; i < sz; i += PGSIZE) {
-		if ((pte = walkpgdir(pgdir, (void *)i, 0)) == 0)
+		if ((pte = walkpgdir(pgdir, (void *)i, 0)) == NULL)
 			panic("copyuvm: pte should exist");
 		if (!(*pte & PTE_P))
 			panic("copyuvm: page not present");
 		pa = PTE_ADDR(*pte);
 		flags = PTE_FLAGS(*pte);
-		if ((mem = kpage_alloc()) == 0)
+		if ((mem = kpage_alloc()) == NULL)
 			goto bad;
 		memmove(mem, (char *)p2v(pa), PGSIZE);
 		if (mappages(d, (void *)i, PGSIZE, V2P(mem), flags) < 0) {
@@ -249,7 +249,7 @@ copyuvm(uintptr_t *pgdir, uint32_t sz)
 
 bad:
 	freevm(d);
-	return 0;
+	return NULL;
 }
 
 // Map user virtual address to kernel address.
@@ -262,9 +262,9 @@ uva2ka(uintptr_t *pgdir, char *uva)
 	if (pte == NULL)
 		return NULL;
 	if ((*pte & PTE_P) == 0)
-		return 0;
+		return NULL;
 	if ((*pte & PTE_U) == 0)
-		return 0;
+		return NULL;
 	return (char *)p2v(PTE_ADDR(*pte));
 }
 
@@ -281,7 +281,7 @@ copyout(uintptr_t *pgdir, uintptr_t va, void *p, size_t len)
 	while (len > 0) {
 		va0 = (uint32_t)PGROUNDDOWN(va);
 		pa0 = uva2ka(pgdir, (char *)va0);
-		if (pa0 == 0)
+		if (pa0 == NULL)
 			return -1;
 		n = PGSIZE - (va - va0);
 		if (n > len)

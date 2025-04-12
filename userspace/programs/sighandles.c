@@ -23,7 +23,7 @@ sigint_handle2(int _)
 
 int main(void)
 {
-	if (signal(SIGINT, sigint_handle2) < 0) {
+	if (signal(SIGINT, sigint_handle2) == SIG_ERR) {
 		perror("signal");
 		exit(EXIT_FAILURE);
 	}

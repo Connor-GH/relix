@@ -53,7 +53,7 @@ length_cordic(int16_t x, int16_t y, int16_t *x2_, int16_t y2)
 }
 
 int
-main()
+main(void)
 {
 	// high-precision rotation directions, sines and cosines and their products
 	int16_t sB = 0, cB = 16384;

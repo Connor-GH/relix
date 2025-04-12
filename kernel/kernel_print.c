@@ -100,7 +100,7 @@ static void
 print_string(void (*put_function)(char c, char *buf), char *s,
 						 int flags, char *restrict buf, int str_pad)
 {
-	if (s == 0)
+	if (s == NULL)
 		s = "(null)";
 	size_t len;
 	if (strcmp(s, "") == 0) {

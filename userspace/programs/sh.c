@@ -85,7 +85,7 @@ runcmd(struct cmd *cmd)
 	struct pipecmd *pcmd;
 	struct redircmd *rcmd;
 
-	if (cmd == 0)
+	if (cmd == NULL)
 		exit(1);
 	switch (cmd->type) {
 	default:
@@ -94,7 +94,7 @@ runcmd(struct cmd *cmd)
 	case EXEC:
 		str = malloc(__DIRSIZ);
 		ecmd = (struct execcmd *)cmd;
-		if (ecmd->argv[0] == 0)
+		if (ecmd->argv[0] == NULL)
 			exit(1);
 
 		// The pwd should be checked first.
@@ -434,11 +434,11 @@ parseline(char **ps, char *es)
 
 	cmd = parsepipe(ps, es);
 	while (peek(ps, es, "&")) {
-		gettoken(ps, es, 0, 0);
+		gettoken(ps, es, NULL, NULL);
 		cmd = backcmd(cmd);
 	}
 	if (peek(ps, es, ";")) {
-		gettoken(ps, es, 0, 0);
+		gettoken(ps, es, NULL, NULL);
 		cmd = listcmd(cmd, parseline(ps, es));
 	}
 	return cmd;
@@ -451,7 +451,7 @@ parsepipe(char **ps, char *es)
 
 	cmd = parseexec(ps, es);
 	if (peek(ps, es, "|")) {
-		gettoken(ps, es, 0, 0);
+		gettoken(ps, es, NULL, NULL);
 		cmd = pipecmd(cmd, parsepipe(ps, es));
 	}
 	return cmd;
@@ -464,7 +464,7 @@ parseredirs(struct cmd *cmd, char **ps, char *es)
 	char *q, *eq;
 
 	while (peek(ps, es, "<>")) {
-		tok = gettoken(ps, es, 0, 0);
+		tok = gettoken(ps, es, NULL, NULL);
 		if (gettoken(ps, es, &q, &eq) != 'a')
 			panic("missing file for redirection");
 		switch (tok) {
@@ -489,11 +489,11 @@ parseblock(char **ps, char *es)
 
 	if (!peek(ps, es, "("))
 		panic("parseblock");
-	gettoken(ps, es, 0, 0);
+	gettoken(ps, es, NULL, NULL);
 	cmd = parseline(ps, es);
 	if (!peek(ps, es, ")"))
 		panic("syntax - missing )");
-	gettoken(ps, es, 0, 0);
+	gettoken(ps, es, NULL, NULL);
 	cmd = parseredirs(cmd, ps, es);
 	return cmd;
 }
@@ -526,8 +526,8 @@ parseexec(char **ps, char *es)
 			panic("too many args");
 		ret = parseredirs(ret, ps, es);
 	}
-	cmd->argv[argc] = 0;
-	cmd->eargv[argc] = 0;
+	cmd->argv[argc] = NULL;
+	cmd->eargv[argc] = NULL;
 	return ret;
 }
 
@@ -542,8 +542,8 @@ nulterminate(struct cmd *cmd)
 	struct pipecmd *pcmd;
 	struct redircmd *rcmd;
 
-	if (cmd == 0)
-		return 0;
+	if (cmd == NULL)
+		return NULL;
 
 	switch (cmd->type) {
 	case EXEC:

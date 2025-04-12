@@ -195,7 +195,7 @@ trap(struct trapframe *tf)
 		kill(myproc()->pid, SIGFPE);
 		break;
 	default:
-		if (myproc() == 0 || (tf->cs & 3) == 0) {
+		if (myproc() == NULL || (tf->cs & 3) == 0) {
 			// In kernel, it must be our mistake.
 			uart_printf("unexpected trap %ld from cpu %d rip %lx (cr2=%#lx)\n",
 							tf->trapno, my_cpu_id(), tf->rip, rcr2());

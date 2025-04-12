@@ -1,3 +1,5 @@
+#ifndef _SLEEPLOCK_H
+#define _SLEEPLOCK_H
 #pragma once
 #include "spinlock.h"
 #ifndef USE_HOST_TOOLS
@@ -22,3 +24,4 @@ holdingsleep(struct sleeplock *);
 void
 initsleeplock(struct sleeplock *, char *);
 #endif
+#endif // !_SLEEPLOCK_H

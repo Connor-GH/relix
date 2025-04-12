@@ -2,7 +2,6 @@
 // Input is from the keyboard or serial port.
 // Output is written to the screen and serial port.
 
-#include "kernel_signal.h"
 #include "mman.h"
 #include "vga.h"
 #include <stdint.h>
@@ -12,16 +11,13 @@
 #include <stddef.h>
 #include "console.h"
 #include "file.h"
-#include "ioapic.h"
 #include "boot/multiboot2.h"
 #include "proc.h"
 #include "spinlock.h"
-#include "traps.h"
 #include "lib/queue.h"
 #include "uart.h"
 #include "x86.h"
 #include "kbd.h"
-#include "kalloc.h"
 #include "drivers/lapic.h"
 #include "compiler_attributes.h"
 #include "macros.h"

@@ -16,8 +16,8 @@ pipealloc(struct file **f0, struct file **f1)
 {
 	struct pipe *p;
 
-	p = 0;
-	*f0 = *f1 = 0;
+	p = NULL;
+	*f0 = *f1 = NULL;
 	if ((*f0 = filealloc()) == NULL || (*f1 = filealloc()) == NULL)
 		goto bad;
 	if ((p = kmalloc(sizeof(*p))) == NULL)

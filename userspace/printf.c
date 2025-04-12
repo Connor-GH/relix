@@ -101,7 +101,7 @@ static int
 print_string(void (*put_function)(FILE *fp, char c, char *buf), char *s,
 						 int flags, FILE *fp, char *restrict buf, int str_pad, size_t print_n_chars)
 {
-	if (s == 0)
+	if (s == NULL)
 		s = "(null)";
 	size_t len;
 	int written = 0;

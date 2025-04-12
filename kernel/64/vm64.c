@@ -107,15 +107,15 @@ seginit(void)
 	c = &cpus[my_cpu_id()];
 	c->local = local;
 
-	c->proc = 0;
+	c->proc = NULL;
 
 	addr = (uint64_t)tss;
-	c->gdt_bits[0] = 0x0000000000000000;
-	c->gdt_bits[SEG_KCODE] = 0x0020980000000000; // Code, DPL=0, R/X
-	c->gdt_bits[SEG_UCODE] = 0x0020F80000000000; // Code, DPL=3, R/X
-	c->gdt_bits[SEG_KDATA] = 0x0000920000000000; // Data, DPL=0, W
-	c->gdt_bits[SEG_KCPU] = 0;
-	c->gdt_bits[SEG_UDATA] = 0x0000F20000000000; // Data, DPL=3, W
+	c->gdt_bits[0] = 0x0000000000000000LU;
+	c->gdt_bits[SEG_KCODE] = 0x0020980000000000LU; // Code, DPL=0, R/X
+	c->gdt_bits[SEG_UCODE] = 0x0020F80000000000LU; // Code, DPL=3, R/X
+	c->gdt_bits[SEG_KDATA] = 0x0000920000000000LU; // Data, DPL=0, W
+	c->gdt_bits[SEG_KCPU] = 0LU;
+	c->gdt_bits[SEG_UDATA] = 0x0000F20000000000LU; // Data, DPL=3, W
 	c->gdt_bits[SEG_TSS + 0] = (0x0067) | ((addr & 0xFFFFFF) << 16) |
 														 (0x00E9LL << 40) | (((addr >> 24) & 0xFF) << 56);
 	c->gdt_bits[SEG_TSS + 1] = (addr >> 32);
@@ -205,7 +205,7 @@ switchuvm(struct proc *p)
 	void *pml4;
 	uint32_t *tss;
 	pushcli();
-	if (p->pgdir == 0)
+	if (p->pgdir == NULL)
 		panic("switchuvm: no pgdir");
 	tss = (uint32_t *)(((char *)mycpu()->local) + 1024);
 	tss_set_rsp(tss, 0, (uintptr_t)myproc()->kstack + KSTACKSIZE);

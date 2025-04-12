@@ -57,7 +57,7 @@ morecore(size_t nu)
 	}
 	p = sbrk(nu * sizeof(Header));
 	if (p == (char *)-1)
-		return 0;
+		return NULL;
 	hp = (Header *)p;
 	hp->size = nu;
 	free((void *)(hp + 1));
@@ -72,7 +72,7 @@ malloc(size_t nbytes)
 
 	nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
 	// There is no free list yet, so we need to make one.
-	if ((prevp = freep) == 0) {
+	if ((prevp = freep) == NULL) {
 		base.ptr = freep = prevp = &base;
 		base.size = 0;
 	}
@@ -96,8 +96,8 @@ malloc(size_t nbytes)
 			return (void *)(p + 1);
 		}
 		if (p == freep)
-			if ((p = morecore(nunits)) == 0)
-				return 0;
+			if ((p = morecore(nunits)) == NULL)
+				return NULL;
 	}
 }
 __attribute__((malloc)) void *

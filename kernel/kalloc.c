@@ -188,8 +188,8 @@ morecore(__attribute__((unused)) size_t nu)
 		nu = MORECORE_MAX;
 
 	p = kpage_alloc();
-	if (p == 0)
-		return 0;
+	if (p == NULL)
+		return NULL;
 	hp = (Header *)p;
 	hp->size = 4096 / sizeof(Header); // kalloc always allocates 4096 bytes
 	kfree(header_to_ptr(hp));
@@ -212,7 +212,7 @@ kmalloc(size_t nbytes) __acquires(kmem)
 	}
 	for (p = prevp->ptr;; prevp = p, p = p->ptr) {
 		if (!p)
-			return 0;
+			return NULL;
 		// We found a size that can fit the amount of bytes we want.
 		if (p->size >= nunits) {
 			// It is exactly the right size.

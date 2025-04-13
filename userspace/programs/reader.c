@@ -17,9 +17,8 @@ main(void)
 		exit(EXIT_FAILURE);
 	}
 	char c = 0;
-	int ret = 0;
 	while (c <= 'Z') {
-		if ((ret = read(fd, &c, 1)) < 0) {
+		if (read(fd, &c, 1) < 0) {
 			break;
 		} else {
 			printf("received %c\n", c);

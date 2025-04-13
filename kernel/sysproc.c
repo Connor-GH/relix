@@ -63,6 +63,7 @@ sys_getppid(void)
 	if (proc != NULL && proc->parent != NULL)
 		return proc->parent->pid;
 	else
+		// If parent has been killed, use init (PID 1).
 		return 1;
 }
 

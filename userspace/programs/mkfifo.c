@@ -9,12 +9,10 @@ main(int argc, char **argv)
 {
 	char *argv0 = argv[0];
 	char c;
-	bool mflag = false;
 	mode_t mode = 0644; // rw user and r group and others
 	while ((c = getopt(argc, argv, "m:")) != -1) {
 		switch (c) {
 		case 'm':
-			mflag = true;
 			errno = 0;
 			mode = strtol(optarg, NULL, 8);
 			if (errno != 0)

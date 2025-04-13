@@ -72,7 +72,8 @@ try_again:
 	if (strcmp(passwd, actual_password) == 0) {
 		fprintf(stdout, "Password is correct!\n");
 autologin:;
-		setuid(uid);
+		if (uid == 0)
+			setuid(uid);
 		char *const sh_argv[] = { "/bin/sh", NULL };
 		execve("/bin/sh", sh_argv, environ);
 		printf("execv sh failed\n");

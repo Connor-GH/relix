@@ -60,6 +60,12 @@ run_tests(void)
 		// Parent
 		} else {
 			ssize_t bytes_read = read(pipefd[0], received_data, test_size);
+			if (bytes_read < 0) {
+				perror("read");
+				free(data_to_send);
+				free(received_data);
+				exit(EXIT_FAILURE);
+			}
 
 			// Wait for child process to finish
 			wait(NULL);

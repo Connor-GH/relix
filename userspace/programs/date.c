@@ -7,8 +7,7 @@ main(void)
 {
 
 	time_t unix_seconds;
-	time_t time2;
-	if ((time2 = time(&unix_seconds)) == (time_t)-1) {
+	if (time(&unix_seconds) == (time_t)-1) {
 		perror("time");
 		exit(EXIT_FAILURE);
 	}

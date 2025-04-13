@@ -34,13 +34,15 @@ lstat(const char *n, struct stat *st)
 DIR *
 fdopendir(int fd)
 {
+	if (fd == -1)
+		return NULL;
 	struct dirent de;
 	struct __linked_list_dirent *ll = malloc(sizeof(*ll));
-	if (fd == -1)
+	if (ll == NULL)
 		return NULL;
 	DIR *dirp = (DIR *)malloc(sizeof(DIR));
 	if (dirp == NULL) {
-		close(fd);
+		free(ll);
 		return NULL;
 	}
 	dirp->fd = fd;
@@ -100,12 +102,17 @@ closedir(DIR *dir)
 		errno = -EBADF;
 		return -1;
 	}
+	// Walk to the end of the list.
 	while (dir->list != NULL && dir->list->next != NULL) {
 		dir->list = dir->list->next;
 	}
+	// Step back one level.
 	dir->list = dir->list->prev;
+
+	// Start freeing the list.
 	while (dir->list->prev != NULL) {
 		free(dir->list->next);
+		dir->list = dir->list->prev;
 	}
 	free(dir->list);
 	free(dir);

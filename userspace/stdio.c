@@ -362,6 +362,7 @@ snprintf(char *restrict str, size_t n, const char *restrict fmt, ...)
 	va_list listp;
 	va_start(listp, fmt);
 	ret = vsnprintf(str, n, fmt, listp);
+	str[ret] = '\0';
 	va_end(listp);
 	return ret;
 }
@@ -373,6 +374,7 @@ sprintf(char *restrict str, const char *restrict fmt, ...)
 	va_list listp;
 	va_start(listp, fmt);
 	ret = vsprintf(str, fmt, listp);
+	str[ret] = '\0';
 	va_end(listp);
 	return ret;
 }

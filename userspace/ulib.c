@@ -1,3 +1,4 @@
+#include "kernel/include/fs.h"
 #include "kernel/include/kernel_signal.h"
 #include "stat.h"
 #include <errno.h>
@@ -225,50 +226,6 @@ assert_fail(const char *assertion, const char *file, int lineno,
 					assertion);
 	fprintf(stderr, "Aborting.\n");
 	exit(-1);
-}
-
-// Fun fact: setenv sets errno, but getenv does not :^)
-char *
-getenv(const char *name)
-{
-	for (size_t i = 0; environ[i] != NULL; i++) {
-		char *equals = strchr(environ[i], '=');
-		if (equals == NULL)
-			continue; // Resilient. (Is this in the spec?)
-		size_t this_env_length = equals - environ[i];
-		// If it's not the same length, we don't even bother comparing.
-		if (strlen(name) != this_env_length)
-			continue;
-		if (strncmp(name, environ[i], this_env_length) == 0) {
-			return equals + 1;
-		}
-	}
-	return NULL;
-}
-
-static size_t
-get_env_index(const char *name)
-{
-	for (size_t i = 0; environ[i] != NULL; i++) {
-		char *equals = strchr(environ[i], '=');
-		if (equals == NULL)
-			continue; // Resilient. (Is this in the spec?)
-		size_t this_env_length = equals - environ[i];
-		// If it's not the same length, we don't even bother comparing.
-		if (strlen(name) != this_env_length)
-			continue;
-		if (strncmp(name, environ[i], this_env_length) == 0) {
-			return i;
-		}
-	}
-	return -1;
-}
-
-// TODO implement setenv
-int
-setenv(const char *name, const char *value, int replace)
-{
-	return -1;
 }
 
 // Duplicate a string
@@ -534,4 +491,36 @@ void
 srand(unsigned int seed)
 {
 	s_next_rand = seed;
+}
+
+int
+execvp(const char *file, char *const argv[])
+{
+	char str[__DIRSIZ];
+
+	char *path_env = getenv("PATH");
+	if (path_env == NULL) {
+		return -1;
+	}
+
+	char *path = strdup(path_env); // TODO leak of this memory
+	if (path != NULL) {
+		char *s = strtok(path, ":");
+		while (s != NULL) {
+			sprintf(str, "%s/%s", s, file);
+			errno = 0;
+			execve(str, argv, environ);
+			s = strtok(NULL, ":");
+		}
+	}
+	// Now check current directory.
+	if (getcwd(str, __DIRSIZ) == NULL) {
+		return -1;
+	}
+
+	if (strncat(stpcpy(str, "/"), file, strlen(file) + 1) == NULL) {
+		return -1;
+	}
+	execve(str, argv, environ);
+	return -1;
 }

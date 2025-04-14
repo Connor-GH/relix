@@ -19,11 +19,8 @@ exec(const char *prog, char *const *argv)
 {
 	return execve(prog, argv, (char *const []){ "", NULL });
 }
-static inline int
-execvp(const char *file, char *const *argv)
-{
-	return exec(file, argv);
-}
+int
+execvp(const char *file, char *const *argv);
 // our exec() is technically execv()
 static inline int
 execv(const char *prog, char *const *argv)

@@ -97,29 +97,7 @@ runcmd(struct cmd *cmd)
 		if (ecmd->argv[0] == NULL)
 			exit(1);
 
-		// The pwd should be checked first.
-		// If pwd = "/", this defines, for example,
-		// running "foo" without prepending "./".
-		// the total string would then be "/./foo".
-		sprintf(str, "%s/%s", pwd, ecmd->argv[0]);
-		execve(str, ecmd->argv, environ);
-		// Clear buffer for other attempts.
-		memset(str, '\0', __DIRSIZ);
-
-		char *path_env = getenv("PATH");
-		if (path_env == NULL) {
-			fprintf(stderr, "$PATH is empty or not set.\n");
-		}
-		char *path = strdup(path_env);
-		if (path != NULL) {
-			char *s = strtok(path, ":");
-			while (s != NULL) {
-				sprintf(str, "%s/%s", s, ecmd->argv[0]);
-				errno = 0;
-				execve(str, ecmd->argv, environ);
-				s = strtok(NULL, ":");
-			}
-		}
+		execvp(ecmd->argv[0], ecmd->argv);
 		fprintf(stderr, "exec %s failed: %s\n", ecmd->argv[0], strerror(errno));
 		break;
 

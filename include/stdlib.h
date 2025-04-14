@@ -25,10 +25,18 @@ realloc(void *ptr, size_t size);
 void
 qsort(void *base, size_t nmemb, size_t size,
 			int (*)(const void *, const void *));
+
+char *
+__findenv(const char *name, int len, int *offset);
+int
+putenv(char *str);
 char *
 getenv(const char *name);
 int
 setenv(const char *name, const char *value, int replace);
+int
+unsetenv(const char *name);
+
 // POSIX.1 requires at least 32 atexit handlers.
 #define ATEXIT_MAX 32
 int

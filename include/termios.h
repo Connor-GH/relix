@@ -98,15 +98,33 @@ enum __termios_c_cflag {
 };
 
 enum __termios_c_lflag {
-	ECHO = 0x1, // Enable echo.
-	ECHOE = 0x2, // Echo erase character as error-correcting backspace.
-	ECHOK = 0x4, // Echo KILL.
-	ECHONL = 0x8, // Echo NL.
-	ICANON = 0x10, // Canonical input (erase and kill processing).
-	IEXTEN = 0x20, // Enable extended input character processing.
-	ISIG = 0x40, // Enable signals.
-	NOFLSH = 0x80, // Disable flush after interrupt or quit.
-	TOSTOP = 0x100, // Send SIGTTOU for background output.
+	ECHO = 01, // Enable echo.
+	ECHOE = 02, // Echo erase character as error-correcting backspace.
+	ECHOK = 04, // Echo KILL.
+	ECHONL = 010, // Echo NL.
+	ICANON = 020, // Canonical input (erase and kill processing).
+	IEXTEN = 040, // Enable extended input character processing.
+	ISIG = 0100, // Enable signals.
+	NOFLSH = 0200, // Disable flush after interrupt or quit.
+	TOSTOP = 0400, // Send SIGTTOU for background output.
+};
+
+enum __termios_attr {
+	TCSANOW = 1,
+	TCSADRAIN = 2,
+	TCSAFLUSH = 4,
+};
+
+enum __termios_line_control {
+	// tcflush()
+	TCIFLUSH = 1,
+	TCIOFLUSH = 2,
+	TCOFLUSH = 4,
+	// tcflow()
+	TCIOFF = 1,
+	TCION = 2,
+	TCOOFF = 4,
+	TCOON = 8,
 };
 
 struct termios {
@@ -115,6 +133,16 @@ struct termios {
 	tcflag_t c_cflag;
 	tcflag_t c_lflag;
 	cc_t c_cc[NCCS];
+	// POSIX.1-2024 is silent about these two,
+	// but they are the easiest way to setup tc{g,s}et{o,i}speed().
+	// Additionally, it seems that every system uses these anyway.
+	speed_t c_ispeed;
+	speed_t c_ospeed;
+};
+
+struct winsize {
+	unsigned short ws_row;
+	unsigned short ws_col;
 };
 
 speed_t
@@ -139,3 +167,8 @@ int
 tcsendbreak(int, int);
 int
 tcsetattr(int, int, const struct termios *);
+
+int
+tcgetwinsize(int fd, struct winsize *);
+int
+tcsetwinsize(int fd, const struct winsize *);

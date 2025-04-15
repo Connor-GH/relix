@@ -524,3 +524,16 @@ execvp(const char *file, char *const argv[])
 	execve(str, argv, environ);
 	return -1;
 }
+
+static void
+sleep_noop(int signum)
+{
+
+}
+
+unsigned int
+sleep(unsigned int seconds)
+{
+	signal(SIGALRM, sleep_noop);
+	return alarm(seconds);
+}

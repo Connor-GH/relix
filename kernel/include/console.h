@@ -40,4 +40,8 @@ kernel_vprintf_template(void (*put_function)(char c, char *buf),
 								 char *restrict buf, const char *fmt, va_list argp,
 								 struct spinlock *lock, bool locking,
 								 size_t print_n_chars);
+struct termios *
+get_term_settings(int minor);
+void
+set_term_settings(int minor, struct termios *termios);
 #endif

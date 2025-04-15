@@ -82,7 +82,7 @@ sys_sbrk(void)
 }
 
 size_t
-sys_sleep(void)
+sys_alarm(void)
 {
 	unsigned int n;
 	time_t ticks0;
@@ -98,6 +98,7 @@ sys_sleep(void)
 		}
 		sleep(&ticks, &tickslock);
 	}
+	kill(myproc()->pid, SIGALRM);
 	release(&tickslock);
 	return 0;
 }
@@ -171,6 +172,21 @@ sys_reboot(void)
 	default:
 		return -EINVAL;
 	}
+}
+
+size_t
+sys_setgid(void)
+{
+	// cannot setuid if not root
+	if (myproc()->cred.gid != 0)
+		return -EPERM;
+	uid_t gid;
+	if (argint(0, &gid) < 0)
+		return -EINVAL;
+	struct cred cred;
+	cred.gid = gid;
+	myproc()->cred = cred;
+	return 0;
 }
 
 size_t

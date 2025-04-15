@@ -7,6 +7,7 @@ struct rusage;
 pid_t
 wait3(int *status, int options,
 		struct rusage *rusage);
+
 // Our pid_t for wait is laid out like this:
 // 0b00000000000000000000000000000000
 //   [       r      ][   R  ][   S  ]
@@ -25,5 +26,14 @@ wait3(int *status, int options,
 #define WSTOPSIG(status) (SIGSTOP)
 #define WIFCONTINUED(status) (WTERMSIG(status) == SIGCONT)
 
+#define WEXITED 0x2
+#define WNOWAIT 0x4
+#define WSTOPPED 0x8
 // Options.
 #define WNOHANG 0x1
+
+enum idtype_t {
+	P_ALL,
+	P_PGID,
+	P_PID
+};

@@ -5,5 +5,3 @@
 
 time_t
 uptime(void);
-int
-echoout(int answer);

@@ -3,6 +3,7 @@
 // Output is written to the screen and serial port.
 
 #include "mman.h"
+#include "termios.h"
 #include "vga.h"
 #include <stdint.h>
 #include <stdint.h>
@@ -22,12 +23,11 @@
 #include "compiler_attributes.h"
 #include "macros.h"
 
-
 extern size_t
 let_rust_handle_it(const char *fmt);
 
-static int panicked = 0;
 int echo_out = 1;
+static int panicked = 0;
 static uint32_t static_foreg = VGA_COLOR_WHITE;
 static uint32_t static_backg = VGA_COLOR_BLACK;
 static int alt_form = 0;
@@ -49,6 +49,34 @@ static struct {
 	struct spinlock lock;
 	int locking;
 } cons;
+
+static struct termios tty_settings[NTTY] = {0};
+
+// This should always be in bounds, provided that
+// only the minor from ip->minor is passed in, and
+// that ip->major == TTY.
+struct termios *
+get_term_settings(int minor)
+{
+	return &tty_settings[minor];
+}
+
+void
+set_term_settings(int minor, struct termios *termios)
+{
+	struct termios local = {
+		.c_lflag = termios->c_lflag,
+		.c_cflag = termios->c_cflag,
+		.c_iflag = termios->c_iflag,
+		.c_oflag = termios->c_oflag,
+		.c_ispeed = termios->c_ispeed,
+		.c_ospeed = termios->c_ospeed,
+	};
+	for (int i = 0; i < NCCS; i++)
+		local.c_cc[i] = termios->c_cc[i];
+
+	tty_settings[minor] = local;
+}
 
 // color is default if it is set to 0xff
 static void
@@ -135,15 +163,18 @@ uartputc_wrapper(char c, char *buf)
 {
 	uartputc3(c, 0, 0);
 }
-size_t ansi_noop(const char *s) { return 0; }
+size_t
+ansi_noop(const char *s)
+{
+	return 0;
+}
 __attribute__((format(printf, 1, 2)))
 __nonnull(1) void uart_printf(const char *fmt, ...)
 {
 	va_list argp;
 	va_start(argp, fmt);
-	kernel_vprintf_template(uartputc_wrapper,
-														NULL, NULL, fmt, argp,
-														&cons.lock, false, -1);
+	kernel_vprintf_template(uartputc_wrapper, NULL, NULL, fmt, argp, &cons.lock,
+													false, -1);
 	va_end(argp);
 }
 
@@ -159,9 +190,8 @@ __attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *fmt,
 {
 	va_list argp;
 	va_start(argp, fmt);
-	kernel_vprintf_template(vga_write_char_wrapper,
-														let_rust_handle_it, NULL, fmt, argp,
-														&cons.lock, true, -1);
+	kernel_vprintf_template(vga_write_char_wrapper, let_rust_handle_it, NULL, fmt,
+													argp, &cons.lock, true, -1);
 	va_end(argp);
 }
 __attribute__((format(printf, 1, 2)))
@@ -169,9 +199,8 @@ __nonnull(1) void vga_cprintf(const char *fmt, ...)
 {
 	va_list argp;
 	va_start(argp, fmt);
-	kernel_vprintf_template(vga_write_char_wrapper,
-														let_rust_handle_it, NULL, fmt, argp,
-														&cons.lock, true, -1);
+	kernel_vprintf_template(vga_write_char_wrapper, let_rust_handle_it, NULL, fmt,
+													argp, &cons.lock, true, -1);
 	va_end(argp);
 }
 size_t global_string_index = 0;
@@ -187,9 +216,8 @@ __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...)
 	va_list argp;
 	va_start(argp, fmt);
 	global_string_index = 0;
-	kernel_vprintf_template(string_putc_wrapper,
-														ansi_noop, str, fmt, argp,
-														&cons.lock, true, -1);
+	kernel_vprintf_template(string_putc_wrapper, ansi_noop, str, fmt, argp,
+													&cons.lock, true, -1);
 	va_end(argp);
 }
 
@@ -329,7 +357,8 @@ consoleintr(int (*getc)(void))
 		procdump(); // now call procdump() wo. cons.lock held
 	}
 }
-__nonnull(2, 3) static ssize_t consoleread(short minor, struct inode *ip, char *dst, size_t n)
+__nonnull(2, 3) static ssize_t
+	consoleread(short minor, struct inode *ip, char *dst, size_t n)
 {
 	size_t target;
 	int c;
@@ -402,7 +431,6 @@ consolewrite(short minor, __attribute__((unused)) struct inode *ip,
 		vga_write_char(buf[i] & 0xff, static_foreg, static_backg);
 	}
 	release(&cons.lock);
-
 	return n;
 }
 /* clang-format on */
@@ -425,14 +453,12 @@ consoleclose_noop(short minor)
 	return 0;
 }
 
-
 __nonnull(2, 3) static ssize_t
-uartread(short minor, __attribute__((unused)) struct inode *ip,
-																		 char *buf, size_t n)
+	uartread(short minor, __attribute__((unused)) struct inode *ip, char *buf,
+					 size_t n)
 {
 	return n;
 }
-
 
 /* clang-format off */
 __nonnull(2, 3) static ssize_t
@@ -465,15 +491,14 @@ uartclose_noop(short minor)
 }
 
 __nonnull(2, 3) static ssize_t
-ttyread(short minor, __attribute__((unused)) struct inode *ip,
-																		 char *buf, size_t n)
+	ttyread(short minor, __attribute__((unused)) struct inode *ip, char *buf,
+					size_t n)
 {
 	if (minor >= MINOR_TTY_SERIAL)
 		return uartread(minor, ip, buf, n);
 	else
 		return consoleread(minor, ip, buf, n);
 }
-
 
 /* clang-format off */
 __nonnull(2, 3) static ssize_t
@@ -532,5 +557,24 @@ consoleinit(void)
 	devsw[TTY].open = ttyopen_noop;
 	devsw[TTY].close = ttyclose_noop;
 	cons.locking = 1;
+	// Notice: we start all terminals in echo mode.
+	struct termios termios = {
+		.c_iflag = ~(IXOFF | INPCK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR |
+			ICRNL | IXON | IGNPAR) | IGNBRK,
+		.c_oflag = ~OPOST,
+		.c_lflag = ~(ECHOE | ECHOK | ECHONL | ICANON | ISIG | IEXTEN |
+			NOFLSH | TOSTOP) | ECHO,
+		.c_cflag = ~(CSIZE | PARENB) | CS8 | CREAD,
+		.c_cc = {
+			// Other elements are _POSIX_VDISABLE (0).
+			[VMIN] = 1, [VTIME] = 0,
+		},
+		.c_ospeed = B19200,
+		.c_ispeed = B19200,
+	};
 
+	// Set default term settings.
+	for (int i = 0; i < NTTY; i++) {
+		set_term_settings(i, &termios);
+	}
 }

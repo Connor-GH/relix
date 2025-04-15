@@ -44,6 +44,8 @@ int
 vfprintf(FILE *restrict, const char *restrict fmt, va_list argp);
 __attribute__((format(printf, 2, 3))) int
 fprintf(FILE *restrict, const char *restrict fmt, ...);
+int
+vprintf(const char *restrict fmt, va_list argp);
 __attribute__((format(printf, 1, 2))) int
 printf(const char *restrict fmt, ...);
 __attribute__((format(printf, 2, 3))) int
@@ -72,6 +74,8 @@ void
 setbuf(FILE *restrict stream, char *restrict buf);
 int
 getc(FILE *stream);
+int
+getchar(void);
 int
 ungetc(int c, FILE *stream);
 int

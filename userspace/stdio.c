@@ -253,6 +253,12 @@ getc(FILE *stream)
 	return c;
 }
 
+int
+getchar(void)
+{
+	return getc(stdin);
+}
+
 static void
 static_fgetc(FILE *stream, char c, char *buf)
 {
@@ -475,13 +481,19 @@ dprintf(int fd, const char *restrict fmt, ...)
 	return ret;
 }
 
+int
+vprintf(const char *restrict fmt, va_list argp)
+{
+	return vfprintf(stdout, fmt, argp);
+}
+
 __attribute__((format(printf, 1, 2))) int
 printf(const char *restrict fmt, ...)
 {
 	int ret;
 	va_list listp;
 	va_start(listp, fmt);
-	ret = vfprintf(stdout, fmt, listp);
+	ret = vprintf(fmt, listp);
 	va_end(listp);
 	return ret;
 }

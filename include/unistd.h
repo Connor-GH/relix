@@ -45,18 +45,28 @@ int
 chdir(const char *);
 int
 dup(int);
+unsigned int
+alarm(unsigned int);
+
 pid_t
 getpid(void);
 pid_t
 getppid(void);
+
 uid_t
 getuid(void);
-uid_t
-getgid(void);
+int
+setuid(uid_t);
 uid_t
 geteuid(void);
-uid_t
+
+gid_t
+getgid(void);
+gid_t
 getegid(void);
+int
+setgid(gid_t);
+
 void *
 sbrk(int);
 unsigned int
@@ -64,8 +74,6 @@ sleep(unsigned int);
 // needs sys/reboot
 int
 reboot(int cmd);
-int
-setuid(int);
 int
 fsync(int fd);
 extern char *optarg;
@@ -81,7 +89,13 @@ dup2(int oldfd, int newfd);
 #define STDIN_FILENO 0
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
+// POSIX specifies a value other than -1.
+#define _POSIX_VDISABLE 0
 off_t
 lseek(int fd, off_t offset, int whence);
 int
 isatty(int fd);
+int
+ttyname_r(int fd, char *buf, size_t buflen);
+char *
+ttyname(int fd);

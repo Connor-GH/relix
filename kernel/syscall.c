@@ -158,7 +158,7 @@ sys_read(void);
 extern size_t
 sys_sbrk(void);
 extern size_t
-sys_sleep(void);
+sys_alarm(void);
 extern size_t
 sys_unlink(void);
 extern size_t
@@ -174,7 +174,7 @@ sys_chmod(void);
 extern size_t
 sys_reboot(void);
 extern size_t
-sys_echoout(void);
+sys_setgid(void);
 extern size_t
 sys_setuid(void);
 extern size_t
@@ -237,7 +237,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_dup] = sys_dup,
 	[SYS_getpid] = sys_getpid,
 	[SYS_sbrk] = sys_sbrk,
-	[SYS_sleep] = sys_sleep,
+	[SYS_alarm] = sys_alarm,
 	[SYS_uptime] = sys_uptime,
 	[SYS_open] = sys_open,
 	[SYS_write] = sys_write,
@@ -249,7 +249,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_time] = sys_time,
 	[SYS_chmod] = sys_chmod,
 	[SYS_reboot] = sys_reboot,
-	[SYS_echoout] = sys_echoout,
+	[SYS_setgid] = sys_setgid,
 	[SYS_setuid] = sys_setuid,
 	[SYS_ptrace] = sys_ptrace,
 	[SYS_symlink] = sys_symlink,

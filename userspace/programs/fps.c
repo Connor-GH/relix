@@ -15,7 +15,7 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 	int fd = open("/dev/fb0", O_RDONLY);
-	if (ioctl(fd, FBIOGET_VSCREENINFO, &screeninfo)) {
+	if (ioctl(fd, FBIOCGET_VSCREENINFO, &screeninfo)) {
 		perror("ioctl");
 		exit(1);
 	}

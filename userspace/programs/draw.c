@@ -13,9 +13,14 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 	int fd = open("/dev/fb0", O_RDONLY);
-	if (ioctl(fd, FBIOGET_VSCREENINFO, &screeninfo)) {
+	if (fd == -1) {
+		perror("open");
+		exit(EXIT_FAILURE);
+	}
+	if (ioctl(fd, FBIOCGET_VSCREENINFO, &screeninfo)) {
 		perror("ioctl");
-		exit(1);
+		close(fd);
+		exit(EXIT_FAILURE);
 	}
 	close(fd);
 	libgui_fill_rect_ptr(fb, &(struct rectangle){0, 0, screeninfo.xres, screeninfo.yres - 40}, 0x666666);

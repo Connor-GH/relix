@@ -13,7 +13,7 @@
 #define SYS_dup 10
 #define SYS_getpid 11
 #define SYS_sbrk 12
-#define SYS_sleep 13
+#define SYS_alarm 13
 #define SYS_uptime 14
 #define SYS_open 15
 #define SYS_write 16
@@ -25,7 +25,7 @@
 #define SYS_time 22
 #define SYS_chmod 23
 #define SYS_reboot 24
-#define SYS_echoout 25
+#define SYS_setgid 25
 #define SYS_setuid 26
 #define SYS_ptrace 27
 #define SYS_symlink 28
@@ -67,7 +67,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_dup] = "dup",
 	[SYS_getpid] = "getpid",
 	[SYS_sbrk] = "sbrk",
-	[SYS_sleep] = "sleep",
+	[SYS_alarm] = "alarm",
 	[SYS_uptime] = "uptime",
 	[SYS_open] = "open",
 	[SYS_write] = "write",
@@ -79,7 +79,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_time] = "time",
 	[SYS_chmod] = "chmod",
 	[SYS_reboot] = "reboot",
-	[SYS_echoout] = "echoout",
+	[SYS_setgid] = "setgid",
 	[SYS_setuid] = "setuid",
 	[SYS_ptrace] = "ptrace",
 	[SYS_symlink] = "symlink",
@@ -146,4 +146,16 @@ ssize_t
 fetchstr(uintptr_t, char **);
 void
 syscall(void);
+
+/*
+ * Designed for functions that return int, where
+ * 0 is treated as "success", and less than zero is failure.
+ * Propogates the error, if any, similar to Rust's "?" operator.
+ */
+#define PROPOGATE_ERR(x)   \
+	{                        \
+		int __ret;             \
+		if ((__ret = (x)) < 0) \
+			return __ret;        \
+	}
 #endif

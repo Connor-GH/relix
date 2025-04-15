@@ -1,3 +1,4 @@
+#include "termios.h"
 #include <sys/param.h>
 #include <stdlib.h>
 #include <string.h>
@@ -49,13 +50,22 @@ try_again:
 	username[strlen(username) - 1] = '\0';
 
 	printf("password for %s: ", username);
-	echoout(0);
+	struct termios term;
+
+	tcgetattr(STDIN_FILENO, &term);
+	term.c_lflag &= ~ECHO;
+	tcsetattr(STDIN_FILENO, TCSADRAIN, &term);
+
 	if (fgets(passwd, MAX_PASSWD, stdin) != passwd) {
 		perror("fgets");
 		exit(1);
 	}
 	passwd[strlen(passwd) - 1] = '\0';
-	echoout(1);
+
+	tcgetattr(STDIN_FILENO, &term);
+	term.c_lflag |= ECHO;
+	tcsetattr(STDIN_FILENO, TCSADRAIN, &term);
+
 	if (uid == -1) {
 		entry = getpwnam(username);
 

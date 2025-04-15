@@ -11,6 +11,7 @@
 #include "kernel_assert.h"
 #include "mmu.h"
 #include "pci.h"
+#include "termios.h"
 #include "vga.h"
 #include <defs.h>
 #include <stdint.h>
@@ -41,17 +42,6 @@
 #include "drivers/lapic.h"
 #include "vm.h"
 
-/*
- * Designed for functions that return int, where
- * 0 is treated as "success", and less than zero is failure.
- * Propogates the error, if any, similar to Rust's "?" operator.
- */
-#define PROPOGATE_ERR(x)   \
-	{                        \
-		int __ret;             \
-		if ((__ret = (x)) < 0) \
-			return __ret;        \
-	}
 static struct inode *
 link_dereference(struct inode *ip, char *buff);
 // Fetch the nth word-sized system call argument as a file descriptor
@@ -765,20 +755,6 @@ sys_chmod(void)
 	return 0;
 }
 
-size_t
-sys_echoout(void)
-{
-	int answer;
-	begin_op();
-	if (argint(0, &answer) < 0) {
-		end_op();
-		return -EINVAL;
-	}
-	echo_out = answer;
-	end_op();
-	return 0;
-}
-
 // target, linkpath
 size_t
 sys_symlink(void)
@@ -915,7 +891,6 @@ sys_ioctl(void)
 	int fd;
 	struct file *file;
 	unsigned long request;
-	void *last_optional_arg = NULL;
 	uintptr_t uptr;
 	if (argfd(0, &fd, &file) < 0 || argunsigned_long(1, &request) < 0)
 		return -EINVAL;
@@ -926,28 +901,71 @@ sys_ioctl(void)
 
 	switch (request) {
 	case PCIIOCGETCONF: {
-		if (argptr(2, (char **)&last_optional_arg, sizeof(struct pci_conf *)) < 0)
-			return -EINVAL;
-		if (last_optional_arg == NULL)
+		struct pci_conf *pci_conf_p;
+
+		PROPOGATE_ERR(argptr(2, (char **)&pci_conf_p, sizeof(struct pci_conf *)));
+
+		if (pci_conf_p == NULL)
 			return -EFAULT;
 
 		// INVARIANT: pci_init must happen before pci_get_conf().
 		struct FatPointerArray_pci_conf pci_conf = pci_get_conf();
-		memcpy(last_optional_arg, pci_conf.ptr,
+
+		memcpy(pci_conf_p, pci_conf.ptr,
 					 pci_conf.len * sizeof(struct pci_conf));
 		return 0;
 		break;
 	}
-	case FBIOGET_VSCREENINFO: {
-		if (argptr(2, (char **)&last_optional_arg,
-							 sizeof(struct fb_var_screeninfo *)) < 0)
-			return -EINVAL;
+	case FBIOCGET_VSCREENINFO: {
+		if (file->ip->major != FB) {
+				return -EINVAL;
+		}
+		struct fb_var_screeninfo *scr_info;
+		PROPOGATE_ERR(argptr(2, (char **)&scr_info,
+											 sizeof(struct fb_var_screeninfo *)));
 
-		if (last_optional_arg == NULL)
+		if (scr_info == NULL)
 			return -EFAULT;
 
 		struct fb_var_screeninfo info = { WIDTH, HEIGHT, BPP_DEPTH };
-		memcpy(last_optional_arg, &info, sizeof(struct fb_var_screeninfo));
+		memcpy(scr_info, &info, sizeof(struct fb_var_screeninfo));
+		return 0;
+		break;
+	}
+	case TIOCGETAW:
+	case TIOCGETAF:
+	case TIOCGETA: {
+		if (file->ip->major != TTY) {
+			return -EINVAL;
+		}
+		struct termios *termios;
+		PROPOGATE_ERR(argptr(2, (char **)&termios, sizeof(struct termios *)));
+
+		if (termios == NULL)
+			return -EFAULT;
+
+		struct termios *ret = get_term_settings(file->ip->minor);
+		// Copy here because userspace cannot use kernel pointers.
+		memcpy(termios, ret, sizeof(struct termios));
+		return 0;
+		break;
+	}
+	case TIOCSETAW:
+	case TIOCSETAF:
+	case TIOCSETA: {
+		if (file->ip->major != TTY) {
+			return -EINVAL;
+		}
+		struct termios *termios;
+		PROPOGATE_ERR(argptr(2, (char **)&termios, sizeof(struct termios *)));
+
+		if (termios == NULL)
+			return -EFAULT;
+
+		set_term_settings(file->ip->minor, termios);
+		// Adjust whether chracters print.
+		echo_out = (termios->c_lflag & ECHO) == ECHO;
+
 		return 0;
 		break;
 	}

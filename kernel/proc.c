@@ -650,7 +650,6 @@ kill(pid_t pid, int signal)
 					break;
 				}
 			} else {
-				uart_printf("Not a default handler... %s\n", p->name);
 				copy_signal_to_stack(p, signal);
 			}
 			// Wake process from sleep if necessary.

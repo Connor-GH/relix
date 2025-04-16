@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <stdlib.h>
@@ -388,4 +389,27 @@ strpbrk(const char *s1, const char *s2)
 		++p1;
 	}
 	return NULL;
+}
+
+// Duplicate a string
+// Caller frees the string.
+char *
+strndup(const char *s, size_t n)
+{
+	if (s == NULL)
+		return NULL;
+	char *new_s = malloc(n);
+	if (new_s == NULL) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	strncpy(new_s, s, n);
+	return new_s;
+}
+
+char *
+strdup(const char *s)
+{
+	return strndup(s, strlen(s) + 1);
+
 }

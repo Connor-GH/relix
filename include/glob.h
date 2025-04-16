@@ -1,6 +1,6 @@
 #ifndef GLOB_H
 #define GLOB_H
-#include <stdint.h>
+#include <stddef.h>
 
 typedef struct {
 	size_t gl_pathc;

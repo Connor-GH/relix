@@ -229,22 +229,6 @@ assert_fail(const char *assertion, const char *file, int lineno,
 	exit(-1);
 }
 
-// Duplicate a string
-// Caller frees the string.
-char *
-strdup(const char *s)
-{
-	if (s == NULL)
-		return NULL;
-	char *new_s = malloc(strlen(s) + 1);
-	if (new_s == NULL) {
-		errno = ENOMEM;
-		return NULL;
-	}
-	strncpy(new_s, s, strlen(s) + 1);
-	return new_s;
-}
-
 typedef void (*atexit_handler)(void);
 static atexit_handler atexit_handlers[ATEXIT_MAX] = { NULL };
 

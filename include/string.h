@@ -65,6 +65,8 @@ char *
 strtok(char *restrict str, const char *restrict delim);
 char *
 strdup(const char *s);
+char *
+strndup(const char *s, size_t n);
 
 int
 strcoll(const char *s1, const char *s2);

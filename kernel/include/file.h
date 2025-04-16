@@ -9,6 +9,7 @@
 #if __KERNEL__
 struct file {
 	enum { FD_NONE, FD_PIPE, FD_INODE, FD_FIFO, } type;
+	int flags; // Flags like FD_CLOEXEC.
 	int ref; // reference count
 	char readable;
 	char writable;

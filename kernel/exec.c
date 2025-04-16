@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <string.h>
 #include "kernel_assert.h"
+#include "fcntl_constants.h"
 #include "macros.h"
 #include "vm.h"
 #include "drivers/mmu.h"
@@ -209,6 +210,20 @@ ok:
 	// TODO this needs to be a copy, not a reference
 	if (curproc->parent != NULL)
 		curproc->cred = curproc->parent->cred;
+
+	// FIXME:
+	// I know that this needs to be here in order to close
+	// those files, but there are currently some bugs with it
+	// (it causes a kernel panic when it shouldn't). That makes
+	// me think that, at this point, curproc->ofile is uninitialized.
+	// I have not tried to look and see whether it is or not.
+#if 0
+	for (int j = 0; j < NOFILE; j++) {
+		if (curproc->ofile[j] != NULL && curproc->ofile[j]->flags == FD_CLOEXEC) {
+			fileclose(curproc->ofile[j]);
+		}
+	}
+#endif
 	switchuvm(curproc);
 	freevm(oldpgdir);
 	return 0;

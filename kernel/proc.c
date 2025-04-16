@@ -150,6 +150,7 @@ found:
 
 	p->cred.uid = 0;
 	p->cred.gid = 0;
+	memset(p->cred.groups, 0, sizeof(p->cred.groups));
 
 	p->umask = S_IWGRP | S_IWOTH;
 
@@ -719,4 +720,14 @@ sleep_on_ms(time_t ms)
 		sleep(&ticks, &tickslock);
 	}
 	release(&tickslock);
+}
+
+bool
+is_in_group(gid_t group, struct cred *cred)
+{
+	for (int i = 0; i < MAXGROUPS; i++) {
+		if (group == cred->groups[i])
+			return true;
+	}
+	return false;
 }

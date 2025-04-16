@@ -23,11 +23,18 @@ free(void *ap)
 {
 	Header *bp, *p;
 
+#if defined(MEMORY_GUARDS)
+	if (ap == NULL) {
+		fprintf(stderr, "free(NULL) was called.\n");
+		abort();
+	}
+#endif
+
 	bp = (Header *)ap - 1;
 	for (p = freep; !(bp > p && bp < p->ptr); p = p->ptr)
 		if (p >= p->ptr && (bp > p || bp < p->ptr))
 			break;
-	/* BREAKPOINT */
+
 	if (bp + bp->size == p->ptr) {
 		bp->size += p->ptr->size;
 		bp->ptr = p->ptr->ptr;
@@ -69,7 +76,12 @@ malloc(size_t nbytes)
 {
 	Header *p, *prevp;
 	size_t nunits;
-
+#if defined(MEMORY_GUARDS)
+	if (nbytes == 0) {
+		fprintf(stderr, "malloc(0) is undefined behavior.\n");
+		abort();
+	}
+#endif
 	nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
 	// There is no free list yet, so we need to make one.
 	if ((prevp = freep) == NULL) {

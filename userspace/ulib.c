@@ -1,5 +1,6 @@
 #include "kernel/include/fs.h"
 #include "kernel/include/kernel_signal.h"
+#include "limits.h"
 #include "stat.h"
 #include <errno.h>
 #include <setjmp.h>
@@ -290,6 +291,7 @@ exit(int status)
 __attribute__((noreturn)) void
 abort(void)
 {
+	raise(SIGABRT);
 	_exit(1);
 }
 
@@ -304,6 +306,25 @@ __getcwd(char *buf, size_t n);
 char *
 getcwd(char *buf, size_t n)
 {
+	// POSIX leaves this the behavior on NULL buf
+	// unspecified, but bash needs this in order to
+	// not deref a NULL pointer. Objectively, this
+	// is bash's fault for not following the standard,
+	// but I will make an exception this *once*.
+	if (buf == NULL) {
+		size_t alloc_size;
+		if (n == 0)
+			alloc_size = PATH_MAX;
+		else
+			alloc_size = n;
+
+		buf = malloc(alloc_size);
+		if (buf == NULL)
+			return NULL;
+
+		return buf;
+	}
+
 	int ret = __getcwd(buf, n);
 	if (ret < 0)
 		return NULL;
@@ -311,12 +332,6 @@ getcwd(char *buf, size_t n)
 		return buf;
 }
 
-int
-fcntl(int fd, int cmd, ...)
-{
-	fprintf(stderr, "fcntl: not implemented!\n");
-	return -1;
-}
 int
 isatty(int fd)
 {
@@ -326,13 +341,47 @@ isatty(int fd)
 int
 sigemptyset(sigset_t *set)
 {
-	return -1;
+	*set = 0;
+	return 0;
 }
 
 int
 sigfillset(sigset_t *set)
 {
-	return -1;
+	*set = ~0U;
+	return 0;
+}
+
+int
+sigaddset(sigset_t *set, int signum)
+{
+	if (signum < 0 || signum > NSIG) {
+		errno = EINVAL;
+		return -1;
+	}
+	*set |= __SIG_BIT(signum);
+	return 0;
+}
+
+int
+sigdelset(sigset_t *set, int signum)
+{
+	if (signum < 0 || signum > NSIG) {
+		errno = EINVAL;
+		return -1;
+	}
+	*set &= ~__SIG_BIT(signum);
+	return 0;
+}
+
+int
+sigismember(const sigset_t *set, int signum)
+{
+	if (signum < 0 || signum > NSIG) {
+		errno = EINVAL;
+		return -1;
+	}
+	return (*set & __SIG_BIT(signum)) != 0;
 }
 
 int

@@ -1,5 +1,7 @@
 #include "kernel/include/x86.h"
+#include <errno.h>
 #include <umath.h>
+#include <math.h>
 #include <stddef.h>
 
 unsigned int
@@ -42,4 +44,10 @@ double
 fabs(double x)
 {
 	return __fabs(x);
+}
+
+double
+pow(double x, double y)
+{
+	return __builtin_pow(x, y);
 }

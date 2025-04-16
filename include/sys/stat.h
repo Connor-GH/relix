@@ -8,7 +8,9 @@ fstat(int fd, struct stat *);
 int
 mkdir(const char *dir, mode_t mode);
 int
-chmod(char *, int mode);
+chmod(const char *, mode_t mode);
+int
+fchmod(int fd, mode_t mode);
 __attribute__((nonnull(2))) int
 stat(const char *, struct stat *);
 int

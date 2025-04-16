@@ -55,9 +55,16 @@ void *
 memcpy(void *dst, const void *src, size_t n);
 void *
 mempcpy(void *dst, const void *src, size_t n);
+void *
+memchr(const void *s, int c, size_t n);
+void *
+memrchr(const void *s, int c, size_t n);
 char *
 strerror(int err_no);
 char *
 strtok(char *restrict str, const char *restrict delim);
 char *
 strdup(const char *s);
+
+int
+strcoll(const char *s1, const char *s2);

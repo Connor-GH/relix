@@ -50,7 +50,10 @@
 #define SYS_getppid 47
 #define SYS_times 48
 #define SYS_stat 49
-#define SYSCALL_AMT 49
+#define SYS_fchmod 50
+#define SYS_access 51
+#define SYS_fcntl 52
+#define SYSCALL_AMT 52
 #ifndef __ASSEMBLER__
 #include <stddef.h>
 #include "types.h"
@@ -104,6 +107,9 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_getppid] = "getppid",
 	[SYS_times] = "times",
 	[SYS_stat] = "stat",
+	[SYS_fchmod] = "fchmod",
+	[SYS_access] = "access",
+	[SYS_fcntl] = "fcntl",
 };
 #endif
 #if __KERNEL__ && !defined(__ASSEMBLER__)
@@ -157,5 +163,13 @@ syscall(void);
 		int __ret;             \
 		if ((__ret = (x)) < 0) \
 			return __ret;        \
+	}
+#define PROPOGATE_ERR_WITH(x, expr) \
+	{                                 \
+		int __ret;                      \
+		if ((__ret = (x)) < 0) {        \
+			expr;                         \
+			return __ret;                 \
+		}                               \
 	}
 #endif

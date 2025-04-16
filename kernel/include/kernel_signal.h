@@ -37,6 +37,7 @@ enum {
 	__SIG_last
 };
 #define NSIG __SIG_last - 1
+#define __SIG_BIT(sig) (1U << (sig))
 
 union sigval {
 	int sival_int;
@@ -54,7 +55,7 @@ typedef struct {
 } siginfo_t;
 
 typedef void (*sighandler_t)(int);
-typedef int sigset_t;
+typedef uint32_t sigset_t;
 struct sigaction {
 	union {
 		void (*sa_handler)(int);
@@ -69,7 +70,22 @@ struct sigaction {
 #define SIG_DFL ((sighandler_t)-2) // Default action
 #define SIG_IGN ((sighandler_t)1) // Ignore
 
-#define SIG_SETMASK 0x1
+#define SIG_SETMASK 1
+#define SIG_BLOCK 2
+#define SIG_UNBLOCK 3
+
+
+#define SA_NOCLDSTOP 1
+#define SA_ONSTACK   2
+#define SA_RESETHAND 3
+#define SA_RESTART 4
+#define SA_SIGINFO 5
+#define SA_NOCLDWAIT 6
+#define SA_NODEFER 7
+#define SS_ONSTACK 8
+#define SS_DISABLE 9
+#define MINSIGSTKSZ 10
+#define SIGSTKSZ 11
 
 #if __KERNEL__
 sighandler_t

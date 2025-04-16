@@ -30,6 +30,8 @@ time_t
 time(time_t *tloc);
 struct tm *
 localtime(const time_t *timep);
+void
+tzset(void);
 
 extern int daylight;
 extern long timezone;

@@ -76,8 +76,7 @@ sys_sbrk(void)
 	if (arguintptr_t(0, &n) < 0)
 		return -EINVAL;
 	addr = myproc()->sz;
-	if (growproc(n) < 0)
-		return -1; // TODO
+	PROPOGATE_ERR(growproc(n));
 	return addr;
 }
 

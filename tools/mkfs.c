@@ -106,6 +106,7 @@ xlong(uint64_t x)
 static uint32_t rootino;
 static uint32_t etcino;
 static uint32_t binino;
+static uint32_t slashroot_ino;
 
 static void
 make_file(uint32_t currentino, const char *name, uint32_t parentino)
@@ -138,6 +139,7 @@ makedirs(void)
 {
 	binino = make_dir(rootino, "bin");
 	etcino = make_dir(rootino, "etc");
+	slashroot_ino = make_dir(rootino, "root");
 }
 
 int

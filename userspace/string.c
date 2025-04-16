@@ -27,6 +27,13 @@ strcmp(const char *p, const char *q)
 	return strncmp(p, q, (np > nq ? nq : np) + 1);
 }
 
+// We do not currently support locales outside of C.
+int
+strcoll(const char *s1, const char *s2)
+{
+	return strcmp(s1, s2);
+}
+
 char *
 strstr(const char *s1, const char *s2)
 {
@@ -99,14 +106,32 @@ strchr(const char *s, int c)
 			return (char *)s;
 	return NULL;
 }
+
+void *
+memchr(const void *s, int c, size_t n)
+{
+	for (size_t i = 0; i < n; i++) {
+		if (((const char *)s)[i] == c)
+			return (void *)s + i;
+	}
+	return NULL;
+}
+
+void *
+memrchr(const void *s, int c, size_t n)
+{
+	for (size_t i = n; i > 0; i--)
+		if (((const char *)s)[i-1] == c)
+			return (char *)s + i - 1;
+	return NULL;
+}
+
 char *
 strrchr(const char *s, int c)
 {
-	for (int i = strlen(s) - 1; i >= 0; i--)
-		if (s[i] == c)
-			return (char *)s + i;
-	return NULL;
+	return memchr(s, c, strlen(s) + 1);
 }
+
 char *
 strncpy(char *dst, const char *src, size_t n)
 {
@@ -131,6 +156,12 @@ stpncpy(char *dst, const char *src, size_t n)
 	while (n-- > 1)
 		*dst++ = '\0';
 	return dst;
+}
+
+void
+bcopy(const void *src, void *dst, size_t n)
+{
+	memmove(dst, src, n);
 }
 
 static char *restrict __strtok_token = NULL;

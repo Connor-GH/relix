@@ -3,7 +3,6 @@
 #ifndef __ASSEMBLER__
 extern int errno;
 #endif
-#define MAX_ERRNO 40
 #define EPERM 1 /* Operation not permitted */
 #define ENOENT 2 /* No such file or directory */
 #define ESRCH 3 /* No such process */
@@ -42,9 +41,10 @@ extern int errno;
 #define EDEADLK 35 /* Resource deadlock */
 #define ENAMETOOLONG 36 /* Name too long */
 #define ENOLCK 37 /* No record locks available */
-#define ENOSYS 38 /* Invalid syscall number */
+#define ENOSYS 38 /* Functionality not supported */
 #define ENOTEMPTY 39 /* Directory not empty */
 #define ELOOP 40 /* Too many symbolic links */
+#define MAX_ERRNO 40
 #if !defined(__KERNEL__) && !defined(__ASSEMBLER__)
 static const char *const errno_codes[] = {
 	[0] = "Success",
@@ -85,7 +85,7 @@ static const char *const errno_codes[] = {
 	[EDEADLK] = "Resource deadlock",
 	[ENAMETOOLONG] = "Name too long",
 	[ENOLCK] = "No record locks available",
-	[ENOSYS] = "Invalid syscall number",
+	[ENOSYS] = "function not implemented",
 	[ENOTEMPTY] = "Directory not empty",
 	[ELOOP] = "Too many symbolic links",
 };

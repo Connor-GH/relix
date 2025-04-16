@@ -660,8 +660,8 @@ sys_getcwd(void)
 {
 	char *buf;
 	size_t size;
-	if (argstr(0, &buf) < 0 || argsize_t(1, &size) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argstr(0, &buf));
+	PROPOGATE_ERR(argsize_t(1, &size));
 
 	// Translate cwd from inode into path.
 	char *ret = inode_to_path(buf, size, myproc()->cwd);
@@ -742,7 +742,7 @@ sys_chmod(void)
 	mode_t mode;
 	struct inode *ip;
 	begin_op();
-	if (argstr(0, &path) < 0 || argint(1, (mode_t *)&mode) < 0 ||
+	if (argstr(0, &path) < 0 || argmode_t(1, &mode) < 0 ||
 			(ip = namei(path)) == NULL) {
 		end_op();
 		return -EINVAL;
@@ -751,6 +751,25 @@ sys_chmod(void)
 	// capture the file type and change the permissions
 	ip->mode = (ip->mode & S_IFMT) | mode;
 	inode_unlock(ip);
+	end_op();
+	return 0;
+}
+
+size_t
+sys_fchmod(void)
+{
+	struct file *file;
+	mode_t mode;
+	begin_op();
+	PROPOGATE_ERR_WITH(argfd(0, NULL, &file), {
+		end_op();
+	});
+	PROPOGATE_ERR_WITH(argmode_t(1, &mode), {
+		end_op();
+	});
+	inode_lock(file->ip);
+	file->ip->mode = (file->ip->mode & S_IFMT) | mode;
+	inode_unlock(file->ip);
 	end_op();
 	return 0;
 }
@@ -975,6 +994,73 @@ sys_ioctl(void)
 	}
 }
 
+size_t
+sys_fcntl(void)
+{
+	struct file *file;
+	int op;
+	PROPOGATE_ERR(argfd(0, NULL, &file));
+	PROPOGATE_ERR(argint(1, &op));
+
+
+	switch (op) {
+	case F_DUPFD: {
+		int arg;
+		int fd;
+		PROPOGATE_ERR(argint(2, &arg));
+		PROPOGATE_ERR(fd = fdalloc(file));
+		if (filedup(file) == NULL)
+			return -EBADF;
+		return fd;
+	}
+	case F_DUPFD_CLOEXEC: {
+		int arg;
+		int fd;
+		struct file *duped_file;
+		PROPOGATE_ERR(argint(2, &arg));
+		PROPOGATE_ERR(fd = fdalloc(file));
+		if ((duped_file = filedup(file)) == NULL)
+			return -EBADF;
+		duped_file->flags = FD_CLOEXEC;
+		return fd;
+	}
+	case F_GETFL: {
+		inode_lock(file->ip);
+		int flags = file->ip->flags;
+		inode_unlock(file->ip);
+		return flags;
+	}
+	case F_SETFL: {
+		int arg;
+		PROPOGATE_ERR(argint(2, &arg));
+		inode_lock(file->ip);
+		file->ip->flags = arg;
+		inode_unlock(file->ip);
+		return 0;
+	}
+	case F_GETFD: {
+		return file->flags;
+	}
+	case F_SETFD: {
+		int arg;
+		PROPOGATE_ERR(argint(2, &arg));
+		file->flags = arg;
+		return 0;
+	}
+	case F_GETLK:
+	case F_SETLK:
+	case F_SETLKW:
+	case F_GETLKW:
+	case F_GETOWN:
+	case F_SETOWN:
+		return -ENOSYS;
+	default: {
+		return -EINVAL;
+	}
+	}
+	// Not reached.
+}
+
 static int
 mmap_prot_to_perm(int prot)
 {
@@ -1192,4 +1278,104 @@ sys_rename(void)
 	inode_unlock(dp);
 	end_op();
 	return -ENOENT;
+}
+
+size_t
+sys_access(void)
+{
+	char *path;
+	// Not to be confused with the
+	// mode_t mode.
+	int mode;
+	struct inode *ip;
+	// Initialized down below.
+	bool perms_wanted_ok;
+	bool read_ok = false;
+	bool write_ok = false;
+	bool exec_ok = false;
+	bool correct_uid;
+	bool correct_gid;
+	PROPOGATE_ERR(argstr(0, &path));
+	PROPOGATE_ERR(argint(1, &mode));
+	begin_op();
+	// File does not exist,
+	if ((ip = namei(path)) == NULL) {
+		end_op();
+		return -ENOENT;
+	}
+	// All we wanted to do is check whether the
+	// file exists, and it does.
+	if (mode == F_OK) {
+		end_op();
+		return 0;
+	}
+	// This small bit is the only part that
+	// requires a lock since the booleans are
+	// evaluated here (the only use of ip).
+	inode_lock(ip);
+	// UID 0 (root) is always the "correct UID".
+	if (myproc()->cred.uid == 0) {
+		correct_uid = true;
+	} else {
+		correct_uid = myproc()->cred.uid == ip->uid;
+	}
+	correct_gid = is_in_group(ip->gid, &myproc()->cred);
+
+	inode_unlock(ip);
+	end_op();
+
+	// Check for read.
+	if ((mode & R_OK) == R_OK) {
+		// User
+		if ((mode & S_IRUSR) == S_IRUSR) {
+			read_ok |= correct_uid;
+		}
+		if ((mode & S_IRGRP) == S_IRGRP) {
+			read_ok |= correct_gid;
+		}
+		if ((mode & S_IROTH) == S_IROTH) {
+			read_ok |= true;
+		}
+	} else {
+		read_ok = true;
+	}
+
+	if ((mode & W_OK) == W_OK) {
+		// User
+		if ((mode & S_IWUSR) == S_IWUSR) {
+			write_ok |= correct_uid;
+		}
+		if ((mode & S_IWGRP) == S_IWGRP) {
+			write_ok |= correct_gid;
+		}
+		if ((mode & S_IWOTH) == S_IWOTH) {
+			write_ok |= true;
+		}
+	} else {
+		write_ok = true;
+	}
+
+	if ((mode & X_OK) == X_OK) {
+		// User
+		if ((mode & S_IXUSR) == S_IXUSR) {
+			exec_ok |= correct_uid;
+		}
+		if ((mode & S_IXGRP) == S_IXGRP) {
+			exec_ok |= correct_gid;
+		}
+		if ((mode & S_IXOTH) == S_IXOTH) {
+			exec_ok |= true;
+		}
+	} else {
+		exec_ok = true;
+	}
+
+
+	perms_wanted_ok = read_ok && write_ok && exec_ok;
+
+	if (perms_wanted_ok) {
+		return 0;
+	} else {
+		return -1;
+	}
 }

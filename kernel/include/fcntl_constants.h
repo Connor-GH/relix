@@ -21,9 +21,19 @@
 #define F_GETFL 0x004
 #define F_SETFL 0x008 // expects arg
 
+#define F_DUPFD_CLOEXEC 0x010
+#define F_GETLK 0x020
+#define F_SETLK 0x040 // expects arg
+#define F_GETLKW 0x080
+#define F_SETLKW 0x100 // expects arg
+
+#define F_GETOWN 0x200
+#define F_SETOWN 0x400
+
+
 #define FD_CLOEXEC 0x01
 
 #define F_OK 0
-#define X_OK 1
+#define X_OK (1 << 0)
 #define W_OK (1 << 1)
 #define R_OK (1 << 2)

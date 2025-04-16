@@ -7,7 +7,15 @@ static struct tm s_time;
 
 int daylight;
 long timezone;
-char *tzname[2];
+char *tzname[2] = {NULL, NULL};
+
+void
+tzset(void)
+{
+	// TODO timezone parsing from TZ environment variable.
+	tzname[0] = "   ";
+	tzname[1] = "   ";
+}
 
 struct tm *
 localtime(const time_t *timep)

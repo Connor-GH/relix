@@ -13,17 +13,10 @@
 #include "../drivers/mmu.h"
 #include "../include/file.h"
 
-struct groups {
-	char *gr_name;
-	char *gr_passwd;
-	gid_t gr_gid;
-	char **gr_mem;
-};
-
 struct cred {
 	uid_t uid;
 	gid_t gid;
-	struct groups groups[MAXGROUPS];
+	gid_t groups[MAXGROUPS];
 };
 
 struct cpu {
@@ -145,4 +138,6 @@ void
 yield(void);
 struct proc *
 last_proc_ran(void);
+bool
+is_in_group(gid_t group, struct cred *cred);
 #endif

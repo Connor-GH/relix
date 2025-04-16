@@ -91,8 +91,14 @@ dup2(int oldfd, int newfd);
 #define STDERR_FILENO 2
 // POSIX specifies a value other than -1.
 #define _POSIX_VDISABLE 0
+
+#define MB_LEN_MAX 1
+#define MB_CUR_MAX 1
+
 off_t
 lseek(int fd, off_t offset, int whence);
+int
+access(const char *pathname, int mode);
 int
 isatty(int fd);
 int

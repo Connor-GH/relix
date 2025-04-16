@@ -223,6 +223,12 @@ extern size_t
 sys_times(void);
 extern size_t
 sys_stat(void);
+extern size_t
+sys_fchmod(void);
+extern size_t
+sys_access(void);
+extern size_t
+sys_fcntl(void);
 
 static size_t (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,
@@ -274,6 +280,9 @@ static size_t (*syscalls[])(void) = {
 	[SYS_getppid] = sys_getppid,
 	[SYS_times] = sys_times,
 	[SYS_stat] = sys_stat,
+	[SYS_fchmod] = sys_fchmod,
+	[SYS_access] = sys_access,
+	[SYS_fcntl] = sys_fcntl,
 };
 
 void

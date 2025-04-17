@@ -265,7 +265,7 @@ index 503e0dc..0687f69 100644
 +CFLAGS+=-pipe -fno-pic -static -fno-builtin -ffreestanding -nostdlib -nostdinc \
 +				-mno-avx -I$(ROOTDIR)/include/ -I$(ROOTDIR) \
 +				-D__USER__  -fno-stack-protector -include $(ROOTDIR)/include/math.h
-+LIBS+= $(ROOTDIR)/bin/ulib.a $(ROOTDIR)/bin/libgui.a $(ROOTDIR)/bin/sharedlib.a
++LIBS+= $(ROOTDIR)/bin/libc.a $(ROOTDIR)/bin/libgui.a $(ROOTDIR)/bin/sharedlib.a
 
  # subdirectory for objects
  OBJDIR=build

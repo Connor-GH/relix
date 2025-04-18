@@ -13,7 +13,7 @@ define _
 endef
 
 $(BIN)/%.o: $(UPROGS_DIR)/%.c
-	$(CC) $(CFLAGS) -Wno-error $(UCFLAGS) -c -o $@ $^
+	$(CC) $(CFLAGS) $(UCFLAGS) -c -o $@ $^
 
 ULIBS = $(ULIB_STATIC) $(SHAREDLIBS_STATIC)
 

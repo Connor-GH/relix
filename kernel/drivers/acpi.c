@@ -36,7 +36,6 @@
 #include "lapic.h"
 
 extern struct cpu cpus[NCPU];
-extern int ncpu;
 extern uint8_t ioapicid;
 
 static int

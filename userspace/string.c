@@ -83,7 +83,7 @@ strcasecmp(const char *p, const char *q)
 size_t
 strlen(const char *s)
 {
-	int n;
+	size_t n;
 
 	for (n = 0; s && s[n]; n++)
 		;
@@ -92,7 +92,7 @@ strlen(const char *s)
 size_t
 strnlen(const char *s, size_t size)
 {
-	int n;
+	size_t n;
 
 	for (n = 0; n < size && s && s[n]; n++)
 		;

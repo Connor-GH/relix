@@ -21,11 +21,11 @@ $(BIN)/entryother.o: $(BOOTDIR)/entryother.S
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0x7000 -o $(BIN)/bootblockother.o $@
 	$(OBJCOPY) -S -O binary -j .text $(BIN)/bootblockother.o $(BIN)/entryother
 
-$(BIN)/initcode.o: $(BOOTDIR)/initcode$(BITS).S
-	$(CC) $(CFLAGS) -Oz -nostdinc $(BOOT_INC) -c $(BOOTDIR)/initcode$(BITS).S -o $(BIN)/initcode.o
+$(BIN)/initcode.o: $(BOOTDIR)/initcode64.S
+	$(CC) $(CFLAGS) -Oz -nostdinc $(BOOT_INC) -c $(BOOTDIR)/initcode64.S -o $(BIN)/initcode.o
 	objcopy --remove-section .note.gnu.property $(BIN)/initcode.o
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0 -o $(BIN)/initcode.out $@
 	$(OBJCOPY) -S -O binary $(BIN)/initcode.out $(BIN)/initcode
-$(BIN)/entry.o: $(BOOTDIR)/entry$(BITS).S
-	$(CC) $(CFLAGS) -O0 -nostdinc $(BOOT_INC) -c $(BOOTDIR)/entry$(BITS).S -o $@
+$(BIN)/entry.o: $(BOOTDIR)/entry64.S
+	$(CC) $(CFLAGS) -O0 -nostdinc $(BOOT_INC) -c $(BOOTDIR)/entry64.S -o $@
 	objcopy --remove-section .note.gnu.property $(BIN)/entry.o

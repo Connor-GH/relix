@@ -1,28 +1,19 @@
-# Cross-compiling (e.g., on Mac OS X)
-# TOOLPREFIX = i386-jos-elf
-
 # Using native tools (e.g., on X86 Linux)
-#TOOLPREFIX =
+TOOLPREFIX =
 
 # Try to infer the correct TOOLPREFIX if not set
 ifndef TOOLPREFIX
-TOOLPREFIX := $(shell if i386-jos-elf-objdump -i 2>&1 | grep '^elf32-i386$$' >/dev/null 2>&1; \
-	then echo 'i386-jos-elf-'; \
-	elif objdump -i 2>&1 | grep 'elf32-i386' >/dev/null 2>&1; \
+_ := $(shell if $(TOOLPREFIX)objdump -i 2>&1 | grep 'elf64-x86-64' >/dev/null 2>&1; \
 	then echo ''; \
 	else echo "***" 1>&2; \
-	echo "*** Error: Couldn't find an i386-*-elf version of GCC/binutils." 1>&2; \
-	echo "*** Is the directory with i386-jos-elf-gcc in your PATH?" 1>&2; \
-	echo "*** If your i386-*-elf toolchain is installed with a command" 1>&2; \
-	echo "*** prefix other than 'i386-jos-elf-', set your TOOLPREFIX" 1>&2; \
-	echo "*** environment variable to that prefix and run 'make' again." 1>&2; \
-	echo "*** To turn off this error, run 'gmake TOOLPREFIX= ...'." 1>&2; \
+	echo "*** Error: you do not have a toolchain capable of" 1>&2; \
+	echo "*** producing 64-bit ELF files \(based on objdump -i\)." 1>&2; \
+	echo "*** Specify your toolchain with `gmake TOOLPREFIX=my-prefix`." 1>&2; \
 	echo "***" 1>&2; exit 1; fi)
 endif
 
 QEMU = qemu-system-x86_64
 
-ARCHNOFLAGS = -mno-sse -mno-red-zone -mno-avx -mno-avx2 -mno-mmx -mno-80387
 
 CC = $(TOOLPREFIX)gcc
 AS = $(TOOLPREFIX)gas
@@ -33,8 +24,6 @@ RANLIB = $(TOOLPREFIX)ranlib
 OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 CARGO = $(TOOLPREFIX)cargo +nightly
-
-BITS = 64
 
 # llvm stuff
 ifneq ($(LLVM),)
@@ -47,21 +36,23 @@ ifneq ($(LLVM),)
 	AR = llvm-ar
 	RANLIB = llvm-ranlib
 	LINKER_FLAGS = -fuse-ld=lld
+	WNOGCC =
 ifneq ($(ANALYZER),)
 	ANALYZER = --analyze
 endif
 else
 	LLVM = 0
+	WNOGCC = -Wno-clobbered
 endif
-# we will support dmd-style D compilers only.
 
-WFLAGS = -Wall -Wextra -Wformat -Wnull-dereference -Warray-bounds -Wswitch -Wshadow
+ARCHNOFLAGS = -mno-sse -mno-red-zone -mno-avx -mno-avx2 -mno-mmx -mno-80387
+WFLAGS = -Wall -Wextra -Wformat -Wnull-dereference -Warray-bounds -Wswitch -Wshadow -Werror
 # TODO get rid of this
 WNOFLAGS = -Wno-unused-parameter -Wno-infinite-recursion -Wno-pointer-arith -Wno-unused -Wno-pedantic -Wno-sign-compare
 
 CFLAGS = -std=gnu11 -pipe -fno-pic -static -fno-builtin -ffreestanding \
 				 -fno-strict-aliasing -nostdlib -Og -ggdb -fno-omit-frame-pointer \
-				 -nostdinc -fno-builtin -Werror $(ARCHNOFLAGS) $(WFLAGS) $(WNOFLAGS) $(WNOGCC) $(ANALYZER)
+				 -nostdinc $(ARCHNOFLAGS) $(WFLAGS) $(WNOFLAGS) $(WNOGCC) $(ANALYZER)
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 RUSTFLAGS = -Ctarget-feature=-avx,-avx2,-sse,-sse2,-sse3,-ssse3,-sse4.1,-sse4.2 -Crelocation-model=static -Cpanic=abort -Copt-level=0 -Ccode-model=kernel -Cno-redzone=true -Cincremental=true -Cembed-bitcode=n -Cforce-unwind-tables=n -Ccodegen-units=1 -Csymbol-mangling-version=v0 -Zfunction-sections=n
 CARGO_FLAGS = -Zunstable-options --target x86_64-unknown-none
@@ -72,30 +63,19 @@ ifneq ($(RELEASE),)
 	RUSTFLAGS += -C opt-level=2 -Cembed-bitcode=yes
 	KCFLAGS += -D__KERNEL_DEBUG__=0
 else
-	RUSTFLAGS += -C opt-level=s --cfg kernel_debug
+	RUSTFLAGS += -C opt-level=2
 	KCFLAGS += -D__KERNEL_DEBUG__=1
 endif
 ASFLAGS = -gdwarf-2 -Wa,-divide --mx86-used-note=no
-ifeq ($(BITS),64)
-	CFLAGS += -m64 -march=x86-64 -mcmodel=kernel -mtls-direct-seg-refs -DX86_64=1
-	ASFLAGS += -m64 -march=x86-64 -mcmodel=kernel -mtls-direct-seg-refs -DX86_64=1
-else
-	CFLAGS += -m32 -march=i386
-	ASFLAGS += -m32
-endif
-# FreeBSD ld wants ``elf_i386_fbsd''
+
+CFLAGS += -m64 -march=x86-64 -mcmodel=kernel -mtls-direct-seg-refs -DX86_64=1
+ASFLAGS += -m64 -march=x86-64 -mcmodel=kernel -mtls-direct-seg-refs -DX86_64=1
+
+# FreeBSD ld wants ``elf_x86_64_fbsd''
 ifeq ($(HOST_OS),FreeBSD)
-	ifeq ($(BITS),64)
 	LDFLAGS += -m $(shell $(LD) -V | grep elf_x86_64 2>/dev/null | head -n 1)
 else
-	LDFLAGS += -m $(shell $(LD) -V | grep elf_i386 2>/dev/null | head -n 1)
-endif
-else
-	ifeq ($(BITS),64)
 	LDFLAGS += -melf_x86_64
-else
-	LDFLAGS += -m elf_i386
-endif
 endif
 LDFLAGS += -z noexecstack -O1
 

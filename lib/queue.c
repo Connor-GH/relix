@@ -18,7 +18,7 @@ struct queue_##T##_node { \
 struct queue_##T { \
   struct queue_##T##_node *front; \
   struct queue_##T##_node *rear; \
-  int size; \
+  size_t size; \
 }; \
 \
 struct queue_##T * \

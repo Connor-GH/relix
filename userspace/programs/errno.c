@@ -20,7 +20,7 @@ main(int argc, char **argv)
 		if (argv[i][0] == '-') {
 			switch (argv[i][1]) {
 			case 'l':
-				for (int j = 0; j < sizeof(errno_codes) / sizeof(errno_codes[0]); j++) {
+				for (size_t j = 0; j < sizeof(errno_codes) / sizeof(errno_codes[0]); j++) {
 					printf("%s\n", errno_codes[j]);
 				}
 				return 0;

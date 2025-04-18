@@ -14,13 +14,13 @@ SECTIONS
         /* Must be equal to KERNLINK */
 	. = 0xFFFFFFFF80100000;
 
-	PROVIDE(begin = .);
+	PROVIDE(__kernel_begin = .);
 
 	.text : AT(mboot_load_addr) {
 		*(.text .rela.text .stub .text.* .gnu.linkonce.t.*)
 	}
 
-	PROVIDE(etext = .);	/* Define the 'etext' symbol to this value */
+	PROVIDE(__kernel_etext = .);	/* Define the '__kernel_etext' symbol to this value */
 
 	.rodata : {
 		*(.rodata .rodata.* .gnu.linkonce.r.*)
@@ -35,7 +35,7 @@ SECTIONS
 	 * of the data section, but that's not one of the conventional
 	 * symbols, because the convention started before there was a
 	 * read-only rodata section between text and data. */
-	PROVIDE(data = .);
+	PROVIDE(__kernel_data = .);
 
 	/* The data segment */
 	.data : {
@@ -44,7 +44,7 @@ SECTIONS
 
 	. = ALIGN(0x1000);
 
-	PROVIDE(edata = .);
+	PROVIDE(__kernel_edata = .);
 
 	.bss : {
 		*(.bss)
@@ -53,13 +53,13 @@ SECTIONS
 
 	. = ALIGN(0x1000);
 
-	PROVIDE(end = .);
+	PROVIDE(__kernel_end = .);
 
 	/DISCARD/ : {
 		*(.eh_frame .rela.eh_frame .note.* .note.GNU-stack)
 	}
 }
 
-mboot_load_end = mboot_load_addr + (edata - begin);
-mboot_bss_end = mboot_load_addr + (end - begin);
-mboot_entry_addr = mboot_load_addr + (mboot_entry - begin);
+mboot_load_end = mboot_load_addr + (__kernel_edata - __kernel_begin);
+mboot_bss_end = mboot_load_addr + (__kernel_end - __kernel_begin);
+mboot_entry_addr = mboot_load_addr + (mboot_entry - __kernel_begin);

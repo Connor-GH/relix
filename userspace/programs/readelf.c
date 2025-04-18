@@ -47,7 +47,7 @@ print_symbol_table(int fd, struct Elf64_Ehdr *header,
 				continue;
 			}
 
-			if (read(fd, symbols, symbol_table_header->sh_size) !=
+			if ((size_t)read(fd, symbols, symbol_table_header->sh_size) !=
 					symbol_table_header->sh_size) {
 				perror("read");
 				free(symbols);
@@ -72,7 +72,7 @@ print_symbol_table(int fd, struct Elf64_Ehdr *header,
 				continue;
 			}
 
-			if (read(fd, symbol_strtab, strtab_header->sh_size) !=
+			if ((size_t)read(fd, symbol_strtab, strtab_header->sh_size) !=
 					strtab_header->sh_size) {
 				perror("read");
 				free(symbols);
@@ -169,7 +169,7 @@ main(int argc, char *argv[])
 			return EXIT_FAILURE;
 		}
 
-		if (read(fd, (void *)strtab, strtab_header->sh_size) !=
+		if ((size_t)read(fd, (void *)strtab, strtab_header->sh_size) !=
 				strtab_header->sh_size) {
 			perror("read");
 			free(section_headers);
@@ -179,25 +179,25 @@ main(int argc, char *argv[])
 		}
 	}
 
-	/*
+
     // Print ELF Header
     printf("ELF Header:\n");
-    printf("  Magic:   ");
+    printf("\tMagic:   ");
     for (int i = 0; i < EI_NIDENT; i++)
         printf("%02x ", header.e_ident[i]);
     printf("\n");
-    printf("  Class:                             %d\n", header.e_ident[EI_CLASS]);
-    printf("  Data:                              %d\n", header.e_ident[EI_DATA]);
-    printf("  Version:                           %d\n", header.e_ident[EI_VERSION]);
-    printf("  OS/ABI:                            %d\n", header.e_ident[EI_OSABI]);
-    printf("  ABI Version:                       %d\n", header.e_ident[EI_ABIVERSION]);
-    printf("  Type:                              %d\n", header.e_type);
-    printf("  Entry point address:               0x%lx\n", header.e_entry);
-    printf("  Start of program headers:          %lu (%#x)\n", header.e_phoff, header.e_phnum);
-    printf("  Start of section headers:          %lu (#%x)\n", header.e_shoff, header.e_shnum);
-*/
+    printf("\tClass:                    %d\n", header.e_ident[EI_CLASS]);
+    printf("\tData:                     %d\n", header.e_ident[EI_DATA]);
+    printf("\tVersion:                  %d\n", header.e_ident[EI_VERSION]);
+    printf("\tOS/ABI:                   %d\n", header.e_ident[EI_OSABI]);
+    printf("\tABI Version:              %d\n", header.e_ident[EI_ABIVERSION]);
+    printf("\tType:                     %d\n", header.e_type);
+    printf("\tEntry point address:      %#lx\n", header.e_entry);
+    printf("\tStart of program headers: %lu\n", header.e_phoff);
+    printf("\tStart of section headers: %lu\n", header.e_shoff);
+
 	// Print section headers with their names
-	//print_section_headers(fd, &header, section_headers, strtab);
+	print_section_headers(fd, &header, section_headers, strtab);
 
 	print_symbol_table(fd, &header, section_headers, strtab);
 

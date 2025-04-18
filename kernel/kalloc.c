@@ -17,11 +17,10 @@
 #include <stddef.h>
 #include "boot/multiboot2.h"
 #include <string.h>
+#include "kernel_ld_syms.h"
 
 void
 freerange(void *vstart, void *vend);
-extern char end[]; // first address after kernel loaded from ELF file
-	// defined by the kernel linker script in kernel.ld
 
 struct run {
 	struct run *next;
@@ -77,7 +76,7 @@ __nonnull(1) void kpage_free(char *v) __releases(kpage)
 	if (V2IO(v) >= DEVBASE)
 		return;
 
-	if ((uintptr_t)v % PGSIZE || v < end ||
+	if ((uintptr_t)v % PGSIZE || v < __kernel_end ||
 		(V2P(v) >= available_memory && likely(available_memory > 0)))
 		panic("kpage_free");
 

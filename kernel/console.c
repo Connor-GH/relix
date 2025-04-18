@@ -427,7 +427,7 @@ consolewrite(short minor, __attribute__((unused)) struct inode *ip,
 																		 char *buf, size_t n)
 {
 	acquire(&cons.lock);
-	for (int i = 0; i < n; i++) {
+	for (size_t i = 0; i < n; i++) {
 		vga_write_char(buf[i] & 0xff, static_foreg, static_backg);
 	}
 	release(&cons.lock);
@@ -465,7 +465,7 @@ __nonnull(2, 3) static ssize_t
 uartwrite(short minor, __attribute__((unused)) struct inode *ip,
 																		 char *buf, size_t n)
 {
-	for (int i = 0; i < n; i++) {
+	for (size_t i = 0; i < n; i++) {
 		uartputc(buf[i]);
 	}
 	return n;

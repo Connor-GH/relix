@@ -26,7 +26,7 @@ printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 	static const char digits[] = "0123456789abcdef";
 	char buf[64];
 	int i = 0;
-	int neg = 0;
+	bool neg = 0;
 	uint64_t x;
 
 	if (sgn && xx < 0) {
@@ -36,7 +36,7 @@ printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 		x = xx;
 	}
 	int numlen = 1;
-	int x_copy = x;
+	uint64_t x_copy = x;
 	while ((x_copy /= base) != 0)
 		numlen++;
 
@@ -103,19 +103,20 @@ print_string(void (*put_function)(FILE *fp, char c, char *buf), char *s,
 {
 	if (s == NULL)
 		s = "(null)";
-	size_t len;
+	int len;
 	int written = 0;
 	if (strcmp(s, "") == 0) {
 			len = 0;
-	} else
-			len = strnlen(s, print_n_chars);
+	} else {
+			len = (int)strnlen(s, print_n_chars);
+	}
 	while (len != 0 && *s != 0) {
 		put_function(fp, *s, buf);
 		written++;
 		s++;
 	}
 	if (IS_SET(flags, FLAG_LJUST) && len < str_pad) {
-		for (int _ = 0; _ < str_pad - len; _++) {
+		for (int i = 0; i < str_pad - len; i++) {
 			put_function(fp, ' ', buf);
 			written++;
 		}
@@ -152,7 +153,7 @@ __libc_vprintf_template(void (*put_function)(FILE *fp, char c, char *buf),
 	int c = 0, i = 0, state = 0;
 	int flags = 0;
 	int str_pad = 0;
-	int count = 0;
+	size_t count = 0;
 
 	for (; fmt[i]; i++) {
 		if (count >= print_n_chars)

@@ -253,7 +253,7 @@ main(int argc, char *argv[])
 	}
 	for (int j = 1; j < argc; j++) {
 		if (argv[j][0] == '-' && argv[j][1] != '\0') {
-			for (int k = 1; k < strlen(argv[j]); k++) {
+			for (size_t k = 1; k < strlen(argv[j]); k++) {
 				switch (argv[j][k]) {
 				case 'l':
 					lflag = true;

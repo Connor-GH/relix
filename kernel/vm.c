@@ -6,6 +6,7 @@
 #include "console.h"
 #include "vm.h"
 #include "fs.h"
+#include "msr.h"
 #include "compiler_attributes.h"
 #include "defs.h"
 #include "boot/multiboot2.h"
@@ -366,11 +367,24 @@ mkgate(uint32_t *idt, uint32_t n, void *kva, uint32_t pl, uint32_t trap)
 	idt[n + 3] = 0;
 }
 
+// Set the RSP based on the TSS. "n" is either
+// 0, 1, or 2.
 static void
-tss_set_rsp(uint32_t *tss, uint32_t n, uint64_t rsp)
+tss_set_rsp(struct taskstate64 *tss, uint32_t n, uint64_t rsp)
 {
-	tss[n * 2 + 1] = rsp;
-	tss[n * 2 + 2] = rsp >> 32;
+	switch (n) {
+	case 0:
+		tss->rsp0 = rsp;
+		break;
+	case 1:
+		tss->rsp1 = rsp;
+		break;
+	case 2:
+		tss->rsp2 = rsp;
+		break;
+	default:
+		panic("tss_set_rsp: invalid `n' value");
+	}
 }
 
 extern void *vectors[];
@@ -380,7 +394,6 @@ extern void *vectors[];
 void
 seginit(void)
 {
-	uint32_t *tss;
 	uint64_t addr;
 	void *local;
 	struct cpu *c;
@@ -394,16 +407,19 @@ seginit(void)
 
 	lidt((void *)idt, PGSIZE);
 
-	// create a page for cpu local storage
-	local = kalloc();
+	// Create a page for cpu local storage.
+	// This is just 4kiB of free space for %FS.
+	local = kpage_alloc();
 	memset(local, 0, PGSIZE);
 
-	tss = (uint32_t *)(((char *)local) + 1024);
-	// IO Map Base = End of TSS
-	tss[16] = 0x0068 << 16 | 0x0000 /* reserved bits */;
+	struct taskstate64 *tss = kmalloc(sizeof(*tss));
+	memset(tss, 0, sizeof(*tss));
 
-	// point FS smack in the middle of our local storage page
-	wrmsr(0xC0000100, ((uint64_t)local) + (PGSIZE / 2));
+	// IO Map Base = End of TSS
+	tss->iomb = sizeof(*tss);
+
+	// Point FS to our local storage page.
+	wrmsr(MSR_FS_BASE, ((uint64_t)local));
 
 	c = &cpus[my_cpu_id()];
 	c->local = local;
@@ -420,6 +436,7 @@ seginit(void)
 	c->gdt_bits[SEG_TSS + 0] = (0x0067) | ((addr & 0xFFFFFF) << 16) |
 														 (0x00E9LL << 40) | (((addr >> 24) & 0xFF) << 56);
 	c->gdt_bits[SEG_TSS + 1] = (addr >> 32);
+	c->tss = tss;
 
 	lgdt((void *)c->gdt, sizeof(c->gdt));
 
@@ -504,11 +521,11 @@ void
 switchuvm(struct proc *p)
 {
 	void *pml4;
-	uint32_t *tss;
+	struct taskstate64 *tss;
 	pushcli();
 	if (p->pgdir == NULL)
 		panic("switchuvm: no pgdir");
-	tss = (uint32_t *)(((char *)mycpu()->local) + 1024);
+	tss = (struct taskstate64 *)mycpu()->tss;
 	tss_set_rsp(tss, 0, (uintptr_t)myproc()->kstack + KSTACKSIZE);
 	pml4 = (void *)PTE_ADDR(p->pgdir[511]);
 	lcr3(v2p(pml4));

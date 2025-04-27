@@ -118,11 +118,19 @@ startothers(void)
 	struct cpu *c;
 	char *stack;
 
+	struct {
+		uint64_t s3;
+		uint32_t s2;
+		uint32_t s1;
+	} intro_stack;
+
 	// Write entry code to unused memory at 0x7000.
 	// The linker has placed the image of entryother.S in
 	// _binary_entryother_start.
-	code = p2v(0x7000);
-	memmove(code, _binary_bin_entryother_start,
+	// Subtract sizeof(intro_stack) because
+	// we need to store data below this.
+	code = p2v(0x7000) - sizeof(intro_stack);
+	memmove(code + sizeof(intro_stack), _binary_bin_entryother_start,
 					(uintptr_t)_binary_bin_entryother_size);
 
 	for (c = cpus; c < cpus + ncpu; c++) {
@@ -133,12 +141,19 @@ startothers(void)
 		// pgdir to use. We cannot use kpgdir yet, because the AP processor
 		// is running in low  memory, so we use entrypgdir for the APs too.
 		stack = kpage_alloc();
-#if X86_64
-		*(uint32_t *)(code - 4) =
-			0x8000; // just enough stack to get us to entry64mp
-		*(uint32_t *)(code - 8) = v2p(entry32mp);
-		*(uint64_t *)(code - 16) = (uint64_t)(stack + KSTACKSIZE);
-#endif
+
+		// These are initialized in the order that
+		// they are popped off the stack in lapicstartap.
+		// In memory, they are in the reverse order due to
+		// the stack growing down.
+		intro_stack.s1 = 0x8000; // just enough stack to get us to entry64mp
+		intro_stack.s2 = v2p(entry32mp);
+		intro_stack.s3 = (uint64_t)(stack + KSTACKSIZE);
+
+		memmove(code, &intro_stack, sizeof(intro_stack));
+		// Put code pointer at the top of the stack.
+		code += sizeof(intro_stack);
+
 		lapicstartap(c->apicid, v2p(code));
 
 		// wait for cpu to finish mpmain()

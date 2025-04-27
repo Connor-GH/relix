@@ -127,6 +127,8 @@ argunsigned_long(int, unsigned long *);
 int
 arguintptr_t(int n, uintptr_t *ip);
 int
+argintptr_t(int n, intptr_t *ip);
+int
 argssize_t(int n, ssize_t *sp);
 int
 argsize_t(int n, size_t *sp);
@@ -152,6 +154,10 @@ ssize_t
 fetchstr(uintptr_t, char **);
 void
 syscall(void);
+
+// Init function for syscall/sysret.
+void
+syscall_init(void);
 
 /*
  * Designed for functions that return int, where

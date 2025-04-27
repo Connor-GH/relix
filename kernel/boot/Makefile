@@ -23,9 +23,9 @@ $(BIN)/entryother.o: $(BOOTDIR)/entryother.S
 
 $(BIN)/initcode.o: $(BOOTDIR)/initcode64.S
 	$(CC) $(CFLAGS) -Oz -nostdinc $(BOOT_INC) -c $(BOOTDIR)/initcode64.S -o $(BIN)/initcode.o
-	objcopy --remove-section .note.gnu.property $(BIN)/initcode.o
+	$(OBJCOPY) --remove-section .note.gnu.property $(BIN)/initcode.o
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0 -o $(BIN)/initcode.out $@
 	$(OBJCOPY) -S -O binary $(BIN)/initcode.out $(BIN)/initcode
 $(BIN)/entry.o: $(BOOTDIR)/entry64.S
 	$(CC) $(CFLAGS) -O0 -nostdinc $(BOOT_INC) -c $(BOOTDIR)/entry64.S -o $@
-	objcopy --remove-section .note.gnu.property $(BIN)/entry.o
+	$(OBJCOPY) --remove-section .note.gnu.property $(BIN)/entry.o

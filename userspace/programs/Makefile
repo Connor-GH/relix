@@ -21,13 +21,13 @@ define prog
 $(SYSROOT)/$(BIN)/_$(1): $(BIN)/$(1).o
 endef
 
-$(call prog,lspci) $(ULIBS) $(call rust_libs,pci,gui)
+$(call prog,lspci) $(call rust_libs,pci,gui) $(ULIBS)
 	$(call _)
 
-$(call prog,draw) $(ULIBS) $(call rust_libs,gui)
+$(call prog,draw) $(call rust_libs,gui) $(ULIBS)
 	$(call _)
 
-$(call prog,fps) $(ULIBS) $(call rust_libs,gui)
+$(call prog,fps) $(call rust_libs,gui) $(ULIBS)
 	$(call _)
 
 # Generic recipe for those who do not require complicated and expensive linkage.

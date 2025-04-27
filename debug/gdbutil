@@ -25,7 +25,7 @@ define outputsts
       loop_break
     end
     if $arg0 == $STS_LDT
-      echo STS_LDT\ 
+      echo STS_LDT\
       loop_break
     end
     if $arg0 == $STS_T16B
@@ -37,7 +37,7 @@ define outputsts
       loop_break
     end
     if $arg0 == $STS_TG
-      echo STS_TG\ \ 
+      echo STS_TG\ \
       loop_break
     end
     if $arg0 == $STS_IG16
@@ -71,7 +71,7 @@ define outputsts
     echo Reserved
     loop_break
   end
-end  
+end
 
 # IA32 2007, Volume 3A, Table 3-1
 set $STA_X = 0x8
@@ -111,10 +111,9 @@ end
 # xv6-specific
 set $SEG_KCODE = 1
 set $SEG_KDATA = 2
-set $SEG_KCPU  = 3
+set $SEG_UDATA = 3
 set $SEG_UCODE = 4
-set $SEG_UDATA = 5
-set $SEG_TSS   = 6
+set $SEG_TSS   = 5
 
 define outputcs
   if ($arg0 & 4) == 0
@@ -123,9 +122,6 @@ define outputcs
     end
     if $arg0 >> 3 == $SEG_KDATA
       printf "SEG_KDATA<<3"
-    end
-    if $arg0 >> 3 == $SEG_KCPU
-      printf "SEG_KCPU<<3"
     end
     if $arg0 >> 3 == $SEG_UCODE
       printf "SEG_UCODE<<3"

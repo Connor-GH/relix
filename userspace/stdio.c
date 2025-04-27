@@ -1,4 +1,6 @@
 #include "kernel/include/param.h"
+#include "libc_syscalls.h"
+#include <sys/syscall.h>
 #include "printf.h"
 #include "stat.h"
 #include <stdarg.h>
@@ -57,6 +59,13 @@ __fini_stdio(void)
 		}
 	}
 }
+
+int
+rename(const char *oldpath, const char *newpath)
+{
+	return __syscall2(SYS_rename, (long)oldpath, (long)newpath);
+}
+
 static int
 flush(FILE *stream)
 {
@@ -515,14 +524,18 @@ setvbuf(FILE *restrict stream, char *restrict buf, int modes, size_t n)
 {
 	if (buf != NULL) {
 		fflush(stream);
-		stream->write_buffer = buf;
-		stream->write_buffer_size = n;
+		if (stream != NULL) {
+			stream->write_buffer = buf;
+			stream->write_buffer_size = n;
+		}
 	}
 	if (!(modes == _IOFBF || modes == _IOLBF || modes == _IONBF)) {
 		errno = EINVAL;
 		return -1;
 	}
-	stream->buffer_mode = modes;
+	if (stream != NULL) {
+		stream->buffer_mode = modes;
+	}
 	return 0;
 }
 

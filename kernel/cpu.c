@@ -107,8 +107,6 @@ cpuflags(uint32_t cpu_vendor[static 3])
 	return cpu_features;
 }
 
-#define MSR_MPERF 0xE7
-#define MSR_APERF 0xE8
 static void
 do_ryzen_discovery(uint32_t ebx)
 {
@@ -273,7 +271,7 @@ remaining_features(CpuFeatures *cpu_features)
 		{ CPUID_FEAT_EDX_EXT_LM, "long_mode" },
 		{ CPUID_FEAT_EDX_EXT_3DNOW_EXT, "3dnow_ext" },
 		{ CPUID_FEAT_EDX_EXT_3DNOW, "3dnow" },
-		{0}
+		{0},
 	};
 
 	pr_debug("Cpu features: ");
@@ -318,6 +316,7 @@ remaining_features(CpuFeatures *cpu_features)
 			case CPUID_FEAT_EDX_EXT_FPU: cpu_features->fpu_misc.fpu = true; break;
 			case CPUID_FEAT_EDX_EXT_FXSR: cpu_features->fxsr |= FXSR; break;
 			case CPUID_FEAT_EDX_EXT_FFXSR: cpu_features->fxsr |= FFXSR; break;
+			case CPUID_FEAT_EDX_EXT_LM: cpu_features->misc |= LONG_MODE;
 			}
 		}
 	}
@@ -379,6 +378,11 @@ cpu_features_init(void)
 	if (read_cr4() & CR4_OSXSAVE) {
 		xsetbv(XBV_XCR0, xgetbv(XBV_XCR0) | XCR0_SSE);
 	}
+
+	// If we even made it to this code and failed, I'd be surprised.
+	// All 64-bit CPUS are supposed to set this, and we execute 64-bit
+	// code waaaaay before we do this check.
+	kernel_assert(cpu_features->misc & LONG_MODE);
 
 	// Wait on enabling AVX reg saving for a later date.
 	#if 0

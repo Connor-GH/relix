@@ -1,7 +1,5 @@
 #include "kernel/include/fs.h"
 #include "kernel/include/kernel_signal.h"
-#include "limits.h"
-#include "stat.h"
 #include <errno.h>
 #include <setjmp.h>
 #include <sys/stat.h>
@@ -21,17 +19,6 @@
 
 int errno;
 extern char **environ;
-
-// This should probably be moved into the kernel, because
-// we have more symbolic link information there. It might
-// be possible, however, to keep this in userspace if we
-// can get enough information about files without too many
-// syscalls.
-int
-lstat(const char *n, struct stat *st)
-{
-	return stat(n, st);
-}
 
 DIR *
 fdopendir(int fd)
@@ -285,88 +272,12 @@ dup2(int oldfd, int newfd)
 	return dup(oldfd);
 }
 
-extern int
-__getcwd(char *buf, size_t n);
-char *
-getcwd(char *buf, size_t n)
-{
-	// POSIX leaves this the behavior on NULL buf
-	// unspecified, but bash needs this in order to
-	// not deref a NULL pointer. Objectively, this
-	// is bash's fault for not following the standard,
-	// but I will make an exception this *once*.
-	if (buf == NULL) {
-		size_t alloc_size;
-		if (n == 0)
-			alloc_size = PATH_MAX;
-		else
-			alloc_size = n;
-
-		buf = malloc(alloc_size);
-		if (buf == NULL)
-			return NULL;
-
-		return buf;
-	}
-
-	int ret = __getcwd(buf, n);
-	if (ret < 0)
-		return NULL;
-	else
-		return buf;
-}
-
 int
 isatty(int fd)
 {
 	return fd == 0;
 }
 
-int
-sigemptyset(sigset_t *set)
-{
-	*set = 0;
-	return 0;
-}
-
-int
-sigfillset(sigset_t *set)
-{
-	*set = ~0U;
-	return 0;
-}
-
-int
-sigaddset(sigset_t *set, int signum)
-{
-	if (signum < 0 || signum > NSIG) {
-		errno = EINVAL;
-		return -1;
-	}
-	*set |= __SIG_BIT(signum);
-	return 0;
-}
-
-int
-sigdelset(sigset_t *set, int signum)
-{
-	if (signum < 0 || signum > NSIG) {
-		errno = EINVAL;
-		return -1;
-	}
-	*set &= ~__SIG_BIT(signum);
-	return 0;
-}
-
-int
-sigismember(const sigset_t *set, int signum)
-{
-	if (signum < 0 || signum > NSIG) {
-		errno = EINVAL;
-		return -1;
-	}
-	return (*set & __SIG_BIT(signum)) != 0;
-}
 
 int
 raise(int sig)
@@ -444,28 +355,6 @@ psignal(int sig, const char *s)
 	fprintf(stderr, "%s: %s\n", s, strsignal(sig));
 }
 
-uid_t
-geteuid(void)
-{
-	return getuid();
-}
-
-uid_t
-getegid(void)
-{
-	return getgid();
-}
-
-uid_t
-vfork(void)
-{
-	pid_t pid = fork();
-	if (pid > 0) {
-		wait(NULL);
-	}
-	return pid;
-}
-
 // Implmentation taken from the C Programming Language
 double
 atof(const char *nptr)
@@ -502,11 +391,6 @@ atof(const char *nptr)
 	return sign * val / power;
 }
 
-int
-mkfifo(const char *pathname, mode_t mode)
-{
-	return mknod(pathname, mode | S_IFIFO, 0);
-}
 
 static uint64_t s_next_rand = 1;
 

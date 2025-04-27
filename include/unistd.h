@@ -11,7 +11,7 @@ vfork(void) __attribute__((returns_twice));
 void
 _exit(int) __attribute__((noreturn));
 int
-pipe(int *);
+pipe(int pipefd[2]);
 int
 execve(const char *, char *const *, char *const *);
 static inline int

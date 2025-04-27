@@ -4,7 +4,7 @@
 // user code, and calls into file.c and fs.c.
 //
 
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 #include "fb.h"
 #include "fcntl_constants.h"
 #include "memlayout.h"
@@ -564,9 +564,8 @@ sys_open(void)
 
 	PROPOGATE_ERR(argstr(0, &path));
 	PROPOGATE_ERR(argint(1, &flags));
-	if (((flags & O_CREAT) == O_CREAT) || ((flags & O_TMPFILE) == O_TMPFILE)) {
-		PROPOGATE_ERR(argmode_t(2, &mode));
-	} else {
+	PROPOGATE_ERR(argmode_t(2, &mode));
+	if (!(((flags & O_CREAT) == O_CREAT)) && !(((flags & O_TMPFILE) == O_TMPFILE))) {
 		mode = 0777; // mode is ignored.
 	}
 

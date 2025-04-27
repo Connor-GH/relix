@@ -13,7 +13,7 @@
 #include "proc.h"
 #include "console.h"
 #include "kernel_assert.h"
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 
 struct cpu cpus[NCPU];
 int ncpu;

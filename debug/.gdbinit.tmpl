@@ -23,5 +23,7 @@ end
 echo + target remote localhost:26000\n
 target remote localhost:26000
 
+macro define offsetof(t, f) &((t *)0)->f
+
 echo + symbol-file bin/kernel\n
 symbol-file bin/kernel

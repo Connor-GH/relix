@@ -1,15 +1,20 @@
+#include "mmu.h"
 #include "param.h"
 #include "spinlock.h"
 #include "memlayout.h"
 #include "trap.h"
 #include <errno.h>
+#include "kernel_assert.h"
 #include <fcntl.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <defs.h>
 #include "proc.h"
 #include "x86.h"
 #include "syscall.h"
 #include "console.h"
+#include "msr.h"
+#include <stdnoreturn.h>
 
 #define SYSCALL_ARG_FETCH(T)                                   \
 	int fetch##T(uintptr_t addr, T *ip)                          \
@@ -67,7 +72,7 @@ fetcharg(int n)
 	case 2:
 		return proc->tf->rdx;
 	case 3:
-		return proc->tf->rcx;
+		return proc->tf->r10;
 	case 4:
 		return proc->tf->r8;
 	case 5:
@@ -87,6 +92,7 @@ SYSCALL_ARG_N(int);
 SYSCALL_ARG_N(unsigned_int);
 SYSCALL_ARG_N(unsigned_long);
 SYSCALL_ARG_N(uintptr_t);
+SYSCALL_ARG_N(intptr_t);
 SYSCALL_ARG_N(ssize_t);
 SYSCALL_ARG_N(size_t);
 SYSCALL_ARG_N(off_t);
@@ -284,6 +290,135 @@ static size_t (*syscalls[])(void) = {
 	[SYS_access] = sys_access,
 	[SYS_fcntl] = sys_fcntl,
 };
+
+noreturn static void
+syscall_do(void);
+
+__attribute__((noinline)) void
+syscall_init(void)
+{
+	// Tell the EFER to enable syscall/sysret.
+	wrmsr(MSR_EFER, rdmsr(MSR_EFER) | EFER_SCE);
+	// Show LSTAR where the syscall function is.
+	wrmsr(MSR_LSTAR, (uintptr_t)&syscall_do);
+	uint64_t star = 0;
+	// For the "target sysret" mode (user mode), %ss is 63..48 + 16.
+	// This is because they expect your GDT to look like the following:
+	// KCODE
+	// KDATA
+	// UCODE32
+	// UDATA (previously: UDATA32 before IA-32e, which is amd64)
+	// [something]
+	// UCODE64
+	//
+	// UCODE32 + 16 == UCODE64
+	// UCODE + 8 == UDATA
+	//
+	// Our GDT looks like the following:
+	// KCODE
+	// KDATA
+	// UDATA
+	// UCODE
+	// and so we do "-16" to set the ss at UCODE,
+	// and this results in a "-8" for UDATA.
+	//
+	// And the compatability mode uses UCODE32 + 0 == UCODE32.
+	star |= ((((unsigned long)SEG_UCODE << 3UL) - 16) | DPL_USER) << 48UL;
+	star |= ((((unsigned long)SEG_KCODE << 3UL)) | DPL_KERNEL) << 32UL;
+
+	wrmsr(MSR_STAR, star);
+	wrmsr(MSR_FMASK, FL_DIRECTION | FL_IF | FL_TRAP);
+	wrmsr(MSR_KERNEL_GS_BASE,(uint64_t)mycpu());
+}
+
+void
+syswrap(struct trapframe *tf);
+
+noreturn __attribute__((naked))
+static void
+syscall_do(void)
+{
+	__asm__ __volatile__(
+		"swapgs\n" // user %gs -> kernel %gs
+
+		"mov %%rsp, %%gs:%c[user_stack]\n"
+		"mov %%gs:%c[kernel_stack], %%rsp\n"
+
+		"pushq $0\n" // ss
+
+		"pushq %%gs:%c[user_stack]\n" // user rsp.
+		// We used %gs for all we need it for (CPU-local data).
+		// Swap it back.
+		"swapgs\n"
+		"sti\n"
+
+		"pushq %%r11\n" // rflags
+		"movq %%cs, %%r11\n"
+		"pushq %%r11\n" // cs
+		"pushq %%rcx\n" // user rip is preserved in rcx.
+		"pushq $0\n" // err
+		"pushq $0\n" // trapno
+		"pushq %%r15\n"
+		"pushq %%r14\n"
+		"pushq %%r13\n"
+		"pushq %%r12\n"
+		"pushq $0\n" // r11 was trashed (rflags)
+		"pushq %%r10\n" // r10 is caller-save
+		"pushq %%r9\n" // r9 is caller-save
+		"pushq %%r8\n" // r8 is caller-save and scratch
+		"pushq %%rdi\n" // rdi is caller-save
+		"pushq %%rsi\n" // rsi is caller-save
+		"pushq %%rbp\n"
+		"pushq %%rdx\n" // rdx is caller-save
+		"pushq $0\n" // rcx was trashed (rip)
+		"pushq %%rbx\n"
+		"pushq %%rax\n"
+
+		"xor %%rbp, %%rbp\n"
+		"movq %%rsp, %%rdi\n"
+		"callq syswrap\n"
+
+		"popq %%rax\n"
+		"popq %%rbx\n"
+		"addq $8, %%rsp\n"
+		"popq %%rdx\n"
+		"popq %%rbp\n"
+		"popq %%rsi\n"
+		"popq %%rdi\n"
+		"popq %%r9\n"
+		"popq %%r8\n"
+		"popq %%r10\n"
+		"popq %%r11\n"
+		"popq %%r12\n"
+		"popq %%r13\n"
+		"popq %%r14\n"
+		"popq %%r15\n"
+
+		"addq $(8 * 2), %%rsp\n" // skip trapno and err
+		"popq %%rcx\n" // rip
+		"addq $8, %%rsp\n" // skip cs
+		"popq %%r11\n" // rflags
+
+		"cli\n"
+		"popq %%rsp\n" // rsp
+		// TODO stack leak of %ss?
+
+		"sysretq\n"
+		:
+		: [user_stack] "i" (offsetof(struct cpu, user_stack)),
+			[kernel_stack] "i" (offsetof(struct cpu, kernel_stack))
+	);
+}
+_Static_assert(offsetof(struct cpu, user_stack) == 16, "");
+_Static_assert(offsetof(struct cpu, kernel_stack) == 8, "");
+
+void
+syswrap(struct trapframe *tf)
+{
+	kernel_assert(myproc() != NULL);
+	myproc()->tf = tf;
+	syscall();
+}
 
 void
 syscall(void)

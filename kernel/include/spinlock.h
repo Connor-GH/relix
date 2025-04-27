@@ -9,7 +9,7 @@
 #undef __nonnull
 #endif
 
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 // Mutual exclusion lock.
 struct spinlock {
 	uint32_t locked; // Is the lock held?

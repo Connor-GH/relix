@@ -279,6 +279,12 @@ vga_scroll(uint32_t fb_width, uint32_t fb_height, uint8_t font_width,
 }
 
 void
+vga_reset_char_index(void)
+{
+	fb_char_index = 0;
+}
+
+void
 clear_cells(uint32_t x, uint32_t y, uint32_t x_len, uint32_t y_len,
 						uint8_t font_width, uint8_t font_height, uint32_t foreground,
 						uint32_t background, const bool (*font)[])

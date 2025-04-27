@@ -1,6 +1,6 @@
 #pragma once
 #if __KERNEL__
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdbool.h>

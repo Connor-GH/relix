@@ -38,9 +38,12 @@ ifneq ($(LLVM),)
 	LINKER_FLAGS = -fuse-ld=lld
 	WNOGCC =
 ifneq ($(ANALYZER),)
-	ANALYZER = --analyze
+	FUZZFLAGS = --analyze
 endif
 else
+ifneq ($(ANALYZER),)
+	FUZZFLAGS = -fanalyzer -Wno-analyzer-va-arg-type-mismatch
+endif
 	LLVM = 0
 	WNOGCC = -Wno-clobbered
 endif
@@ -52,7 +55,7 @@ WNOFLAGS = -Wno-unused-parameter -Wno-infinite-recursion -Wno-pointer-arith -Wno
 
 CFLAGS = -std=gnu11 -pipe -fno-pic -static -fno-builtin -ffreestanding \
 				 -fno-strict-aliasing -nostdlib -Og -ggdb -fno-omit-frame-pointer \
-				 -nostdinc $(ARCHNOFLAGS) $(WFLAGS) $(WNOFLAGS) $(WNOGCC) $(ANALYZER)
+				 -nostdinc $(ARCHNOFLAGS) $(WFLAGS) $(WNOFLAGS) $(WNOGCC) $(FUZZFLAGS)
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 RUSTFLAGS = -Ctarget-feature=-avx,-avx2,-sse,-sse2,-sse3,-ssse3,-sse4.1,-sse4.2 -Crelocation-model=static -Cpanic=abort -Copt-level=0 -Ccode-model=kernel -Cno-redzone=true -Cincremental=true -Cembed-bitcode=n -Cforce-unwind-tables=n -Ccodegen-units=1 -Csymbol-mangling-version=v0 -Zfunction-sections=n
 CARGO_FLAGS = -Zunstable-options --target x86_64-unknown-none
@@ -68,8 +71,8 @@ else
 endif
 ASFLAGS = -gdwarf-2 -Wa,-divide --mx86-used-note=no
 
-CFLAGS += -m64 -march=x86-64 -mcmodel=kernel -mtls-direct-seg-refs -DX86_64=1
-ASFLAGS += -m64 -march=x86-64 -mcmodel=kernel -mtls-direct-seg-refs -DX86_64=1
+CFLAGS += -m64 -march=x86-64 -mtls-direct-seg-refs -DX86_64=1
+ASFLAGS += -m64 -march=x86-64 -mtls-direct-seg-refs -DX86_64=1
 
 # FreeBSD ld wants ``elf_x86_64_fbsd''
 ifeq ($(HOST_OS),FreeBSD)

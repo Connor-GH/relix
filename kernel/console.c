@@ -20,7 +20,7 @@
 #include "x86.h"
 #include "kbd.h"
 #include "drivers/lapic.h"
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 #include "macros.h"
 
 extern size_t
@@ -224,19 +224,19 @@ __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...)
 __noreturn __cold void
 panic(const char *s)
 {
-	int i;
 	uintptr_t pcs[10];
 
 	cli();
 	cons.locking = 0;
+	vga_reset_char_index();
 	// use lapiccpunum so that we can call panic from mycpu()
-	uart_printf("lapicid %d: panic: ", lapicid());
-	uart_printf("%s", s);
-	uart_printf("\n");
+	vga_cprintf("\033[1;31mlapicid %d: panic: %s\n", lapicid(), s);
 	getcallerpcs(&s, pcs);
-	for (i = 0; i < 10; i++) {
-		uart_printf(" %#lx", pcs[i]);
+	vga_cprintf("Stack frames:\n");
+	for (int i = 0; i < 10; i++) {
+		vga_cprintf("#%d %#lx\n", i, pcs[i]);
 	}
+	vga_cprintf("\033[0m");
 	panicked = 1; // freeze other CPU
 #if !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wanalyzer-infinite-loop"
@@ -269,11 +269,6 @@ consputc(int c)
 static void
 consputc3(int c, uint32_t foreg, uint32_t backg)
 {
-	if (panicked) {
-		cli();
-		for (;;)
-			;
-	}
 
 	if (c == BACKSPACE) {
 		uartputc('\b');
@@ -300,6 +295,11 @@ void
 consoleintr(int (*getc)(void))
 {
 	int c, doprocdump = 0;
+	if (panicked) {
+		cli();
+		for (;;)
+			;
+	}
 
 	acquire(&cons.lock);
 	while ((c = getc()) >= 0) {

@@ -2,7 +2,6 @@
 # This code runs in user space, but the kernel needs to know about it.
 
 #include "syscall.h"
-#include "traps.h"
 
 
 # exec(init, argv)
@@ -12,13 +11,13 @@ start:
   mov $argv, %rsi
 	mov $envp, %rdx
   mov $SYS_execve, %rax
-  int $T_SYSCALL
+  syscall
 
 # for(;;) _exit(1);
 exit:
   mov $1, %rdi
   mov $SYS__exit, %rax
-  int $T_SYSCALL
+	syscall
   jmp exit
 
 .align 8

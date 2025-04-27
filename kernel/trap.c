@@ -144,6 +144,8 @@ trap(struct trapframe *tf)
 		break;
 	case T_ILLOP:
 		uart_printf("Illegal instruction\n");
+		uart_printf("from cpu %d rip %lx (cr2=%#lx)\n",
+			my_cpu_id(), tf->rip, rcr2());
 		if ((tf->cs & 3) == DPL_USER) {
 			kill(myproc()->killed, SIGILL);
 		} else {

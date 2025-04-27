@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <time.h>
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 extern volatile uint32_t *lapic;
 
 // Local APIC registers, divided by 4 for use as uint[] indices.

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdint.h>
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 #include "drivers/memlayout.h"
 #include "drivers/mmu.h"
 #include "spinlock.h"

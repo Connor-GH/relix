@@ -2,7 +2,7 @@
 #if __KERNEL__
 #include <stdint.h>
 #include "types.h"
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 
 void
 block_init(void);

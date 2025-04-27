@@ -7,7 +7,7 @@
 #include "vm.h"
 #include "fs.h"
 #include "msr.h"
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 #include "defs.h"
 #include "boot/multiboot2.h"
 #include "param.h"
@@ -325,7 +325,7 @@ copyout(uintptr_t *pgdir, uintptr_t va, void *p, size_t len)
  *
  */
 
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 #include "kernel/boot/multiboot2.h"
 #include "param.h"
 #include "stdint.h"
@@ -394,7 +394,6 @@ extern void *vectors[];
 void
 seginit(void)
 {
-	uint64_t addr;
 	void *local;
 	struct cpu *c;
 	uint32_t *idt = (uint32_t *)kalloc();
@@ -424,23 +423,30 @@ seginit(void)
 	c = &cpus[my_cpu_id()];
 	c->local = local;
 
+	c->self = c;
+	c->kernel_stack = 0;
+	c->user_stack = 0;
 	c->proc = NULL;
 
-	addr = (uint64_t)tss;
-	c->gdt_bits[0] = 0x0000000000000000LU;
+	uint64_t addr = (uint64_t)tss;
+	c->gdt_bits[SEG_NULL] = 0x0000000000000000LU;
 	c->gdt_bits[SEG_KCODE] = 0x0020980000000000LU; // Code, DPL=0, R/X
-	c->gdt_bits[SEG_UCODE] = 0x0020F80000000000LU; // Code, DPL=3, R/X
 	c->gdt_bits[SEG_KDATA] = 0x0000920000000000LU; // Data, DPL=0, W
-	c->gdt_bits[SEG_KCPU] = 0LU;
 	c->gdt_bits[SEG_UDATA] = 0x0000F20000000000LU; // Data, DPL=3, W
-	c->gdt_bits[SEG_TSS + 0] = (0x0067) | ((addr & 0xFFFFFF) << 16) |
-														 (0x00E9LL << 40) | (((addr >> 24) & 0xFF) << 56);
-	c->gdt_bits[SEG_TSS + 1] = (addr >> 32);
+	c->gdt_bits[SEG_UCODE] = 0x0020F80000000000LU; // Code, DPL=3, R/X
+	c->gdt_bits[SEG_TSS + 0] = (0x0067) /* segment limit */ |
+		((addr & 0xFFFFFF) << 16) /* base address 15:00 */ |
+		(((addr >> 16LU) & 0xFFLU) << 32LU) /* base address 23:16 */ |
+		/* (STS_T64A | (DPL_USER << 5) | (1 << 7)) , avl=0, granularity=0 */
+		(0x00E9LL << 40) |
+		(((addr >> 24) & 0xFF) << 56) /* address 31:24 */;
+	c->gdt_bits[SEG_TSS + 1] = (addr >> 32) & 0xFFFFFFFF /* address 63:32 */;
 	c->tss = tss;
 
 	lgdt((void *)c->gdt, sizeof(c->gdt));
 
 	ltr(SEG_TSS << 3);
+	syscall_init();
 }
 
 // The core relix code only knows about two levels of page tables,
@@ -522,11 +528,14 @@ switchuvm(struct proc *p)
 {
 	void *pml4;
 	struct taskstate64 *tss;
+
 	pushcli();
 	if (p->pgdir == NULL)
 		panic("switchuvm: no pgdir");
-	tss = (struct taskstate64 *)mycpu()->tss;
+	tss = mycpu()->tss;
 	tss_set_rsp(tss, 0, (uintptr_t)myproc()->kstack + KSTACKSIZE);
+	// Set for when we swapgs in syscalls.
+	mycpu()->kernel_stack = tss->rsp0;
 	pml4 = (void *)PTE_ADDR(p->pgdir[511]);
 	lcr3(v2p(pml4));
 	popcli();

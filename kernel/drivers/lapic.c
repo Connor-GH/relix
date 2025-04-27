@@ -8,7 +8,7 @@
 #include "x86.h"
 #include "memlayout.h"
 #include "stdbool.h"
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 #include "kernel_assert.h"
 #include "lapic.h"
 #include <string.h>

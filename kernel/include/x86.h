@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <stddef.h>
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 // Routines to let C code use special x86 instructions.
 
 static __always_inline double

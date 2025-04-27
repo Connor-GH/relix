@@ -14,7 +14,7 @@
 #include "macros.h"
 #include "vm.h"
 #include "drivers/mmu.h"
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 
 // count is argc/envc
 // vec is argv/envp

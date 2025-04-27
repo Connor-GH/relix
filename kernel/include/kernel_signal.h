@@ -67,7 +67,7 @@ struct sigaction {
 };
 
 #define SIG_ERR ((sighandler_t)-1) // Error
-#define SIG_DFL ((sighandler_t)-2) // Default action
+#define SIG_DFL ((sighandler_t)0) // Default action
 #define SIG_IGN ((sighandler_t)1) // Ignore
 
 #define SIG_SETMASK 1

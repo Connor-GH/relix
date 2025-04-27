@@ -7,8 +7,17 @@
 // This file contains definitions for the
 // x86 memory management unit (MMU).
 
-// Eflags register
-#define FL_IF 0x00000200 // Interrupt Enable
+// Rflags register
+#define FL_CARRY (1U << 0)
+#define FL_PARITY (1U << 2)
+#define FL_ADJUST (1U << 4)
+#define FL_ZERO (1U << 6)
+#define FL_SIGN (1U << 7)
+#define FL_TRAP (1U << 8)
+#define FL_IF (1U << 9) // Interrupt Enable
+#define FL_DIRECTION (1U << 10)
+#define FL_OVERFLOW (1U << 11)
+#define FL_IOPL (3U << 12)
 
 // Control Register flags
 #define CR0_PE 0x00000001 // Protection Enable
@@ -25,24 +34,18 @@
 
 #define CR4_PSE 0x00000010 // Page size extension
 
-#if X86_64
-#define SEG_KCODE 1 // kernel code
-#define SEG_KDATA 2 // kernel data+stack
-#define SEG_KCPU 3 // kernel per-cpu data
-#define SEG_UCODE 4 // user code
-#define SEG_UDATA 5 // user data+stack
-#define SEG_TSS 6 // this process's task state
-#define NSEGS 8
-#else
-// various segment selectors.
-#define SEG_KCODE 1 // kernel code
-#define SEG_KDATA 2 // kernel data+stack
-#define SEG_UCODE 3 // user code
-#define SEG_UDATA 4 // user data+stack
-#define SEG_TSS 5 // this process's task state
+#if X86_64 || __ASSEMBLER__
+// mycpu()->gdt holds these segments.
 
-// cpu->gdt[NSEGS] holds the above segments.
-#define NSEGS 6
+// various segment selectors.
+#define SEG_NULL 0U // NULL descriptor
+#define SEG_KCODE 1U // kernel code
+#define SEG_KDATA 2U // kernel data+stack
+#define SEG_UDATA 3U // user data+stack
+#define SEG_UCODE 4U // user code
+#define SEG_TSS 5U // this process's task state; takes up 2 slots.
+
+#define NSEGS 7U
 
 #endif
 #ifndef __ASSEMBLER__
@@ -94,6 +97,7 @@ struct segdesc {
 										(uintptr_t)(base) >> 24 }
 #endif
 
+#define DPL_KERNEL 0x0
 #define DPL_USER 0x3 // User DPL
 
 // Application segment type bits
@@ -102,9 +106,16 @@ struct segdesc {
 #define STA_R 0x2 // Readable (executable segments)
 
 // System segment type bits
-#define STS_T32A 0x9 // Available 32-bit TSS
-#define STS_IG32 0xE // 32-bit Interrupt Gate
-#define STS_TG32 0xF // 32-bit Trap Gate
+#if X86_64
+#define STS_RESERVED 0
+#define STS_LDT 0x2
+#define STS_T64A 0x9 // Available 64-bit TSS
+#define STS_T64B 0xB // Busy 64-bit TSS
+#define STS_CG64 0xC // 64-bit Call Gate
+#define STS_IG64 0xE // 64-bit Interrupt Gate
+#define STS_TG64 0xF // 64-bit Trap Gate
+#endif
+
 
 // A virtual address 'la' has a three-part structure as follows:
 //
@@ -165,8 +176,28 @@ struct segdesc {
 #ifndef __ASSEMBLER__
 typedef uintptr_t pte_t;
 
-// Task state segment format
-struct taskstate {
+struct taskstate64 {
+	uint32_t __reserved0;
+	uint64_t rsp0;
+	uint64_t rsp1;
+	uint64_t rsp2;
+	uint32_t __reserved1[2];
+	uint64_t ist1;
+	uint64_t ist2;
+	uint64_t ist3;
+	uint64_t ist4;
+	uint64_t ist5;
+	uint64_t ist6;
+	uint64_t ist7;
+	uint32_t __reserved2[2];
+	uint16_t __reserved3;
+	uint16_t iomb;
+} __attribute__((packed));
+
+_Static_assert(sizeof(struct taskstate64) == 104, "");
+
+// Task state segment format (32-bit).
+struct taskstate32 {
 	uint32_t link; // Old ts selector
 	uint32_t rsp0; // Stack pointers and segment selectors
 	uint16_t ss0; //   after an increase in privilege level

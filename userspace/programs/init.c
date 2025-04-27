@@ -56,7 +56,7 @@ execute_program(const char *program, char *const args[], char **env)
 		if (WIFEXITED(status)) {
 			printf("Child exited with status %d\n", WEXITSTATUS(status));
 		} else {
-			printf("Child did not terminate normally\n");
+			printf("Child did not terminate normally: %d\n", WEXITSTATUS(status));
 		}
 	}
 }

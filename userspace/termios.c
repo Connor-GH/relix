@@ -106,7 +106,7 @@ tcsendbreak(int fd, int len)
 
 	sleepytime.tv_sec = 0;
 	sleepytime.tv_usec = 400000;
-	if (ioctl(fd, TIOCSBRK, 0) == -1)
+	if (ioctl(fd, TIOCSBRK) == -1)
 		return -1;
 	// TODO:
 	// The BSD implementation puts this here
@@ -116,7 +116,7 @@ tcsendbreak(int fd, int len)
 #if 0
 	(void)select(0, 0, 0, 0, &sleepytime);
 #endif
-	if (ioctl(fd, TIOCCBRK, 0) == -1)
+	if (ioctl(fd, TIOCCBRK) == -1)
 		return -1;
 	return 0;
 }

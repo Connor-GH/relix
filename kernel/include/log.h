@@ -1,7 +1,7 @@
 #pragma once
 #if __KERNEL__
 #include <buf.h>
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 void
 initlog(dev_t dev);
 void

@@ -20,7 +20,9 @@ KERNEL_INC = $(IVARS) \
 						 -I$(KERNELDIR)/include \
 						 -I$(KERNELDIR)/drivers/include \
 						 -I$(KERNELDIR)/drivers \
-						 $(KERNEL_EXTRAS)
+							$(KERNEL_EXTRAS)
+
+KCFLAGS += -mcmodel=kernel
 
 
 include $(KERNELDIR)/boot/Makefile

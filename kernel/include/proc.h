@@ -20,9 +20,12 @@ struct cred {
 };
 
 struct cpu {
+	struct cpu *self;
+	uint64_t kernel_stack;
+	uint64_t user_stack;
 	uint8_t apicid; // Local APIC ID
 	struct context *scheduler; // swtch() here to enter scheduler
-	struct taskstate64 *tss; // Used by x86 to find stack for interrupt
+	struct taskstate64 *tss __attribute__((aligned(16))); // Used by x86 to find stack for interrupt
 	union {
 		struct segdesc gdt[NSEGS]; // x86 global descriptor table
 #if X86_64

@@ -182,9 +182,7 @@ sys_setgid(void)
 	uid_t gid;
 	if (argint(0, &gid) < 0)
 		return -EINVAL;
-	struct cred cred;
-	cred.gid = gid;
-	myproc()->cred = cred;
+	myproc()->cred.gid = gid;
 	return 0;
 }
 
@@ -197,9 +195,7 @@ sys_setuid(void)
 	uid_t uid;
 	if (argint(0, &uid) < 0)
 		return -EINVAL;
-	struct cred cred;
-	cred.uid = uid;
-	myproc()->cred = cred;
+	myproc()->cred.uid = uid;
 	return 0;
 }
 
@@ -231,10 +227,8 @@ sys_signal(void)
 {
 	int signum;
 	sighandler_t handler;
-	if (argint(0, &signum) < 0)
-		return -EINVAL;
-	if (argptr(1, (char **)&handler, sizeof(*handler)) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argint(0, &signum));
+	PROPOGATE_ERR(argptr(1, (char **)&handler, sizeof(*handler)));
 	return (size_t)kernel_attach_signal(signum, handler);
 }
 
@@ -275,5 +269,5 @@ sys_times(void)
 	if (argptr(0, (char **)&tms, sizeof(struct tms *)) < 0)
 		return -EFAULT;
 
-	return 1;
+	return -ENOSYS;
 }

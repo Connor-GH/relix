@@ -41,6 +41,8 @@ vga_init(struct multiboot_tag_framebuffer *tag, struct fb_rgb rgb,
 				 struct multiboot_tag_framebuffer_common common);
 void
 vga_write_char(int c, uint32_t foreground, uint32_t background);
+void
+vga_reset_char_index(void);
 // Raw pixel writing.
 void
 vga_write(uint32_t x, uint32_t y, uint32_t color);

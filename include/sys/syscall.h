@@ -1,10 +1,6 @@
 #pragma once
 #include "kernel/include/syscall.h"
 #undef __KERNEL__
-#include "kernel/include/traps.h"
-#define STRINGIFY(s) #s
-#define BOILERPLATE(s) STRINGIFY(s)
-#define SC_STRING BOILERPLATE(T_SYSCALL)
 
 #define __GET_MACRO(_0, _1, _2, _3, _4, _5, _6, x, ...) x
 #define syscall(...)                                                       \

@@ -12,7 +12,7 @@
 #include "buf.h"
 #include "ioapic.h"
 #include "console.h"
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 
 #define SECTOR_SIZE 512
 #define IDE_BSY 0x80

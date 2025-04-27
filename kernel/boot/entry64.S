@@ -23,8 +23,9 @@
  *
  */
 
-#include <multiboot2.h>
-#include <vga.h>
+#include "multiboot2.h"
+#include "vga.h"
+#include "msr.h"
 .code32
 .global mboot_header
 .global mboot_entry
@@ -111,8 +112,8 @@ entry32mp:
   bts $5, %eax
   mov %eax, %cr4
 
-# enable long mode - EFER.LME=1
-  mov $0xc0000080, %ecx
+# enable long mode - EFER.LME=1 (bit 8)
+  mov $MSR_EFER, %ecx
   rdmsr
   bts $8, %eax
   wrmsr

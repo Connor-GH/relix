@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <string.h>
 #include "drivers/mmu.h"
+#include "kernel_assert.h"
 #include "drivers/lapic.h"
 #include "defs.h"
 #include "param.h"
@@ -22,7 +23,7 @@
 #include "file.h"
 #include "fs.h"
 #include "trap.h"
-#include "compiler_attributes.h"
+#include "lib/compiler_attributes.h"
 #include "types.h"
 #include "kernel_signal.h"
 
@@ -55,6 +56,12 @@ int
 my_cpu_id(void)
 {
 	pushcli();
+	// This is a silly trick:
+	// mycpu() outputs a "struct cpu *"
+	// cpus is of type "struct cpu *"
+	// mycpu() returns an offset of cpus,
+	// i.e. (cpus + id)
+	// (cpus + id) - cpus == id.
 	int ret = mycpu() - cpus;
 	popcli();
 	return ret;
@@ -69,14 +76,16 @@ mycpu(void)
 	int apicid, i;
 
 	if (readrflags() & FL_IF)
-		panic("mycpu called with interrupts enabled\n");
+		panic("mycpu called with interrupts enabled");
 
 	apicid = lapicid();
 	// APIC IDs are not guaranteed to be contiguous. Maybe we should have
 	// a reverse map, or reserve a register to store &cpus[i].
 	for (i = 0; i < ncpu; ++i) {
-		if (cpus[i].apicid == apicid)
+		if (cpus[i].apicid == apicid) {
+			kernel_assert(cpus[i].apicid == i);
 			return &cpus[i];
+		}
 	}
 	// apicid is not familiar; we are probably in the early
 	// stages of booting. just use the first CPU for now.
@@ -85,7 +94,7 @@ mycpu(void)
 	pass++;
 	if (pass < 200000)
 		return &cpus[0];
-	panic("unknown apicid\n");
+	panic("unknown apicid");
 }
 
 // Disable interrupts so that we are not rescheduled
@@ -673,8 +682,9 @@ kernel_attach_signal(int signum, sighandler_t handler)
 	if (signum >= __SIG_last || signum < 0) {
 		return SIG_ERR;
 	} else {
+		sighandler_t old = myproc()->sig_handlers[signum];
 		myproc()->sig_handlers[signum] = handler;
-		return NULL;
+		return old;
 	}
 }
 

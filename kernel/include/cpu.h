@@ -24,6 +24,9 @@ enum FXSR {
 	// FPU fast xsave/xrestor
 	FFXSR = 1 << 1,
 };
+enum MISC_CPU_FEATURES {
+	LONG_MODE = 1 << 0,
+};
 typedef struct cpu_features_struct {
 	enum SSE sse;
 	enum AVX avx;
@@ -37,6 +40,7 @@ typedef struct cpu_features_struct {
 		};
 		uint32_t bits;
 	} fpu_misc;
+	enum MISC_CPU_FEATURES misc;
 } CpuFeatures;
 #define CPUID_EAX_GETFEATURES 1
 // from OSDEV wiki

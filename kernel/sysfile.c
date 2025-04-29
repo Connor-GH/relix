@@ -87,8 +87,7 @@ sys_dup(void)
 	struct file *f;
 	int fd;
 
-	if (argfd(0, NULL, &f) < 0)
-		return -1;
+	PROPOGATE_ERR(argfd(0, NULL, &f));
 	if ((fd = fdalloc(f)) < 0)
 		return -EBADF;
 	filedup(f);

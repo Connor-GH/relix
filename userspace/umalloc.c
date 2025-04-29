@@ -1,4 +1,3 @@
-#include "stdint.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,8 +14,8 @@ struct header {
 
 typedef struct header Header;
 
-static Header base;
-static Header *freep;
+static Header base = {NULL, 0};
+static Header *freep = NULL;
 
 void
 free(void *ap)

@@ -17,7 +17,7 @@ open(const char *pathname, int flags, ...)
 	} else {
 		mode = 0;
 	}
-	return __syscall3(SYS_open, (long)pathname, flags, mode);
+	return __syscall_ret(__syscall3(SYS_open, (long)pathname, flags, mode));
 }
 
 int
@@ -45,5 +45,5 @@ fcntl(int fd, int cmd, ...)
 		arg = NULL;
 		break;
 	}
-	return __syscall3(SYS_fcntl, fd, cmd, (long)arg);
+	return __syscall_ret(__syscall3(SYS_fcntl, fd, cmd, (long)arg));
 }

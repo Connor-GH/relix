@@ -385,8 +385,8 @@ syscall_do(void)
 		"popq %%rbp\n"
 		"popq %%rsi\n"
 		"popq %%rdi\n"
-		"popq %%r9\n"
 		"popq %%r8\n"
+		"popq %%r9\n"
 		"popq %%r10\n"
 		"popq %%r11\n"
 		"popq %%r12\n"
@@ -438,8 +438,12 @@ syscall(void)
 			yticks = ticks;
 			release(&tickslock);
 
-			cprintf("pid %d: syscall %s => %ld (%lu ticks)\n", curproc->pid,
+			cprintf("pid %d: syscall %s => %ld (%lu ticks)", curproc->pid,
 							syscall_names[num], curproc->tf->rax, yticks - xticks);
+			if ((signed)curproc->tf->rax < 0) {
+				cprintf(" \"%s\"", errno_codes[-(signed)curproc->tf->rax]);
+			}
+			cprintf("\n");
 		} else {
 			curproc->tf->rax = syscalls[num]();
 		}

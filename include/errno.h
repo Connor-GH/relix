@@ -45,7 +45,7 @@ extern int errno;
 #define ENOTEMPTY 39 /* Directory not empty */
 #define ELOOP 40 /* Too many symbolic links */
 #define MAX_ERRNO 40
-#if !defined(__KERNEL__) && !defined(__ASSEMBLER__)
+#if !defined(__ASSEMBLER__)
 static const char *const errno_codes[] = {
 	[0] = "Success",
 	[EPERM] = "Operation not permitted",

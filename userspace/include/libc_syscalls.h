@@ -1,121 +1,96 @@
 #pragma once
 #include <sys/syscall.h>
+#include "lib/compiler_attributes.h"
 
 extern int errno;
 
-#define __syscall0(num)                             \
-	({                                                \
-		long long __ret;                                \
-		__asm__ __volatile__("syscall"                  \
-												 : "=a"(__ret)              \
-												 : "a"(num)                 \
-												 : "rcx", "r11", "memory"); \
-		if (__ret < 0) {                                \
-			errno = -__ret;                               \
-			__ret = -1;                                   \
-		}                                               \
-		__ret;                                          \
-	})
+static __always_inline long
+__syscall_ret(unsigned long r)
+{
+	if (r > -4096UL) {
+		errno = -r;
+		return -1;
+	}
+	return r;
+}
 
-#define __syscall1(num, a1)                            \
-	({                                                   \
-		long long __ret;                                   \
-		register __typeof__(a1) __rdi __asm__("rdi") = a1; \
-		__asm__ __volatile__("syscall"                     \
-												 : "=a"(__ret)                 \
-												 : "a"(num), "r"(__rdi)        \
-												 : "rcx", "r11", "memory");    \
-		if (__ret < 0) {                                \
-			errno = -__ret;                               \
-			__ret = -1;                                   \
-		}                                               \
-		__ret;                                             \
-	})
-#define __syscall2(num, a1, a2)                        \
-	({                                                   \
-		long long __ret;                                   \
-		register __typeof__(a1) __rdi __asm__("rdi") = a1; \
-		register __typeof__(a2) __rsi __asm__("rsi") = a2; \
-		__asm__ __volatile__("syscall"                     \
-												 : "=a"(__ret)                 \
-												 : "a"(num), "r"(__rdi)        \
-												 : "rcx", "r11", "memory");    \
-		if (__ret < 0) {                                \
-			errno = -__ret;                               \
-			__ret = -1;                                   \
-		}                                               \
-		__ret;                                             \
-	})
-#define __syscall3(num, a1, a2, a3)                                     \
-	({                                                                    \
-		long long __ret;                                                    \
-		register __typeof__(a1) __rdi __asm__("rdi") = a1;                  \
-		register __typeof__(a2) __rsi __asm__("rsi") = a2;                  \
-		register __typeof__(a3) __rdx __asm__("rdx") = a3;                  \
-		__asm__ __volatile__("syscall"                                      \
-												 : "=a"(__ret)                                  \
-												 : "a"(num), "r"(__rdi), "r"(__rsi), "r"(__rdx) \
-												 : "rcx", "r11", "memory");                     \
-		if (__ret < 0) {                                \
-			errno = -__ret;                               \
-			__ret = -1;                                   \
-		}                                               \
-		__ret;                                                              \
-	})
-#define __syscall4(num, a1, a2, a3, a4)                                  \
-	({                                                                     \
-		long long __ret;                                                     \
-		register __typeof__(a1) __rdi __asm__("rdi") = a1;                   \
-		register __typeof__(a2) __rsi __asm__("rsi") = a2;                   \
-		register __typeof__(a3) __rdx __asm__("rdx") = a3;                   \
-		register __typeof__(a4) __r10 __asm__("r10") = a4;                   \
-		__asm__ __volatile__("syscall"                                       \
-												 : "=a"(__ret)                                   \
-												 : "a"(num), "r"(__rdi), "r"(__rsi), "r"(__rdx), \
-													 "r"(__r10),                                   \
-												 : "rcx", "r11", "memory");                      \
-		if (__ret < 0) {                                \
-			errno = -__ret;                               \
-			__ret = -1;                                   \
-		}                                               \
-		__ret;                                                               \
-	})
-#define __syscall5(num, a1, a2, a3, a4, a5)                              \
-	({                                                                     \
-		long long __ret;                                                     \
-		register __typeof__(a1) __rdi __asm__("rdi") = a1;                   \
-		register __typeof__(a2) __rsi __asm__("rsi") = a2;                   \
-		register __typeof__(a3) __rdx __asm__("rdx") = a3;                   \
-		register __typeof__(a4) __r10 __asm__("r10") = a4;                   \
-		register __typeof__(a5) __r8 __asm__("r8") = a5;                     \
-		__asm__ __volatile__("syscall"                                       \
-												 : "=a"(__ret)                                   \
-												 : "a"(num), "r"(__rdi), "r"(__rsi), "r"(__rdx), \
-													 "r"(__r10), "r"(__r8)                         \
-												 : "rcx", "r11", "memory");                      \
-		if (__ret < 0) {                                \
-			errno = -__ret;                               \
-			__ret = -1;                                   \
-		}                                               \
-		__ret;                                                               \
-	})
-#define __syscall6(num, a1, a2, a3, a4, a5, a6)                          \
-	({                                                                     \
-		long long __ret;                                                     \
-		register __typeof__(a1) __rdi __asm__("rdi") = a1;                   \
-		register __typeof__(a2) __rsi __asm__("rsi") = a2;                   \
-		register __typeof__(a3) __rdx __asm__("rdx") = a3;                   \
-		register __typeof__(a4) __r10 __asm__("r10") = a3;                   \
-		register __typeof__(a5) __r8 __asm__("r8") = a5;                     \
-		register __typeof__(a6) __r9 __asm__("r9") = a6;                     \
-		__asm__ __volatile__("syscall"                                       \
-												 : "=a"(__ret)                                   \
-												 : "a"(num), "r"(__rdi), "r"(__rsi), "r"(__rdx), \
-													 "r"(__r10), "r"(__r8), "r"(__r9)              \
-												 : "rcx", "r11", "memory");                      \
-		if (__ret < 0) {                                \
-			errno = -__ret;                               \
-			__ret = -1;                                   \
-		}                                               \
-		__ret;                                                               \
-	})
+static __always_inline long
+__syscall0(long n)
+{
+	unsigned long ret;
+	__asm__ __volatile__("syscall" : "=a"(ret) : "a"(n) : "rcx", "r11", "memory");
+	return ret;
+}
+
+static __always_inline long
+__syscall1(long n, long a1)
+{
+	unsigned long ret;
+	__asm__ __volatile__("syscall"
+											 : "=a"(ret)
+											 : "a"(n), "D"(a1)
+											 : "rcx", "r11", "memory");
+	return ret;
+}
+
+static __always_inline long
+__syscall2(long n, long a1, long a2)
+{
+	unsigned long ret;
+	__asm__ __volatile__("syscall"
+											 : "=a"(ret)
+											 : "a"(n), "D"(a1), "S"(a2)
+											 : "rcx", "r11", "memory");
+	return ret;
+}
+
+static __always_inline long
+__syscall3(long n, long a1, long a2, long a3)
+{
+	unsigned long ret;
+	__asm__ __volatile__("syscall"
+											 : "=a"(ret)
+											 : "a"(n), "D"(a1), "S"(a2), "d"(a3)
+											 : "rcx", "r11", "memory");
+	return ret;
+}
+
+static __always_inline long
+__syscall4(long n, long a1, long a2, long a3, long a4)
+{
+	unsigned long ret;
+	register long r10 __asm__("r10") = a4;
+	__asm__ __volatile__("syscall"
+											 : "=a"(ret)
+											 : "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10)
+											 : "rcx", "r11", "memory");
+	return ret;
+}
+
+static __always_inline long
+__syscall5(long n, long a1, long a2, long a3, long a4, long a5)
+{
+	unsigned long ret;
+	register long r10 __asm__("r10") = a4;
+	register long r8 __asm__("r8") = a5;
+	__asm__ __volatile__("syscall"
+											 : "=a"(ret)
+											 : "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10), "r"(r8)
+											 : "rcx", "r11", "memory");
+	return ret;
+}
+
+static __always_inline long
+__syscall6(long n, long a1, long a2, long a3, long a4, long a5, long a6)
+{
+	unsigned long ret;
+	register long r10 __asm__("r10") = a4;
+	register long r8 __asm__("r8") = a5;
+	register long r9 __asm__("r9") = a6;
+	__asm__ __volatile__("syscall"
+											 : "=a"(ret)
+											 : "a"(n), "D"(a1), "S"(a2), "d"(a3), "r"(r10), "r"(r8),
+												 "r"(r9)
+											 : "rcx", "r11", "memory");
+	return ret;
+}

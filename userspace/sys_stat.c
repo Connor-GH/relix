@@ -5,25 +5,25 @@
 int
 mknod(const char *pathname, mode_t mode, dev_t device)
 {
-	return __syscall3(SYS_mknod, (long)pathname, mode, device);
+	return __syscall_ret(__syscall3(SYS_mknod, (long)pathname, mode, device));
 }
 
 int
 mkdir(const char *pathname, mode_t mode)
 {
-	return __syscall2(SYS_mkdir, (long)pathname, mode);
+	return __syscall_ret(__syscall2(SYS_mkdir, (long)pathname, mode));
 }
 
 int
 stat(const char *restrict pathname, struct stat *restrict statbuf)
 {
-	return __syscall2(SYS_stat, (long)pathname, (long)statbuf);
+	return __syscall_ret(__syscall2(SYS_stat, (long)pathname, (long)statbuf));
 }
 
 int
 fstat(int fd, struct stat *restrict statbuf)
 {
-	return __syscall2(SYS_fstat, fd, (long)statbuf);
+	return __syscall_ret(__syscall2(SYS_fstat, fd, (long)statbuf));
 }
 
 // This should probably be moved into the kernel, because
@@ -40,19 +40,19 @@ lstat(const char *restrict n, struct stat *restrict st)
 int
 chmod(const char *pathname, mode_t mode)
 {
-	return __syscall2(SYS_chmod, (long)pathname, mode);
+	return __syscall_ret(__syscall2(SYS_chmod, (long)pathname, mode));
 }
 
 int
 fchmod(int fd, mode_t mode)
 {
-	return __syscall2(SYS_fchmod, fd, mode);
+	return __syscall_ret(__syscall2(SYS_fchmod, fd, mode));
 }
 
 mode_t
 umask(mode_t mask)
 {
-	return __syscall1(SYS_umask, mask);
+	return __syscall_ret(__syscall1(SYS_umask, mask));
 }
 
 int

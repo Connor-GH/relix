@@ -39,5 +39,5 @@ ioctl(int fd, unsigned long request, ...)
 		arg = NULL;
 		break;
 	}
-	return __syscall3(SYS_ioctl, fd, request, (long)arg);
+	return __syscall_ret(__syscall3(SYS_ioctl, fd, request, (long)arg));
 }

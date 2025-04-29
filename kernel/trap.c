@@ -60,6 +60,22 @@ decipher_page_fault_error_code(uint64_t error_code)
 		uart_printf("Caused by an SGX violation.\n");
 	}
 }
+
+void
+regdump(struct trapframe *tf)
+{
+	uart_printf("Register dump:\n");
+	uart_printf(
+		"rax = %#018lx rbx = %#018lx rcx = %#018lx rdx = %#018lx rsi = %#018lx\n"
+				 "rdi = %#018lx rsp = %#018lx rbp = %#018lx r8  = %#018lx r9  = %#018lx\n"
+				 "r10 = %#018lx r11 = %#018lx r12 = %#018lx r13 = %#018lx r14 = %#018lx\n"
+				 "r15 = %#018lx rip = %#018lx cs  = %#018lx ds  = %#018lx rfl = %#018lx\n"
+				 "err = %#018lx tno = %#018lx\n",
+
+							tf->rax, tf->rbx, tf->rcx, tf->rdx, tf->rsi, tf->rdi, tf->rsp,
+							tf->rbp, tf->r8, tf->r9, tf->r10, tf->r11, tf->r12, tf->r13,
+							tf->r14, tf->r15, tf->rip, tf->cs, tf->ds, tf->rflags, tf->err, tf->trapno);
+}
 static void
 decipher_error_code_nonpagefault(uint64_t error_code)
 {
@@ -88,8 +104,6 @@ decipher_error_code_nonpagefault(uint64_t error_code)
 	}
 	uart_printf("In the index: %lu\n", (error_code & 0x0000FFFF) >> 3);
 }
-
-
 
 void
 trap(struct trapframe *tf)
@@ -139,15 +153,22 @@ trap(struct trapframe *tf)
 	case T_IRQ0 + 7:
 	case T_IRQ0 + IRQ_SPURIOUS:
 		uart_printf("cpu%d: spurious interrupt at %#lx:%#lx\n", my_cpu_id(), tf->cs,
-						tf->rip);
+								tf->rip);
 		lapiceoi();
+		break;
+	case T_BRKPT:
+	case T_DEBUG:
+		uart_printf("cpu%d: breakpoint/trap at %#lx:%#lx\n", my_cpu_id(), tf->cs,
+								tf->rip);
+		regdump(tf);
+		kill(myproc()->pid, SIGTRAP);
 		break;
 	case T_ILLOP:
 		uart_printf("Illegal instruction\n");
-		uart_printf("from cpu %d rip %lx (cr2=%#lx)\n",
-			my_cpu_id(), tf->rip, rcr2());
+		uart_printf("from cpu %d rip %lx (cr2=%#lx)\n", my_cpu_id(), tf->rip,
+								rcr2());
 		if ((tf->cs & 3) == DPL_USER) {
-			kill(myproc()->killed, SIGILL);
+			kill(myproc()->pid, SIGILL);
 		} else {
 			panic("Illegal instruction in the kernel!");
 		}
@@ -155,14 +176,15 @@ trap(struct trapframe *tf)
 	case T_GPFLT:
 		uart_printf("General protection fault\n");
 		if ((tf->cs & 3) == DPL_USER) {
-			kill(myproc()->killed, SIGSEGV);
-			uart_printf("Process %s killed with SIGSEGV: sp=%#lx\n", myproc()->name, tf->rsp);
-			uart_printf("from cpu %d rip %lx (cr2=%#lx)\n",
-							my_cpu_id(), tf->rip, rcr2());
+			kill(myproc()->pid, SIGSEGV);
+			uart_printf("Process %s killed with SIGSEGV: sp=%#lx\n", myproc()->name,
+									tf->rsp);
+			uart_printf("from cpu %d rip %lx (cr2=%#lx)\n", my_cpu_id(), tf->rip,
+									rcr2());
 		} else {
 			uart_printf("BUG: General protection fault in the kernel!\n");
-			uart_printf("from cpu %d rip %lx (cr2=%#lx)\n",
-							my_cpu_id(), tf->rip, rcr2());
+			uart_printf("from cpu %d rip %lx (cr2=%#lx)\n", my_cpu_id(), tf->rip,
+									rcr2());
 			panic("kernel general protection fault");
 		}
 		break;
@@ -178,36 +200,39 @@ trap(struct trapframe *tf)
 		if ((tf->cs & DPL_USER) == 0) {
 			panic("trap");
 		} else {
-			uart_printf("Process %s killed with SIGSEGV: sp=%#lx\n", myproc()->name, tf->rsp);
+			uart_printf("Process %s killed with SIGSEGV\n", myproc()->name);
+			regdump(tf);
 			uintptr_t pcs[10];
 			getcallerpcs_with_bp(pcs, &tf->rbp, 10);
 			for (int i = 0; i < 10; i++)
-					uart_printf("%#lx ", pcs[i]);
-				uart_printf("\n");
+				uart_printf("%#lx ", pcs[i]);
+			uart_printf("\n");
 			kill(myproc()->pid, SIGSEGV);
 		}
 		break;
 	case T_DIVIDE:
-		uart_printf("%s[%d]: trap divide by zero error: %#lx\n", myproc()->name, myproc()->pid, tf->rip);
+		uart_printf("%s[%d]: trap divide by zero error: %#lx\n", myproc()->name,
+								myproc()->pid, tf->rip);
 		kill(myproc()->pid, SIGFPE);
 		break;
 	case T_SIMDERR:
 	case T_FPERR:
-		uart_printf("%s[%d]: floating point error: %#lx\n", myproc()->name, myproc()->pid, tf->rip);
+		uart_printf("%s[%d]: floating point error: %#lx\n", myproc()->name,
+								myproc()->pid, tf->rip);
 		kill(myproc()->pid, SIGFPE);
 		break;
 	default:
 		if (myproc() == NULL || (tf->cs & 3) == 0) {
 			// In kernel, it must be our mistake.
 			uart_printf("unexpected trap %ld from cpu %d rip %lx (cr2=%#lx)\n",
-							tf->trapno, my_cpu_id(), tf->rip, rcr2());
+									tf->trapno, my_cpu_id(), tf->rip, rcr2());
 			panic("trap");
 		}
 		// In user space, assume process misbehaved.
 		uart_printf("pid %d %s: trap %ld err %ld on cpu %d "
-						"rip %#lx addr %#lx--kill proc\n",
-						myproc()->pid, myproc()->name, tf->trapno, tf->err, my_cpu_id(),
-						tf->rip, rcr2());
+								"rip %#lx addr %#lx--kill proc\n",
+								myproc()->pid, myproc()->name, tf->trapno, tf->err, my_cpu_id(),
+								tf->rip, rcr2());
 		myproc()->killed = 1;
 	}
 

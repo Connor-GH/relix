@@ -95,8 +95,11 @@ closedir(DIR *dir)
 	while (dir->list != NULL && dir->list->next != NULL) {
 		dir->list = dir->list->next;
 	}
+
 	// Step back one level.
-	dir->list = dir->list->prev;
+	if (dir->list != NULL) {
+		dir->list = dir->list->prev;
+	}
 
 	// Start freeing the list.
 	while (dir->list->prev != NULL) {

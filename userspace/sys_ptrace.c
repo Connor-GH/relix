@@ -5,5 +5,5 @@
 int
 ptrace(char mask[static SYSCALL_AMT])
 {
-	return __syscall1(SYS_ptrace, (long)mask);
+	return __syscall_ret(__syscall1(SYS_ptrace, (long)mask));
 }

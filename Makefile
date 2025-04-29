@@ -71,7 +71,7 @@ else
 endif
 ASFLAGS = -gdwarf-2 -Wa,-divide --mx86-used-note=no
 
-CFLAGS += -m64 -march=x86-64 -mtls-direct-seg-refs -DX86_64=1
+CFLAGS += -m64 -march=x86-64 -mtls-direct-seg-refs -DX86_64=1 -D__relix__=1
 ASFLAGS += -m64 -march=x86-64 -mtls-direct-seg-refs -DX86_64=1
 
 # FreeBSD ld wants ``elf_x86_64_fbsd''

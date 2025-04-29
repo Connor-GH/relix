@@ -136,6 +136,14 @@ int
 argoff_t(int n, off_t *sp);
 int
 argmode_t(int n, mode_t *sp);
+int
+argdev_t(int n, dev_t *sp);
+int
+argpid_t(int n, pid_t *sp);
+int
+arguid_t(int n, uid_t *sp);
+int
+arggid_t(int n, gid_t *sp);
 
 int
 fetchint(uintptr_t, int *);

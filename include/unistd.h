@@ -68,7 +68,7 @@ int
 setgid(gid_t);
 
 void *
-sbrk(int);
+sbrk(intptr_t increment);
 unsigned int
 sleep(unsigned int);
 // needs sys/reboot

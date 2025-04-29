@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <errno.h>
 #include <sys/reboot.h>
+#include <sys/times.h>
 #include <time.h>
 #include <string.h>
 #include "x86.h"
@@ -21,8 +22,8 @@ size_t
 sys__exit(void)
 {
 	int status;
-	if (argint(0, &status) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argint(0, &status));
+
 	exit(status);
 	return 0; // not reached
 }
@@ -30,10 +31,9 @@ sys__exit(void)
 size_t
 sys_wait(void)
 {
-	// very strange: is this correct behavior?
 	int *status;
-	if (argptr(0, (char **)&status, 1) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argptr(0, (char **)&status, sizeof(*status)));
+
 	return wait(status);
 }
 
@@ -43,10 +43,9 @@ sys_kill(void)
 	pid_t pid;
 	int signal;
 
-	if (argint(0, &pid) < 0)
-		return -EINVAL;
-	if (argint(1, &signal) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argpid_t(0, &pid));
+	PROPOGATE_ERR(argint(1, &signal));
+
 	return kill(pid, signal);
 }
 
@@ -71,10 +70,10 @@ size_t
 sys_sbrk(void)
 {
 	uintptr_t addr;
-	uintptr_t n;
+	intptr_t n;
 
-	if (arguintptr_t(0, &n) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argintptr_t(0, &n));
+
 	addr = myproc()->sz;
 	PROPOGATE_ERR(growproc(n));
 	return addr;
@@ -86,8 +85,8 @@ sys_alarm(void)
 	unsigned int n;
 	time_t ticks0;
 
-	if (argunsigned_int(0, &n) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argunsigned_int(0, &n));
+
 	acquire(&tickslock);
 	ticks0 = ticks;
 	while (ticks - ticks0 < n) {
@@ -119,11 +118,7 @@ size_t
 sys_time(void)
 {
 	time_t *time;
-	if (argptr(0, (char **)&time, sizeof(*time)) < 0) {
-		// Not in the POSIX definition, but I am not sure of
-		// what to return in case we can't get the arg here.
-		return -EINVAL;
-	}
+	PROPOGATE_ERR(argptr(0, (char **)&time, sizeof(*time)));
 
 	time_t cur_time = rtc_now();
 	if (time != NULL) {
@@ -148,9 +143,7 @@ size_t
 sys_reboot(void)
 {
 	int cmd;
-	if (argint(0, &cmd) < 0) {
-		return -EINVAL;
-	}
+	PROPOGATE_ERR(argint(0, &cmd));
 
 	switch (cmd) {
 	case RB_POWER_OFF:
@@ -179,9 +172,9 @@ sys_setgid(void)
 	// cannot setuid if not root
 	if (myproc()->cred.gid != 0)
 		return -EPERM;
-	uid_t gid;
-	if (argint(0, &gid) < 0)
-		return -EINVAL;
+	gid_t gid;
+	PROPOGATE_ERR(arggid_t(0, &gid));
+
 	myproc()->cred.gid = gid;
 	return 0;
 }
@@ -193,8 +186,8 @@ sys_setuid(void)
 	if (myproc()->cred.uid != 0)
 		return -EPERM;
 	uid_t uid;
-	if (argint(0, &uid) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(arguid_t(0, &uid));
+
 	myproc()->cred.uid = uid;
 	return 0;
 }
@@ -216,8 +209,8 @@ size_t
 sys_ptrace(void)
 {
 	char *trace_ptr;
-	if (argptr(0, &trace_ptr, SYSCALL_AMT) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argptr(0, &trace_ptr, SYSCALL_AMT));
+
 	memmove(myproc()->ptrace_mask_ptr, trace_ptr, SYSCALL_AMT);
 	return 0;
 }
@@ -229,6 +222,7 @@ sys_signal(void)
 	sighandler_t handler;
 	PROPOGATE_ERR(argint(0, &signum));
 	PROPOGATE_ERR(argptr(1, (char **)&handler, sizeof(*handler)));
+
 	return (size_t)kernel_attach_signal(signum, handler);
 }
 
@@ -266,8 +260,7 @@ size_t
 sys_times(void)
 {
 	struct tms *tms;
-	if (argptr(0, (char **)&tms, sizeof(struct tms *)) < 0)
-		return -EFAULT;
+	PROPOGATE_ERR(argptr(0, (char **)&tms, sizeof(*tms)));
 
 	return -ENOSYS;
 }

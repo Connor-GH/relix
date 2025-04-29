@@ -88,8 +88,7 @@ sys_dup(void)
 	int fd;
 
 	PROPOGATE_ERR(argfd(0, NULL, &f));
-	if ((fd = fdalloc(f)) < 0)
-		return -EBADF;
+	PROPOGATE_ERR(fd = fdalloc(f));
 	filedup(f);
 	return fd;
 }
@@ -101,9 +100,12 @@ sys_read(void)
 	uint64_t n;
 	char *p;
 
-	// do not rearrange, because then 'n' will be undefined.
-	if (argfd(0, NULL, &f) < 0 || arguintptr_t(2, &n) < 0 || argptr(1, &p, n) < 0)
-		return -EINVAL;
+	// Do not rearrange, because then 'n' will be undefined.
+	// argptr() uses the value of n here, and it is only
+	// initialized after arguintptr_t() is run.
+	PROPOGATE_ERR(argfd(0, NULL, &f));
+	PROPOGATE_ERR(arguintptr_t(2, &n));
+	PROPOGATE_ERR(argptr(1, &p, n));
 	return fileread(f, p, n);
 }
 
@@ -114,8 +116,12 @@ sys_write(void)
 	uint64_t n;
 	char *p;
 
-	if (argfd(0, NULL, &f) < 0 || arguintptr_t(2, &n) < 0 || argptr(1, &p, n) < 0)
-		return -EINVAL;
+	// Do not rearrange, because then 'n' will be undefined.
+	// argptr() uses the value of n here, and it is only
+	// initialized after arguintptr_t() is run.
+	PROPOGATE_ERR(argfd(0, NULL, &f));
+	PROPOGATE_ERR(arguintptr_t(2, &n));
+	PROPOGATE_ERR(argptr(1, &p, n));
 	return filewrite(f, p, n);
 }
 
@@ -127,11 +133,10 @@ sys_writev(void)
 	int fd;
 	struct file *file;
 	ssize_t accumulated_bytes = 0;
-	if (argfd(0, &fd, &file) < 0 ||
-			argptr(1, (void *)&iovecs, sizeof(*iovecs)) < 0 ||
-			argint(2, &iovcnt) < 0) {
-		return -EINVAL;
-	}
+	PROPOGATE_ERR(argfd(0, &fd, &file));
+	PROPOGATE_ERR(argint(2, &iovcnt));
+	PROPOGATE_ERR(argptr(1, (void *)&iovecs, sizeof(*iovecs) * iovcnt));
+
 	for (int i = 0; i < iovcnt; i++) {
 		ssize_t ret = filewrite(file, iovecs->iov_base, iovecs->iov_len);
 		if (ret < 0)
@@ -145,9 +150,8 @@ sys_close(void)
 {
 	int fd;
 	struct file *f;
+	PROPOGATE_ERR(argfd(0, &fd, &f));
 
-	if (argfd(0, &fd, &f) < 0)
-		return -EINVAL;
 	myproc()->ofile[fd] = NULL;
 	fileclose(f);
 	return 0;
@@ -197,8 +201,8 @@ sys_link(void)
 	int retflag = EINVAL;
 	struct inode *dp, *ip;
 
-	if (argstr(0, &old) < 0 || argstr(1, &new) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argstr(0, &old));
+	PROPOGATE_ERR(argstr(1, &new));
 
 	begin_op();
 	if ((ip = namei(old)) == NULL) {
@@ -267,8 +271,7 @@ sys_unlink(void)
 	uint64_t off;
 	int error = EINVAL;
 
-	if (argstr(0, &path) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argstr(0, &path));
 
 	begin_op();
 	if ((dp = nameiparent(path, name)) == NULL) {
@@ -563,6 +566,8 @@ sys_open(void)
 
 	PROPOGATE_ERR(argstr(0, &path));
 	PROPOGATE_ERR(argint(1, &flags));
+	// Always pulled in because the libc wrapper
+	// sets it to zero if the flags that require it are not set.
 	PROPOGATE_ERR(argmode_t(2, &mode));
 	if (!(((flags & O_CREAT) == O_CREAT)) && !(((flags & O_TMPFILE) == O_TMPFILE))) {
 		mode = 0777; // mode is ignored.
@@ -582,9 +587,9 @@ sys_mkdir(void)
 	struct inode *ip;
 	mode_t mode;
 
-	if (argstr(0, &path) < 0 || argint(1, &mode) < 0) {
-		return -EINVAL;
-	}
+	PROPOGATE_ERR(argstr(0, &path));
+	PROPOGATE_ERR(argmode_t(1, &mode));
+
 	if (myproc() == NULL)
 		return -EAGAIN;
 	begin_op();
@@ -606,10 +611,10 @@ sys_mknod(void)
 	mode_t mode;
 	dev_t dev;
 
-	if ((argstr(0, &path)) < 0 || argint(1, &mode) < 0 ||
-			arguintptr_t(2, &dev) < 0) {
-		return -EINVAL;
-	}
+	PROPOGATE_ERR(argstr(0, &path));
+	PROPOGATE_ERR(argmode_t(1, &mode));
+	PROPOGATE_ERR(argdev_t(2, &dev));
+
 	begin_op();
 	if ((ip = create(path, mode, major(dev), minor(dev))) == 0) {
 		end_op();
@@ -627,8 +632,10 @@ sys_chdir(void)
 	struct inode *ip;
 	struct proc *curproc = myproc();
 
+	PROPOGATE_ERR(argstr(0, &path));
+
 	begin_op();
-	if (argstr(0, &path) < 0 || (ip = namei(path)) == 0) {
+	if ((ip = namei(path)) == 0) {
 		end_op();
 		return -EINVAL;
 	}
@@ -676,10 +683,10 @@ sys_execve(void)
 	uintptr_t uargv, uarg;
 	uintptr_t uenvp, uenv;
 
-	if (argstr(0, &path) < 0 || arguintptr_t(1, &uargv) < 0 ||
-			arguintptr_t(2, &uenvp) < 0) {
-		return -EINVAL;
-	}
+	PROPOGATE_ERR(argstr(0, &path));
+	PROPOGATE_ERR(arguintptr_t(1, &uargv));
+	PROPOGATE_ERR(arguintptr_t(2, &uenvp));
+
 	memset(argv, 0, sizeof(argv));
 	memset(envp, 0, sizeof(envp));
 	for (size_t i = 0;; i++) {
@@ -712,14 +719,13 @@ sys_execve(void)
 size_t
 sys_pipe(void)
 {
-	int *fd;
+	int fd[2];
 	struct file *rf, *wf;
 	int fd0, fd1;
 
-	if (argptr(0, (void *)&fd, 2 * sizeof(fd[0])) < 0)
-		return -EINVAL;
-	if (pipealloc(&rf, &wf) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argptr(0, (void *)&fd, sizeof(fd)));
+
+	PROPOGATE_ERR(pipealloc(&rf, &wf));
 	fd0 = -1;
 	if ((fd0 = fdalloc(rf)) < 0 || (fd1 = fdalloc(wf)) < 0) {
 		if (fd0 >= 0)
@@ -739,9 +745,11 @@ sys_chmod(void)
 	char *path;
 	mode_t mode;
 	struct inode *ip;
+	PROPOGATE_ERR(argstr(0, &path));
+	PROPOGATE_ERR(argmode_t(1, &mode));
+
 	begin_op();
-	if (argstr(0, &path) < 0 || argmode_t(1, &mode) < 0 ||
-			(ip = namei(path)) == NULL) {
+	if ((ip = namei(path)) == NULL) {
 		end_op();
 		return -EINVAL;
 	}
@@ -780,8 +788,8 @@ sys_symlink(void)
 	char dir[DIRSIZ];
 	uint64_t poff;
 	struct inode *eexist, *ip;
-	if (argstr(0, &target) < 0 || argstr(1, &linkpath) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argstr(0, &target));
+	PROPOGATE_ERR(argstr(1, &linkpath));
 
 	begin_op();
 	if ((eexist = namei(linkpath)) != NULL) {
@@ -821,10 +829,10 @@ sys_readlink(void)
 {
 	char *target, *ubuf;
 	size_t bufsize = 0;
-	if (argstr(0, &target) < 0 || argstr(1, &ubuf) < 0 ||
-			argsize_t(2, &bufsize) < 0) {
-		return -EINVAL;
-	}
+	PROPOGATE_ERR(argstr(0, &target));
+	PROPOGATE_ERR(argstr(1, &ubuf));
+	PROPOGATE_ERR(argsize_t(2, &bufsize));
+
 	struct inode *ip;
 	begin_op();
 	if ((ip = namei(target)) == NULL) {
@@ -893,9 +901,10 @@ sys_lseek(void)
 	int whence;
 	struct file *file;
 
-	if (argfd(0, &fd, &file) < 0 || argssize_t(1, &offset) < 0 ||
-			argint(2, &whence) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argfd(0, &fd, &file));
+	PROPOGATE_ERR(argoff_t(1, &offset));
+	PROPOGATE_ERR(argint(2, &whence));
+
 	if (S_ISFIFO(file->ip->mode) || S_ISSOCK(file->ip->mode))
 		return -ESPIPE;
 
@@ -909,8 +918,8 @@ sys_ioctl(void)
 	struct file *file;
 	unsigned long request;
 	uintptr_t uptr;
-	if (argfd(0, &fd, &file) < 0 || argunsigned_long(1, &request) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argfd(0, &fd, &file));
+	PROPOGATE_ERR(argunsigned_long(1, &request));
 
 	// The file needs to be a char device.
 	if (!S_ISCHR(file->ip->mode))
@@ -1079,11 +1088,13 @@ sys_mmap(void)
 	int prot, flags, fd;
 	struct file *file;
 	off_t offset;
-	if (argptr(0, (char **)&addr, sizeof(void *)) < 0 ||
-			argsize_t(1, &length) < 0 || argint(2, &prot) < 0 ||
-			argint(3, &flags) < 0 || argfd(4, &fd, &file) < 0 ||
-			argoff_t(5, &offset) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argptr(0, (char **)&addr, sizeof(void *)));
+	PROPOGATE_ERR(argsize_t(1, &length));
+	PROPOGATE_ERR(argint(2, &prot));
+	PROPOGATE_ERR(argint(3, &flags));
+	PROPOGATE_ERR(argfd(4, &fd, &file));
+	PROPOGATE_ERR(argoff_t(5, &offset));
+
 	if (length == 0)
 		return -EINVAL;
 	// We don't support MAP_PRIVATE or MAP_SHARED_VALIDATE for now.
@@ -1147,9 +1158,10 @@ sys_munmap(void)
 	size_t length;
 
 	struct proc *proc = myproc();
-	if (argptr(0, (char **)&addr, sizeof(void *)) < 0 ||
-			argsize_t(1, &length) < 0)
-		return -EINVAL;
+
+	PROPOGATE_ERR(argptr(0, (char **)&addr, sizeof(void *)));
+	PROPOGATE_ERR(argsize_t(1, &length));
+
 	if (length == 0)
 		return -EINVAL;
 	int j = -1;
@@ -1177,8 +1189,7 @@ sys_fsync(void)
 {
 	int fd;
 	struct file *file;
-	if (argfd(0, &fd, &file) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(argfd(0, &fd, &file));
 
 	if (fd == 0 || fd == 1 || fd == 2) {
 		if (fd == 0)
@@ -1211,9 +1222,9 @@ sys_rename(void)
 	struct inode *ip1, *ip2;
 	struct dirent de;
 	char newelem[DIRSIZ];
-	if (argstr(0, &oldpath_) < 0 || argstr(1, &newpath_) < 0) {
-		return -EINVAL;
-	}
+
+	PROPOGATE_ERR(argstr(0, &oldpath_));
+	PROPOGATE_ERR(argstr(1, &newpath_));
 	// argstr wants a mutable char *, but our arguments are const.
 	// we cast them back here.
 	const char *oldpath = oldpath_;

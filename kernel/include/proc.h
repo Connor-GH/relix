@@ -110,7 +110,7 @@ exit(int) __attribute__((noreturn));
 pid_t
 fork(bool virtual);
 int
-growproc(int);
+growproc(intptr_t);
 int
 kill(pid_t, int);
 struct cpu *

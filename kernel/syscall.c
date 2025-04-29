@@ -97,6 +97,8 @@ SYSCALL_ARG_N(ssize_t);
 SYSCALL_ARG_N(size_t);
 SYSCALL_ARG_N(off_t);
 SYSCALL_ARG_N(mode_t);
+SYSCALL_ARG_N(dev_t);
+SYSCALL_ARG_N(pid_t);
 
 // Fetch the nth word-sized system call argument as a pointer
 // to a block of memory of size bytes.  Check that the pointer
@@ -107,8 +109,7 @@ argptr(int n, char **pp, int size)
 	uintptr_t ptr;
 	struct proc *curproc = myproc();
 
-	if (arguintptr_t(n, &ptr) < 0)
-		return -EINVAL;
+	PROPOGATE_ERR(arguintptr_t(n, &ptr));
 
 	if (size < 0 || ((uintptr_t)ptr >= curproc->effective_largest_sz ||
 									 (uintptr_t)ptr + size > curproc->effective_largest_sz)) {
@@ -126,8 +127,8 @@ ssize_t
 argstr(int n, char **pp)
 {
 	uintptr_t addr;
-	if (arguintptr_t(n, &addr) < 0)
-		return -1;
+	PROPOGATE_ERR(arguintptr_t(n, &addr));
+
 	return fetchstr(addr, pp);
 }
 

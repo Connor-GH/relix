@@ -51,7 +51,7 @@ bad:
 		fileclose(*f0);
 	if (*f1)
 		fileclose(*f1);
-	return -1;
+	return -ENOMEM;
 }
 
 void

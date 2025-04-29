@@ -100,7 +100,7 @@ getppid(void)
 }
 
 void *
-sbrk(int increment)
+sbrk(intptr_t increment)
 {
 	return (void *)__syscall_ret(__syscall1(SYS_sbrk, increment));
 }

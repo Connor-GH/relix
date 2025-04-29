@@ -214,7 +214,7 @@ userinit(void)
 // Grow current process's memory by n bytes.
 // Return 0 on success, -1 on failure.
 int
-growproc(int n)
+growproc(intptr_t n)
 {
 	uintptr_t sz;
 	struct proc *curproc = myproc();

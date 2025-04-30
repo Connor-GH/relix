@@ -21,6 +21,7 @@
 #define __release(x)
 #endif
 #define __always_inline inline __attribute__((__always_inline__))
+#define __must_check_return_value __attribute__((warn_unused_result))
 // this function does not get called often.
 #define __cold __attribute__((__cold__))
 // every input always has the same output. aka, a->a', b->b', b->NOT a'

@@ -4,7 +4,6 @@
 // user code, and calls into file.c and fs.c.
 //
 
-#include "lib/compiler_attributes.h"
 #include "fb.h"
 #include "fcntl_constants.h"
 #include "memlayout.h"
@@ -37,13 +36,9 @@
 #include "kalloc.h"
 #include "mman.h"
 #include "pipe.h"
-#include "lib/ring_buffer.h"
 #include <string.h>
-#include "drivers/lapic.h"
 #include "vm.h"
 
-static struct inode *
-link_dereference(struct inode *ip, char *buff);
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
@@ -62,23 +57,6 @@ argfd(int n, int *pfd, struct file **pf)
 	if (pf)
 		*pf = f;
 	return 0;
-}
-
-// Allocate a file descriptor for the given file.
-// Takes over file reference from caller on success.
-static int
-fdalloc(struct file *f)
-{
-	int fd;
-	struct proc *curproc = myproc();
-
-	for (fd = 0; fd < NOFILE; fd++) {
-		if (curproc->ofile[fd] == NULL) {
-			curproc->ofile[fd] = f;
-			return fd;
-		}
-	}
-	return -EMFILE;
 }
 
 size_t
@@ -153,8 +131,7 @@ sys_close(void)
 	PROPOGATE_ERR(argfd(0, &fd, &f));
 
 	myproc()->ofile[fd] = NULL;
-	fileclose(f);
-	return 0;
+	return fileclose(f);
 }
 
 size_t
@@ -324,238 +301,6 @@ bad:
 	return -error;
 }
 
-// Holds lock on ip when released.
-static struct inode *
-create(char *path, mode_t mode, short major, short minor)
-{
-	struct inode *ip, *dp;
-	char name[DIRSIZ];
-
-	// POSIX says that creat(2) makes an IFREG if IFMT is 0.
-	if ((mode & S_IFMT) == 0)
-		mode |= S_IFREG;
-
-	// get inode of path, and put the name in name.
-	if ((dp = nameiparent(path, name)) == NULL)
-		return NULL;
-	inode_lock(dp);
-
-	// /dp/name is present
-	if ((ip = dirlookup(dp, name, NULL)) != NULL) {
-		inode_unlockput(dp);
-		inode_lock(ip);
-		if (S_ISREG(ip->mode) && S_ISREG(mode)) {
-			ip->mode = mode;
-			return ip;
-		}
-		if (S_ISLNK(ip->mode) && S_ISLNK(mode)) {
-			ip->mode = mode;
-			return ip;
-		}
-		if (S_ISFIFO(ip->mode) && S_ISFIFO(mode)) {
-			ip->mode = mode;
-			return ip;
-		}
-		inode_unlockput(ip);
-		return NULL;
-	}
-
-	if ((ip = inode_alloc(dp->dev, mode)) == NULL)
-		panic("create: inode_alloc");
-
-	inode_lock(ip);
-	ip->major = major;
-	ip->minor = minor;
-	ip->nlink = 1;
-	ip->mode = mode;
-	ip->gid = DEFAULT_GID;
-	ip->uid = DEFAULT_UID;
-	ip->flags = 0;
-	// atime, mtime, etc. get handled in inode_update()
-	inode_update(ip);
-	// Create . and .. entries.
-	// because every directory goes as follows:
-	// $ ls -l
-	// .
-	// ..
-	// dir/
-	// $ cd dir
-	// $ ls -l
-	// .
-	// ..
-	if (S_ISDIR(mode)) {
-		dp->nlink++; // for ".."
-		inode_update(dp);
-		// No ip->nlink++ for ".": avoid cyclic ref count.
-		if (dirlink(ip, ".", ip->inum) < 0 || dirlink(ip, "..", dp->inum) < 0)
-			panic("create dots");
-	}
-
-	if (dirlink(dp, name, ip->inum) < 0)
-		panic("create: dirlink");
-
-	inode_unlockput(dp);
-
-	return ip;
-}
-
-int
-fileopen(char *path, int flags, mode_t mode)
-{
-	int fd;
-	struct file *f;
-	struct inode *ip;
-
-	if (path == NULL)
-		return -EFAULT;
-
-	begin_op();
-
-	if ((flags & O_CREATE) == O_CREATE) {
-		// try to create a file and it exists.
-		if ((ip = namei(path)) != NULL) {
-			// if it's a char device, possibly do something special.
-			inode_lock(ip);
-			if (S_ISCHR(ip->mode)) {
-				goto get_fd;
-			}
-			// if it's not a char device, just exit.
-			inode_unlockput(ip);
-			end_op();
-			return -EEXIST;
-		}
-		// create() holds a lock on this inode pointer,
-		// but only if it succeeds.
-		ip = create(path, mode, 0, 0);
-		if (ip == NULL) {
-			end_op();
-			return -EIO;
-		}
-	} else {
-		if ((ip = namei(path)) == NULL) {
-			end_op();
-			return -ENOENT;
-		}
-		inode_lock(ip);
-		ip->flags = flags;
-
-		if (S_ISLNK(ip->mode)) {
-			if ((ip = link_dereference(ip, path)) == NULL) {
-				inode_unlockput(ip);
-				end_op();
-				return -EINVAL;
-			}
-		}
-		if (S_ISDIR(ip->mode) && ((flags & O_ACCMODE) != O_RDONLY)) {
-			inode_unlockput(ip);
-			end_op();
-			return -EISDIR;
-		}
-		if (S_ISCHR(ip->mode)) {
-			if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].open) {
-				inode_unlockput(ip);
-				end_op();
-				return -ENODEV;
-			}
-			// Run device-specific opening code, if any.
-			devsw[ip->major].open(ip->minor, flags);
-		}
-	}
-	if (S_ISFIFO(ip->mode) && (flags & O_NONBLOCK) != O_NONBLOCK) {
-		if (ip->rf == NULL && ip->wf == NULL) {
-			if (pipealloc(&ip->rf, &ip->wf) < 0) {
-				inode_unlockput(ip);
-				end_op();
-				return -1;
-			}
-			ip->rf->type = FD_FIFO;
-			ip->wf->type = FD_FIFO;
-			ip->rf->ip = ip;
-			ip->wf->ip = ip;
-
-			// As explained in pipealloc, writing to one pipe
-			// affects the other one because they are pointing
-			// to the same one. For example, writing to rf's
-			// pipe changes wf's pipe.
-			ip->rf->pipe->writeopen = 0;
-			ip->rf->pipe->readopen = 0;
-		}
-		if ((flags & O_ACCMODE) == O_WRONLY) {
-			// O_WRONLY is special for FIFOs.
-			// If there is no reader open, then we
-			// have to exit with this errno value.
-			if (ip->wf->pipe->readopen == 0) {
-				inode_unlock(ip);
-				end_op();
-				return -ENXIO;
-			}
-
-			ip->wf->pipe->writeopen++;
-			ip->wf->ref++;
-
-			if ((fd = fdalloc(ip->wf)) < 0) {
-				inode_unlock(ip);
-				end_op();
-				return fd;
-			}
-			inode_unlock(ip);
-			acquire(&(ip->wf->pipe)->lock);
-			while (!(ip->wf->pipe)->readopen) {
-				wakeup(&(ip->wf->pipe)->ring_buffer->nread);
-				sleep(&(ip->wf->pipe)->ring_buffer->nwrite, &(ip->wf->pipe)->lock);
-			}
-			wakeup(&(ip->wf->pipe)->ring_buffer->nread);
-			release(&(ip->wf->pipe)->lock);
-
-			end_op();
-			return fd;
-
-		} else if ((flags & O_ACCMODE) == O_RDONLY) {
-			ip->rf->pipe->readopen++;
-			ip->rf->ref++;
-			if ((fd = fdalloc(ip->rf)) < 0) {
-				inode_unlock(ip);
-				end_op();
-				return fd;
-			}
-			inode_unlock(ip);
-
-			acquire(&(ip->rf->pipe)->lock);
-			// Wait for a write side to be opened.
-			// Skips around and goes into the scheduler to avoid spinning on this.
-			while (!(ip->rf->pipe)->writeopen) {
-				wakeup(&(ip->rf->pipe)->ring_buffer->nwrite);
-				sleep(&(ip->rf->pipe)->ring_buffer->nread, &(ip->rf->pipe)->lock);
-			}
-			wakeup(&(ip->rf->pipe)->ring_buffer->nwrite);
-			release(&(ip->rf->pipe)->lock);
-
-			end_op();
-			return fd;
-		}
-	}
-	// By this line, both branches above are holding a lock to ip.
-	// That is why it is released down here.
-get_fd:
-
-	if ((f = filealloc()) == NULL || (fd = fdalloc(f)) < 0) {
-		if (f)
-			fileclose(f);
-		inode_unlockput(ip);
-		end_op();
-		return -EBADF;
-	}
-	inode_unlock(ip);
-	end_op();
-
-	f->type = FD_INODE;
-	f->ip = ip;
-	f->off = (flags & O_APPEND) ? f->ip->size : 0;
-	f->readable = !((flags & O_ACCMODE) == O_WRONLY);
-	f->writable = ((flags & O_ACCMODE) == O_WRONLY) ||
-								((flags & O_ACCMODE) == O_RDWR);
-	return fd;
-}
 
 size_t
 sys_open(void)
@@ -593,7 +338,7 @@ sys_mkdir(void)
 	if (myproc() == NULL)
 		return -EAGAIN;
 	begin_op();
-	if ((ip = create(path, (S_IFDIR | mode) & ~myproc()->umask, 0, 0)) == NULL) {
+	if ((ip = filecreate(path, (S_IFDIR | mode) & ~myproc()->umask, 0, 0)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
@@ -616,7 +361,7 @@ sys_mknod(void)
 	PROPOGATE_ERR(argdev_t(2, &dev));
 
 	begin_op();
-	if ((ip = create(path, mode, major(dev), minor(dev))) == 0) {
+	if ((ip = filecreate(path, mode, major(dev), minor(dev))) == 0) {
 		end_op();
 		return -ENOENT;
 	}
@@ -730,8 +475,10 @@ sys_pipe(void)
 	if ((fd0 = fdalloc(rf)) < 0 || (fd1 = fdalloc(wf)) < 0) {
 		if (fd0 >= 0)
 			myproc()->ofile[fd0] = NULL;
-		fileclose(rf);
-		fileclose(wf);
+		// Ignore the return value here so that
+		// we can get a more accurate errno.
+		(void)fileclose(rf);
+		(void)fileclose(wf);
 		return -EBADF;
 	}
 	fd[0] = fd0;
@@ -811,7 +558,7 @@ sys_symlink(void)
 	}
 	inode_unlock(eexist);
 
-	if ((ip = create(linkpath, S_IFLNK | S_IAUSR, 0, 0)) == NULL) {
+	if ((ip = filecreate(linkpath, S_IFLNK | S_IAUSR, 0, 0)) == NULL) {
 		end_op();
 		return -ENOSPC;
 	}
@@ -862,35 +609,6 @@ sys_readlink(void)
 	inode_unlock(ip);
 	end_op();
 	return 0;
-}
-
-// Follows a symbolic link until we either resolve it or recurse too much.
-// Caller must hold lock.
-// On success, we return a new locked inode, unlocking the first one.
-// On failure, we return NULL, and the inode is no longer locked.
-struct inode *
-link_dereference(struct inode *ip, char *buff) __must_hold(&ip->lock)
-{
-	int ref_count = NLINK_DEREF;
-	struct inode *new_ip = ip;
-	while (S_ISLNK(new_ip->mode)) {
-		ref_count--;
-		if (ref_count == 0)
-			goto bad;
-
-		if (inode_read(new_ip, buff, 0, new_ip->size) < 0)
-			goto bad;
-
-		inode_unlock(new_ip);
-
-		if ((new_ip = namei(buff)) == NULL)
-			goto bad;
-		inode_lock(new_ip);
-	}
-	return new_ip;
-bad:
-	inode_unlock(new_ip);
-	return NULL;
 }
 
 size_t
@@ -1080,6 +798,7 @@ mmap_prot_to_perm(int prot)
 	}
 	return ret;
 }
+
 size_t
 sys_mmap(void)
 {

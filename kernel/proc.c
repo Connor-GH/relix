@@ -317,7 +317,10 @@ exit(int status)
 	// Close all open files.
 	for (fd = 0; fd < NOFILE; fd++) {
 		if (curproc->ofile[fd]) {
-			fileclose(curproc->ofile[fd]);
+			// It is not possible for exit to
+			// set errno, so we ignore this
+			// return value.
+			(void)fileclose(curproc->ofile[fd]);
 			curproc->ofile[fd] = NULL;
 		}
 	}

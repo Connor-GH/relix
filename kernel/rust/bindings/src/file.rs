@@ -131,7 +131,7 @@ pub type _bindgen_ty_1 = ::core::ffi::c_uint;
 
 unsafe extern "C" {
     pub fn filealloc() -> *mut file;
-    pub fn fileclose(arg1: *mut file);
+    pub fn fileclose(arg1: *mut file) -> ::core::ffi::c_int;
     pub fn fileopen(
         path: *mut ::core::ffi::c_char,
         omode: ::core::ffi::c_int,

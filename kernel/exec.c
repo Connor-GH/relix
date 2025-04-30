@@ -220,7 +220,7 @@ ok:
 #if 0
 	for (int j = 0; j < NOFILE; j++) {
 		if (curproc->ofile[j] != NULL && curproc->ofile[j]->flags == FD_CLOEXEC) {
-			fileclose(curproc->ofile[j]);
+			(void)fileclose(curproc->ofile[j]);
 		}
 	}
 #endif

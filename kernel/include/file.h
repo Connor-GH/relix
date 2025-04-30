@@ -51,10 +51,24 @@ _Static_assert(__DEVSW_last <= NDEV, "Too many devices; adjust NDEV in param.h")
 #if __KERNEL__
 extern struct devsw devsw[];
 
+// Helper functions for file manipulation that
+// sysfile.c might like.
 struct file *
 filealloc(void);
-void
+int
+fdalloc(struct file *f);
+struct inode *
+link_dereference(struct inode *ip, char *buff) __must_hold(&ip->lock);
+struct file *
+fd_to_struct_file(int fd);
+char *
+inode_to_path(char *buf, size_t n, struct inode *ip);
+
+// Generalized functions for file operations.
+int
 fileclose(struct file *);
+struct inode *
+filecreate(char *path, mode_t mode, short major, short minor);
 int
 fileopen(char *path, int flags, mode_t mode);
 struct file *
@@ -69,9 +83,6 @@ ssize_t
 filewrite(struct file *, char *, uint64_t n);
 off_t
 fileseek(struct file *f, off_t offset, int whence);
-struct file *
-fd_to_struct_file(int fd);
-char *
-inode_to_path(char *buf, size_t n, struct inode *ip);
+
 #endif
 #endif // !_FILE_H

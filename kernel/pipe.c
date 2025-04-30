@@ -47,10 +47,12 @@ bad:
 		ring_buffer_destroy(p->ring_buffer, kfree);
 		kfree(p);
 	}
+	// We ignore the return values here
+	// because we are erroring anyway.
 	if (*f0)
-		fileclose(*f0);
+		(void)fileclose(*f0);
 	if (*f1)
-		fileclose(*f1);
+		(void)fileclose(*f1);
 	return -ENOMEM;
 }
 

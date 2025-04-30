@@ -136,6 +136,7 @@
 #define PF_R 0x4
 #define PF_MASKPROC 0xf0000000
 
+// Standard types
 #define PT_NULL 0
 #define PT_LOAD 1
 #define PT_DYNAMIC 2
@@ -148,6 +149,9 @@
 #define PT_HIOS 0x6fffffff
 #define PT_LOPROC 0x70000000
 #define PT_HIPROC 0x7fffffff
+
+#define PT_GNU_EH_FRAME 0x6474e550
+#define PT_GNU_PROPERTY 0x6474e553
 
 #define SHN_UNDEF 0
 #define SHN_LORESERVE 0xff00

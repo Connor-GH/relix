@@ -413,9 +413,14 @@ fileread(struct file *f, char *addr, uint64_t n)
 		return piperead(f->pipe, addr, n);
 	} else if (f->type == FD_INODE) {
 		inode_lock(f->ip);
-		if ((r = inode_read(f->ip, addr, f->off, n)) > 0)
-			f->off += r;
+		r = inode_read(f->ip, addr, f->off, n);
 		inode_unlock(f->ip);
+		if (r < 0)
+			return r;
+
+		// We have read this many bytes, so
+		// increase the offset.
+		f->off += r;
 		return r;
 	}
 	panic("fileread");
@@ -463,15 +468,20 @@ filewrite(struct file *f, char *addr, uint64_t n)
 			if (n1 > max)
 				n1 = max;
 
+			// begin_op()/end_op() is here because
+			// we only need to setup the log
+			// in the event of a write.
 			begin_op();
 			inode_lock(f->ip);
-			if ((r = inode_write(f->ip, addr + i, f->off, n1)) > 0)
-				f->off += r;
+			r = inode_write(f->ip, addr + i, f->off, n1);
 			inode_unlock(f->ip);
 			end_op();
 
 			if (r < 0)
-				break;
+				return r;
+
+			f->off += r;
+
 			if (r != n1)
 				panic("short filewrite");
 			i += r;
@@ -488,8 +498,7 @@ name_of_inode(struct inode *ip, struct inode *parent, char buf[static DIRSIZ],
 	off_t off;
 	struct dirent de;
 	for (off = 0; off < parent->size; off += sizeof(de)) {
-		if (inode_read(parent, (char *)&de, off, sizeof(de)) != sizeof(de))
-			panic("name_of_inode: can't read dir entry");
+		PROPOGATE_ERR(inode_read(parent, (char *)&de, off, sizeof(de)));
 		if (de.d_ino == ip->inum) {
 			strncpy(buf, de.d_name, n - 1);
 			return 0;

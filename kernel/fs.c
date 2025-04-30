@@ -15,6 +15,7 @@
 #include <dirent.h>
 #include <time.h>
 #include <errno.h>
+#include <stdckdint.h>
 #include <stdatomic.h>
 #include "fs.h"
 #include "param.h"
@@ -576,7 +577,8 @@ inode_read(struct inode *ip, char *dst, off_t off, uint64_t n) __must_hold(&ip->
 		return devsw[ip->major].read(ip->minor, ip, dst, n);
 	}
 
-	if (off > ip->size || off + n < off)
+	off_t result;
+	if (off > ip->size || ckd_add(&result, off, n))
 		return -EDOM;
 	if (off + n > ip->size)
 		n = ip->size - off;
@@ -608,7 +610,8 @@ inode_write(struct inode *ip, char *src, off_t off, uint64_t n) __must_hold(&ip-
 		return devsw[ip->major].write(ip->minor, ip, src, n);
 	}
 
-	if (off > ip->size || off + n < off)
+	off_t result;
+	if (off > ip->size || ckd_add(&result, off, n))
 		return -EDOM;
 	if (off + n > MAXFILE * BSIZE)
 		return -EDOM;
@@ -653,7 +656,7 @@ dirlookup(struct inode *dp, const char *name, uint64_t *poff) __must_hold(&dp->l
 		panic("dirlookup not DIR");
 
 	for (uint64_t off = 0; off < dp->size; off += sizeof(de)) {
-		if (inode_read(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+		if (inode_read(dp, (char *)&de, off, sizeof(de)) < 0)
 			panic("dirlookup read");
 		if (de.d_ino == 0)
 			continue;
@@ -666,7 +669,7 @@ dirlookup(struct inode *dp, const char *name, uint64_t *poff) __must_hold(&dp->l
 		}
 	}
 
-	return 0;
+	return NULL;
 }
 
 // Write a new directory entry (name, inum) into the directory dp.
@@ -680,9 +683,9 @@ dirlink(struct inode *dp, const char *name, uint32_t inum)
 	struct inode *ip;
 
 	// Check that name is not present.
-	if ((ip = dirlookup(dp, name, 0)) != 0) {
+	if ((ip = dirlookup(dp, name, 0)) != NULL) {
 		inode_put(ip);
-		return -1;
+		return -EEXIST;
 	}
 	if (inum == last_inum) {
 		if (last_offset_from_inum + sizeof(de) < dp->size) {
@@ -693,7 +696,7 @@ dirlink(struct inode *dp, const char *name, uint32_t inum)
 	}
 	// Look for an empty dirent.
 	for (; off < dp->size; off += sizeof(de)) {
-		if (inode_read(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+		if (inode_read(dp, (char *)&de, off, sizeof(de)) < 0)
 			panic("dirlink read");
 		if (de.d_ino == 0) {
 			last_offset_from_inum = off;
@@ -703,7 +706,7 @@ dirlink(struct inode *dp, const char *name, uint32_t inum)
 
 	strncpy(de.d_name, name, DIRSIZ);
 	de.d_ino = inum;
-	if (inode_write(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+	if (inode_write(dp, (char *)&de, off, sizeof(de)) < 0)
 		panic("dirlink");
 	last_inum = inum;
 
@@ -767,27 +770,27 @@ namex(const char *path, int nameiparent, char *name)
 	else
 		ip = inode_dup(myproc()->cwd); // increase refcount
 
-	while ((path = skipelem(path, name)) != 0) {
+	while ((path = skipelem(path, name)) != NULL) {
 		inode_lock(ip);
 		if (!S_ISDIR(ip->mode)) {
 			inode_unlockput(ip);
-			return 0;
+			return NULL;
 		}
 		if (nameiparent && *path == '\0') {
 			// Stop one level early.
 			inode_unlock(ip);
 			return ip;
 		}
-		if ((next = dirlookup(ip, name, 0)) == 0) {
+		if ((next = dirlookup(ip, name, 0)) == NULL) {
 			inode_unlockput(ip);
-			return 0;
+			return NULL;
 		}
 		inode_unlockput(ip);
 		ip = next;
 	}
 	if (nameiparent) {
 		inode_put(ip);
-		return 0;
+		return NULL;
 	}
 	return ip;
 }

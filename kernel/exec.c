@@ -90,7 +90,7 @@ __nonnull(1, 2) int execve(const char *path, char *const *argv, char *const *env
 
 ok:
 	// Check ELF header
-	if (inode_read(ip, (char *)&elf, 0, sizeof(elf)) != sizeof(elf)) {
+	if (inode_read(ip, (char *)&elf, 0, sizeof(elf)) < 0) {
 		goto bad;
 	}
 	if (elf.magic != ELF_MAGIC_NUMBER) {
@@ -105,7 +105,7 @@ ok:
 	// Load program into memory.
 	sz = 0;
 	for (i = 0, off = elf.e_phoff; i < elf.e_phnum; i++, off += sizeof(ph)) {
-		if (inode_read(ip, (char *)&ph, off, sizeof(ph)) != sizeof(ph)) {
+		if (inode_read(ip, (char *)&ph, off, sizeof(ph)) < 0) {
 			goto bad;
 		}
 		if (ph.p_type != PT_LOAD)

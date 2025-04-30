@@ -10,9 +10,9 @@ uintptr_t *
 setupkvm(void);
 char *
 uva2ka(uintptr_t *, char *);
-int
+uintptr_t
 allocuvm(uintptr_t *, uintptr_t, uintptr_t);
-int
+uintptr_t
 deallocuvm(uintptr_t *, uintptr_t, uintptr_t);
 void
 freevm(uintptr_t *);

@@ -24,12 +24,11 @@ push_user_stack(uintptr_t *count, char *const *vec, uintptr_t *ustack,
 {
 	for (*count = 0; vec[*count]; (*count)++) {
 		if (*count >= MAXARG)
-			return -1;
+			return -E2BIG;
 		// move the stack down to account for an argument
 		*sp = (*sp - (strlen(vec[*count]) + 1)) & ~(sizeof(uintptr_t) - 1);
 		// copy this vector index onto the stack pointer finally.
-		if (copyout(pgdir, *sp, vec[*count], strlen(vec[*count]) + 1) < 0)
-			return -1;
+		PROPOGATE_ERR(copyout(pgdir, *sp, vec[*count], strlen(vec[*count]) + 1));
 		ustack[idx + *count] = *sp;
 	}
 	// 0 is fake return address
@@ -50,7 +49,7 @@ __nonnull(1, 2) int execve(const char *path, char *const *argv, char *const *env
 	struct inode *ip;
 	struct Elf64_Phdr ph;
 	uintptr_t *pgdir, *oldpgdir;
-	int return_errno = 0;
+	int return_errno = 0, errno_tmp = 0;
 	struct proc *curproc = myproc();
 
 	begin_op();
@@ -90,7 +89,8 @@ __nonnull(1, 2) int execve(const char *path, char *const *argv, char *const *env
 
 ok:
 	// Check ELF header
-	if (inode_read(ip, (char *)&elf, 0, sizeof(elf)) < 0) {
+	if ((errno_tmp = inode_read(ip, (char *)&elf, 0, sizeof(elf))) < 0) {
+		return_errno = errno_tmp;
 		goto bad;
 	}
 	if (elf.magic != ELF_MAGIC_NUMBER) {
@@ -105,7 +105,8 @@ ok:
 	// Load program into memory.
 	sz = 0;
 	for (i = 0, off = elf.e_phoff; i < elf.e_phnum; i++, off += sizeof(ph)) {
-		if (inode_read(ip, (char *)&ph, off, sizeof(ph)) < 0) {
+		if ((errno_tmp = inode_read(ip, (char *)&ph, off, sizeof(ph))) < 0) {
+			return_errno = errno_tmp;
 			goto bad;
 		}
 		if (ph.p_type != PT_LOAD)
@@ -123,8 +124,8 @@ ok:
 		if (ph.p_vaddr % PGSIZE != 0) {
 			goto bad;
 		}
-		if (loaduvm(pgdir, (char *)ph.p_vaddr, ip, ph.p_offset, ph.p_filesz) < 0) {
-			return_errno = -ENOMEM;
+		if ((errno_tmp = loaduvm(pgdir, (char *)ph.p_vaddr, ip, ph.p_offset, ph.p_filesz)) < 0) {
+			return_errno = errno_tmp;
 			goto bad;
 		}
 	}

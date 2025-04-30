@@ -1,3 +1,4 @@
+#include "errno.h"
 #include <stdint.h>
 #include <string.h>
 #include "drivers/memlayout.h"
@@ -113,7 +114,7 @@ loaduvm(uintptr_t *pgdir, char *addr, struct inode *ip, uint32_t offset,
 
 // Allocate page tables and physical memory to grow process from oldsz to
 // newsz, which need not be page aligned.  Returns new size or 0 on error.
-int
+uintptr_t
 allocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 {
 	char *mem;
@@ -146,7 +147,7 @@ allocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
 // need to be less than oldsz.  oldsz can be larger than the actual
 // process size.  Returns the new process size.
-int
+uintptr_t
 deallocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 {
 	pte_t *pte;
@@ -289,7 +290,7 @@ copyout(uintptr_t *pgdir, uintptr_t va, void *p, size_t len)
 		va0 = (uint32_t)PGROUNDDOWN(va);
 		pa0 = uva2ka(pgdir, (char *)va0);
 		if (pa0 == NULL)
-			return -1;
+			return -EFAULT;
 		n = PGSIZE - (va - va0);
 		if (n > len)
 			n = len;

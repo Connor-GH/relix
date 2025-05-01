@@ -119,4 +119,5 @@ free_queue_##T(struct queue_##T *q, void (*deallocator)(void *)) \
 
 QUEUE_T(int)
 QUEUE_T(unsigned_char)
+QUEUE_T(mouse_packet)
 

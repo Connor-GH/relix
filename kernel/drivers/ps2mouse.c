@@ -1,10 +1,21 @@
-#include "stdbool.h"
-#include "vga.h"
+#include "errno.h"
+#include "lib/queue.h"
 #include "x86.h"
 #include "traps.h"
 #include "ioapic.h"
-#include "macros.h"
+#include "spinlock.h"
+#include "ps2mouse.h"
+#include "kalloc.h"
+#include "proc.h"
+#include "fcntl_constants.h"
+#include "console.h"
+
+#include "mman.h"
+#include "string.h"
 #include <stdint.h>
+#include <sys/types.h>
+#include <stdbool.h>
+
 #define MOUSE_STATUS 0x64
 #define MOUSE_DATA 0x60
 #define ENABLE_AUX_DEVICE 0xA8
@@ -13,15 +24,15 @@
 #define WRITE_TO_AUX 0xD4
 #define MOUSEID 0xF2
 
-#define BUTTON_LEFT 1 << 0
-#define BUTTON_RIGHT 1 << 1
-#define BUTTON_MIDDLE 1 << 2
-#define MOUSE_XSIGN 1 << 4
-#define MOUSE_YSIGN 1 << 5
-#define MOUSE_ALWAYS_SET 0xC0
+#define MOUSE_QUEUE_SIZE 256
 
-static uint8_t mouse_data[4];
+static uint8_t mouse_data[3];
 static uint8_t count = 0;
+
+struct {
+	struct spinlock lock;
+	struct queue_mouse_packet *mouse_queue;
+} mouselock;
 
 static void
 mouse_wait(uint8_t a_type)
@@ -86,6 +97,65 @@ mouse_read(void)
 	return inb(MOUSE_DATA);
 }
 
+__nonnull(2, 3) static ssize_t
+mouseread(__unused short minor, struct inode *ip, char *dst, size_t n)
+{
+get_element:;
+	acquire(&mouselock.lock);
+	struct mouse_packet data;
+	int ret = dequeue_mouse_packet(mouselock.mouse_queue, &data, kfree);
+	release(&mouselock.lock);
+	if (ret != QUEUE_SUCCESS) {
+		if ((ip->flags & O_NONBLOCK) == O_NONBLOCK) {
+			return -EWOULDBLOCK;
+		} else {
+			// Let other processes do stuff while we sit here and spin.
+			yield();
+			// The default is spinning on the mouse queue.
+			goto get_element;
+		}
+	}
+	memcpy(dst, &data, sizeof(data));
+	return n;
+}
+
+/* clang-format off */
+__nonnull(2, 3) static ssize_t
+mousewrite(__unused short minor, __unused struct inode *ip,
+					 __unused char *buf, size_t n)
+{
+	return n;
+}
+/* clang-format on */
+
+static struct mmap_info
+mousemmap_noop(__unused short minor, __unused size_t length,
+							 __unused uintptr_t addr, __unused int perm)
+{
+	return (struct mmap_info){};
+}
+
+static int mouse_file_ref = 0;
+
+static int
+mouseopen(__unused short minor, __unused int flags)
+{
+	if (mouse_file_ref == 0) {
+		acquire(&mouselock.lock);
+		clean_queue_mouse_packet(mouselock.mouse_queue, kfree);
+		release(&mouselock.lock);
+		mouse_file_ref++;
+	}
+	return 0;
+}
+
+static int
+mouseclose(__unused short minor)
+{
+	mouse_file_ref--;
+	return 0;
+}
+
 void
 ps2mouseinit(void)
 {
@@ -107,24 +177,30 @@ ps2mouseinit(void)
 	// Enable
 	mouse_write(0xF4);
 	mouse_read(); // ACK
+
+	initlock(&mouselock.lock, "mouse");
+
+	acquire(&mouselock.lock);
+	mouselock.mouse_queue = create_queue_mouse_packet(kmalloc);
+	release(&mouselock.lock);
+
+	if (mouselock.mouse_queue == NULL) {
+		panic("Could not create mouse_queue");
+	}
+
+	devsw[MOUSE].write = mousewrite;
+	devsw[MOUSE].read = mouseread;
+	devsw[MOUSE].mmap = mousemmap_noop;
+	devsw[MOUSE].open = mouseopen;
+	devsw[MOUSE].close = mouseclose;
 	ioapicenable(IRQ_PS2_MOUSE, 0);
 }
-
-static bool left = 0;
-static bool right = 0;
-static bool middle = 0;
-
-static uint32_t x = 0;
-static uint32_t y = 0;
 
 void
 ps2mouseintr(void)
 {
 	uint8_t status;
 	mouse_recv();
-	left = false;
-	right = false;
-	middle = false;
 
 	status = inb(MOUSE_STATUS) & 1;
 	if (status) {
@@ -132,30 +208,16 @@ ps2mouseintr(void)
 		mouse_data[count++] = inb(MOUSE_DATA);
 		if (count == 3) {
 			count = 0;
-			int32_t delta_x = mouse_data[1] | ((mouse_data[0] & (1 << 4)) ? 0xFFFFFF00 : 0);
-			int32_t delta_y = mouse_data[2] | ((mouse_data[0] & (1 << 5)) ? 0xFFFFFF00 : 0);
 
-			// Mouse x/y overflow (bits 6 and 7)
-			if ((mouse_data[0] & 0x80) != 0 || (mouse_data[0] & 0x40) != 0) {
-				delta_x = 0;
-				delta_y = 0;
-				return;
-			}
+			struct mouse_packet coords = { .data = { mouse_data[0], mouse_data[1], mouse_data[2] } };
+			int val;
+			acquire(&mouselock.lock);
+			val = enqueue_mouse_packet(mouselock.mouse_queue, coords, kmalloc,
+																 MOUSE_QUEUE_SIZE);
+			release(&mouselock.lock);
 
-			if ((mouse_data[0] & BUTTON_LEFT)) {
-				left = true;
-			}
-			if ((mouse_data[0] & BUTTON_RIGHT)) {
-				right = true;
-			}
-			if ((mouse_data[0] & BUTTON_MIDDLE)) {
-				middle = true;
-			}
-			x = signed_saturating_add(x, delta_x, WIDTH-1);
-
-			y = signed_saturating_add(y, -delta_y, HEIGHT-1);
-
-			vga_write(x, y, 0xff00ff);
+			if (val == QUEUE_OOM)
+				panic("Cannot allocate memory for mouse queue");
 		}
 	}
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <stddef.h>
+#include <stdint.h>
 
 #define QUEUE_T_HEADER(T) \
 /* Returns NULL on error. */ \
@@ -34,5 +35,10 @@ enum {
 };
 
 typedef unsigned char unsigned_char;
-QUEUE_T_HEADER(int)
+typedef struct mouse_packet {
+	uint8_t data[3];
+} mouse_packet;
+
+	QUEUE_T_HEADER(int)
 QUEUE_T_HEADER(unsigned_char)
+QUEUE_T_HEADER(mouse_packet)

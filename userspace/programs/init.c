@@ -85,6 +85,7 @@ main(void)
 
 	make_file_device("/dev/null", makedev(2, 1), O_RDWR);
 	make_file_device("/dev/kbd0", makedev(4, 0), O_RDONLY | O_NONBLOCK);
+	make_file_device("/dev/mouse0", makedev(7, 0), O_RDONLY | O_NONBLOCK);
 	make_file_device("/dev/sda", makedev(5, 0), O_RDWR);
 
 	for (;;) {

@@ -1,28 +1,50 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include "kernel/drivers/ps2mouse.h"
 
-int main(void)
+int
+main(void)
 {
-	int fd = open("/dev/kbd0", O_NONBLOCK);
+	int fd = open("/dev/mouse0", O_NONBLOCK);
 	if (fd < 0) {
 		perror("open");
 		exit(EXIT_FAILURE);
 	}
-	char buffer[8];
+	uint8_t mouse_data[3];
+	bool left = false;
+	bool right = false;
+	bool middle = false;
 
 	while (1) {
-		read(fd, buffer, 4);
-		buffer[4] = '\0';
-		unsigned char scancode = buffer[0];
-		unsigned char keyRelease = (0x80 & scancode);
+		if (read(fd, mouse_data, 3) < 0)
+			continue;
 
-		scancode = (0x7F & scancode);
+		int32_t delta_x = mouse_data[1] |
+											((mouse_data[0] & (1 << 4)) ? 0xFFFFFF00 : 0);
+		int32_t delta_y = mouse_data[2] |
+											((mouse_data[0] & (1 << 5)) ? 0xFFFFFF00 : 0);
 
-		printf("%#x (%c) r=%d\n", scancode, scancode, 0 == keyRelease);
-		sleep(100);
+		// Mouse x/y overflow (bits 6 and 7)
+		if ((mouse_data[0] & 0x80) != 0 || (mouse_data[0] & 0x40) != 0) {
+			delta_x = 0;
+			delta_y = 0;
+			continue;
+		}
+
+		if ((mouse_data[0] & BUTTON_LEFT)) {
+			left = true;
+		}
+		if ((mouse_data[0] & BUTTON_RIGHT)) {
+			right = true;
+		}
+		if ((mouse_data[0] & BUTTON_MIDDLE)) {
+			middle = true;
+		}
+
+		printf("dx: %d dy: %d left: %d right: %d mid: %d\n", delta_x, delta_y, left, right, middle);
 	}
 	return 0;
-
 }

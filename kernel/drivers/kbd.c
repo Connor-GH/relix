@@ -1,3 +1,4 @@
+#include "errno.h"
 #include "proc.h"
 #include "spinlock.h"
 #include <stdint.h>
@@ -417,7 +418,7 @@ get_element:;
 	release(&kbdlock.lock);
 	if (ret != QUEUE_SUCCESS) {
 		if ((ip->flags & O_NONBLOCK) == O_NONBLOCK) {
-			return -1;
+			return -EWOULDBLOCK;
 		} else {
 			// Let other processes do stuff while we sit here and spin.
 			yield();
@@ -468,14 +469,16 @@ kbdclose(short minor)
 void
 kbdinit(void)
 {
+	initlock(&kbdlock.lock, "kbd");
+
 	acquire(&kbdlock.lock);
 	kbdlock.kbd_queue = create_queue_unsigned_char(kmalloc);
+	release(&kbdlock.lock);
+
 	if (kbdlock.kbd_queue == NULL) {
 		panic("Could not create kbd_queue");
 	}
-	release(&kbdlock.lock);
 
-	initlock(&kbdlock.lock, "kbdread");
 	devsw[KBD].write = kbdwrite;
 	devsw[KBD].read = kbdread;
 	devsw[KBD].mmap = kbdmmap_noop;

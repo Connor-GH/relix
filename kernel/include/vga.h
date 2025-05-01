@@ -1,6 +1,9 @@
 #ifndef _VGA_H
 #define _VGA_H
 #pragma once
+// ATTENTION!!!
+// Might need to adjust memory in kernel/main.c
+// if this changes.
 #define WIDTH 640U
 #define HEIGHT 480U
 #define BPP_DEPTH 32U

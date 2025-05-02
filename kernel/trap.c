@@ -1,9 +1,13 @@
+#include <stdint.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <time.h>
+
 #include "drivers/mmu.h"
 #include "drivers/lapic.h"
 #include "drivers/ps2mouse.h"
+
 #include "proc.h"
 #include "x86.h"
 #include "trap.h"
@@ -14,8 +18,7 @@
 #include "kbd.h"
 #include "uart.h"
 #include "console.h"
-#include <stdint.h>
-#include "time.h"
+
 enum {
 	PAGE_FAULT_PRESENT = 1 << 0,
 	PAGE_FAULT_WRITE = 1 << 1,
@@ -197,11 +200,11 @@ trap(struct trapframe *tf)
 	case T_PGFLT:
 		uart_printf("Page fault at %#lx, ip=%#lx\n", rcr2(), tf->rip);
 		decipher_page_fault_error_code(tf->err);
+		regdump(tf);
 		if ((tf->cs & DPL_USER) == 0) {
 			panic("trap");
 		} else {
 			uart_printf("Process %s killed with SIGSEGV\n", myproc()->name);
-			regdump(tf);
 			uintptr_t pcs[10];
 			getcallerpcs_with_bp(pcs, &tf->rbp, 10);
 			for (int i = 0; i < 10; i++)

@@ -3,6 +3,7 @@
 #include "spinlock.h"
 #include "memlayout.h"
 #include "trap.h"
+#include "vm.h"
 #include <errno.h>
 #include "kernel_assert.h"
 #include <fcntl.h>
@@ -10,6 +11,7 @@
 #include <stdint.h>
 #include <defs.h>
 #include "proc.h"
+#include "kalloc.h"
 #include "x86.h"
 #include "syscall.h"
 #include "console.h"
@@ -433,13 +435,9 @@ syscall(void)
 	if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
 		if (curproc->ptrace_mask_ptr[num] == 1) {
 			size_t xticks, yticks;
-			acquire(&tickslock);
 			xticks = ticks;
-			release(&tickslock);
 			curproc->tf->rax = syscalls[num]();
-			acquire(&tickslock);
 			yticks = ticks;
-			release(&tickslock);
 
 			cprintf("pid %d: syscall %s => %ld (%lu ticks)", curproc->pid,
 							syscall_names[num], curproc->tf->rax, yticks - xticks);

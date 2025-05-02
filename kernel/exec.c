@@ -140,6 +140,8 @@ ok:
 		goto bad;
 	}
 	clearpteu(pgdir, (char *)(sz - 4 * PGSIZE));
+	// Make NULL dereferences cause a page fault.
+	clearpteu(pgdir, (char *)0);
 	sp = sz;
 
 	// Push argument strings, prepare rest of stack in ustack.

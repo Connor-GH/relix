@@ -108,9 +108,7 @@ sys_uptime(void)
 {
 	time_t xticks;
 
-	acquire(&tickslock);
 	xticks = ticks;
-	release(&tickslock);
 	return xticks;
 }
 

@@ -21,13 +21,15 @@ inituvm(uintptr_t *, char *, uint32_t);
 int
 loaduvm(uintptr_t *, char *, struct inode *, uint32_t, uint32_t);
 uintptr_t *
-copyuvm(uintptr_t *, uint32_t);
+copyuvm(uintptr_t *, size_t);
 void
 switchuvm(struct proc *);
 void
 switchkvm(void);
 int
 copyout(uintptr_t *pgdir, uintptr_t va, void *pa, size_t len);
+void
+setpteu(uintptr_t *pgdir, char *uva);
 void
 clearpteu(uintptr_t *pgdir, char *uva);
 int

@@ -23,7 +23,7 @@ uintptr_t *kpgdir; // for use in scheduler()
 // that corresponds to virtual address va.  If alloc!=0,
 // create any required page table pages.
 static pte_t *
-walkpgdir(uintptr_t *pgdir, const void *va, int alloc)
+walkpgdir(uintptr_t *pgdir, const void *va, bool alloc)
 {
 	uintptr_t *pde;
 	pte_t *pgtab;
@@ -59,7 +59,7 @@ mappages(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm)
 	a = (char *)PGROUNDDOWN((uintptr_t)va);
 	last = (char *)PGROUNDDOWN(((uintptr_t)va) + size - 1);
 	for (;;) {
-		if ((pte = walkpgdir(pgdir, a, 1)) == NULL)
+		if ((pte = walkpgdir(pgdir, a, true)) == NULL)
 			return -1;
 		if (*pte & PTE_P)
 			panic("remap");
@@ -99,7 +99,7 @@ loaduvm(uintptr_t *pgdir, char *addr, struct inode *ip, uint32_t offset,
 	if ((uintptr_t)addr % PGSIZE != 0)
 		panic("loaduvm: addr must be page aligned");
 	for (i = 0; i < sz; i += PGSIZE) {
-		if ((pte = walkpgdir(pgdir, addr + i, 0)) == NULL)
+		if ((pte = walkpgdir(pgdir, addr + i, false)) == NULL)
 			panic("loaduvm: address should exist");
 		pa = PTE_ADDR(*pte);
 		if (sz - i < PGSIZE)
@@ -200,17 +200,42 @@ freevm(uintptr_t *pgdir)
 	kpage_free((char *)pgdir);
 }
 
+void
+clear_pte_mask(uintptr_t *pgdir, char *user_virt_addr, pte_t mask)
+{
+	pte_t *pte;
+
+	pte = walkpgdir(pgdir, user_virt_addr, false);
+	if (pte == NULL)
+		panic("set_pte_mask");
+	*pte &= ~mask;
+}
+
+void
+set_pte_mask(uintptr_t *pgdir, char *user_virt_addr, pte_t mask)
+{
+	pte_t *pte;
+
+	pte = walkpgdir(pgdir, user_virt_addr, false);
+	if (pte == NULL)
+		panic("set_pte_mask");
+	*pte |= mask;
+}
+
 // Clear PTE_U on a page. Used to create an inaccessible
 // page beneath the user stack.
 void
 clearpteu(uintptr_t *pgdir, char *uva)
 {
-	pte_t *pte;
+	clear_pte_mask(pgdir, uva, PTE_U);
+}
 
-	pte = walkpgdir(pgdir, uva, 0);
-	if (pte == NULL)
-		panic("clearpteu");
-	*pte &= ~PTE_U;
+// Set PTE_U on a page. Used to create new pages or
+// remap kernel pages to user pages.
+void
+setpteu(uintptr_t *pgdir, char *uva)
+{
+	set_pte_mask(pgdir, uva, PTE_U);
 }
 
 void
@@ -218,7 +243,7 @@ unmap_user_page(uintptr_t *pgdir, char *user_va)
 {
 	pte_t *pte;
 
-	pte = walkpgdir(pgdir, user_va, 0);
+	pte = walkpgdir(pgdir, user_va, false);
 	if (pte == NULL) {
 		panic("unmap_user_page: no page found");
 	}
@@ -229,7 +254,7 @@ unmap_user_page(uintptr_t *pgdir, char *user_va)
 // Given a parent process's page table, create a copy
 // of it for a child.
 uintptr_t *
-copyuvm(uintptr_t *pgdir, uint32_t sz)
+copyuvm(uintptr_t *pgdir, size_t sz)
 {
 	uintptr_t *d;
 	pte_t *pte;
@@ -239,7 +264,7 @@ copyuvm(uintptr_t *pgdir, uint32_t sz)
 	if ((d = setupkvm()) == NULL)
 		return NULL;
 	for (i = 0; i < sz; i += PGSIZE) {
-		if ((pte = walkpgdir(pgdir, (void *)i, 0)) == NULL)
+		if ((pte = walkpgdir(pgdir, (void *)i, false)) == NULL)
 			panic("copyuvm: pte should exist");
 		if (!(*pte & PTE_P))
 			panic("copyuvm: page not present");

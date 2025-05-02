@@ -48,10 +48,13 @@ argfd(int n, int *pfd, struct file **pf)
 	struct file *f;
 
 	PROPOGATE_ERR(argint(n, &fd));
-	if (fd < 0 || (f = myproc()->ofile[fd]) == NULL)
+	if (fd < 0)
 		return -EBADF;
 	if (fd >= NOFILE)
 		return -ENFILE;
+	if ((f = myproc()->ofile[fd]) == NULL)
+		return -EBADF;
+
 	if (pfd)
 		*pfd = fd;
 	if (pf)

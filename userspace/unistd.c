@@ -1,14 +1,17 @@
-#include "limits.h"
 #include <sys/types.h>
 #include <sys/times.h>
+#include <sys/stat.h>
+#include <sys/syscall.h>
+
 #include <stdlib.h>
+#include <limits.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/stat.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <stddef.h>
-#include <sys/syscall.h>
+#include <errno.h>
+
 #include "libc_syscalls.h"
 
 pid_t
@@ -34,24 +37,32 @@ wait(int *wstatus)
 int
 pipe(int pipefd[2])
 {
+	if (pipefd[0] < 0 || pipefd[1] < 0)
+		return __syscall_ret(-EBADF);
 	return __syscall_ret(__syscall1(SYS_pipe, (long)pipefd));
 }
 
 ssize_t
 read(int fd, void *buf, size_t count)
 {
+	if (fd < 0)
+		return __syscall_ret(-EBADF);
 	return __syscall_ret(__syscall3(SYS_read, fd, (long)buf, count));
 }
 
 ssize_t
 write(int fd, const void *buf, size_t count)
 {
+	if (fd < 0)
+		return __syscall_ret(-EBADF);
 	return __syscall_ret(__syscall3(SYS_write, fd, (long)buf, count));
 }
 
 int
 close(int fd)
 {
+	if (fd < 0)
+		return __syscall_ret(-EBADF);
 	return __syscall_ret(__syscall1(SYS_close, fd));
 }
 

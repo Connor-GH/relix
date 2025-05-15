@@ -29,6 +29,7 @@ struct run {
 struct {
 	struct spinlock lock[NCPU];
 	struct run *freelist[NCPU];
+	bool use_lock;
 } kmem;
 
 // Initialization happens in two phases.
@@ -39,15 +40,17 @@ struct {
 void
 kinit1(void *vstart, void *vend)
 {
+	for (int i = 0; i < min(NCPU, ncpu); i++)
+		initlock(&kmem.lock[i], "kmem");
+	kmem.use_lock = false;
 	freerange(vstart, vend);
 }
 
 void
 kinit2(void *vstart, void *vend)
 {
-	for (int i = 0; i < min(NCPU, ncpu); i++)
-		initlock(&kmem.lock[i], "kmem");
 	freerange(vstart, vend);
+	kmem.use_lock = true;
 }
 
 void
@@ -80,13 +83,15 @@ __nonnull(1) void kpage_free(char *v) __releases(kpage)
 		(V2P(v) >= available_memory && likely(available_memory > 0)))
 		panic("kpage_free");
 
-	//if (kmem.use_lock)
-	acquire(&kmem.lock[id]);
+	if (kmem.use_lock)
+		acquire(&kmem.lock[id]);
+
 	r = (struct run *)v;
 	r->next = kmem.freelist[id];
 	kmem.freelist[id] = r;
-	//if (kmem.use_lock)
-	release(&kmem.lock[id]);
+
+	if (kmem.use_lock)
+		release(&kmem.lock[id]);
 	popcli();
 	__release(kpage);
 }
@@ -101,21 +106,25 @@ kpage_alloc(void) __acquires(kpage)
 	int id = my_cpu_id();
 	struct run *r;
 
-	//if (kmem.use_lock)
-	acquire(&kmem.lock[id]);
+	if (kmem.use_lock)
+		acquire(&kmem.lock[id]);
 	r = kmem.freelist[id];
 	if (r)
 		kmem.freelist[id] = r->next;
-	//if (kmem.use_lock)
-	release(&kmem.lock[id]);
+	if (kmem.use_lock)
+		release(&kmem.lock[id]);
 
 	if (!r) {
 		for (int i = 0; i < min(NCPU, ncpu); i++) {
-			acquire(&kmem.lock[i]);
+			if (kmem.use_lock)
+				acquire(&kmem.lock[i]);
+
 			r = kmem.freelist[i];
 			if (r)
 				kmem.freelist[i] = r->next;
-			release(&kmem.lock[i]);
+
+			if (kmem.use_lock)
+				release(&kmem.lock[i]);
 
 			if (r)
 				break;

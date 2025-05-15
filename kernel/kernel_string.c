@@ -82,6 +82,17 @@ strlen(const char *s)
 		;
 	return n;
 }
+
+size_t
+strnlen(const char *s, size_t size)
+{
+	size_t n;
+
+	for (n = 0; n < size && s && s[n]; n++)
+		;
+	return n;
+}
+
 char *
 strchr(const char *s, int c)
 {

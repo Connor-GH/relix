@@ -5,11 +5,6 @@
 #include "mman.h"
 #include "termios.h"
 #include "vga.h"
-#include <stdint.h>
-#include <stdint.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stddef.h>
 #include "console.h"
 #include "file.h"
 #include "boot/multiboot2.h"
@@ -22,6 +17,13 @@
 #include "drivers/lapic.h"
 #include "lib/compiler_attributes.h"
 #include "macros.h"
+#include "symbols.h"
+
+#include <stdint.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 extern size_t
 let_rust_handle_it(const char *fmt);
@@ -227,14 +229,19 @@ panic(const char *s)
 	uintptr_t pcs[10];
 
 	cli();
-	cons.locking = 0;
+	cons.locking = 1;
 	vga_reset_char_index();
 	// use lapiccpunum so that we can call panic from mycpu()
 	vga_cprintf("\033[1;31mlapicid %d: panic: %s\n", lapicid(), s);
 	getcallerpcs(&s, pcs);
 	vga_cprintf("Stack frames:\n");
 	for (int i = 0; i < 10; i++) {
-		vga_cprintf("#%d %#lx\n", i, pcs[i]);
+		// The relative positition within function.
+		size_t relative_pos;
+		const char *name = symbol_resolve(pcs[i], &relative_pos);
+
+		if (name != NULL && relative_pos != 0)
+			vga_cprintf("%s+%#lx\n", name, relative_pos);
 	}
 	vga_cprintf("\033[0m");
 	panicked = 1; // freeze other CPU

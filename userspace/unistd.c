@@ -37,8 +37,6 @@ wait(int *wstatus)
 int
 pipe(int pipefd[2])
 {
-	if (pipefd[0] < 0 || pipefd[1] < 0)
-		return __syscall_ret(-EBADF);
 	return __syscall_ret(__syscall1(SYS_pipe, (long)pipefd));
 }
 

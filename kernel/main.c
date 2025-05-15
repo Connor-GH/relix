@@ -45,7 +45,9 @@ main(struct multiboot_info *mbinfo)
 	| uart-only printing zone |
 	\*-----------------------*/
 	uartinit1(); // serial port
-	kinit1(__kernel_end, P2V(4 * 1024 * 1024)); // phys page allocator
+	// 8MiB allocated just for the kernel.
+	// This is to be considered an "early allocator".
+	kinit1(__kernel_end, P2V(8 * 1024 * 1024)); // phys page allocator
 	parse_multiboot(mbinfo);
 	kernel_assert(available_memory != 0);
 	// Past kvmalloc, addresses need to be virtual.
@@ -76,7 +78,7 @@ main(struct multiboot_info *mbinfo)
 	//timerinit();
 	pci_init();
 	startothers(); // start other processors
-	kinit2(P2V(4UL * 1024 * 1024), P2V(available_memory)); // must come after startothers()
+	kinit2(P2V(8UL * 1024 * 1024), P2V(available_memory)); // must come after startothers()
 	userinit(); // first user process
 	mpmain(); // finish this processor's setup
 }

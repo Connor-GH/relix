@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "console.h"
 #include "memlayout.h"
+#include "symbols.h"
 
 const char *
 multiboot_mmap_type(int type)
@@ -23,6 +24,60 @@ multiboot_mmap_type(int type)
 		return "unknown";
 	}
 }
+
+const char *
+multiboot_tag_type(int type)
+{
+	switch (type) {
+	case MULTIBOOT_TAG_TYPE_END:
+		return "end";
+	case MULTIBOOT_TAG_TYPE_CMDLINE:
+		return "command line";
+	case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
+		return "bootloader name";
+	case MULTIBOOT_TAG_TYPE_MODULE:
+		return "module";
+	case MULTIBOOT_TAG_TYPE_BASIC_MEMINFO:
+		return "basic meminfo";
+	case MULTIBOOT_TAG_TYPE_BOOTDEV:
+		return "boot device";
+	case MULTIBOOT_TAG_TYPE_MMAP:
+		return "memory map";
+	case MULTIBOOT_TAG_TYPE_VBE:
+		return "vbe";
+	case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
+		return "framebuffer";
+	case MULTIBOOT_TAG_TYPE_ELF_SECTIONS:
+		return "ELF sections";
+	case MULTIBOOT_TAG_TYPE_APM:
+		return "APM";
+	case MULTIBOOT_TAG_TYPMULTIBOOT_TAG_TYPE_EFI64E_EFI32:
+		return "EFI 32-bit system table";
+	case MULTIBOOT_TAG_TYPE_EFI64:
+		return "EFI 64-bit system table";
+	case MULTIBOOT_TAG_TYPE_SMBIOS:
+		return "SMBIOS tables";
+	case MULTIBOOT_TAG_TYPE_ACPI_OLD:
+		return "ACPI 1.0 RSDP";
+	case MULTIBOOT_TAG_TYPE_ACPI_NEW:
+		return "ACPI 2.0 RSDP";
+	case MULTIBOOT_TAG_TYPE_NETWORK:
+		return "network information";
+	case MULTIBOOT_TAG_TYPE_EFI_MMAP:
+		return "EFI memory map";
+	case MULTIBOOT_TAG_TYPE_EFI_BS:
+		return "EFI boot services";
+	case MULTIBOOT_TAG_TYPE_EFI32_IH:
+		return "EFI 32-bit image handle";
+	case MULTIBOOT_TAG_TYPE_EFI64_IH:
+		return "EFI 64-bit image handle";
+	case MULTIBOOT_TAG_TYPE_LOAD_BASE_ADDR:
+		return "image load base physical address";
+	default:
+		return "unknown";
+	}
+}
+
 struct color_24bpp {
 	uint8_t red;
 	uint8_t green;
@@ -72,8 +127,6 @@ parse_multiboot(struct multiboot_info *mbinfo)
 			 tag->type != MULTIBOOT_TAG_TYPE_END;
 			 tag = (struct multiboot_tag *)((multiboot_uint8_t *)tag + ((tag->size + 7) & ~7))) {
 		switch (tag->type) {
-		case MULTIBOOT_TAG_TYPE_CMDLINE:
-			break;
 		case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
 			uart_printf("Bootloader is %s\n", ((struct multiboot_tag_string *)tag)->string);
 			break;
@@ -97,7 +150,7 @@ parse_multiboot(struct multiboot_info *mbinfo)
 			break;
 		}
 		case MULTIBOOT_TAG_TYPE_FRAMEBUFFER: {
-			struct multiboot_tag_framebuffer *fb = ((struct multiboot_tag_framebuffer *)tag);
+			struct multiboot_tag_framebuffer *fb = (struct multiboot_tag_framebuffer *)tag;
 			struct multiboot_tag_framebuffer_common fbtag = fb->common;
 			uart_printf("Fb addr: %p pitch: %d %dx%d bpp %d type %d\n",
 							(void *)fbtag.framebuffer_addr, fbtag.framebuffer_pitch,
@@ -120,7 +173,15 @@ parse_multiboot(struct multiboot_info *mbinfo)
 			}
 			break;
 		}
+		case MULTIBOOT_TAG_TYPE_ELF_SECTIONS: {
+			struct multiboot_tag_elf_sections *sections = (struct multiboot_tag_elf_sections *)tag;
+			symbol_table_init((struct Elf64_Shdr *)sections->section_headers,
+										 sections->entsize, sections->num);
+			break;
+		}
 		default:
+			uart_printf("Skipping over multiboot tag %d (\"%s\")\n", tag->type,
+							 multiboot_tag_type(tag->type));
 			break;
 		}
 	}

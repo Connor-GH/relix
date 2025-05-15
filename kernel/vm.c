@@ -1,4 +1,5 @@
 #include "errno.h"
+#include "kernel_assert.h"
 #include <stdint.h>
 #include <string.h>
 #include "drivers/memlayout.h"

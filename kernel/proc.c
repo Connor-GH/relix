@@ -237,7 +237,7 @@ growproc(intptr_t n)
 // Create a new process copying p as the parent.
 // Sets up stack to return as if from system call.
 // Caller must set state of returned proc to RUNNABLE.
-// POSIX.1-2008: fork is a "signed integer type".
+// POSIX.1-2008: fork returns a "signed integer type".
 pid_t
 fork(bool virtual)
 {

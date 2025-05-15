@@ -219,6 +219,7 @@ numerical_padding:
 			case '+':
 				flags |= FLAG_SIGN;
 				goto skip_state_reset;
+			case 'z':
 			case 'l':
 				flags |= FLAG_LONG;
 				goto skip_state_reset;

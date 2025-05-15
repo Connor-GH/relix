@@ -310,10 +310,17 @@ struct multiboot_tag_framebuffer {
 struct multiboot_tag_elf_sections {
 	multiboot_uint32_t type;
 	multiboot_uint32_t size;
+
+	// correspond to the e_sh fields of the Elf64_Ehdr
+	// The difference is that these sizes are different.
+	// In the ELF spec, all of these are u16, while here
+	// they are sometimes u32 and sometimes u16.
 	multiboot_uint32_t num;
 	multiboot_uint32_t entsize;
-	multiboot_uint32_t shndx;
-	char sections[0];
+	multiboot_uint16_t strndx;
+
+	multiboot_uint16_t reserved;
+	char section_headers[0];
 } __attribute__((packed));
 
 struct multiboot_tag_apm {

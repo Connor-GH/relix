@@ -70,7 +70,10 @@ freerange(void *vstart, void *vend)
 // which normally should have been returned by a
 // call to kpage_alloc().	(The exception is when
 // initializing the allocator; see kinit above.)
-__nonnull(1) void kpage_free(char *v) __releases(kpage)
+//
+// It is also possible that kpage_free MIGHT be NULL.
+void
+kpage_free(char *v) __releases(kpage)
 {
 	pushcli();
 	struct run *r;
@@ -160,6 +163,11 @@ kfree(void *ap) __releases(kmem)
 {
 	Header *bp, *p;
 
+	if (ap == NULL) {
+		uart_printf("WARN: kernel tried to free a NULL pointer\n");
+		return;
+	}
+
 	bp = ptr_to_header(ap);
 	for (p = freep; p && !(bp > p && bp < p->ptr); p = p->ptr)
 		if (p >= p->ptr && (bp > p || bp < p->ptr))
@@ -187,7 +195,7 @@ kfree(void *ap) __releases(kmem)
 
 
 static Header *
-morecore(__attribute__((unused)) size_t nu)
+morecore(size_t nu)
 {
 	char *p;
 	Header *hp;
@@ -210,6 +218,11 @@ kmalloc(size_t nbytes) __acquires(kmem)
 {
 	Header *p, *prevp;
 	size_t nunits;
+
+	if (nbytes == 0) {
+		uart_printf("WARN: kernel tried to allocate memory with size 0.\n");
+		return NULL;
+	}
 
 	nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
 
@@ -244,12 +257,17 @@ kmalloc(size_t nbytes) __acquires(kmem)
 				return NULL;
 	}
 }
-__attribute__((malloc)) __nonnull(1) void *krealloc(void *ptr, size_t size)
+__attribute__((malloc)) void *
+krealloc(void *ptr, size_t size)
 {
-	void *newptr = kmalloc(size);
-	if (!newptr)
-		return NULL;
+	if (ptr == NULL)
+		return kmalloc(size);
+
 	Header *hdr = ptr_to_header(ptr);
+	void *newptr = kmalloc(size);
+	if (newptr == NULL)
+		return NULL;
+
 	memcpy(newptr, ptr, min(hdr->size, size));
 	kfree(ptr);
 

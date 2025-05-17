@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <ctype.h>
+#include <sys/param.h>
 
 // Parsed command representation
 #define EXEC 1
@@ -168,8 +169,6 @@ getcmd(char *buf, int nbuf)
 		return -1;
 	return 0;
 }
-
-#define MIN(a, b) (((a) > (b)) ? (b) : (a))
 
 int
 main(void)

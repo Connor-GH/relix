@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdckdint.h>
+#include <sys/param.h>
 
 // Memory allocator by Kernighan and Ritchie,
 // The C programming Language, 2nd ed.  Section 8.7.
@@ -17,17 +19,21 @@ typedef struct header Header;
 static Header base = {NULL, 0};
 static Header *freep = NULL;
 
+#define ptr_to_header(ptr) (((Header *)ptr) - 1)
+#define header_to_ptr(hdr) ((void *)(hdr + 1))
+
+// Undefined behavior:
+// - the pointer we are handed is not from {re,m}alloc.
+// - the pointer is from {re,m}alloc, but has been free()'d
 void
 free(void *ap)
 {
 	Header *bp, *p;
 
-#if defined(MEMORY_GUARDS)
+	// C spec: "If ptr is a null pointer, no action occurs".
 	if (ap == NULL) {
-		fprintf(stderr, "free(NULL) was called.\n");
-		abort();
+		return;
 	}
-#endif
 
 	bp = (Header *)ap - 1;
 	for (p = freep; !(bp > p && bp < p->ptr); p = p->ptr)
@@ -70,6 +76,8 @@ morecore(size_t nu)
 	return freep;
 }
 
+// Undefined behavior:
+// - the the size is 0
 __attribute__((malloc)) void *
 malloc(size_t nbytes)
 {
@@ -111,20 +119,51 @@ malloc(size_t nbytes)
 				return NULL;
 	}
 }
+
+// Undefined behavior:
+// - the pointer we are handed is not from {re,m}alloc.
+// - the pointer is from {re,m}alloc, but has been free()'d
+// - size is 0
 __attribute__((malloc)) void *
 realloc(void *ptr, size_t size)
 {
-	if (ptr)
-		free(ptr);
-	ptr = malloc(size);
-	return ptr;
+	// C spec: "If ptr is a null pointer, the realloc function behaves
+	// like the malloc function for the specified size"
+	if (ptr == NULL)
+		return malloc(size);
+
+	Header *old_ptr_hdr = ptr_to_header(ptr);
+	void *new_ptr = malloc(size);
+
+	// C spec:
+	// - "If memory for the new object is not allocated, the
+	// old object is not deallocated and its value is unchanged."
+	//
+	// - "The realloc function returns ... a null pointer if the new
+	// object has not been allocated".
+	if (new_ptr == NULL)
+		return NULL;
+	memcpy(new_ptr, ptr, MIN(old_ptr_hdr->size, size));
+	free(ptr);
+	return new_ptr;
 }
+
+
+// Undefined behavior:
+// - either nmemb or sz are 0.
 __attribute__((malloc)) void *
 calloc(size_t nmemb, size_t sz)
 {
-	void *ptr = malloc(nmemb * sz);
+	size_t res;
+	// C spec: "The calloc function returns ... a null pointer if the
+	// space cannot be allocated or if the product nmemb * size would
+	// wraparound size_t".
+	if (ckd_mul(&res, nmemb, sz))
+		return NULL;
+
+	void *ptr = malloc(res);
 	if (ptr == NULL)
 		return NULL;
-	memset(ptr, 0, nmemb * sz);
+	memset(ptr, 0, res);
 	return ptr;
 }

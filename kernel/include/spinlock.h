@@ -5,14 +5,17 @@
 #include <stdint.h>
 #include <stddef.h>
 #else
+// When making mkfs, the libc
+// implementation defines these.
+// Undefine them so we can use our own.
 #undef __always_inline
 #undef __nonnull
 #endif
-
+#include <stdatomic.h>
 #include "lib/compiler_attributes.h"
 // Mutual exclusion lock.
 struct spinlock {
-	uint32_t locked; // Is the lock held?
+	atomic_flag locked;
 
 	// For debugging:
 	char *name; // Name of lock.

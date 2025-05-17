@@ -1,20 +1,21 @@
 // Mutual exclusion spin locks.
 
-#include <stdint.h>
 #include "drivers/memlayout.h"
 #include "drivers/mmu.h"
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
 #include "console.h"
-#include <string.h>
 #include "kernel_assert.h"
+#include <string.h>
+#include <stdint.h>
+#include <stdatomic.h>
 
 void
 initlock(struct spinlock *lk, char *name)
 {
 	lk->name = name;
-	lk->locked = 0;
+	lk->locked = ATOMIC_FLAG_INIT;
 	lk->cpu = NULL;
 }
 
@@ -30,7 +31,7 @@ acquire(struct spinlock *lk) __acquires(lk)
 		uart_printf("%s\n", lk->name);
 	kernel_assert(!holding(lk));
 
-	while (__sync_lock_test_and_set(&lk->locked, 1) != 0)
+	while (atomic_flag_test_and_set(&lk->locked) != 0)
 		;
 	__acquire(lk);
 	// Tell the C compiler and the processor to not move loads or stores
@@ -60,8 +61,8 @@ release(struct spinlock *lk) __releases(lk)
 
 	// Release the lock, equivalent to lk->locked = 0.
 	// This code can't use a C assignment, since it might
-	// not be atomic. A real OS would use C atomics here.
-	__sync_lock_release(&lk->locked);
+	// not be atomic.
+	atomic_flag_clear(&lk->locked);
 	__release(lk);
 
 	popcli();
@@ -74,8 +75,6 @@ getcallerpcs(void *v, uintptr_t pcs[])
 	uintptr_t *rbp;
 #if X86_64
 	asm volatile("mov %%rbp, %0" : "=r"(rbp));
-#else
-	rbp = (uintptr_t *)v - 2;
 #endif
 	getcallerpcs_with_bp(pcs, rbp, 10);
 
@@ -102,7 +101,7 @@ holding(struct spinlock *lock)
 {
 	int r;
 	pushcli();
-	r = lock->locked && lock->cpu == mycpu();
+	r = atomic_flag_is_set(&lock->locked) && lock->cpu == mycpu();
 	popcli();
 	return r;
 }

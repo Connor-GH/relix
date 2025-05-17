@@ -3,11 +3,11 @@
 #pragma once
 #include "spinlock.h"
 #ifndef USE_HOST_TOOLS
-#include <stdint.h>
+#include <stdatomic.h>
 #endif
 // Long-term locks for processes
 struct sleeplock {
-	uint32_t locked; // Is the lock held?
+	atomic_flag locked; // Is the lock held?
 	struct spinlock lk; // spinlock protecting this sleep lock
 
 	// For debugging:

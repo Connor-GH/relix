@@ -4,14 +4,29 @@
 // user code, and calls into file.c and fs.c.
 //
 
+#include "console.h"
+#include "exec.h"
 #include "fb.h"
 #include "fcntl_constants.h"
-#include "memlayout.h"
+#include "file.h"
+#include "fs.h"
+#include "ioctl.h"
+#include "kalloc.h"
 #include "kernel_assert.h"
+#include "log.h"
+#include "memlayout.h"
+#include "mman.h"
 #include "mmu.h"
+#include "param.h"
 #include "pci.h"
+#include "pipe.h"
+#include "proc.h"
+#include "syscall.h"
 #include "termios.h"
+#include "types.h"
 #include "vga.h"
+#include "vm.h"
+
 #include <defs.h>
 #include <stdint.h>
 #include <stat.h>
@@ -22,22 +37,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <stddef.h>
-#include "param.h"
-#include "types.h"
-#include "proc.h"
-#include "fs.h"
-#include "file.h"
-#include "console.h"
-#include "log.h"
-#include "syscall.h"
-#include "pipe.h"
-#include "exec.h"
-#include "ioctl.h"
-#include "kalloc.h"
-#include "mman.h"
-#include "pipe.h"
 #include <string.h>
-#include "vm.h"
+#include <stdatomic.h>
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -467,11 +468,14 @@ sys_execve(void)
 size_t
 sys_pipe(void)
 {
-	int fd[2];
+	int *fd;
 	struct file *rf, *wf;
 	int fd0, fd1;
 
-	PROPOGATE_ERR(argptr(0, (void *)&fd, sizeof(fd)));
+	// Arrays don't decay like you'd expect them to
+	// when going into argptr. You must use a raw
+	// pointer type, even for arrays.
+	PROPOGATE_ERR(argptr(0, (void *)&fd, 2*sizeof(fd[0])));
 
 	PROPOGATE_ERR(pipealloc(&rf, &wf));
 	fd0 = -1;
@@ -824,7 +828,7 @@ sys_mmap(void)
 		return -EINVAL;
 
 	// "The file has been locked, or too much memory has been locked"
-	if (file->ip->lock.locked)
+	if (atomic_flag_is_set(&file->ip->lock.locked))
 		return -EAGAIN;
 	if (length % PGSIZE != 0 || (uintptr_t)addr % PGSIZE != 0)
 		return -EINVAL;

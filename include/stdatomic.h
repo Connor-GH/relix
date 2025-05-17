@@ -95,10 +95,8 @@
  */
 
 #if defined(__CLANG_ATOMICS)
-#define ATOMIC_VAR_INIT(value) (value)
 #define atomic_init(obj, value) __c11_atomic_init(obj, value)
 #else
-#define ATOMIC_VAR_INIT(value) { .__val = (value) }
 #define atomic_init(obj, value) ((void)((obj)->__val = (value)))
 #endif
 
@@ -366,7 +364,13 @@ typedef _Atomic(uintmax_t) atomic_uintmax_t;
 typedef struct {
 	atomic_bool __flag;
 } atomic_flag;
-#define ATOMIC_FLAG_INIT { ATOMIC_VAR_INIT(0) }
+#define ATOMIC_FLAG_INIT (atomic_flag){ 0 }
+
+static __inline _Bool
+atomic_flag_is_set(volatile atomic_flag *__object)
+{
+	return atomic_load(&__object->__flag);
+}
 
 static __inline _Bool
 atomic_flag_test_and_set_explicit(volatile atomic_flag *__object,

@@ -13,6 +13,8 @@ uva2ka(uintptr_t *, char *);
 uintptr_t
 allocuvm(uintptr_t *, uintptr_t, uintptr_t);
 uintptr_t
+allocuvm_cow(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz);
+uintptr_t
 deallocuvm(uintptr_t *, uintptr_t, uintptr_t);
 void
 freevm(uintptr_t *);

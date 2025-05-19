@@ -1,7 +1,10 @@
+#include "kalloc.h"
+#include "memlayout.h"
 #include <stdint.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <time.h>
 
 #include "drivers/mmu.h"
@@ -197,9 +200,46 @@ trap(struct trapframe *tf)
 		break;
 	}
 	// TODO handle pagefaults in a way that allows copy-on-write
-	case T_PGFLT:
+	case T_PGFLT: {
+		uintptr_t addr = rcr2();
 		uart_printf("Page fault at %#lx, ip=%#lx\n", rcr2(), tf->rip);
+		uintptr_t pml4 = PML4X(addr);
+		uintptr_t pdpt = PDPTX(addr);
+		uintptr_t pde = PDX(addr);
+		uintptr_t pte = PTX(addr);
+		uintptr_t idx = addr & 0b111111111111;
 		decipher_page_fault_error_code(tf->err);
+		uart_printf("This is at [%ld][%ld][%ld][%ld][%ld]\n", pml4,
+							pdpt,
+							pde,
+							pte,
+							idx);
+	uintptr_t *pde_ = &myproc()->pgdir[PDX(addr)];
+	// We can only attempt CoW if the page tables are
+	// not severely messed up. If they are NULL, we just
+	// do the normal process killing.
+	if (pde_ == NULL) {
+		goto out;
+	}
+	if (*pde_ & PTE_P) {
+		uintptr_t *pgtab = (pte_t *)p2v(PTE_ADDR(*pde_));
+		if (pgtab == NULL) {
+			goto out;
+		}
+		uintptr_t *pg = &pgtab[PTX(addr)];
+		if (*pg & PTE_COW && !(*pg & PTE_P)) {
+			void *mem = kpage_alloc();
+			if (mem == NULL) {
+				kill(myproc()->pid, SIGSEGV);
+				break;
+			}
+			*pg |= V2P(mem) | PTE_P;
+			*pg &= ~PTE_COW;
+			lcr3(V2P(myproc()->pgdir));
+			break;
+		}
+	}
+out:
 		regdump(tf);
 		if ((tf->cs & DPL_USER) == 0) {
 			panic("trap");
@@ -213,6 +253,7 @@ trap(struct trapframe *tf)
 			kill(myproc()->pid, SIGSEGV);
 		}
 		break;
+	}
 	case T_DIVIDE:
 		uart_printf("%s[%d]: trap divide by zero error: %#lx\n", myproc()->name,
 								myproc()->pid, tf->rip);

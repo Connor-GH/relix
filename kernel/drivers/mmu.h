@@ -125,6 +125,10 @@ struct segdesc {
 // +----------------+----------------+---------------------+
 //  \--- PDX(va) --/ \--- PTX(va) --/
 
+#define PML4X(va) (((uintptr_t)(va) >> PML4XSHIFT) & PXMASK)
+
+#define PDPTX(va) (((uintptr_t)(va) >> PDPTXSHIFT) & PXMASK)
+
 // page directory index
 #define PDX(va) (((uintptr_t)(va) >> PDXSHIFT) & PXMASK)
 
@@ -141,6 +145,8 @@ struct segdesc {
 #define PGSHIFT 12
 #define PTXSHIFT 12
 #define PDXSHIFT 21
+#define PDPTXSHIFT 30
+#define PML4XSHIFT 39
 #define PXMASK 0x1FF
 #else
 // Page directory and page table constants.
@@ -158,16 +164,49 @@ struct segdesc {
 	(((sz) + (uintptr_t)PGSIZE - 1) & ~((uintptr_t)PGSIZE - 1))
 #define PGROUNDDOWN(a) (((a)) & ~((uintptr_t)PGSIZE - 1))
 
-// Page table/directory entry flags.
-#define PTE_P 0x001 // Present
-#define PTE_W 0x002 // Writeable
-#define PTE_U 0x004 // User
-#define PTE_PWT 0x008 // Write-Through
-#define PTE_PCD 0x010 // Cache-Disable
-#define PTE_A 0x020 // Accessed
-#define PTE_D 0x040 // Dirty
-#define PTE_PS 0x080 // Page Size
-#define PTE_MBZ 0x180 // Bits must be zero
+// Page Directory Pointer Table flags.
+#define PDPT_P (1 << 0) // Present
+#define PDPT_W (1 << 1) // Writeable
+#define PDPT_U (1 << 2) // User
+#define PDPT_PWT (1 << 3) // Write-Through
+#define PDPT_PCD (1 << 4) // Cache-Disable
+#define PDPT_A (1 << 5) // Accessed
+#define PDPT_D (1 << 6) // Dirty
+#define PDPT_PS (1 << 7) // Page Size
+#define PDPT_GLOBAL (1 << 8) // Global
+#define PDPT_AVL (0b111 << 9) // Available/Unused
+#define PDPT_PAT (1 << 12) // Page Attribute Table
+
+
+// Page table flags.
+#define PTE_P (1 << 0) // Present
+#define PTE_W (1 << 1) // Writeable
+#define PTE_U (1 << 2) // User
+#define PTE_PWT (1 << 3) // Write-Through
+#define PTE_PCD (1 << 4) // Cache-Disable
+#define PTE_A (1 << 5) // Accessed
+#define PTE_D (1 << 6) // Dirty
+#define PTE_PAT (1 << 7) // Page Attribute Table
+#define PTE_GLOBAL (1 << 8) // Global
+#define PTE_AVL (0b111 << 9) // Available/Unused
+// Custom PTE flags (contained within PTE_AVL).
+#define PTE_COW (1 << 9)
+#define PTE_UNUSED10 (1 << 10)
+#define PTE_UNUSED11 (1 << 11)
+
+// Page directory entry flags.
+#define PDE_P (1 << 0) // Present
+#define PDE_W (1 << 1) // Writeable
+#define PDE_U (1 << 2) // User
+#define PDE_PWT (1 << 3) // Write-Through
+#define PDE_PCD (1 << 4) // Cache-Disable
+#define PDE_A (1 << 5) // Accessed
+#define PDE_D (1 << 6) // Dirty
+#define PDE_PS (1 << 7) // Page Size
+#define PDE_GLOBAL (1 << 8) // Global
+#define PDE_AVL (0b111 << 9) // Available/Unused
+#define PDE_PAT (1 << 12) // Page Attribute Table
+
 
 // Address in page table or page directory entry
 #define PTE_ADDR(pte) ((uintptr_t)(pte) & ~0xFFF)
@@ -175,6 +214,8 @@ struct segdesc {
 
 #ifndef __ASSEMBLER__
 typedef uintptr_t pte_t;
+typedef uintptr_t pde_t;
+typedef uintptr_t pdpt_t;
 
 struct taskstate64 {
 	uint32_t __reserved0;

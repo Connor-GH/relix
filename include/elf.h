@@ -49,16 +49,33 @@
 #define EM_RISCV 243
 #define EM_ALPHA 0x9026
 
+/* e_ident[EI_OSABI] */
+#define ELFMAG0 0x7f
+#define ELFMAG1 'E'
+#define ELFMAG2 'L'
+#define ELFMAG3 'F'
+
 /* e_ident[EI_CLASS] */
+#define ELFCLASSNONE 0
 #define ELFCLASS32 1
 #define ELFCLASS64 2
 
 /* e_ident[EI_DATA] */
+#define ELFDATANONE 0
 #define ELFDATA2LSB 1
 #define ELFDATA2MSB 2
 
 /* e_ident[EI_VERSION] */
+#define EV_NONE 0
 #define EV_CURRENT 1
+
+/* e_ident[EI_OSABI] */
+#define ELFOSABI_SYSV 0
+#define ELFOSABI_LINUX 3
+#define ELFOSABI_FREEBSD 9
+#define ELFOSABI_STANDALONE 255
+
+/* e_ident[EI_ABIVERSION] */
 
 /* e_type */
 #define ET_REL 1

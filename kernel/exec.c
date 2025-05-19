@@ -97,6 +97,24 @@ ok:
 		goto bad;
 	}
 
+	// We require 64 bit, little endian, linux/unix ELF files.
+	if (elf.e_ident[EI_CLASS] != ELFCLASS64) {
+		goto bad;
+	}
+
+	if (elf.e_ident[EI_DATA] != ELFDATA2LSB) {
+		goto bad;
+	}
+
+	if (elf.e_ident[EI_OSABI] != ELFOSABI_SYSV &&
+		elf.e_ident[EI_OSABI] != ELFOSABI_LINUX) {
+		goto bad;
+	}
+
+	if (elf.e_ident[EI_VERSION] != EV_CURRENT) {
+		goto bad;
+	}
+
 	if ((pgdir = setupkvm()) == NULL) {
 		return_errno = -ENOMEM;
 		goto bad;
@@ -111,6 +129,21 @@ ok:
 		}
 		if (ph.p_type != PT_LOAD)
 			continue;
+
+		// Skip empty segments.
+		if (ph.p_memsz == 0)
+			continue;
+
+#if FULL_ELF_SUPPORT
+		if (ph.p_align % PGSIZE != 0) {
+			goto bad;
+		}
+#endif
+
+		if (ph.p_vaddr % ph.p_align != ph.p_offset % ph.p_align) {
+			goto bad;
+		}
+
 		if (ph.p_memsz < ph.p_filesz) {
 			goto bad;
 		}
@@ -119,9 +152,6 @@ ok:
 		}
 		if ((sz = allocuvm(pgdir, sz, ph.p_vaddr + ph.p_memsz)) == 0) {
 			return_errno = -ENOMEM;
-			goto bad;
-		}
-		if (ph.p_vaddr % PGSIZE != 0) {
 			goto bad;
 		}
 		if ((errno_tmp = loaduvm(pgdir, (char *)ph.p_vaddr, ip, ph.p_offset, ph.p_filesz)) < 0) {

@@ -52,7 +52,7 @@ walkpgdir(uintptr_t *pgdir, const void *va, bool alloc)
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
 int
-mappages(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm)
+mappages_perm(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm)
 {
 	char *a, *last;
 	pte_t *pte;
@@ -64,13 +64,26 @@ mappages(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm)
 			return -1;
 		if (*pte & PTE_P)
 			panic("remap");
-		*pte = pa | perm | PTE_P;
+		*pte = pa | perm;
 		if (a == last)
 			break;
 		a += PGSIZE;
 		pa += PGSIZE;
 	}
 	return 0;
+}
+
+
+int
+mappages(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm)
+{
+	return mappages_perm(pgdir, va, size, pa, perm | PTE_P);
+}
+
+int
+mappages_cow(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm)
+{
+	return mappages_perm(pgdir, va, size, pa, perm | PTE_COW);
 }
 
 // Load the initcode into address 0 of pgdir.
@@ -144,6 +157,27 @@ allocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 	return newsz;
 }
 
+uintptr_t
+allocuvm_cow(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
+{
+	char *mem;
+	uintptr_t a;
+
+	if (newsz >= KERNBASE)
+		return 0;
+	if (newsz < oldsz)
+		return oldsz;
+
+	a = PGROUNDUP(oldsz);
+	for (; a < newsz; a += PGSIZE) {
+		if (mappages_cow(pgdir, (char *)a, PGSIZE, 0x0, PTE_W | PTE_U) < 0) {
+			deallocuvm(pgdir, newsz, oldsz);
+			return 0;
+		}
+	}
+	return newsz;
+
+}
 // Deallocate user pages to bring the process size from oldsz to
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
 // need to be less than oldsz.  oldsz can be larger than the actual
@@ -494,7 +528,7 @@ setupkvm(void)
 	/*
 	 * This code syncs with the setup code in entry64.S
 	 */
-	// "P4ML -> PDPT-A"
+	// "PML4 -> PDPT-A"
 	pml4[0] = v2p(pdpt) | PTE_P | PTE_W | PTE_U;
 	// "P4ML -> PDPT-B"
 	pml4[511] = v2p(kpdpt) | PTE_P | PTE_W | PTE_U;
@@ -538,13 +572,13 @@ kvmalloc(void)
 	// Notice, though, how cr4 does not have bit 7 set in entry64.S
 	// that means that this effectively does nothing until we turn it on.
 	for (n = 0; n < NPDENTRIES; n++) {
-		kpgdir0[n] = (n << PDXSHIFT) | PTE_PS | PTE_P | PTE_W;
-		kpgdir1[n] = ((n + 512) << PDXSHIFT) | PTE_PS | PTE_P | PTE_W;
+		kpgdir0[n] = (n << PDXSHIFT) | PDE_PS | PDE_P | PDE_W;
+		kpgdir1[n] = ((n + 512) << PDXSHIFT) | PDE_PS | PDE_P | PDE_W;
 	}
 	struct multiboot_tag_framebuffer_common fb_common = get_fb_common();
 	uintptr_t fb_addr = fb_common.framebuffer_addr;
 	for (n = 0; n < 16; n++) {
-		iopgdir[n] = (fb_addr + (n << PDXSHIFT)) | PTE_PS | PTE_P | PTE_W |
+		iopgdir[n] = (fb_addr + (n << PDXSHIFT)) | PDE_PS | PTE_P | PTE_W |
 								 PTE_PWT | PTE_PCD;
 	}
 	switchkvm();

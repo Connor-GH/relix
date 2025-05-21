@@ -124,6 +124,7 @@ atoi(const char *s)
 		n = n * 10 + *s++ - '0';
 	return n;
 }
+
 long long
 strtoll(const char *restrict s, char **restrict endptr, int base)
 {
@@ -207,6 +208,18 @@ int
 atoi_base(const char *s, uint32_t base)
 {
 	return (int)strtoll(s, NULL, base);
+}
+
+unsigned long long
+strtoull(const char *s, char **nptr, int base)
+{
+	return strtoll(s, nptr, base);
+}
+
+unsigned long
+strtoul(const char *s, char **endptr, int base)
+{
+	return strtoull(s, endptr, base);
 }
 
 void

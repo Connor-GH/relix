@@ -57,6 +57,10 @@ long
 strtol(const char *restrict s, char **restrict nptr, int base);
 long long
 strtoll(const char *restrict s, char **restrict nptr, int base);
+unsigned long
+strtoul(const char *s, char **endptr, int base);
+unsigned long long
+strtoull(const char *s, char **endptr, int base);
 __attribute__((noreturn)) void
 abort(void);
 void *

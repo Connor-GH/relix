@@ -17,7 +17,6 @@
 #include <sys/uio.h>
 #include <sys/param.h>
 #include <sys/stat.h>
-#include <gui.h>
 
 FILE *stdin;
 FILE *stdout;

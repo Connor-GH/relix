@@ -100,6 +100,22 @@ struct segdesc {
 #define DPL_KERNEL 0x0
 #define DPL_USER 0x3 // User DPL
 
+#define SEG_A (1 << 0) // segment accessed bit
+#define SEG_R (1 << 1) // readable (code)
+#define SEG_W (1 << 1) // writable (data)
+#define SEG_C (1 << 2) // conforming segment (code)
+#define SEG_E (1 << 2) // expand-down bit (data)
+#define SEG_CODE (1 << 3) // code segment (instead of data)
+
+// User and system segment bits.
+#define SEG_S (1 << 4) // if 0, system descriptor
+#define SEG_DPL(x) ((x) << 5) // descriptor privilege level (2 bits)
+#define SEG_P (1 << 7) // segment present
+#define SEG_AVL (1 << 8) // available for operating system use
+#define SEG_L (1 << 9) // long mode
+#define SEG_D (1 << 10) // default operation size 32-bit
+#define SEG_G (1 << 11) // granularity
+
 // Application segment type bits
 #define STA_X 0x8 // Executable segment
 #define STA_W 0x2 // Writeable (non-executable segments)
@@ -115,7 +131,6 @@ struct segdesc {
 #define STS_IG64 0xE // 64-bit Interrupt Gate
 #define STS_TG64 0xF // 64-bit Trap Gate
 #endif
-
 
 // A virtual address 'la' has a three-part structure as follows:
 //
@@ -177,7 +192,6 @@ struct segdesc {
 #define PDPT_AVL (0b111 << 9) // Available/Unused
 #define PDPT_PAT (1 << 12) // Page Attribute Table
 
-
 // Page table flags.
 #define PTE_P (1 << 0) // Present
 #define PTE_W (1 << 1) // Writeable
@@ -206,7 +220,6 @@ struct segdesc {
 #define PDE_GLOBAL (1 << 8) // Global
 #define PDE_AVL (0b111 << 9) // Available/Unused
 #define PDE_PAT (1 << 12) // Page Attribute Table
-
 
 // Address in page table or page directory entry
 #define PTE_ADDR(pte) ((uintptr_t)(pte) & ~0xFFF)

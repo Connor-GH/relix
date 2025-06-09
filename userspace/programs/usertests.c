@@ -19,7 +19,6 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 char buf[8192];
-char name[3];
 char *echoargv[] = { "/bin/echo", "ALL", "TESTS", "PASSED", NULL };
 
 // does chdir() call iput(p->cwd) in a transaction?
@@ -256,6 +255,7 @@ void
 createtest(void)
 {
 	int i, fd;
+	char name[3];
 
 	fprintf(stdout, "many creates, followed by unlink test\n");
 
@@ -659,7 +659,7 @@ createdelete(void)
 		wait(NULL);
 	}
 
-	createdelete_name[0] = name[1] = name[2] = 0;
+	createdelete_name[0] = createdelete_name[1] = createdelete_name[2] = 0;
 	for (i = 0; i < N; i++) {
 		for (pi = 0; pi < 4; pi++) {
 			createdelete_name[0] = 'p' + pi;

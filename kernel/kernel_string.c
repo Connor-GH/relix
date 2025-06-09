@@ -22,10 +22,9 @@ strcpy(char *s, const char *t)
 int
 strcmp(const char *p, const char *q)
 {
-	size_t n = strlen(p);
-	if (n != strlen(q))
-		return -1;
-	return strncmp(p, q, n);
+	size_t np = strlen(p);
+	size_t nq = strlen(q);
+	return strncmp(p, q, (np > nq ? nq : np) + 1);
 }
 
 char *

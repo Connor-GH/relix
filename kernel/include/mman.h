@@ -6,6 +6,10 @@
 #define PROT_WRITE 0x2
 #define MAP_SHARED 0x1
 
+// POSIX 2024
+#define MAP_ANONYMOUS 0x2
+#define MAP_ANON MAP_ANONYMOUS
+
 #if __KERNEL__
 #include "file.h"
 #include <stddef.h>

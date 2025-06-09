@@ -10,7 +10,6 @@
 #include "fs.h"
 #include "msr.h"
 #include "lib/compiler_attributes.h"
-#include "defs.h"
 #include "boot/multiboot2.h"
 #include "param.h"
 #include "vga.h"
@@ -62,8 +61,10 @@ mappages_perm(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm
 	for (;;) {
 		if ((pte = walkpgdir(pgdir, a, true)) == NULL)
 			return -1;
-		if (*pte & PTE_P)
+		if (*pte & PTE_P) {
+			uart_printf("Remap of %p from %#lx to %#lx\n", a, PTE_ADDR(*pte), pa);
 			panic("remap");
+		}
 		*pte = pa | perm;
 		if (a == last)
 			break;
@@ -155,6 +156,35 @@ allocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 		}
 	}
 	return newsz;
+}
+
+int
+alloc_user_bytes(uintptr_t *pgdir, const size_t size, const uintptr_t virt_addr, uintptr_t *phys_addr)
+{
+	if (size == 0)
+		return -EINVAL;
+	if (pgdir == NULL)
+		return -EINVAL;
+
+	const size_t newsize = PGROUNDUP(size);
+	for (size_t i = 0; i < newsize; i += PGSIZE) {
+		char *mem = kmalloc(PGSIZE);
+		if (mem == NULL) {
+			uart_printf("alloc_user_bytes: out of memory\n");
+			/* dealloc_user_bytes ... */
+			return -ENOMEM;
+		}
+		if (i == 0 && phys_addr != NULL)
+			*phys_addr = V2P(mem);
+		const uintptr_t proper_virt_addr = i + PGROUNDUP(virt_addr);
+
+		if (mappages(pgdir, (char *)proper_virt_addr, PGSIZE, V2P(mem), PTE_W | PTE_U) < 0) {
+			/* dealloc_user_bytes ... */
+			kfree(mem);
+			return -ENOMEM;
+		}
+	}
+	return 0;
 }
 
 uintptr_t

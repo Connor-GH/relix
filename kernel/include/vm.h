@@ -38,4 +38,6 @@ int
 mappages(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm);
 void
 unmap_user_page(uintptr_t *pgdir, char *user_va);
+int
+alloc_user_bytes(uintptr_t *pgdir, const size_t size, const uintptr_t virt_addr, uintptr_t *phys_addr);
 #endif

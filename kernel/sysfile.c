@@ -305,7 +305,6 @@ bad:
 	return -error;
 }
 
-
 size_t
 sys_open(void)
 {
@@ -318,7 +317,8 @@ sys_open(void)
 	// Always pulled in because the libc wrapper
 	// sets it to zero if the flags that require it are not set.
 	PROPOGATE_ERR(argmode_t(2, &mode));
-	if (!(((flags & O_CREAT) == O_CREAT)) && !(((flags & O_TMPFILE) == O_TMPFILE))) {
+	if (!(((flags & O_CREAT) == O_CREAT)) &&
+			!(((flags & O_TMPFILE) == O_TMPFILE))) {
 		mode = 0777; // mode is ignored.
 	}
 
@@ -342,7 +342,8 @@ sys_mkdir(void)
 	if (myproc() == NULL)
 		return -EAGAIN;
 	begin_op();
-	if ((ip = filecreate(path, (S_IFDIR | mode) & ~myproc()->umask, 0, 0)) == NULL) {
+	if ((ip = filecreate(path, (S_IFDIR | mode) & ~myproc()->umask, 0, 0)) ==
+			NULL) {
 		end_op();
 		return -ENOENT;
 	}
@@ -475,7 +476,7 @@ sys_pipe(void)
 	// Arrays don't decay like you'd expect them to
 	// when going into argptr. You must use a raw
 	// pointer type, even for arrays.
-	PROPOGATE_ERR(argptr(0, (void *)&fd, 2*sizeof(fd[0])));
+	PROPOGATE_ERR(argptr(0, (void *)&fd, 2 * sizeof(fd[0])));
 
 	PROPOGATE_ERR(pipealloc(&rf, &wf));
 	fd0 = -1;
@@ -521,12 +522,8 @@ sys_fchmod(void)
 	struct file *file;
 	mode_t mode;
 	begin_op();
-	PROPOGATE_ERR_WITH(argfd(0, NULL, &file), {
-		end_op();
-	});
-	PROPOGATE_ERR_WITH(argmode_t(1, &mode), {
-		end_op();
-	});
+	PROPOGATE_ERR_WITH(argfd(0, NULL, &file), { end_op(); });
+	PROPOGATE_ERR_WITH(argmode_t(1, &mode), { end_op(); });
 	inode_lock(file->ip);
 	file->ip->mode = (file->ip->mode & S_IFMT) | mode;
 	inode_unlock(file->ip);
@@ -662,18 +659,17 @@ sys_ioctl(void)
 		// INVARIANT: pci_init must happen before pci_get_conf().
 		struct FatPointerArray_pci_conf pci_conf = pci_get_conf();
 
-		memcpy(pci_conf_p, pci_conf.ptr,
-					 pci_conf.len * sizeof(struct pci_conf));
+		memcpy(pci_conf_p, pci_conf.ptr, pci_conf.len * sizeof(struct pci_conf));
 		return 0;
 		break;
 	}
 	case FBIOCGET_VSCREENINFO: {
 		if (file->ip->major != FB) {
-				return -EINVAL;
+			return -EINVAL;
 		}
 		struct fb_var_screeninfo *scr_info;
-		PROPOGATE_ERR(argptr(2, (char **)&scr_info,
-											 sizeof(struct fb_var_screeninfo *)));
+		PROPOGATE_ERR(
+			argptr(2, (char **)&scr_info, sizeof(struct fb_var_screeninfo *)));
 
 		if (scr_info == NULL)
 			return -EFAULT;
@@ -733,7 +729,6 @@ sys_fcntl(void)
 	int op;
 	PROPOGATE_ERR(argfd(0, NULL, &file));
 	PROPOGATE_ERR(argint(1, &op));
-
 
 	switch (op) {
 	case F_DUPFD: {
@@ -806,74 +801,96 @@ mmap_prot_to_perm(int prot)
 	return ret;
 }
 
+#define MMAP_HAS_FLAG(x, flag) ((x & flag) == flag)
+
 size_t
 sys_mmap(void)
 {
-	void *addr;
+	void *user_virt_addr;
 	size_t length;
 	int prot, flags, fd;
-	struct file *file;
+	struct file *file = NULL;
 	off_t offset;
-	PROPOGATE_ERR(argptr(0, (char **)&addr, sizeof(void *)));
+	PROPOGATE_ERR(argptr(0, (char **)&user_virt_addr, sizeof(void *)));
 	PROPOGATE_ERR(argsize_t(1, &length));
 	PROPOGATE_ERR(argint(2, &prot));
 	PROPOGATE_ERR(argint(3, &flags));
-	PROPOGATE_ERR(argfd(4, &fd, &file));
+
+	if (!MMAP_HAS_FLAG(flags, MAP_ANONYMOUS)) {
+		PROPOGATE_ERR(argfd(4, &fd, &file));
+	} else {
+		// We ignore whatever is in fd if we map anonymous.
+		(void)argfd(4, &fd, &file);
+	}
+
 	PROPOGATE_ERR(argoff_t(5, &offset));
 
 	if (length == 0)
 		return -EINVAL;
-	// We don't support MAP_PRIVATE or MAP_SHARED_VALIDATE for now.
-	if ((flags & MAP_SHARED) != MAP_SHARED)
+	// We don't support MAP_PRIVATE for now.
+	if (!MMAP_HAS_FLAG(flags, MAP_SHARED) && !MMAP_HAS_FLAG(flags, MAP_ANONYMOUS))
 		return -EINVAL;
 
-	// "The file has been locked, or too much memory has been locked"
-	if (atomic_flag_is_set(&file->ip->lock.locked))
-		return -EAGAIN;
-	if (length % PGSIZE != 0 || (uintptr_t)addr % PGSIZE != 0)
+	if (length % PGSIZE != 0 || (uintptr_t)user_virt_addr % PGSIZE != 0)
 		return -EINVAL;
 	int perm = mmap_prot_to_perm(prot);
 	struct mmap_info info;
-	if (S_ISCHR(file->ip->mode)) {
+	if (!MMAP_HAS_FLAG(flags, MAP_ANONYMOUS) && file != NULL && S_ISCHR(file->ip->mode)) {
+		// "The file has been locked, or too much memory has been locked"
+		if (atomic_flag_is_set(&file->ip->lock.locked))
+			return -EAGAIN;
 		if (file->ip->major < 0 || file->ip->major >= NDEV ||
 				!devsw[file->ip->major].mmap)
 			return -ENODEV;
-		info = devsw[file->ip->major].mmap(file->ip->minor, length, (uintptr_t)addr,
-																			 perm);
+		info = devsw[file->ip->major].mmap(file->ip->minor, length,
+																			 (uintptr_t)user_virt_addr, perm);
 		info.file = file;
 	} else {
-		info = (struct mmap_info){ length, (uintptr_t)addr, 0 /* virtual address */,
-															 NULL, perm };
+		info =
+			(struct mmap_info){ length, 0, (uintptr_t)user_virt_addr, NULL, perm };
 	}
 	struct proc *proc = myproc();
 	if (proc->mmap_count > NMMAP)
 		return -ENOMEM;
+
 	// Place it anywhere.
-	if (addr == NULL) {
-		if (info.virt_addr == 0)
-			info.virt_addr = PGROUNDUP(proc->effective_largest_sz);
-		if (mappages(myproc()->pgdir, (void *)info.virt_addr, info.length,
-								 info.addr, info.perm) < 0) {
-			return -ENOMEM;
+	if (info.virt_addr == 0) {
+		// Next spot in the heap.
+		info.virt_addr = PGROUNDUP(proc->heap + proc->heapsz);
+
+		uintptr_t user_phys_addr;
+		if (info.addr == 0) {
+			PROPOGATE_ERR(alloc_user_bytes(myproc()->pgdir, info.length,
+																		 info.virt_addr, &user_phys_addr));
+			info.addr = user_phys_addr;
+		} else {
+			PROPOGATE_ERR(mappages(myproc()->pgdir, (void *)info.virt_addr,
+														 info.length, info.addr, info.perm));
 		}
-		myproc()->effective_largest_sz += info.length;
+
+		myproc()->heapsz += info.length;
 		proc->mmap_info[proc->mmap_count++] = info;
 		return (size_t)info.virt_addr;
 	} else {
-		if (mappages(proc->pgdir, addr, info.length, info.addr, info.perm) < 0) {
+		if (mappages(proc->pgdir, user_virt_addr, info.length, info.addr,
+								 info.perm) < 0) {
+			// If we arrive here, odds are the physical address we were given is garbage.
 			void *ptr = kmalloc(info.length);
 			if (ptr == NULL)
 				return -ENOMEM;
 			info.addr = V2P(ptr);
-			if (mappages(proc->pgdir, addr, info.length, info.addr, info.perm) < 0) {
+			if (mappages(proc->pgdir, user_virt_addr, info.length, info.addr,
+									 info.perm) < 0) {
 				kfree(ptr);
 				return -ENOMEM;
 			}
+			myproc()->heapsz += info.length;
 			proc->mmap_info[proc->mmap_count++] = info;
 			return (size_t)ptr;
 		}
+		myproc()->heapsz += info.length;
 		proc->mmap_info[proc->mmap_count++] = info;
-		return (size_t)addr;
+		return (size_t)user_virt_addr;
 	}
 }
 
@@ -1104,7 +1121,6 @@ sys_access(void)
 	} else {
 		exec_ok = true;
 	}
-
 
 	perms_wanted_ok = read_ok && write_ok && exec_ok;
 

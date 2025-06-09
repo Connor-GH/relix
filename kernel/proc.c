@@ -156,6 +156,15 @@ found:
 	p->context = (struct context *)sp;
 	memset(p->context, 0, sizeof *p->context);
 	p->context->rip = (uintptr_t)forkret;
+	p->mmap_count = 0;
+
+	// FIXME: This is an arbitrary number.
+	// Right now, the virtual memory system isn't
+	// good enough to just randomize this due to
+	// not having leveled page tables generate as
+	// needed.
+	p->heap = 0x2c000000;
+	p->heapsz = 0;
 
 	p->cred.uid = 0;
 	p->cred.gid = 0;
@@ -228,8 +237,6 @@ growproc(intptr_t n)
 			return -EFAULT;
 	}
 	curproc->sz = sz;
-	if (sz > curproc->effective_largest_sz)
-		curproc->effective_largest_sz = curproc->sz;
 	switchuvm(curproc);
 	return 0;
 }
@@ -259,13 +266,15 @@ fork(bool virtual)
 		return -EIO;
 	}
 	np->sz = curproc->sz;
-	np->effective_largest_sz = curproc->effective_largest_sz;
 	// Only do this for regular fork().
 	if (!virtual) {
+		np->heap = curproc->heap;
+		np->heapsz = curproc->heapsz;
+
 		np->mmap_count = curproc->mmap_count;
 		memcpy(np->mmap_info, curproc->mmap_info, sizeof(np->mmap_info));
 		// Copying the info isn't enough. We also need to map it.
-		for (int j = 0; np->mmap_info[j].file != NULL; j++) {
+		for (int j = 0; np->mmap_info[j].length != 0; j++) {
 			struct mmap_info info = np->mmap_info[j];
 			if (mappages(np->pgdir, (void *)info.virt_addr, info.length, info.addr,
 									 info.perm) < 0) {

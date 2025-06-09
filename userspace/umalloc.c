@@ -67,6 +67,9 @@ morecore(size_t nu)
 	if (nu < MORECORE_THRESHOLD) {
 		nu = MORECORE_THRESHOLD;
 	}
+	// TODO this will be uncommented when the full
+	// sbrk->mmap migration is complete.
+	//p = mmap(NULL, nu * sizeof(Header), PROT_READ | PROT_WRITE, MAP_ANONYMOUS, -1, 0);
 	p = sbrk(nu * sizeof(Header));
 	if (p == (char *)-1)
 		return NULL;

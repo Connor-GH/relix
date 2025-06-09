@@ -88,7 +88,8 @@ struct proc {
 	char ptrace_mask_ptr[SYSCALL_AMT + 1]; // mask for tracing syscalls
 	struct mmap_info mmap_info[NMMAP];
 	size_t mmap_count;
-	size_t effective_largest_sz; // Largest address when including mmap
+	uintptr_t heap; // Location of the heap.
+	uintptr_t heapsz;
 	sighandler_t sig_handlers[__SIG_last];
 	int last_signal;
 	mode_t umask;

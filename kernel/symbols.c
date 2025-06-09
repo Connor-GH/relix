@@ -109,7 +109,17 @@ symbol_table_init(const struct Elf64_Shdr *sections, uint16_t entsize, uint16_t 
 	}
 
 	char *symname = kmalloc(symname_len);
+	if (symname == NULL) {
+		log_no_symbols("symname == NULL");
+		return;
+	}
+
 	s_symbols = kmalloc(s_symbol_num * sizeof(elf_symbol_t));
+	if (s_symbols == NULL) {
+		log_no_symbols("symname == NULL");
+		return;
+	}
+
 	size_t symname_idx = 0;
 	int symbol_idx = 0;
 

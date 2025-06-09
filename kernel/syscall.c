@@ -115,8 +115,8 @@ argptr(int n, char **pp, int size)
 
 	PROPOGATE_ERR(arguintptr_t(n, &ptr));
 
-	if (size < 0 || ((uintptr_t)ptr >= curproc->effective_largest_sz ||
-									 (uintptr_t)ptr + size > curproc->effective_largest_sz)) {
+	if (size < 0 || ((uintptr_t)ptr >= curproc->sz ||
+									 (uintptr_t)ptr + size > curproc->sz)) {
 		return -EFAULT;
 	}
 	*pp = (char *)ptr;

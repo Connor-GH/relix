@@ -237,7 +237,6 @@ ok:
 	curproc->tf->rsp = ROUND_UP(sp, 16) - 8;
 	memset(curproc->mmap_info, 0, sizeof(curproc->mmap_info));
 	curproc->mmap_count = 0;
-	curproc->effective_largest_sz = sz;
 	// If parent is NULL, it's also possible we are init.
 
 	// TODO this needs to be a copy, not a reference

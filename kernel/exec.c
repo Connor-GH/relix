@@ -237,25 +237,21 @@ ok:
 	curproc->tf->rsp = ROUND_UP(sp, 16) - 8;
 	memset(curproc->mmap_info, 0, sizeof(curproc->mmap_info));
 	curproc->mmap_count = 0;
-	// If parent is NULL, it's also possible we are init.
 
+	// If parent is NULL, it's also possible we are init.
 	// TODO this needs to be a copy, not a reference
 	if (curproc->parent != NULL)
 		curproc->cred = curproc->parent->cred;
 
-	// FIXME:
-	// I know that this needs to be here in order to close
-	// those files, but there are currently some bugs with it
-	// (it causes a kernel panic when it shouldn't). That makes
-	// me think that, at this point, curproc->ofile is uninitialized.
-	// I have not tried to look and see whether it is or not.
-#if 0
+	// Only close files if we were passed FD_CLOEXEC.
 	for (int j = 0; j < NOFILE; j++) {
 		if (curproc->ofile[j] != NULL && curproc->ofile[j]->flags == FD_CLOEXEC) {
 			(void)fileclose(curproc->ofile[j]);
+			// This is needed as fileclose() does not do this.
+			curproc->ofile[j] = NULL;
 		}
 	}
-#endif
+
 	switchuvm(curproc);
 	freevm(oldpgdir);
 	return 0;

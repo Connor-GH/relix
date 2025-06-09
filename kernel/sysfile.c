@@ -734,10 +734,15 @@ sys_fcntl(void)
 	case F_DUPFD: {
 		int arg;
 		int fd;
+		struct file *duped_file;
 		PROPOGATE_ERR(argint(2, &arg));
 		PROPOGATE_ERR(fd = fdalloc(file));
-		if (filedup(file) == NULL)
+		if ((duped_file = filedup(file)) == NULL)
 			return -EBADF;
+		if (!(fd >= arg)) {
+			fileclose(duped_file);
+			return -EINVAL;
+		}
 		return fd;
 	}
 	case F_DUPFD_CLOEXEC: {
@@ -748,6 +753,10 @@ sys_fcntl(void)
 		PROPOGATE_ERR(fd = fdalloc(file));
 		if ((duped_file = filedup(file)) == NULL)
 			return -EBADF;
+		if (!(fd >= arg)) {
+			fileclose(duped_file);
+			return -EINVAL;
+		}
 		duped_file->flags = FD_CLOEXEC;
 		return fd;
 	}

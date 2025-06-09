@@ -354,7 +354,7 @@ fileclose(struct file *f)
 
 	acquire(&ftable.lock);
 	if (unlikely(f->ref < 1))
-		panic("fileclose");
+		panic("fileclose: file already closed");
 	// Is the file open somewhere else?
 	// If so, just leave with success.
 	if (--f->ref > 0) {
@@ -372,6 +372,7 @@ fileclose(struct file *f)
 	ff = *f;
 	f->ref = 0;
 	f->type = FD_NONE;
+	f->flags = 0;
 	release(&ftable.lock);
 
 	if (ff.type == FD_PIPE || ff.type == FD_FIFO) {

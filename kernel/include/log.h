@@ -5,7 +5,7 @@
 void
 initlog(dev_t dev);
 void
-log_write(struct buf *);
+log_write(struct block_buffer *);
 void
 begin_op(void) __acquires(op);
 void

@@ -30,11 +30,11 @@
 // You must hold idelock while manipulating queue.
 
 static struct spinlock idelock;
-static struct buf *idequeue;
+static struct block_buffer *idequeue;
 
 static int havedisk1;
 static void
-idestart(struct buf *);
+idestart(struct block_buffer *);
 
 // Wait for IDE disk to become ready.
 static int
@@ -109,7 +109,7 @@ ideinit(void)
 
 // Start the request for b.  Caller must hold idelock.
 static void
-idestart(struct buf *b)
+idestart(struct block_buffer *b)
 {
 	if (unlikely(b == NULL))
 		panic("idestart");
@@ -141,7 +141,7 @@ idestart(struct buf *b)
 void
 ideintr(void)
 {
-	struct buf *b;
+	struct block_buffer *b;
 
 	// First queued buffer is the active request.
 	acquire(&idelock);
@@ -172,9 +172,9 @@ ideintr(void)
 // If B_DIRTY is set, write buf to disk, clear B_DIRTY, set B_VALID.
 // Else if B_VALID is not set, read buf from disk, set B_VALID.
 void
-iderw(struct buf *b)
+iderw(struct block_buffer *b)
 {
-	struct buf **pp;
+	struct block_buffer **pp;
 
 	if (!holdingsleep(&b->lock))
 		panic("iderw: buf not locked");

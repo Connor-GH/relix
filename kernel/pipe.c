@@ -10,7 +10,6 @@
 
 #define PIPESIZE PIPE_BUF
 
-
 int
 pipealloc(struct file **f0, struct file **f1)
 {
@@ -18,12 +17,15 @@ pipealloc(struct file **f0, struct file **f1)
 
 	p = NULL;
 	*f0 = *f1 = NULL;
-	if ((*f0 = filealloc()) == NULL || (*f1 = filealloc()) == NULL)
+	if ((*f0 = filealloc()) == NULL || (*f1 = filealloc()) == NULL) {
 		goto bad;
-	if ((p = kmalloc(sizeof(*p))) == NULL)
+	}
+	if ((p = kmalloc(sizeof(*p))) == NULL) {
 		goto bad;
-	if ((p->ring_buffer = ring_buffer_create(PIPESIZE, kmalloc)) == NULL)
+	}
+	if ((p->ring_buffer = ring_buffer_create(PIPESIZE, kmalloc)) == NULL) {
 		goto bad;
+	}
 	// This creates a pipe like in pipe(2), but we reuse this
 	// function to make FIFOs.
 	p->readopen = 1;
@@ -49,10 +51,12 @@ bad:
 	}
 	// We ignore the return values here
 	// because we are erroring anyway.
-	if (*f0)
+	if (*f0) {
 		(void)fileclose(*f0);
-	if (*f1)
+	}
+	if (*f1) {
 		(void)fileclose(*f1);
+	}
 	return -ENOMEM;
 }
 
@@ -78,7 +82,6 @@ pipeclose(struct pipe *p, int writable)
 int
 pipewrite(struct pipe *p, char *addr, int n)
 {
-	int i;
 
 	acquire(&p->lock);
 
@@ -89,8 +92,9 @@ pipewrite(struct pipe *p, char *addr, int n)
 		kill(myproc()->pid, SIGPIPE);
 		return -EPIPE;
 	}
-	for (i = 0; i < n; i++) {
-		while (p->ring_buffer->nwrite == p->ring_buffer->nread + p->ring_buffer->size) {
+	for (int i = 0; i < n; i++) {
+		while (p->ring_buffer->nwrite ==
+					 p->ring_buffer->nread + p->ring_buffer->size) {
 			if (p->readopen == 0 || myproc()->killed) {
 				release(&p->lock);
 				return -EPIPE;
@@ -98,7 +102,8 @@ pipewrite(struct pipe *p, char *addr, int n)
 			wakeup(&p->ring_buffer->nread);
 			sleep(&p->ring_buffer->nwrite, &p->lock);
 		}
-		p->ring_buffer->data[p->ring_buffer->nwrite++ % p->ring_buffer->size] = addr[i];
+		p->ring_buffer->data[p->ring_buffer->nwrite++ % p->ring_buffer->size] =
+			addr[i];
 	}
 	wakeup(&p->ring_buffer->nread);
 	release(&p->lock);
@@ -111,7 +116,7 @@ piperead(struct pipe *p, char *addr, int n)
 	int i;
 
 	acquire(&p->lock);
-	 while (p->ring_buffer->nread == p->ring_buffer->nwrite && p->writeopen) {
+	while (p->ring_buffer->nread == p->ring_buffer->nwrite && p->writeopen) {
 		if (myproc()->killed) {
 			release(&p->lock);
 			return -1;
@@ -119,9 +124,11 @@ piperead(struct pipe *p, char *addr, int n)
 		sleep(&p->ring_buffer->nread, &p->lock);
 	}
 	for (i = 0; i < n; i++) {
-		if (p->ring_buffer->nread == p->ring_buffer->nwrite)
+		if (p->ring_buffer->nread == p->ring_buffer->nwrite) {
 			break;
-		addr[i] = p->ring_buffer->data[p->ring_buffer->nread++ % p->ring_buffer->size];
+		}
+		addr[i] =
+			p->ring_buffer->data[p->ring_buffer->nread++ % p->ring_buffer->size];
 	}
 	wakeup(&p->ring_buffer->nwrite);
 	release(&p->lock);

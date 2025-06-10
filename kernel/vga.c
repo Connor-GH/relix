@@ -8,8 +8,6 @@
 #include "macros.h"
 #include "mman.h"
 #include "uart.h"
-#include "kalloc.h"
-#include "console.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -32,8 +30,8 @@ struct CursorPosition {
 	uint32_t x;
 	uint32_t y;
 };
-static struct DamageTracking damage_tracking_data = {0};
-static struct CursorPosition cursor_position = {0, 0};
+static struct DamageTracking damage_tracking_data = { 0 };
+static struct CursorPosition cursor_position = { 0, 0 };
 const uint32_t COLOR_RED;
 #define INTERNAL_COLOR_RED                       \
 	(((1 << fb_rgb.framebuffer_red_mask_size) - 1) \
@@ -75,7 +73,8 @@ vgaclose_noop(short minor)
 static struct mmap_info
 vgammap(short minor, size_t length, uintptr_t addr, int perm)
 {
-	return (struct mmap_info){WIDTH*HEIGHT*(BPP_DEPTH/8), fb_common.framebuffer_addr, 0, NULL, perm};
+	return (struct mmap_info){ WIDTH * HEIGHT * (BPP_DEPTH / 8),
+														 fb_common.framebuffer_addr, 0, NULL, perm };
 }
 // INVARIANT: must be ran after vga_init().
 struct multiboot_tag_framebuffer_common
@@ -109,15 +108,15 @@ void
 vga_write(uint32_t x, uint32_t y, uint32_t color)
 {
 	kernel_assert(fb_data != NULL);
-	if (x > fb_common.framebuffer_width || y > fb_common.framebuffer_height)
+	if (x > fb_common.framebuffer_width || y > fb_common.framebuffer_height) {
 		return;
+	}
 
 	void *fb = IO2V(fb_common.framebuffer_addr);
 	multiboot_uint32_t *pixel =
 		fb + fb_common.framebuffer_pitch * y + (fb_common.framebuffer_bpp / 8) * x;
 	*pixel = color;
 }
-
 
 // fb_char_index counts all pixels for width,
 // but only the bottom pixels in a font for height. So for
@@ -146,8 +145,7 @@ x_y_to_fb_char_index(uint32_t x, uint32_t y, uint8_t font_width)
 
 static void
 render_font_glyph(const uint8_t character, const uint32_t x, const uint32_t y,
-									const uint8_t width,
-									const uint8_t height,
+									const uint8_t width, const uint8_t height,
 									const bool font[static 256][width * height],
 									const uint32_t foreground, const uint32_t background)
 {
@@ -155,13 +153,13 @@ render_font_glyph(const uint8_t character, const uint32_t x, const uint32_t y,
 		for (int j = 0; j < width; j++) {
 			const uint32_t adjusted_x = x + j;
 			const uint32_t adjusted_y = y + i;
-			if (font[character][i * width + j] == 1)
+			if (font[character][i * width + j] == 1) {
 				vga_write(adjusted_x, adjusted_y, foreground);
-			else
+			} else {
 				vga_write(adjusted_x, adjusted_y, background);
+			}
 		}
 	}
-
 }
 static uint32_t
 width_chars(uint8_t width)
@@ -173,7 +171,6 @@ height_chars(uint8_t height)
 {
 	return HEIGHT / height;
 }
-
 
 void
 ansi_set_cursor_location(uint16_t x, uint16_t y)
@@ -188,7 +185,7 @@ ansi_set_cursor_location_x(uint16_t x)
 {
 	struct font_data_8x16 font_data = { 8, 16, &font_default };
 	fb_char_index = x_y_to_fb_char_index(x, cursor_position.y, font_data.width);
-	cursor_position = (struct CursorPosition){x, cursor_position.y};
+	cursor_position = (struct CursorPosition){ x, cursor_position.y };
 }
 
 void
@@ -196,7 +193,7 @@ ansi_set_cursor_location_y(uint16_t y)
 {
 	struct font_data_8x16 font_data = { 8, 16, &font_default };
 	fb_char_index = x_y_to_fb_char_index(cursor_position.x, y, font_data.width);
-	cursor_position = (struct CursorPosition){cursor_position.x, y};
+	cursor_position = (struct CursorPosition){ cursor_position.x, y };
 }
 void
 ansi_set_cursor_location_up(uint16_t by)
@@ -208,16 +205,17 @@ static void
 vga_write_carriage_return(uint32_t fb_width, uint8_t font_width)
 {
 	fb_char_index = ROUND_UP(fb_char_index, fb_width) - fb_width;
-	cursor_position = (struct CursorPosition){fb_char_index, font_width};
+	cursor_position = (struct CursorPosition){ fb_char_index, font_width };
 }
 
 static void
 vga_write_newline(uint32_t fb_width, uint8_t font_width, uint32_t height)
 {
-	if (fb_char_index % fb_width == 0)
+	if (fb_char_index % fb_width == 0) {
 		fb_char_index += fb_width;
-	else
+	} else {
 		fb_char_index = ROUND_UP(fb_char_index, fb_width);
+	}
 }
 
 static void
@@ -241,23 +239,24 @@ static void
 vga_scroll(uint32_t fb_width, uint32_t fb_height, uint8_t font_width,
 					 uint8_t font_height, const bool (*font)[])
 {
-
 	uint32_t fb_in_bytes = fb_height * fb_width;
 
 	// Initiate scroll.
-	for (int i = (fb_width * font_height); i < fb_in_bytes; i+=font_width) {
+	for (int i = (fb_width * font_height); i < fb_in_bytes; i += font_width) {
 		uint32_t x = pixel_count_to_char_x_coord(i, font_width);
 		uint32_t y = pixel_count_to_char_y_coord(i / font_height, font_width);
 		// We "have" to scroll on these chars.
-		if (!(damage_tracking_data.data[x][y] == damage_tracking_data.data[x][y-1] &&
-			damage_tracking_data.fg[x][y] == damage_tracking_data.fg[x][y-1] &&
-			damage_tracking_data.bg[x][y] == damage_tracking_data.bg[x][y-1])) {
+		if (!(damage_tracking_data.data[x][y] ==
+						damage_tracking_data.data[x][y - 1] &&
+					damage_tracking_data.fg[x][y] == damage_tracking_data.fg[x][y - 1] &&
+					damage_tracking_data.bg[x][y] == damage_tracking_data.bg[x][y - 1])) {
 			render_font_glyph(damage_tracking_data.data[x][y], x * font_width,
-										 (y-1) * font_height, font_width, font_height, font,
-										 damage_tracking_data.fg[x][y], damage_tracking_data.bg[x][y]);
-			damage_tracking_data.data[x][y-1] = damage_tracking_data.data[x][y];
-			damage_tracking_data.fg[x][y-1] = damage_tracking_data.fg[x][y];
-			damage_tracking_data.bg[x][y-1] = damage_tracking_data.bg[x][y];
+												(y - 1) * font_height, font_width, font_height, font,
+												damage_tracking_data.fg[x][y],
+												damage_tracking_data.bg[x][y]);
+			damage_tracking_data.data[x][y - 1] = damage_tracking_data.data[x][y];
+			damage_tracking_data.fg[x][y - 1] = damage_tracking_data.fg[x][y];
+			damage_tracking_data.bg[x][y - 1] = damage_tracking_data.bg[x][y];
 		}
 	}
 	const uint32_t height = height_chars(font_height);
@@ -265,14 +264,14 @@ vga_scroll(uint32_t fb_width, uint32_t fb_height, uint8_t font_width,
 
 	// Clear the last row.
 	for (int i = 0; i < width; i++) {
-		damage_tracking_data.data[i][height-1] = ' ';
-		damage_tracking_data.fg[i][height-1] = VGA_COLOR_WHITE;
-		damage_tracking_data.bg[i][height-1] = VGA_COLOR_BLACK;
+		damage_tracking_data.data[i][height - 1] = ' ';
+		damage_tracking_data.fg[i][height - 1] = VGA_COLOR_WHITE;
+		damage_tracking_data.bg[i][height - 1] = VGA_COLOR_BLACK;
 
-		clear_cells(i, height-1, 1, 1,
-							font_width, font_height, VGA_COLOR_WHITE, VGA_COLOR_BLACK, font);
+		clear_cells(i, height - 1, 1, 1, font_width, font_height, VGA_COLOR_WHITE,
+								VGA_COLOR_BLACK, font);
 	}
-	cursor_position = (struct CursorPosition){0, height-1};
+	cursor_position = (struct CursorPosition){ 0, height - 1 };
 
 	vga_write_carriage_return(fb_width, font_width);
 }
@@ -290,12 +289,13 @@ clear_cells(uint32_t x, uint32_t y, uint32_t x_len, uint32_t y_len,
 {
 	const uint32_t height = height_chars(font_height);
 	const uint32_t width = width_chars(font_width);
-	if (x > width || y > height)
+	if (x > width || y > height) {
 		return;
+	}
 	for (uint32_t i = 0; i < x_len; i++) {
 		for (uint32_t j = 0; j < y_len; j++) {
-			render_font_glyph(' ', (i+x)*font_width, (j+y)*font_height, font_width,
-										 font_height, font, foreground, background);
+			render_font_glyph(' ', (i + x) * font_width, (j + y) * font_height,
+												font_width, font_height, font, foreground, background);
 		}
 	}
 }
@@ -303,9 +303,11 @@ clear_cells(uint32_t x, uint32_t y, uint32_t x_len, uint32_t y_len,
 void
 ansi_erase_in_front_of_cursor(void)
 {
-	struct font_data_8x16 font_data = {8, 16, &font_default};
-	uint32_t background = damage_tracking_data.bg[cursor_position.x][cursor_position.y];
-	uint32_t foreground = damage_tracking_data.fg[cursor_position.x][cursor_position.y];
+	struct font_data_8x16 font_data = { 8, 16, &font_default };
+	uint32_t background =
+		damage_tracking_data.bg[cursor_position.x][cursor_position.y];
+	uint32_t foreground =
+		damage_tracking_data.fg[cursor_position.x][cursor_position.y];
 	/*
 	 * Observe the following situation where we want to erase from '$' to 'END':
 	 * $ foo bar baz
@@ -325,12 +327,14 @@ ansi_erase_in_front_of_cursor(void)
 	 * [m]              END
 	 */
 	clear_cells(cursor_position.x, cursor_position.y,
-						 width_chars(font_data.width) - cursor_position.x,
-						 height_chars(font_data.height) - cursor_position.y + 1, font_data.width,
-						 font_data.height, foreground, background, *font_data.font);
-	clear_cells(0, cursor_position.y, cursor_position.x-1,
-						 height_chars(font_data.height) - cursor_position.y + 1, font_data.width,
-						 font_data.height, foreground, background, *font_data.font);
+							width_chars(font_data.width) - cursor_position.x,
+							height_chars(font_data.height) - cursor_position.y + 1,
+							font_data.width, font_data.height, foreground, background,
+							*font_data.font);
+	clear_cells(0, cursor_position.y, cursor_position.x - 1,
+							height_chars(font_data.height) - cursor_position.y + 1,
+							font_data.width, font_data.height, foreground, background,
+							*font_data.font);
 }
 
 // Consistent with the define found in console.c.
@@ -342,7 +346,7 @@ vga_write_char(int c, uint32_t foreground, uint32_t background)
 	struct font_data_8x16 font_data = { 8, 16, &font_default };
 	// Past last line.
 	if (fb_char_index >= WIDTH * height_chars(font_data.height) ||
-	// Last line and newline
+			// Last line and newline
 			((fb_char_index >= (WIDTH * (height_chars(font_data.height) - 1))) &&
 			 c == '\n')) {
 		vga_scroll(WIDTH, HEIGHT, font_data.width, font_data.height, font_default);
@@ -355,19 +359,20 @@ vga_write_char(int c, uint32_t foreground, uint32_t background)
 	} else if (c == '\b' || c == BACKSPACE) {
 		vga_backspace(font_data.width, font_data.height, background);
 	} else {
-		render_font_glyph(c,
-											pixel_count_to_char_x_coord(fb_char_index, font_data.width) *
-										font_data.width,
-											pixel_count_to_char_y_coord(fb_char_index, font_data.width) *
-										font_data.height,
-											font_data.width, font_data.height, *font_data.font, foreground,
-											background);
+		render_font_glyph(
+			c,
+			pixel_count_to_char_x_coord(fb_char_index, font_data.width) *
+				font_data.width,
+			pixel_count_to_char_y_coord(fb_char_index, font_data.width) *
+				font_data.height,
+			font_data.width, font_data.height, *font_data.font, foreground,
+			background);
 		uint32_t x = pixel_count_to_char_x_coord(fb_char_index, font_data.width);
 		uint32_t y = pixel_count_to_char_y_coord(fb_char_index, font_data.width);
 		damage_tracking_data.data[x][y] = (char)c;
 		damage_tracking_data.fg[x][y] = foreground;
 		damage_tracking_data.bg[x][y] = background;
-		cursor_position = (struct CursorPosition){x, y};
+		cursor_position = (struct CursorPosition){ x, y };
 		fb_char_index += font_data.width;
 	}
 	if (c == BACKSPACE) {

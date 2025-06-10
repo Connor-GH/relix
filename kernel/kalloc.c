@@ -19,14 +19,14 @@
 #include <string.h>
 #include "kernel_ld_syms.h"
 
-void
+static void
 freerange(void *vstart, void *vend);
 
 struct run {
 	struct run *next;
 };
 
-struct {
+static struct {
 	struct spinlock lock[NCPU];
 	struct run *freelist[NCPU];
 	bool use_lock;
@@ -40,8 +40,9 @@ struct {
 void
 kinit1(void *vstart, void *vend)
 {
-	for (int i = 0; i < min(NCPU, ncpu); i++)
+	for (int i = 0; i < min(NCPU, ncpu); i++) {
 		initlock(&kmem.lock[i], "kmem");
+	}
 	kmem.use_lock = false;
 	freerange(vstart, vend);
 }
@@ -57,12 +58,12 @@ void
 freerange(void *vstart, void *vend)
 {
 	pushcli();
-	char *p;
-	p = (char *)PGROUNDUP((uintptr_t)vstart);
+	char *p = (char *)PGROUNDUP((uintptr_t)vstart);
 	// If this fails, this will cause a page fault
 	// instead of a panic due to the memory for the VGA not being mapped.
-	for (; p + PGSIZE <= (char *)vend; p += PGSIZE)
+	for (; p + PGSIZE <= (char *)vend; p += PGSIZE) {
 		kpage_free(p);
+	}
 	popcli();
 }
 
@@ -77,24 +78,28 @@ kpage_free(char *v) __releases(kpage)
 {
 	pushcli();
 	struct run *r;
-	int id = my_cpu_id();
+	const int id = my_cpu_id();
 	// We do not allocate for devices.
-	if (V2IO(v) >= DEVBASE)
+	if (V2IO(v) >= DEVBASE) {
 		return;
+	}
 
 	if ((uintptr_t)v % PGSIZE || v < __kernel_end ||
-		(V2P(v) >= available_memory && likely(available_memory > 0)))
+			(V2P(v) >= available_memory && likely(available_memory > 0))) {
 		panic("kpage_free");
+	}
 
-	if (kmem.use_lock)
+	if (kmem.use_lock) {
 		acquire(&kmem.lock[id]);
+	}
 
 	r = (struct run *)v;
 	r->next = kmem.freelist[id];
 	kmem.freelist[id] = r;
 
-	if (kmem.use_lock)
+	if (kmem.use_lock) {
 		release(&kmem.lock[id]);
+	}
 	popcli();
 	__release(kpage);
 }
@@ -106,31 +111,38 @@ char *
 kpage_alloc(void) __acquires(kpage)
 {
 	pushcli();
-	int id = my_cpu_id();
+	const int id = my_cpu_id();
 	struct run *r;
 
-	if (kmem.use_lock)
+	if (kmem.use_lock) {
 		acquire(&kmem.lock[id]);
+	}
 	r = kmem.freelist[id];
-	if (r)
+	if (r) {
 		kmem.freelist[id] = r->next;
-	if (kmem.use_lock)
+	}
+	if (kmem.use_lock) {
 		release(&kmem.lock[id]);
+	}
 
 	if (!r) {
 		for (int i = 0; i < min(NCPU, ncpu); i++) {
-			if (kmem.use_lock)
+			if (kmem.use_lock) {
 				acquire(&kmem.lock[i]);
+			}
 
 			r = kmem.freelist[i];
-			if (r)
+			if (r) {
 				kmem.freelist[i] = r->next;
+			}
 
-			if (kmem.use_lock)
+			if (kmem.use_lock) {
 				release(&kmem.lock[i]);
+			}
 
-			if (r)
+			if (r) {
 				break;
+			}
 		}
 	}
 
@@ -145,8 +157,8 @@ kpage_alloc(void) __acquires(kpage)
 typedef long Align;
 
 struct header {
-		struct header *ptr; // Next free list.
-		size_t size;
+	struct header *ptr; // Next free list.
+	size_t size;
 } __attribute__((aligned(8)));
 
 typedef struct header Header;
@@ -169,12 +181,15 @@ kfree(void *ap) __releases(kmem)
 	}
 
 	bp = ptr_to_header(ap);
-	for (p = freep; p && !(bp > p && bp < p->ptr); p = p->ptr)
-		if (p >= p->ptr && (bp > p || bp < p->ptr))
+	for (p = freep; p && !(bp > p && bp < p->ptr); p = p->ptr) {
+		if (p >= p->ptr && (bp > p || bp < p->ptr)) {
 			break;
+		}
+	}
 
-	if (!p)
+	if (!p) {
 		return;
+	}
 
 	if (bp + bp->size == p->ptr) {
 		bp->size += p->ptr->size;
@@ -193,19 +208,20 @@ kfree(void *ap) __releases(kmem)
 	__release(kmem);
 }
 
-
 static Header *
 morecore(size_t nu)
 {
 	char *p;
 	Header *hp;
 
-	if (nu < MORECORE_MAX)
+	if (nu < MORECORE_MAX) {
 		nu = MORECORE_MAX;
+	}
 
 	p = kpage_alloc();
-	if (p == NULL)
+	if (p == NULL) {
 		return NULL;
+	}
 	hp = (Header *)p;
 	hp->size = 4096 / sizeof(Header); // kalloc always allocates 4096 bytes
 	kfree(header_to_ptr(hp));
@@ -216,7 +232,7 @@ morecore(size_t nu)
 void *
 kmalloc(size_t nbytes) __acquires(kmem)
 {
-	Header *p, *prevp;
+	Header *prevp;
 	size_t nunits;
 
 	if (nbytes == 0) {
@@ -231,9 +247,10 @@ kmalloc(size_t nbytes) __acquires(kmem)
 		base.ptr = freep = prevp = &base;
 		base.size = 0;
 	}
-	for (p = prevp->ptr;; prevp = p, p = p->ptr) {
-		if (!p)
+	for (Header *p = prevp->ptr;; prevp = p, p = p->ptr) {
+		if (p == NULL) {
 			return NULL;
+		}
 		// We found a size that can fit the amount of bytes we want.
 		if (p->size >= nunits) {
 			// It is exactly the right size.
@@ -252,21 +269,26 @@ kmalloc(size_t nbytes) __acquires(kmem)
 			__acquire(kmem);
 			return header_to_ptr(p);
 		}
-		if (p == freep)
-			if ((p = morecore(nunits)) == NULL)
+		if (p == freep) {
+			if ((p = morecore(nunits)) == NULL) {
 				return NULL;
+			}
+		}
 	}
 }
+
 __attribute__((malloc)) void *
 krealloc(void *ptr, size_t size)
 {
-	if (ptr == NULL)
+	if (ptr == NULL) {
 		return kmalloc(size);
+	}
 
 	Header *hdr = ptr_to_header(ptr);
 	void *newptr = kmalloc(size);
-	if (newptr == NULL)
+	if (newptr == NULL) {
 		return NULL;
+	}
 
 	memcpy(newptr, ptr, min(hdr->size, size));
 	kfree(ptr);
@@ -278,8 +300,9 @@ __attribute__((malloc)) void *
 kcalloc(size_t size)
 {
 	void *ptr = kmalloc(size);
-	if (ptr == NULL)
+	if (ptr == NULL) {
 		return NULL;
+	}
 	memset(ptr, '\0', size);
 	return ptr;
 }

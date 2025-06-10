@@ -1,21 +1,44 @@
+/* vm64.c
+ *
+ * Copyright (c) 2013 Brian Swetland
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ */
+
+#include "boot/multiboot2.h"
+#include "console.h"
 #include "errno.h"
-#include "kernel_assert.h"
-#include <stdint.h>
-#include <string.h>
-#include "drivers/memlayout.h"
-#include "drivers/mmu.h"
+#include "memlayout.h"
+#include "mmu.h"
+#include "proc.h"
 #include "kalloc.h"
 #include "console.h"
 #include "vm.h"
 #include "fs.h"
 #include "msr.h"
-#include "lib/compiler_attributes.h"
-#include "boot/multiboot2.h"
 #include "param.h"
 #include "vga.h"
 #include "x86.h"
-#include "proc.h"
-
+#include <stdint.h>
+#include <string.h>
 
 uintptr_t *kpgdir; // for use in scheduler()
 
@@ -32,11 +55,11 @@ walkpgdir(uintptr_t *pgdir, const void *va, bool alloc)
 	if (*pde & PTE_P) {
 		pgtab = (pte_t *)p2v(PTE_ADDR(*pde));
 	} else {
-
 		// Not present? We need to allocate. But if we aren't allocating,
 		// this makes no sense to do.
-		if (!alloc || (pgtab = (pte_t *)kpage_alloc()) == NULL)
+		if (!alloc || (pgtab = (pte_t *)kpage_alloc()) == NULL) {
 			return NULL;
+		}
 		// Make sure all those PTE_P bits are zero.
 		memset(pgtab, 0, PGSIZE);
 		// The permissions here are overly generous, but they can
@@ -51,7 +74,8 @@ walkpgdir(uintptr_t *pgdir, const void *va, bool alloc)
 // physical addresses starting at pa. va and size might not
 // be page-aligned.
 int
-mappages_perm(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm)
+mappages_perm(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa,
+							int perm)
 {
 	char *a, *last;
 	pte_t *pte;
@@ -59,21 +83,22 @@ mappages_perm(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm
 	a = (char *)PGROUNDDOWN((uintptr_t)va);
 	last = (char *)PGROUNDDOWN(((uintptr_t)va) + size - 1);
 	for (;;) {
-		if ((pte = walkpgdir(pgdir, a, true)) == NULL)
+		if ((pte = walkpgdir(pgdir, a, true)) == NULL) {
 			return -1;
+		}
 		if (*pte & PTE_P) {
 			uart_printf("Remap of %p from %#lx to %#lx\n", a, PTE_ADDR(*pte), pa);
 			panic("remap");
 		}
 		*pte = pa | perm;
-		if (a == last)
+		if (a == last) {
 			break;
+		}
 		a += PGSIZE;
 		pa += PGSIZE;
 	}
 	return 0;
 }
-
 
 int
 mappages(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa, int perm)
@@ -94,8 +119,9 @@ inituvm(uintptr_t *pgdir, char *init, uint32_t sz)
 {
 	char *mem;
 
-	if (sz >= PGSIZE)
+	if (sz >= PGSIZE) {
 		panic("inituvm: more than a page");
+	}
 	mem = kpage_alloc();
 	memset(mem, 0, PGSIZE);
 	mappages(pgdir, NULL, PGSIZE, V2P(mem), PTE_W | PTE_U);
@@ -111,18 +137,22 @@ loaduvm(uintptr_t *pgdir, char *addr, struct inode *ip, uint32_t offset,
 	uintptr_t i, pa, n;
 	pte_t *pte;
 
-	if ((uintptr_t)addr % PGSIZE != 0)
+	if ((uintptr_t)addr % PGSIZE != 0) {
 		panic("loaduvm: addr must be page aligned");
+	}
 	for (i = 0; i < sz; i += PGSIZE) {
-		if ((pte = walkpgdir(pgdir, addr + i, false)) == NULL)
+		if ((pte = walkpgdir(pgdir, addr + i, false)) == NULL) {
 			panic("loaduvm: address should exist");
+		}
 		pa = PTE_ADDR(*pte);
-		if (sz - i < PGSIZE)
+		if (sz - i < PGSIZE) {
 			n = sz - i;
-		else
+		} else {
 			n = PGSIZE;
-		if (inode_read(ip, p2v(pa), offset + i, n) != n)
+		}
+		if (inode_read(ip, p2v(pa), offset + i, n) != n) {
 			return -1;
+		}
 	}
 	return 0;
 }
@@ -135,10 +165,12 @@ allocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 	char *mem;
 	uintptr_t a;
 
-	if (newsz >= KERNBASE)
+	if (newsz >= KERNBASE) {
 		return 0;
-	if (newsz < oldsz)
+	}
+	if (newsz < oldsz) {
 		return oldsz;
+	}
 
 	a = PGROUNDUP(oldsz);
 	for (; a < newsz; a += PGSIZE) {
@@ -159,12 +191,15 @@ allocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 }
 
 int
-alloc_user_bytes(uintptr_t *pgdir, const size_t size, const uintptr_t virt_addr, uintptr_t *phys_addr)
+alloc_user_bytes(uintptr_t *pgdir, const size_t size, const uintptr_t virt_addr,
+								 uintptr_t *phys_addr)
 {
-	if (size == 0)
+	if (size == 0) {
 		return -EINVAL;
-	if (pgdir == NULL)
+	}
+	if (pgdir == NULL) {
 		return -EINVAL;
+	}
 
 	const size_t newsize = PGROUNDUP(size);
 	for (size_t i = 0; i < newsize; i += PGSIZE) {
@@ -174,11 +209,13 @@ alloc_user_bytes(uintptr_t *pgdir, const size_t size, const uintptr_t virt_addr,
 			/* dealloc_user_bytes ... */
 			return -ENOMEM;
 		}
-		if (i == 0 && phys_addr != NULL)
+		if (i == 0 && phys_addr != NULL) {
 			*phys_addr = V2P(mem);
+		}
 		const uintptr_t proper_virt_addr = i + PGROUNDUP(virt_addr);
 
-		if (mappages(pgdir, (char *)proper_virt_addr, PGSIZE, V2P(mem), PTE_W | PTE_U) < 0) {
+		if (mappages(pgdir, (char *)proper_virt_addr, PGSIZE, V2P(mem),
+								 PTE_W | PTE_U) < 0) {
 			/* dealloc_user_bytes ... */
 			kfree(mem);
 			return -ENOMEM;
@@ -193,10 +230,12 @@ allocuvm_cow(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 	char *mem;
 	uintptr_t a;
 
-	if (newsz >= KERNBASE)
+	if (newsz >= KERNBASE) {
 		return 0;
-	if (newsz < oldsz)
+	}
+	if (newsz < oldsz) {
 		return oldsz;
+	}
 
 	a = PGROUNDUP(oldsz);
 	for (; a < newsz; a += PGSIZE) {
@@ -206,7 +245,6 @@ allocuvm_cow(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 		}
 	}
 	return newsz;
-
 }
 // Deallocate user pages to bring the process size from oldsz to
 // newsz.  oldsz and newsz need not be page-aligned, nor does newsz
@@ -218,8 +256,9 @@ deallocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 	pte_t *pte;
 	uintptr_t a, pa;
 
-	if (newsz >= oldsz)
+	if (newsz >= oldsz) {
 		return oldsz;
+	}
 
 	a = PGROUNDUP(newsz);
 	for (; a < oldsz; a += PGSIZE) {
@@ -229,8 +268,9 @@ deallocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 			a += (NPTENTRIES - 1) * PGSIZE;
 		} else if ((*pte & PTE_P) != 0) {
 			pa = PTE_ADDR(*pte);
-			if (pa == 0)
+			if (pa == 0) {
 				panic("kpage_free");
+			}
 			// Temporary hack.
 			// The only set of memory above the physical address of KERNBASE
 			// is a device's mmio. Since those aren't allocated, just ignore
@@ -250,13 +290,13 @@ deallocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 void
 freevm(uintptr_t *pgdir)
 {
-	uint32_t i;
 
-	if (pgdir == NULL)
+	if (pgdir == NULL) {
 		panic("freevm: no pgdir");
+	}
 	deallocuvm(pgdir, /*KERNBASE*/ 0x3fa00000, 0);
 	// "- 2" because of the page back pointers.
-	for (i = 0; i < NPDENTRIES - 2; i++) {
+	for (uint32_t i = 0; i < NPDENTRIES - 2; i++) {
 		if (pgdir[i] & PTE_P) {
 			char *v = P2V(PTE_ADDR(pgdir[i]));
 			kpage_free(v);
@@ -268,22 +308,22 @@ freevm(uintptr_t *pgdir)
 void
 clear_pte_mask(uintptr_t *pgdir, char *user_virt_addr, pte_t mask)
 {
-	pte_t *pte;
+	pte_t *pte = walkpgdir(pgdir, user_virt_addr, false);
 
-	pte = walkpgdir(pgdir, user_virt_addr, false);
-	if (pte == NULL)
+	if (pte == NULL) {
 		panic("set_pte_mask");
+	}
 	*pte &= ~mask;
 }
 
 void
 set_pte_mask(uintptr_t *pgdir, char *user_virt_addr, pte_t mask)
 {
-	pte_t *pte;
+	pte_t *pte = walkpgdir(pgdir, user_virt_addr, false);
 
-	pte = walkpgdir(pgdir, user_virt_addr, false);
-	if (pte == NULL)
+	if (pte == NULL) {
 		panic("set_pte_mask");
+	}
 	*pte |= mask;
 }
 
@@ -326,17 +366,21 @@ copyuvm(uintptr_t *pgdir, size_t sz)
 	uintptr_t pa, i, flags;
 	char *mem;
 
-	if ((d = setupkvm()) == NULL)
+	if ((d = setupkvm()) == NULL) {
 		return NULL;
+	}
 	for (i = 0; i < sz; i += PGSIZE) {
-		if ((pte = walkpgdir(pgdir, (void *)i, false)) == NULL)
+		if ((pte = walkpgdir(pgdir, (void *)i, false)) == NULL) {
 			panic("copyuvm: pte should exist");
-		if (!(*pte & PTE_P))
+		}
+		if (!(*pte & PTE_P)) {
 			panic("copyuvm: page not present");
+		}
 		pa = PTE_ADDR(*pte);
 		flags = PTE_FLAGS(*pte);
-		if ((mem = kpage_alloc()) == NULL)
+		if ((mem = kpage_alloc()) == NULL) {
 			goto bad;
+		}
 		memmove(mem, (char *)p2v(pa), PGSIZE);
 		if (mappages(d, (void *)i, PGSIZE, V2P(mem), flags) < 0) {
 			kpage_free(mem);
@@ -357,12 +401,15 @@ uva2ka(uintptr_t *pgdir, char *uva)
 	pte_t *pte;
 
 	pte = walkpgdir(pgdir, uva, 0);
-	if (pte == NULL)
+	if (pte == NULL) {
 		return NULL;
-	if ((*pte & PTE_P) == 0)
+	}
+	if ((*pte & PTE_P) == 0) {
 		return NULL;
-	if ((*pte & PTE_U) == 0)
+	}
+	if ((*pte & PTE_U) == 0) {
 		return NULL;
+	}
 	return (char *)p2v(PTE_ADDR(*pte));
 }
 
@@ -379,11 +426,13 @@ copyout(uintptr_t *pgdir, uintptr_t va, void *p, size_t len)
 	while (len > 0) {
 		va0 = (uint32_t)PGROUNDDOWN(va);
 		pa0 = uva2ka(pgdir, (char *)va0);
-		if (pa0 == NULL)
+		if (pa0 == NULL) {
 			return -EFAULT;
+		}
 		n = PGSIZE - (va - va0);
-		if (n > len)
+		if (n > len) {
 			n = len;
+		}
 		memmove(pa0 + (va - va0), buf, n);
 		len -= n;
 		buf += n;
@@ -391,44 +440,6 @@ copyout(uintptr_t *pgdir, uintptr_t va, void *p, size_t len)
 	}
 	return 0;
 }
-/* vm64.c
- *
- * Copyright (c) 2013 Brian Swetland
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- */
-
-#include "lib/compiler_attributes.h"
-#include "kernel/boot/multiboot2.h"
-#include "param.h"
-#include "stdint.h"
-#include "console.h"
-#include <string.h>
-#include "vga.h"
-#include "x86.h"
-#include "memlayout.h"
-#include "mmu.h"
-#include "proc.h"
-#include "kalloc.h"
-#include <stdint.h>
 
 #define kalloc() kpage_alloc()
 static uintptr_t *kpml4;
@@ -436,15 +447,6 @@ static uintptr_t *kpdpt;
 static uintptr_t *iopgdir;
 static uintptr_t *kpgdir0;
 static uintptr_t *kpgdir1;
-
-void
-tvinit(void)
-{
-}
-void
-idtinit(void)
-{
-}
 
 static void
 mkgate(uint32_t *idt, uint32_t n, void *kva, uint32_t pl, uint32_t trap)
@@ -491,8 +493,9 @@ seginit(void)
 	int n;
 	memset(idt, 0, PGSIZE);
 
-	for (n = 0; n < 256; n++)
+	for (n = 0; n < 256; n++) {
 		mkgate(idt, n, vectors[n], 0, 0);
+	}
 	mkgate(idt, 64, vectors[64], 3, 1);
 
 	lidt((void *)idt, PGSIZE);
@@ -525,12 +528,12 @@ seginit(void)
 	c->gdt_bits[SEG_KDATA] = 0x0000920000000000LU; // Data, DPL=0, W
 	c->gdt_bits[SEG_UDATA] = 0x0000F20000000000LU; // Data, DPL=3, W
 	c->gdt_bits[SEG_UCODE] = 0x0020F80000000000LU; // Code, DPL=3, R/X
-	c->gdt_bits[SEG_TSS + 0] = (0x0067) /* segment limit */ |
+	c->gdt_bits[SEG_TSS + 0] =
+		(0x0067) /* segment limit */ |
 		((addr & 0xFFFFFF) << 16) /* base address 15:00 */ |
 		(((addr >> 16LU) & 0xFFLU) << 32LU) /* base address 23:16 */ |
 		/* (STS_T64A | (DPL_USER << 5) | (1 << 7)) , avl=0, granularity=0 */
-		(0x00E9LL << 40) |
-		(((addr >> 24) & 0xFF) << 56) /* address 31:24 */;
+		(0x00E9LL << 40) | (((addr >> 24) & 0xFF) << 56) /* address 31:24 */;
 	c->gdt_bits[SEG_TSS + 1] = (addr >> 32) & 0xFFFFFFFF /* address 63:32 */;
 	c->tss = tss;
 
@@ -621,8 +624,9 @@ switchuvm(struct proc *p)
 	struct taskstate64 *tss;
 
 	pushcli();
-	if (p->pgdir == NULL)
+	if (p->pgdir == NULL) {
 		panic("switchuvm: no pgdir");
+	}
 	tss = mycpu()->tss;
 	tss_set_rsp(tss, 0, (uintptr_t)myproc()->kstack + KSTACKSIZE);
 	// Set for when we swapgs in syscalls.

@@ -96,10 +96,6 @@ int
 __multiboot_console_width_pixels(void);
 int
 __multiboot_console_height_pixels(void);
-int
-__multiboot_console_width_text(void);
-int
-__multiboot_console_height_text(void);
 
 typedef unsigned char multiboot_uint8_t;
 typedef unsigned short multiboot_uint16_t;

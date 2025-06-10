@@ -59,11 +59,12 @@ size_t
 sys_getppid(void)
 {
 	struct proc *proc = myproc();
-	if (proc != NULL && proc->parent != NULL)
+	if (proc != NULL && proc->parent != NULL) {
 		return proc->parent->pid;
-	else
+	} else {
 		// If parent has been killed, use init (PID 1).
 		return 1;
+	}
 }
 
 size_t
@@ -168,8 +169,9 @@ size_t
 sys_setgid(void)
 {
 	// cannot setuid if not root
-	if (myproc()->cred.gid != 0)
+	if (myproc()->cred.gid != 0) {
 		return -EPERM;
+	}
 	gid_t gid;
 	PROPOGATE_ERR(arggid_t(0, &gid));
 
@@ -181,8 +183,9 @@ size_t
 sys_setuid(void)
 {
 	// cannot setuid if not root
-	if (myproc()->cred.uid != 0)
+	if (myproc()->cred.uid != 0) {
 		return -EPERM;
+	}
 	uid_t uid;
 	PROPOGATE_ERR(arguid_t(0, &uid));
 
@@ -201,7 +204,6 @@ sys_getgid(void)
 {
 	return myproc()->cred.gid;
 }
-
 
 size_t
 sys_ptrace(void)

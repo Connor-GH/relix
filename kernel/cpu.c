@@ -24,7 +24,7 @@ static uint8_t clean_fpu[512];
 static void
 fpu_load_control_word(const uint16_t control)
 {
-  __asm__ __volatile__("fldcw %0;"::"m"(control));
+	__asm__ __volatile__("fldcw %0\n" ::"m"(control));
 }
 
 static void
@@ -40,9 +40,9 @@ fpu_init(void)
 
 	write_cr0(cr0);
 
-	__asm__ __volatile__("fninit\t\n"
-											 "fnstsw %0\t\n"
-											 "fnstcw %1\t\n"
+	__asm__ __volatile__("fninit\n"
+											 "fnstsw %0\n"
+											 "fnstcw %1\n"
 											 : "+m"(fsw), "+m"(fcw));
 	fpu_load_control_word(0x37F);
 	fpu_load_control_word(0x37E);
@@ -51,20 +51,21 @@ fpu_init(void)
 	//__asm__ __volatile__("fxsave %0" : "=m" (clean_fpu));
 }
 
-#define PUSHF "pushfq"
-#define POPF "popfq"
-
 static bool
 has_eflag(unsigned long mask)
 {
 	unsigned long f0 = 0, f1 = 0;
 
-	__asm__ __volatile__(PUSHF "    \n\t" PUSHF "    \n\t"
-														 "pop %0    \n\t"
-														 "mov %0,%1 \n\t"
-														 "xor %2,%1 \n\t"
-														 "push %1   \n\t" POPF " \n\t" PUSHF "    \n\t"
-														 "pop %1    \n\t" POPF
+	__asm__ __volatile__("pushfq\n"
+											 "pushfq\n"
+											 "pop %0\n"
+											 "mov %0,%1\n"
+											 "xor %2,%1\n"
+											 "push %1\n"
+											 "popfq\n"
+											 "pushfq\n"
+											 "pop %1\n"
+											 "popfq\n"
 											 : "=&r"(f0), "=&r"(f1)
 											 : "ri"(mask));
 
@@ -74,7 +75,6 @@ has_eflag(unsigned long mask)
 static void
 sse_init(CpuFeatures *features)
 {
-
 	uint64_t cr4 = read_cr4();
 	cr4 |= CR4_OSFXSR;
 	cr4 |= CR4_OSXMMEXCPT;
@@ -88,17 +88,16 @@ cpuflags(uint32_t cpu_vendor[static 3])
 {
 	uint32_t intel_level;
 	CpuFeatures cpu_features = {
-		/* Logically, these four exist, but we still need to check. */
 		.sse = (enum SSE){ 0 },
-
-		.avx = (enum AVX) { 0 },
+		.avx = (enum AVX){ 0 },
 		.fxsr = (enum FXSR){ 0 },
-		.fpu_misc = {{0}},
+		.fpu_misc = { { 0 } },
+		.misc = 0,
 	};
 	/* Check whether the ID bit in rflags is supported. Support means
 	 * that use of cpuid is available. */
 	if (has_eflag(0x200000)) {
-		cpu_features.fpu_misc.cpuid = true;
+		cpu_features.misc |= MISC_FEATURE_CPUID;
 		/* call cpuid with zero */
 		cpuid(0x0, 0, &intel_level, &cpu_vendor[0], &cpu_vendor[2], &cpu_vendor[1]);
 	} else {
@@ -135,10 +134,10 @@ do_ryzen_discovery(uint32_t ebx)
 }
 
 #define PROCESSOR_STRING_UNPACK_U32(arr, idx, reg) \
-	arr[idx] = reg & 0xff; \
-	arr[idx+1] = reg >> 8 & 0xff; \
-	arr[idx+2] = reg >> 16 & 0xff; \
-	arr[idx+3] = reg >> 24 & 0xff;
+	arr[idx] = reg & 0xff;                           \
+	arr[idx + 1] = reg >> 8 & 0xff;                  \
+	arr[idx + 2] = reg >> 16 & 0xff;                 \
+	arr[idx + 3] = reg >> 24 & 0xff;
 static void
 model_family_stepping(void)
 {
@@ -146,10 +145,12 @@ model_family_stepping(void)
 	uint16_t model = 0;
 	uint16_t family = 0;
 	uint8_t processor_stepping = 0;
+
 	cpuid(0x1, 0, &a, &b, &c, &d);
 	processor_stepping = a & 0xF; // 15
 	model = (a >> 4) & 0xF;
 	family = (a >> 8) & 0xF;
+
 	if (family == 0xF) {
 		family += ((a >> 20) & 0xFF); // extended family id
 	}
@@ -160,30 +161,31 @@ model_family_stepping(void)
 	switch (family) {
 	case 0x19:
 		do_ryzen_discovery(b);
+		break;
+	default:
+		break;
 	}
 
 	uint8_t bytes[49];
 	for (int i = 0; i <= 2; i++) {
 		cpuid(0x80000002 + i, 0, &a, &b, &c, &d);
-		PROCESSOR_STRING_UNPACK_U32(bytes, 0 + i*16, a);
-		PROCESSOR_STRING_UNPACK_U32(bytes, 4 + i*16, b);
-		PROCESSOR_STRING_UNPACK_U32(bytes, 8 + i*16, c);
-		PROCESSOR_STRING_UNPACK_U32(bytes, 12 + i*16, d);
+		PROCESSOR_STRING_UNPACK_U32(bytes, 0 + i * 16, a);
+		PROCESSOR_STRING_UNPACK_U32(bytes, 4 + i * 16, b);
+		PROCESSOR_STRING_UNPACK_U32(bytes, 8 + i * 16, c);
+		PROCESSOR_STRING_UNPACK_U32(bytes, 12 + i * 16, d);
 	}
 	bytes[48] = '\0';
-	uart_printf("Cpu is \"%s\" (model=%x family=%x stepping=%x)\n", bytes, model, family,
-							 processor_stepping);
-
+	uart_printf("Cpu is \"%s\" (model=%x family=%x stepping=%x)\n", bytes, model,
+							family, processor_stepping);
 }
 static void
-remaining_features(CpuFeatures *cpu_features)
+set_remaining_features(CpuFeatures *cpu_features)
 {
-	uint32_t a, b, c, d;
 	struct cpuid_struct {
 		uint32_t feature;
 		const char *const feature_string;
 	};
-	a = b = c = d = 0;
+
 	const struct cpuid_struct cpuidstruct_ecx_1[31] = {
 		{ CPUID_FEAT_ECX_SSE3, "sse3" },
 		{ CPUID_FEAT_ECX_PCLMUL, "pclmul" },
@@ -243,6 +245,7 @@ remaining_features(CpuFeatures *cpu_features)
 		{ CPUID_FEAT_ECX_EXT_PERF_CTR_EXT_LLC, "perf_llc" },
 		{ CPUID_FEAT_ECX_EXT_MWAITX, "mwaitx" },
 		{ CPUID_FEAT_ECX_EXT_ADDR_MASK, "addr_mask" },
+		{ 0 },
 	};
 
 	const struct cpuid_struct cpuidstruct_edx_1[31] = {
@@ -261,6 +264,7 @@ remaining_features(CpuFeatures *cpu_features)
 		{ CPUID_FEAT_EDX_SSE2, "sse2" },			 { CPUID_FEAT_EDX_SS, "ss" },
 		{ CPUID_FEAT_EDX_HTT, "htt" },				 { CPUID_FEAT_EDX_TM, "tm" },
 		{ CPUID_FEAT_EDX_IA64, "ia64" },			 { CPUID_FEAT_EDX_PBE, "pbe" },
+		{ 0 },
 	};
 	const struct cpuid_struct cpuidstruct_edx_0x80000001[31] = {
 		{ CPUID_FEAT_EDX_EXT_NX, "nx" },
@@ -271,68 +275,98 @@ remaining_features(CpuFeatures *cpu_features)
 		{ CPUID_FEAT_EDX_EXT_LM, "long_mode" },
 		{ CPUID_FEAT_EDX_EXT_3DNOW_EXT, "3dnow_ext" },
 		{ CPUID_FEAT_EDX_EXT_3DNOW, "3dnow" },
-		{0},
+		{ 0 },
 	};
 
 	pr_debug("Cpu features: ");
+	uint32_t a, b, c, d;
 	cpuid(CPUID_EAX_GETFEATURES, 0, &a, &b, &c, &d);
 	for (size_t i = 0; i < 31; i++) {
-		if (c & cpuidstruct_ecx_1[i].feature && cpuidstruct_ecx_1[i].feature_string != NULL) {
+
+		if (c & cpuidstruct_ecx_1[i].feature &&
+				cpuidstruct_ecx_1[i].feature_string != NULL) {
 			pr_debug("%s ", cpuidstruct_ecx_1[i].feature_string);
 			switch (cpuidstruct_ecx_1[i].feature) {
-			case CPUID_FEAT_ECX_SSE3: cpu_features->sse |= SSE3; break;
-			case CPUID_FEAT_ECX_SSE4_1: cpu_features->sse |= SSE4_1; break;
-			case CPUID_FEAT_ECX_SSE4_2: cpu_features->sse |= SSE4_2; break;
-			case CPUID_FEAT_ECX_SSSE3: cpu_features->sse |= SSSE3; break;
-			case CPUID_FEAT_ECX_AVX: cpu_features->avx |= AVX; break;
+			case CPUID_FEAT_ECX_SSE3:
+				cpu_features->sse |= SSE3;
+				break;
+			case CPUID_FEAT_ECX_SSE4_1:
+				cpu_features->sse |= SSE4_1;
+				break;
+			case CPUID_FEAT_ECX_SSE4_2:
+				cpu_features->sse |= SSE4_2;
+				break;
+			case CPUID_FEAT_ECX_SSSE3:
+				cpu_features->sse |= SSSE3;
+				break;
+			case CPUID_FEAT_ECX_AVX:
+				cpu_features->avx |= AVX;
+				break;
 			}
 		}
 	}
 	for (size_t i = 0; i < 31; i++) {
-		if (d & cpuidstruct_edx_1[i].feature && cpuidstruct_edx_1[i].feature_string != NULL) {
+		if (d & cpuidstruct_edx_1[i].feature &&
+				cpuidstruct_edx_1[i].feature_string != NULL) {
 			pr_debug("%s ", cpuidstruct_edx_1[i].feature_string);
 			switch (cpuidstruct_edx_1[i].feature) {
-			case CPUID_FEAT_EDX_FPU: cpu_features->fpu_misc.fpu = true; break;
-			case CPUID_FEAT_EDX_SSE: cpu_features->sse |= SSE; break;
-			case CPUID_FEAT_EDX_FXSR: cpu_features->fxsr |= FXSR; break;
+			case CPUID_FEAT_EDX_FPU:
+				cpu_features->fpu_misc.fpu = true;
+				break;
+			case CPUID_FEAT_EDX_SSE:
+				cpu_features->sse |= SSE;
+				break;
+			case CPUID_FEAT_EDX_FXSR:
+				cpu_features->fxsr |= FXSR;
+				break;
 			}
 		}
 	}
 	cpuid(CPUID_EAX_GETFEATURES + 0x80000000, 0, &a, &b, &c, &d);
 	for (size_t i = 0; i < 31; i++) {
-		if (c & cpuidstruct_ecx_0x80000001[i].feature && cpuidstruct_ecx_0x80000001[i].feature_string != NULL) {
+		if (c & cpuidstruct_ecx_0x80000001[i].feature &&
+				cpuidstruct_ecx_0x80000001[i].feature_string != NULL) {
 			pr_debug("%s ", cpuidstruct_ecx_0x80000001[i].feature_string);
 			switch (cpuidstruct_ecx_1[i].feature) {
-			case CPUID_FEAT_ECX_EXT_SSE4A: cpu_features->sse |= SSE4A; break;
-			case CPUID_FEAT_ECX_EXT_MISALIGNED_SSE: cpu_features->sse |= SSE_MISALIGNED; break;
-			case CPUID_FEAT_ECX_XSAVE: cpu_features->fpu_misc.xsave = true; break;
+			case CPUID_FEAT_ECX_EXT_SSE4A:
+				cpu_features->sse |= SSE4A;
+				break;
+			case CPUID_FEAT_ECX_EXT_MISALIGNED_SSE:
+				cpu_features->sse |= SSE_MISALIGNED;
+				break;
+			case CPUID_FEAT_ECX_XSAVE:
+				cpu_features->fpu_misc.xsave = true;
+				break;
 			}
 		}
 	}
 	for (size_t i = 0; i < 31; i++) {
-		if (d & cpuidstruct_edx_0x80000001[i].feature && cpuidstruct_edx_0x80000001[i].feature_string != NULL) {
+		if (d & cpuidstruct_edx_0x80000001[i].feature &&
+				cpuidstruct_edx_0x80000001[i].feature_string != NULL) {
 			pr_debug("%s ", cpuidstruct_edx_0x80000001[i].feature_string);
 			switch (cpuidstruct_edx_0x80000001[i].feature) {
-			case CPUID_FEAT_EDX_EXT_FPU: cpu_features->fpu_misc.fpu = true; break;
-			case CPUID_FEAT_EDX_EXT_FXSR: cpu_features->fxsr |= FXSR; break;
-			case CPUID_FEAT_EDX_EXT_FFXSR: cpu_features->fxsr |= FFXSR; break;
-			case CPUID_FEAT_EDX_EXT_LM: cpu_features->misc |= LONG_MODE;
+			case CPUID_FEAT_EDX_EXT_FPU:
+				cpu_features->fpu_misc.fpu = true;
+				break;
+			case CPUID_FEAT_EDX_EXT_FXSR:
+				cpu_features->fxsr |= FXSR;
+				break;
+			case CPUID_FEAT_EDX_EXT_FFXSR:
+				cpu_features->fxsr |= FFXSR;
+				break;
+			case CPUID_FEAT_EDX_EXT_LM:
+				cpu_features->misc |= MISC_FEATURE_LONG_MODE;
 			}
 		}
 	}
 	pr_debug("\n");
 }
 
-static CpuFeatures *
+static void
 set_cpu_vendor_name(char cpu_vendor_name[static 13],
-										uint32_t cpu_vendor[static 3])
+										const uint32_t cpu_vendor[static 3])
 {
-	uint32_t bitmask = 255; // 11111111
-	// This memory WILL get leaked, but it lives for the
-	// duration of the life of the kernel, so it is fine.
-	CpuFeatures *cpu_features = kmalloc(sizeof(*cpu_features));
-	CpuFeatures cpufeatures = cpuflags(cpu_vendor);
-	memcpy(cpu_features, &cpufeatures, sizeof(*cpu_features));
+	uint32_t bitmask = 0b11111111;
 
 	cpu_vendor_name[0] = (uint8_t)(cpu_vendor[0] & bitmask); // lower 7-0 bits
 	cpu_vendor_name[1] =
@@ -350,7 +384,6 @@ set_cpu_vendor_name(char cpu_vendor_name[static 13],
 	cpu_vendor_name[10] = (uint8_t)((cpu_vendor[2] & (bitmask << 16)) >> 16);
 	cpu_vendor_name[11] = (uint8_t)((cpu_vendor[2] & (bitmask << 24)) >> 24);
 	cpu_vendor_name[12] = '\0';
-	return cpu_features;
 }
 
 /*
@@ -362,19 +395,21 @@ cpu_features_init(void)
 {
 	char cpu_vendor_name[13];
 	uint32_t cpu_vendor[3];
-	CpuFeatures *cpu_features = set_cpu_vendor_name(cpu_vendor_name, cpu_vendor);
+	CpuFeatures cpu_features = cpuflags(cpu_vendor);
+
+	set_cpu_vendor_name(cpu_vendor_name, cpu_vendor);
 	pr_debug_file("CPU Vendor: %s\n", cpu_vendor_name);
 
 	// We MUST have cpuid.
-	kernel_assert(cpu_features->fpu_misc.cpuid);
+	kernel_assert(cpu_features.misc & MISC_FEATURE_CPUID);
 
-	remaining_features(cpu_features);
+	set_remaining_features(&cpu_features);
 
 	// AMD64 specifies that we have SSE, which implies FPU.
-	kernel_assert(cpu_features->fpu_misc.fpu);
+	kernel_assert(cpu_features.fpu_misc.fpu);
 	fpu_init();
-	kernel_assert(cpu_features->sse >= SSE && cpu_features->fxsr >= FXSR);
-	sse_init(cpu_features);
+	kernel_assert(cpu_features.sse >= SSE && cpu_features.fxsr >= FXSR);
+	sse_init(&cpu_features);
 	if (read_cr4() & CR4_OSXSAVE) {
 		xsetbv(XBV_XCR0, xgetbv(XBV_XCR0) | XCR0_SSE);
 	}
@@ -382,17 +417,14 @@ cpu_features_init(void)
 	// If we even made it to this code and failed, I'd be surprised.
 	// All 64-bit CPUS are supposed to set this, and we execute 64-bit
 	// code waaaaay before we do this check.
-	kernel_assert(cpu_features->misc & LONG_MODE);
+	kernel_assert(cpu_features.misc & MISC_FEATURE_LONG_MODE);
 
-	// Wait on enabling AVX reg saving for a later date.
-	#if 0
+// Wait on enabling AVX reg saving for a later date.
+#if 0
 	if (cpu_features->avx >= AVX) {
 		xsetbv(XBV_XCR0, xgetbv(XBV_XCR0) | XCR0_AVX);
 	}
-	#endif
-
-
-
+#endif
 
 	model_family_stepping();
 }

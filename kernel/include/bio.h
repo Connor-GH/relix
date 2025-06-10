@@ -6,10 +6,10 @@
 
 void
 block_init(void);
-struct buf *
+struct block_buffer *
 block_read(dev_t dev, uint64_t blockno) __acquires(&b->lock);
 void
-block_release(struct buf *b) __releases(&b->lock);
+block_release(struct block_buffer *b) __releases(&b->lock);
 void
-block_write(struct buf *b) __must_hold(&b->lock);
+block_write(struct block_buffer *b) __must_hold(&b->lock);
 #endif

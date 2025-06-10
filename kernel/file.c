@@ -19,7 +19,7 @@
 #include <stdbool.h>
 
 struct devsw devsw[NDEV];
-struct {
+static struct {
 	struct spinlock lock;
 	struct file file[NFILE];
 } ftable;
@@ -29,6 +29,7 @@ fd_to_struct_file(int fd)
 {
 	return myproc()->ofile[fd];
 }
+
 void
 fileinit(void)
 {
@@ -39,10 +40,9 @@ fileinit(void)
 struct file *
 filealloc(void)
 {
-	struct file *f;
-
 	acquire(&ftable.lock);
-	for (f = ftable.file; f < ftable.file + NFILE; f++) {
+
+	for (struct file *f = ftable.file; f < ftable.file + NFILE; f++) {
 		if (f->ref == 0) {
 			f->ref = 1;
 			f->flags = 0;
@@ -51,6 +51,7 @@ filealloc(void)
 		}
 	}
 	release(&ftable.lock);
+
 	return NULL;
 }
 
@@ -59,10 +60,12 @@ struct file *
 filedup(struct file *f)
 {
 	acquire(&ftable.lock);
+
 	if (unlikely(f->ref < 1))
 		panic("filedup");
 	f->ref++;
 	release(&ftable.lock);
+
 	return f;
 }
 
@@ -71,10 +74,9 @@ filedup(struct file *f)
 int
 fdalloc(struct file *f)
 {
-	int fd;
 	struct proc *curproc = myproc();
 
-	for (fd = 0; fd < NOFILE; fd++) {
+	for (int fd = 0; fd < NOFILE; fd++) {
 		if (curproc->ofile[fd] == NULL) {
 			curproc->ofile[fd] = f;
 			return fd;
@@ -191,7 +193,6 @@ int
 fileopen(char *path, int flags, mode_t mode)
 {
 	int fd;
-	struct file *f;
 	struct inode *ip;
 
 	if (path == NULL)
@@ -322,6 +323,8 @@ fileopen(char *path, int flags, mode_t mode)
 			return fd;
 		}
 	}
+
+	struct file *f;
 	// By this line, both branches above are holding a lock to ip.
 	// That is why it is released down here.
 get_fd:
@@ -350,7 +353,6 @@ get_fd:
 int
 fileclose(struct file *f)
 {
-	struct file ff;
 
 	acquire(&ftable.lock);
 	if (unlikely(f->ref < 1))
@@ -369,7 +371,8 @@ fileclose(struct file *f)
 		// Run device-specific opening code, if any.
 		devsw[f->ip->major].close(f->ip->minor);
 	}
-	ff = *f;
+	struct file ff = *f;
+
 	f->ref = 0;
 	f->type = FD_NONE;
 	f->flags = 0;
@@ -406,7 +409,6 @@ filestat(struct file *f, struct stat *st)
 ssize_t
 fileread(struct file *f, char *addr, uint64_t n)
 {
-	ssize_t r;
 
 	if (f->readable == 0)
 		return -EINVAL;
@@ -414,7 +416,7 @@ fileread(struct file *f, char *addr, uint64_t n)
 		return piperead(f->pipe, addr, n);
 	} else if (f->type == FD_INODE) {
 		inode_lock(f->ip);
-		r = inode_read(f->ip, addr, f->off, n);
+		ssize_t r = inode_read(f->ip, addr, f->off, n);
 		inode_unlock(f->ip);
 		if (r < 0)
 			return r;
@@ -449,7 +451,6 @@ fileseek(struct file *f, off_t n, int whence)
 ssize_t
 filewrite(struct file *f, char *addr, uint64_t n)
 {
-	ssize_t r;
 
 	if (f->writable == 0)
 		return -EROFS;
@@ -474,7 +475,7 @@ filewrite(struct file *f, char *addr, uint64_t n)
 			// in the event of a write.
 			begin_op();
 			inode_lock(f->ip);
-			r = inode_write(f->ip, addr + i, f->off, n1);
+			ssize_t r = inode_write(f->ip, addr + i, f->off, n1);
 			inode_unlock(f->ip);
 			end_op();
 
@@ -496,9 +497,8 @@ static int
 name_of_inode(struct inode *ip, struct inode *parent, char buf[static DIRSIZ],
 							size_t n)
 {
-	off_t off;
 	struct dirent de;
-	for (off = 0; off < parent->size; off += sizeof(de)) {
+	for (off_t off = 0; off < parent->size; off += sizeof(de)) {
 		PROPOGATE_ERR(inode_read(parent, (char *)&de, off, sizeof(de)));
 		if (de.d_ino == ip->inum) {
 			strncpy(buf, de.d_name, n - 1);

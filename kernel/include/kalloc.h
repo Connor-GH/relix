@@ -1,7 +1,6 @@
 #pragma once
 #if __KERNEL__
 #include <stddef.h>
-#include "lib/compiler_attributes.h"
 char *
 kpage_alloc(void);
 void kpage_free(char *);

@@ -417,17 +417,6 @@ console_height_pixels(void)
 	return __multiboot_console_height_pixels();
 }
 
-int
-console_width_text(void)
-{
-	return __multiboot_console_width_text();
-}
-
-int
-console_height_text(void)
-{
-	return __multiboot_console_height_text();
-}
 /* clang-format off */
 __nonnull(2, 3) static ssize_t
 consolewrite(short minor, __attribute__((unused)) struct inode *ip,

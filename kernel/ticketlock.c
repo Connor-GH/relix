@@ -6,7 +6,6 @@
 #include <stdatomic.h>
 #include "ticketlock.h"
 
-
 int
 holding_ticketlock(struct ticketlock *tl)
 {
@@ -26,8 +25,9 @@ void
 acquire_ticketlock(struct ticketlock *tl)
 {
 	pushcli();
-	if (holding_ticketlock(tl))
+	if (holding_ticketlock(tl)) {
 		uart_printf("%s\n", tl->name);
+	}
 	kernel_assert(!holding_ticketlock(tl));
 	uint64_t my_ticket = atomic_fetch_add(&tl->next_ticket, 1);
 	uint64_t now_serving = atomic_load(&tl->now_serving);

@@ -9,7 +9,6 @@
 #include "console.h"
 #include <errno.h>
 #include <string.h>
-#include "kernel_assert.h"
 #include "fcntl_constants.h"
 #include "macros.h"
 #include "vm.h"
@@ -42,13 +41,13 @@ push_user_stack(uintptr_t *count, char *const *vec, uintptr_t *ustack,
 __nonnull(1, 2) int execve(const char *path, char *const *argv, char *const *envp)
 {
 	const char *s, *last;
-	int i, off;
 	uintptr_t envc = 0;
-	uintptr_t argc = 0, sz, sp, ustack[3 + MAXARG + MAXENV + 1] = {};
+	uintptr_t argc = 0, sp, ustack[3 + MAXARG + MAXENV + 1] = {};
 	struct Elf64_Ehdr elf;
 	struct inode *ip;
 	struct Elf64_Phdr ph;
-	uintptr_t *pgdir, *oldpgdir;
+	uintptr_t *pgdir = NULL;
+	uintptr_t *oldpgdir;
 	int return_errno = 0, errno_tmp = 0;
 	struct proc *curproc = myproc();
 
@@ -59,7 +58,6 @@ __nonnull(1, 2) int execve(const char *path, char *const *argv, char *const *env
 		return -ENOENT;
 	}
 	inode_lock(ip);
-	pgdir = NULL;
 
 	// hold back on GID/UID protection right now
 	/*if (ip->gid != curproc->cred.gid && ip->uid != curproc->cred.uid) {
@@ -120,9 +118,9 @@ ok:
 		goto bad;
 	}
 
+	uintptr_t sz = 0;
 	// Load program into memory.
-	sz = 0;
-	for (i = 0, off = elf.e_phoff; i < elf.e_phnum; i++, off += sizeof(ph)) {
+	for (size_t i = 0, off = elf.e_phoff; i < elf.e_phnum; i++, off += sizeof(ph)) {
 		if ((errno_tmp = inode_read(ip, (char *)&ph, off, sizeof(ph))) < 0) {
 			return_errno = errno_tmp;
 			goto bad;
@@ -244,11 +242,11 @@ ok:
 		curproc->cred = curproc->parent->cred;
 
 	// Only close files if we were passed FD_CLOEXEC.
-	for (int j = 0; j < NOFILE; j++) {
-		if (curproc->ofile[j] != NULL && curproc->ofile[j]->flags == FD_CLOEXEC) {
-			(void)fileclose(curproc->ofile[j]);
+	for (int i = 0; i < NOFILE; i++) {
+		if (curproc->ofile[i] != NULL && curproc->ofile[i]->flags == FD_CLOEXEC) {
+			(void)fileclose(curproc->ofile[i]);
 			// This is needed as fileclose() does not do this.
-			curproc->ofile[j] = NULL;
+			curproc->ofile[i] = NULL;
 		}
 	}
 

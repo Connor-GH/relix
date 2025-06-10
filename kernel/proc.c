@@ -73,15 +73,15 @@ static int pass = 0;
 struct cpu *
 mycpu(void)
 {
-	int apicid, i;
 
-	if (readrflags() & FL_IF)
+	if (readrflags() & FL_IF) {
 		panic("mycpu called with interrupts enabled");
+	}
 
-	apicid = lapicid();
 	// APIC IDs are not guaranteed to be contiguous. Maybe we should have
 	// a reverse map, or reserve a register to store &cpus[i].
-	for (i = 0; i < ncpu; ++i) {
+	for (int i = 0; i < ncpu; i++) {
+		int apicid = lapicid();
 		if (cpus[i].apicid == apicid) {
 			kernel_assert(cpus[i].apicid == i);
 			return &cpus[i];
@@ -92,8 +92,9 @@ mycpu(void)
 	// this is assured with "pass" because a real program would
 	// use far more mycpu() than 20,000. it's just enough to boot.
 	pass++;
-	if (pass < 200000)
+	if (pass < 200000) {
 		return &cpus[0];
+	}
 	panic("unknown apicid");
 }
 
@@ -119,13 +120,14 @@ static struct proc *
 allocproc(void)
 {
 	struct proc *p;
-	char *sp;
 
 	acquire(&ptable.lock);
 
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-		if (p->state == UNUSED)
+	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+		if (p->state == UNUSED) {
 			goto found;
+		}
+	}
 
 	release(&ptable.lock);
 	return NULL;
@@ -141,7 +143,7 @@ found:
 		p->state = UNUSED;
 		return NULL;
 	}
-	sp = p->kstack + KSTACKSIZE;
+	char *sp = p->kstack + KSTACKSIZE;
 
 	// Leave room for trap frame.
 	sp -= sizeof *p->tf;
@@ -190,12 +192,14 @@ userinit(void)
 	struct proc *p;
 
 	p = allocproc();
-	if (p == NULL)
+	if (p == NULL) {
 		panic("userinit: allocproc failed");
+	}
 
 	initproc = p;
-	if ((p->pgdir = setupkvm()) == NULL)
+	if ((p->pgdir = setupkvm()) == NULL) {
 		panic("userinit: out of memory?");
+	}
 	inituvm(p->pgdir, _binary_bin_initcode_start,
 					(uintptr_t)_binary_bin_initcode_size);
 	p->sz = PGSIZE;
@@ -230,11 +234,13 @@ growproc(intptr_t n)
 
 	sz = curproc->sz;
 	if (n > 0) {
-		if ((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0)
+		if ((sz = allocuvm(curproc->pgdir, sz, sz + n)) == 0) {
 			return -ENOMEM;
+		}
 	} else if (n < 0) {
-		if ((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0)
+		if ((sz = deallocuvm(curproc->pgdir, sz, sz + n)) == 0) {
 			return -EFAULT;
+		}
 	}
 	curproc->sz = sz;
 	switchuvm(curproc);
@@ -248,7 +254,6 @@ growproc(intptr_t n)
 pid_t
 fork(bool virtual)
 {
-	int i;
 	pid_t pid;
 	struct proc *np;
 	struct proc *curproc = myproc();
@@ -288,9 +293,11 @@ fork(bool virtual)
 	// Clear %rax so that fork returns 0 in the child.
 	np->tf->rax = 0;
 
-	for (i = 0; i < NOFILE; i++)
-		if (curproc->ofile[i])
+	for (int i = 0; i < NOFILE; i++) {
+		if (curproc->ofile[i]) {
 			np->ofile[i] = filedup(curproc->ofile[i]);
+		}
+	}
 	np->cwd = inode_dup(curproc->cwd);
 	np->cred = curproc->cred;
 	np->umask = curproc->umask;
@@ -317,14 +324,13 @@ __noreturn void
 exit(int status)
 {
 	struct proc *curproc = myproc();
-	struct proc *p;
-	int fd;
 
-	if (curproc == initproc)
+	if (curproc == initproc) {
 		panic("init exiting");
+	}
 
 	// Close all open files.
-	for (fd = 0; fd < NOFILE; fd++) {
+	for (int fd = 0; fd < NOFILE; fd++) {
 		if (curproc->ofile[fd]) {
 			// It is not possible for exit to
 			// set errno, so we ignore this
@@ -346,11 +352,12 @@ exit(int status)
 	wakeup1(curproc->parent);
 
 	// Pass abandoned children to init.
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
 		if (p->parent == curproc) {
 			p->parent = initproc;
-			if (p->state == ZOMBIE)
+			if (p->state == ZOMBIE) {
 				wakeup1(initproc);
+			}
 		}
 	}
 
@@ -375,13 +382,15 @@ wait(int *wstatus)
 		// Scan through table looking for exited children.
 		havekids = 0;
 		for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-			if (p->parent != curproc)
+			if (p->parent != curproc) {
 				continue;
+			}
 			havekids = 1;
 			if (p->state == ZOMBIE) {
 				// Found one.
-				if (wstatus != NULL)
+				if (wstatus != NULL) {
 					*wstatus = W_EXITCODE(p->status, p->last_signal);
+				}
 				pid = p->pid;
 				kpage_free(p->kstack);
 				p->kstack = NULL;
@@ -393,8 +402,9 @@ wait(int *wstatus)
 				p->name[0] = 0;
 				p->killed = 0;
 				p->last_signal = 0;
-				for (int i = 0; i < __SIG_last; i++)
+				for (int i = 0; i < __SIG_last; i++) {
 					p->sig_handlers[i] = SIG_DFL;
+				}
 				p->state = UNUSED;
 				release(&ptable.lock);
 				return pid;
@@ -443,7 +453,6 @@ last_proc_ran(void)
 void
 scheduler(void)
 {
-	struct proc *p;
 	int ran = 0;
 	struct cpu *c = mycpu();
 	c->proc = 0;
@@ -454,9 +463,10 @@ scheduler(void)
 
 		// Loop over process table looking for process to run.
 		acquire(&ptable.lock);
-		for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-			if (p->state != RUNNABLE)
+		for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+			if (p->state != RUNNABLE) {
 				continue;
+			}
 
 			// Switch to chosen process.  It is the process's job
 			// to release ptable.lock and then reacquire it
@@ -496,14 +506,18 @@ sched(void)
 	int intena;
 	struct proc *p = myproc();
 
-	if (!holding(&ptable.lock))
+	if (!holding(&ptable.lock)) {
 		panic("sched ptable.lock");
-	if (mycpu()->ncli != 1)
+	}
+	if (mycpu()->ncli != 1) {
 		panic("sched locks");
-	if (p->state == RUNNING)
+	}
+	if (p->state == RUNNING) {
 		panic("sched running");
-	if (readrflags() & FL_IF)
+	}
+	if (readrflags() & FL_IF) {
 		panic("sched interruptible");
+	}
 	intena = mycpu()->intena;
 	swtch(&p->context, mycpu()->scheduler);
 	mycpu()->intena = intena;
@@ -519,12 +533,13 @@ yield(void)
 	release(&ptable.lock);
 }
 
+static int first = 1;
+
 // A fork child's very first scheduling by scheduler()
 // will swtch here.  "Return" to user space.
 void
 forkret(void)
 {
-	static int first = 1;
 	// Still holding ptable.lock from scheduler.
 	release(&ptable.lock);
 
@@ -547,11 +562,13 @@ sleep(void *chan, struct spinlock *lk)
 {
 	struct proc *p = myproc();
 
-	if (p == NULL)
+	if (p == NULL) {
 		panic("sleep");
+	}
 
-	if (lk == NULL)
+	if (lk == NULL) {
 		panic("sleep without lk");
+	}
 
 	// Must acquire ptable.lock in order to
 	// change p->state and then call sched.
@@ -584,11 +601,12 @@ sleep(void *chan, struct spinlock *lk)
 static void
 wakeup1(void *chan)
 {
-	struct proc *p;
 
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-		if (p->state == SLEEPING && p->chan == chan)
+	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+		if (p->state == SLEEPING && p->chan == chan) {
 			p->state = RUNNABLE;
+		}
+	}
 }
 
 // Wake up all processes sleeping on chan.
@@ -626,10 +644,9 @@ copy_signal_to_stack(struct proc *proc, int signal)
 int
 kill(pid_t pid, int signal)
 {
-	struct proc *p;
 
 	acquire(&ptable.lock);
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
 		if (p->pid == pid) {
 			p->last_signal = signal;
 
@@ -675,8 +692,9 @@ kill(pid_t pid, int signal)
 				copy_signal_to_stack(p, signal);
 			}
 			// Wake process from sleep if necessary.
-			if (p->state == SLEEPING)
+			if (p->state == SLEEPING) {
 				p->state = RUNNABLE;
+			}
 			release(&ptable.lock);
 			return 0;
 		}
@@ -689,8 +707,9 @@ sighandler_t
 kernel_attach_signal(int signum, sighandler_t handler)
 {
 	if (signum == SIGFPE || signum == SIGSEGV || signum == SIGBUS ||
-			signum == SIGILL)
+			signum == SIGILL) {
 		return SIG_ERR;
+	}
 	if (signum >= __SIG_last || signum < 0) {
 		return SIG_ERR;
 	} else {
@@ -711,22 +730,24 @@ procdump(void)
 		[RUNNABLE] = "runnable", [RUNNING] = "running", [ZOMBIE] = "zombie",
 		[STOPPED] = "stopped",
 	};
-	struct proc *p;
 	char *state;
 	uintptr_t pc[10];
 
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-		if (p->state == UNUSED)
+	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+		if (p->state == UNUSED) {
 			continue;
-		if (p->state >= 0 && p->state < NELEM(states) && states[p->state])
+		}
+		if (p->state >= 0 && p->state < NELEM(states) && states[p->state]) {
 			state = states[p->state];
-		else
+		} else {
 			state = "???";
+		}
 		vga_cprintf("%d %s %s", p->pid, state, p->name);
 		if (p->state == SLEEPING) {
 			getcallerpcs((uintptr_t *)p->context->rbp, pc);
-			for (int i = 0; i < 10 && pc[i] != 0; i++)
+			for (int i = 0; i < 10 && pc[i] != 0; i++) {
 				vga_cprintf(" %lx", pc[i]);
+			}
 		}
 		vga_cprintf("\n");
 	}
@@ -748,8 +769,9 @@ bool
 is_in_group(gid_t group, struct cred *cred)
 {
 	for (int i = 0; i < MAXGROUPS; i++) {
-		if (group == cred->groups[i])
+		if (group == cred->groups[i]) {
 			return true;
+		}
 	}
 	return false;
 }

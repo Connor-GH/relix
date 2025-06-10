@@ -1,9 +1,7 @@
 #include "boot/multiboot2.h"
 #include "vga.h"
-#include "vm.h"
 #include <stdint.h>
 #include "console.h"
-#include "memlayout.h"
 #include "symbols.h"
 
 const char *
@@ -86,9 +84,6 @@ struct color_24bpp {
 
 static int console_width = 0;
 static int console_height = 0;
-// Hardcoded for now until we get pixel buffer support
-static int font_width = 1;
-static int font_height = 1;
 
 int
 __multiboot_console_width_pixels(void)
@@ -100,18 +95,6 @@ int
 __multiboot_console_height_pixels(void)
 {
 	return console_height;
-}
-
-int
-__multiboot_console_width_text(void)
-{
-	return console_width / font_width;
-}
-
-int
-__multiboot_console_height_text(void)
-{
-	return console_height / font_height;
 }
 
 /* This file is a mess for clang format and so we disable it here. */

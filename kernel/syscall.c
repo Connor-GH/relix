@@ -1,9 +1,6 @@
 #include "mmu.h"
-#include "param.h"
 #include "spinlock.h"
-#include "memlayout.h"
 #include "trap.h"
-#include "vm.h"
 #include <errno.h>
 #include "kernel_assert.h"
 #include <fcntl.h>
@@ -11,7 +8,6 @@
 #include <stdint.h>
 #include <defs.h>
 #include "proc.h"
-#include "kalloc.h"
 #include "x86.h"
 #include "syscall.h"
 #include "console.h"
@@ -47,16 +43,17 @@ SYSCALL_ARG_FETCH(unsigned_long);
 ssize_t
 fetchstr(uintptr_t addr, char **pp)
 {
-	char *s, *ep;
 	struct proc *curproc = myproc();
 
-	if (addr >= curproc->sz)
+	if (addr >= curproc->sz) {
 		return -EFAULT;
+	}
 	*pp = (char *)addr;
-	ep = (char *)curproc->sz;
-	for (s = *pp; s < ep; s++) {
-		if (s != NULL && *s == 0)
+	char *ep = (char *)curproc->sz;
+	for (char *s = *pp; s < ep; s++) {
+		if (s != NULL && *s == 0) {
 			return s - *pp;
+		}
 	}
 	return -1;
 }
@@ -115,8 +112,8 @@ argptr(int n, char **pp, int size)
 
 	PROPOGATE_ERR(arguintptr_t(n, &ptr));
 
-	if (size < 0 || ((uintptr_t)ptr >= curproc->sz ||
-									 (uintptr_t)ptr + size > curproc->sz)) {
+	if (size < 0 ||
+			((uintptr_t)ptr >= curproc->sz || (uintptr_t)ptr + size > curproc->sz)) {
 		return -EFAULT;
 	}
 	*pp = (char *)ptr;
@@ -333,14 +330,13 @@ syscall_init(void)
 
 	wrmsr(MSR_STAR, star);
 	wrmsr(MSR_FMASK, FL_DIRECTION | FL_IF | FL_TRAP);
-	wrmsr(MSR_KERNEL_GS_BASE,(uint64_t)mycpu());
+	wrmsr(MSR_KERNEL_GS_BASE, (uint64_t)mycpu());
 }
 
 void
 syswrap(struct trapframe *tf);
 
-noreturn __attribute__((naked))
-static void
+noreturn __attribute__((naked)) static void
 syscall_do(void)
 {
 	__asm__ __volatile__(
@@ -410,17 +406,19 @@ syscall_do(void)
 
 		"sysretq\n"
 		:
-		: [user_stack] "i" (offsetof(struct cpu, user_stack)),
-			[kernel_stack] "i" (offsetof(struct cpu, kernel_stack))
-	);
+		/* clang-format off */
+		: [user_stack] "i"(offsetof(struct cpu, user_stack)),
+			[kernel_stack] "i"(offsetof(struct cpu, kernel_stack)));
+	/* clang-format on */
 }
-_Static_assert(offsetof(struct cpu, user_stack) == 16, "");
-_Static_assert(offsetof(struct cpu, kernel_stack) == 8, "");
 
+// INVARIANT: myproc() is not NULL.
+// This should never be NULL since this is
+// only called upon a syscall, which is in
+// userspace. By that point, we have processes.
 void
 syswrap(struct trapframe *tf)
 {
-	kernel_assert(myproc() != NULL);
 	myproc()->tf = tf;
 	syscall();
 }

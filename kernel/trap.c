@@ -4,7 +4,6 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <string.h>
 #include <time.h>
 
 #include "drivers/mmu.h"
@@ -73,14 +72,14 @@ regdump(struct trapframe *tf)
 	uart_printf("Register dump:\n");
 	uart_printf(
 		"rax = %#018lx rbx = %#018lx rcx = %#018lx rdx = %#018lx rsi = %#018lx\n"
-				 "rdi = %#018lx rsp = %#018lx rbp = %#018lx r8  = %#018lx r9  = %#018lx\n"
-				 "r10 = %#018lx r11 = %#018lx r12 = %#018lx r13 = %#018lx r14 = %#018lx\n"
-				 "r15 = %#018lx rip = %#018lx cs  = %#018lx ds  = %#018lx rfl = %#018lx\n"
-				 "err = %#018lx tno = %#018lx\n",
+		"rdi = %#018lx rsp = %#018lx rbp = %#018lx r8  = %#018lx r9  = %#018lx\n"
+		"r10 = %#018lx r11 = %#018lx r12 = %#018lx r13 = %#018lx r14 = %#018lx\n"
+		"r15 = %#018lx rip = %#018lx cs  = %#018lx ds  = %#018lx rfl = %#018lx\n"
+		"err = %#018lx tno = %#018lx\n",
 
-							tf->rax, tf->rbx, tf->rcx, tf->rdx, tf->rsi, tf->rdi, tf->rsp,
-							tf->rbp, tf->r8, tf->r9, tf->r10, tf->r11, tf->r12, tf->r13,
-							tf->r14, tf->r15, tf->rip, tf->cs, tf->ds, tf->rflags, tf->err, tf->trapno);
+		tf->rax, tf->rbx, tf->rcx, tf->rdx, tf->rsi, tf->rdi, tf->rsp, tf->rbp,
+		tf->r8, tf->r9, tf->r10, tf->r11, tf->r12, tf->r13, tf->r14, tf->r15,
+		tf->rip, tf->cs, tf->ds, tf->rflags, tf->err, tf->trapno);
 }
 static void
 decipher_error_code_nonpagefault(uint64_t error_code)
@@ -115,12 +114,14 @@ void
 trap(struct trapframe *tf)
 {
 	if (tf->trapno == T_SYSCALL) {
-		if (myproc()->killed)
+		if (myproc()->killed) {
 			exit(0);
+		}
 		myproc()->tf = tf;
 		syscall();
-		if (myproc()->killed)
+		if (myproc()->killed) {
 			exit(0);
+		}
 		return;
 	}
 
@@ -209,36 +210,33 @@ trap(struct trapframe *tf)
 		uintptr_t pte = PTX(addr);
 		uintptr_t idx = addr & 0b111111111111;
 		decipher_page_fault_error_code(tf->err);
-		uart_printf("This is at [%ld][%ld][%ld][%ld][%ld]\n", pml4,
-							pdpt,
-							pde,
-							pte,
-							idx);
-	uintptr_t *pde_ = &myproc()->pgdir[PDX(addr)];
-	// We can only attempt CoW if the page tables are
-	// not severely messed up. If they are NULL, we just
-	// do the normal process killing.
-	if (pde_ == NULL) {
-		goto out;
-	}
-	if (*pde_ & PTE_P) {
-		uintptr_t *pgtab = (pte_t *)p2v(PTE_ADDR(*pde_));
-		if (pgtab == NULL) {
+		uart_printf("This is at [%ld][%ld][%ld][%ld][%ld]\n", pml4, pdpt, pde, pte,
+								idx);
+		uintptr_t *pde_ = &myproc()->pgdir[PDX(addr)];
+		// We can only attempt CoW if the page tables are
+		// not severely messed up. If they are NULL, we just
+		// do the normal process killing.
+		if (pde_ == NULL) {
 			goto out;
 		}
-		uintptr_t *pg = &pgtab[PTX(addr)];
-		if (*pg & PTE_COW && !(*pg & PTE_P)) {
-			void *mem = kpage_alloc();
-			if (mem == NULL) {
-				kill(myproc()->pid, SIGSEGV);
+		if (*pde_ & PTE_P) {
+			uintptr_t *pgtab = (pte_t *)p2v(PTE_ADDR(*pde_));
+			if (pgtab == NULL) {
+				goto out;
+			}
+			uintptr_t *pg = &pgtab[PTX(addr)];
+			if (*pg & PTE_COW && !(*pg & PTE_P)) {
+				void *mem = kpage_alloc();
+				if (mem == NULL) {
+					kill(myproc()->pid, SIGSEGV);
+					break;
+				}
+				*pg |= V2P(mem) | PTE_P;
+				*pg &= ~PTE_COW;
+				lcr3(V2P(myproc()->pgdir));
 				break;
 			}
-			*pg |= V2P(mem) | PTE_P;
-			*pg &= ~PTE_COW;
-			lcr3(V2P(myproc()->pgdir));
-			break;
 		}
-	}
 out:
 		regdump(tf);
 		if ((tf->cs & DPL_USER) == 0) {
@@ -247,8 +245,9 @@ out:
 			uart_printf("Process %s killed with SIGSEGV\n", myproc()->name);
 			uintptr_t pcs[10];
 			getcallerpcs_with_bp(pcs, &tf->rbp, 10);
-			for (int i = 0; i < 10; i++)
+			for (int i = 0; i < 10; i++) {
 				uart_printf("%#lx ", pcs[i]);
+			}
 			uart_printf("\n");
 			kill(myproc()->pid, SIGSEGV);
 		}
@@ -283,16 +282,19 @@ out:
 	// Force process exit if it has been killed and is in user space.
 	// (If it is still executing in the kernel, let it keep running
 	// until it gets to the regular system call return.)
-	if (myproc() && myproc()->killed && (tf->cs & 3) == DPL_USER)
+	if (myproc() && myproc()->killed && (tf->cs & 3) == DPL_USER) {
 		exit(0);
+	}
 
 	// Force process to give up CPU on clock tick.
 	// If interrupts were on while locks held, would need to check nlock.
 	if (myproc() && myproc()->state == RUNNING &&
-			tf->trapno == T_IRQ0 + IRQ_TIMER)
+			tf->trapno == T_IRQ0 + IRQ_TIMER) {
 		yield();
+	}
 
 	// Check if the process has been killed since we yielded
-	if (myproc() && myproc()->killed && (tf->cs & 3) == DPL_USER)
+	if (myproc() && myproc()->killed && (tf->cs & 3) == DPL_USER) {
 		exit(0);
+	}
 }

@@ -5,8 +5,8 @@
 #include "x86.h"
 #include <stddef.h>
 #include <ctype.h>
+#include "macros.h"
 
-#define min(x, y) ((x) < (y) ? (x) : (y))
 
 char *
 strcpy(char *s, const char *t)
@@ -24,7 +24,7 @@ strcmp(const char *p, const char *q)
 {
 	size_t np = strlen(p);
 	size_t nq = strlen(q);
-	return strncmp(p, q, (np > nq ? nq : np) + 1);
+	return strncmp(p, q, min(np, nq) + 1);
 }
 
 char *
@@ -47,23 +47,28 @@ strstr(const char *s1, const char *s2)
 	}
 	return NULL;
 }
+
 int
 strncmp(const char *p, const char *q, size_t n)
 {
-	while (n > 0 && *p && *p == *q)
+	while (n > 0 && *p && *p == *q) {
 		n--, p++, q++;
-	if (n == 0)
+	}
+	if (n == 0) {
 		return 0;
+	}
 	return (uint8_t)*p - (uint8_t)*q;
 }
 
 int
 strncasecmp(const char *p, const char *q, size_t n)
 {
-	while (n > 0 && *p && tolower(*p) == tolower(*q))
+	while (n > 0 && *p && tolower(*p) == tolower(*q)) {
 		n--, p++, q++;
-	if (n == 0)
+	}
+	if (n == 0) {
 		return 0;
+	}
 	return (uint8_t)*p - (uint8_t)*q;
 }
 int
@@ -95,17 +100,21 @@ strnlen(const char *s, size_t size)
 char *
 strchr(const char *s, int c)
 {
-	for (; *s; s++)
-		if (*s == c)
+	for (; *s; s++) {
+		if (*s == c) {
 			return (char *)s;
+		}
+	}
 	return NULL;
 }
 char *
 strrchr(const char *s, int c)
 {
-	for (int i = strlen(s) - 1; i >= 0; i--)
-		if (s[i] == c)
+	for (int i = strlen(s) - 1; i >= 0; i--) {
+		if (s[i] == c) {
 			return (char *)s + i;
+		}
+	}
 	return NULL;
 }
 char *
@@ -114,23 +123,24 @@ strncpy(char *dst, const char *src, size_t n)
 	char *start = dst;
 	while (n > 0 && *src != '\0') {
 		*dst++ = *src++;
-    n--;
-  }
+		n--;
+	}
 
 	while (n > 0) {
-    *dst++ = '\0';
-    n--;
-  }
+		*dst++ = '\0';
+		n--;
+	}
 
-  return start;
+	return start;
 }
 char *
 stpncpy(char *dst, const char *src, size_t n)
 {
 	while (n-- > 0 && (*dst++ = *src++) != 0)
 		;
-	while (n-- > 1)
+	while (n-- > 1) {
 		*dst++ = '\0';
+	}
 	return dst;
 }
 
@@ -177,8 +187,9 @@ memset(void *dst, int c, size_t n)
 	if ((size_t)dst % 4 == 0 && n % 4 == 0) {
 		c &= 0xFF;
 		stosl(dst, (c << 24) | (c << 16) | (c << 8) | c, n / 4);
-	} else
+	} else {
 		stosb(dst, c, n);
+	}
 	return dst;
 }
 
@@ -190,8 +201,9 @@ memcmp(const void *v1, const void *v2, size_t n)
 	dst = v1;
 	s2 = v2;
 	while (n-- > 0) {
-		if (*dst != *s2)
+		if (*dst != *s2) {
 			return *dst - *s2;
+		}
 		dst++, s2++;
 	}
 
@@ -209,11 +221,13 @@ memmove(void *dst, const void *src, size_t n)
 {
 	char *dest = (char *)dst;
 	const char *source = (const char *)src;
-	if (dest == source || n == 0)
+	if (dest == source || n == 0) {
 		return dst;
+	}
 
-	if (dest == NULL)
+	if (dest == NULL) {
 		return NULL;
+	}
 	// If source is lower than dest in memory,
 	// we don't have to worry about clobbering it going forwards.
 	if (dest < source) {
@@ -240,10 +254,11 @@ mempcpy(void *dst, const void *src, size_t n)
 void *
 memcpy(void *dst, const void *src, size_t n)
 {
-	if (n % 8 == 0)
+	if (n % 8 == 0) {
 		return movsq((uint64_t *)dst, (uint64_t *)src, n / sizeof(uint64_t));
-	else
+	} else {
 		return movsb((uint8_t *)dst, (uint8_t *)src, n / sizeof(uint8_t));
+	}
 }
 
 char *
@@ -282,8 +297,9 @@ __safestrcpy(char *s, const char *t, size_t n)
 	char *os;
 
 	os = s;
-	if (n <= 0)
+	if (n <= 0) {
 		return os;
+	}
 	while (--n > 0 && (*s++ = *t++) != 0)
 		;
 	*s = 0;

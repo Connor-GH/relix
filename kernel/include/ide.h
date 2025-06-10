@@ -7,5 +7,5 @@ ideinit(void);
 void
 ideintr(void);
 void
-iderw(struct buf *);
+iderw(struct block_buffer *);
 #endif

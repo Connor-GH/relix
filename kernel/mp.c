@@ -20,13 +20,13 @@ int ncpu;
 uint8_t ioapicid;
 
 static uint8_t
-sum(uint8_t *addr, int len)
+checksum(uint8_t *addr, int len)
 {
-	int i, sum;
+	int sum = 0;
 
-	sum = 0;
-	for (i = 0; i < len; i++)
+	for (int i = 0; i < len; i++) {
 		sum += addr[i];
+	}
 	return sum;
 }
 
@@ -34,15 +34,16 @@ sum(uint8_t *addr, int len)
 static struct mp *
 mpsearch1(uint32_t a, int len)
 {
-	uint8_t *e, *p, *addr;
+	uint8_t *addr = p2v(a);
+	uint8_t *e = addr + len;
 
-	addr = p2v(a);
-	e = addr + len;
-	for (p = addr; p < e; p += sizeof(struct mp))
+	for (uint8_t *p = addr; p < e; p += sizeof(struct mp)) {
 		// see if we found the _MP_ signature that we need.
 		// https://web.archive.org/web/20121002210153/http://download.intel.com/design/archives/processors/pro/docs/24201606.pdf
-		if (memcmp(p, "_MP_", 4) == 0 && sum(p, sizeof(struct mp)) == 0)
+		if (memcmp(p, "_MP_", 4) == 0 && checksum(p, sizeof(struct mp)) == 0) {
 			return (struct mp *)p;
+		}
+	}
 	return NULL;
 }
 
@@ -54,18 +55,20 @@ mpsearch1(uint32_t a, int len)
 static struct mp *
 mpsearch(void)
 {
-	uint8_t *bda;
 	uint32_t p;
 	struct mp *mp;
 
-	bda = (uint8_t *)P2V(0x400);
+	uint8_t *bda = (uint8_t *)P2V(0x400);
+
 	if ((p = ((bda[0x0F] << 8) | bda[0x0E]) << 4)) {
-		if ((mp = mpsearch1(p, 1024)))
+		if ((mp = mpsearch1(p, 1024))) {
 			return mp;
+		}
 	} else {
 		p = ((bda[0x14] << 8) | bda[0x13]) * 1024;
-		if ((mp = mpsearch1(p - 1024, 1024)))
+		if ((mp = mpsearch1(p - 1024, 1024))) {
 			return mp;
+		}
 	}
 	return mpsearch1(0xF0000, 0x10000);
 }
@@ -80,15 +83,19 @@ __nonnull(1) static struct mpconf *mpconfig(struct mp **pmp)
 	struct mpconf *conf;
 	struct mp *mp;
 
-	if ((mp = mpsearch()) == NULL || mp->physaddr == NULL)
+	if ((mp = mpsearch()) == NULL || mp->physaddr == NULL) {
 		return NULL;
+	}
 	conf = (struct mpconf *)p2v((uintptr_t)mp->physaddr);
-	if (memcmp(conf, "PCMP", 4) != 0)
+	if (memcmp(conf, "PCMP", 4) != 0) {
 		return NULL;
-	if (conf->version != 1 && conf->version != 4)
+	}
+	if (conf->version != 1 && conf->version != 4) {
 		return NULL;
-	if (sum((uint8_t *)conf, conf->length) != 0)
+	}
+	if (checksum((uint8_t *)conf, conf->length) != 0) {
 		return NULL;
+	}
 	*pmp = mp;
 	return conf;
 }
@@ -104,8 +111,9 @@ mpinit(void)
 	struct mpioapic *ioapic;
 	struct mpbus *bus;
 
-	if ((conf = mpconfig(&mp)) == NULL)
+	if ((conf = mpconfig(&mp)) == NULL) {
 		panic("Expect to run on an SMP");
+	}
 	ismp = 1;
 	lapic = IO2V((uintptr_t)conf->lapicaddr);
 	for (p = (uint8_t *)(conf + 1), e = (uint8_t *)conf + conf->length; p < e;) {
@@ -152,8 +160,9 @@ mpinit(void)
 			break;
 		}
 	}
-	if (!ismp)
+	if (!ismp) {
 		panic("Didn't find a suitable machine");
+	}
 
 	if (mp->imcrp) {
 		// Bochs doesn't support IMCR, so this doesn't run on Bochs.

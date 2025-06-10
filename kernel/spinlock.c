@@ -27,8 +27,9 @@ void
 acquire(struct spinlock *lk) __acquires(lk)
 {
 	pushcli(); // disable interrupts to avoid deadlock.
-	if (holding(lk))
+	if (holding(lk)) {
 		uart_printf("%s\n", lk->name);
+	}
 	kernel_assert(!holding(lk));
 
 	while (atomic_flag_test_and_set(&lk->locked) != 0)
@@ -77,7 +78,6 @@ getcallerpcs(void *v, uintptr_t pcs[])
 	asm volatile("mov %%rbp, %0" : "=r"(rbp));
 #endif
 	getcallerpcs_with_bp(pcs, rbp, 10);
-
 }
 void
 getcallerpcs_with_bp(uintptr_t pcs[], uintptr_t *rbp, size_t size)
@@ -86,13 +86,15 @@ getcallerpcs_with_bp(uintptr_t pcs[], uintptr_t *rbp, size_t size)
 
 	for (i = 0; i < size; i++) {
 		if (rbp == NULL || rbp < (uintptr_t *)KERNBASE ||
-				rbp == (uintptr_t *)0xffffffff)
+				rbp == (uintptr_t *)0xffffffff) {
 			break;
+		}
 		pcs[i] = rbp[1]; // saved %rip
 		rbp = (uintptr_t *)rbp[0]; // saved %rbp
 	}
-	for (; i < size; i++)
+	for (; i < size; i++) {
 		pcs[i] = 0;
+	}
 }
 
 // Check whether this cpu is holding the lock.
@@ -113,22 +115,25 @@ holding(struct spinlock *lock)
 void
 pushcli(void)
 {
-	int rflags;
+	int rflags = readrflags();
 
-	rflags = readrflags();
 	cli();
-	if (mycpu()->ncli == 0)
+	if (mycpu()->ncli == 0) {
 		mycpu()->intena = rflags & FL_IF;
+	}
 	mycpu()->ncli += 1;
 }
 
 void
 popcli(void)
 {
-	if (readrflags() & FL_IF)
+	if (readrflags() & FL_IF) {
 		panic("popcli - interruptible");
-	if (--mycpu()->ncli < 0)
+	}
+	if (--mycpu()->ncli < 0) {
 		panic("popcli");
-	if (mycpu()->ncli == 0 && mycpu()->intena)
+	}
+	if (mycpu()->ncli == 0 && mycpu()->intena) {
 		sti();
+	}
 }

@@ -1,5 +1,4 @@
 #include "fs.h"
-#include "spinlock.h"
 #include "file.h"
 
 static ssize_t

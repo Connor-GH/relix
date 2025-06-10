@@ -25,8 +25,12 @@ enum FXSR {
 	FFXSR = 1 << 1,
 };
 enum MISC_CPU_FEATURES {
-	LONG_MODE = 1 << 0,
+	MISC_FEATURE_LONG_MODE = 1 << 0,
+	MISC_FEATURE_CPUID = 1 << 1,
 };
+/*
+ * CPU Features tree for determining what we can use.
+ */
 typedef struct cpu_features_struct {
 	enum SSE sse;
 	enum AVX avx;
@@ -34,7 +38,6 @@ typedef struct cpu_features_struct {
 	union {
 		struct {
 			uint32_t fpu : 1;
-			uint32_t cpuid : 1;
 			uint32_t mmx : 1;
 			uint32_t xsave: 1;
 		};

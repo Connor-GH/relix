@@ -1,14 +1,11 @@
 // Intel 8250 serial port (UART).
 
 #include "traps.h"
-#include "vga.h"
 #include "x86.h"
 #include "uart.h"
 #include "ioapic.h"
 #include "drivers/lapic.h"
 #include "console.h"
-#include "types.h"
-#include "file.h"
 
 #define COM1 0x3f8
 
@@ -31,14 +28,15 @@ uartinit1(void)
 	outb(COM1 + 1, 0x01); // Enable receive interrupts.
 
 	// If status is 0xFF, no serial port.
-	if (inb(COM1 + 5) == 0xFF)
+	if (inb(COM1 + 5) == 0xFF) {
 		return;
+	}
 	uart = 1;
 
-
 	// Announce that we're here.
-	for (p = "booting relix...\n"; *p; p++)
+	for (p = "booting relix...\n"; *p; p++) {
 		uartputc(*p);
+	}
 }
 
 void
@@ -54,22 +52,24 @@ uartinit2(void)
 void
 uartputc(int c)
 {
-	int i;
-
-	if (!uart)
+	if (!uart) {
 		return;
-	for (i = 0; i < 128 && !(inb(COM1 + 5) & 0x20); i++)
+	}
+	for (int i = 0; i < 128 && !(inb(COM1 + 5) & 0x20); i++) {
 		microdelay(10);
+	}
 	outb(COM1 + 0, c);
 }
 
 static int
 uartgetc(void)
 {
-	if (!uart)
+	if (!uart) {
 		return -1;
-	if (!(inb(COM1 + 5) & 0x01))
+	}
+	if (!(inb(COM1 + 5) & 0x01)) {
 		return -1;
+	}
 	return inb(COM1 + 0);
 }
 

@@ -42,7 +42,8 @@ compare_symbols(const void *c1, const void *c2)
 }
 
 void
-symbol_table_init(const struct Elf64_Shdr *sections, uint16_t entsize, uint16_t num)
+symbol_table_init(const struct Elf64_Shdr *sections, uint16_t entsize,
+									uint16_t num)
 {
 	if (sections == NULL) {
 		log_no_symbols("sections == NULL");
@@ -183,8 +184,9 @@ symbol_table_init(const struct Elf64_Shdr *sections, uint16_t entsize, uint16_t 
 size_t
 symbol_locate(const char *name)
 {
-	if (s_symbol_num == 0 || s_symlen_max == 0 || s_symbols == NULL)
+	if (s_symbol_num == 0 || s_symlen_max == 0 || s_symbols == NULL) {
 		goto error_condition;
+	}
 
 	for (int i = 0; i < s_symbol_num; ++i) {
 		if (strncmp(name, s_symbols[i].name, s_symlen_max)) {
@@ -201,8 +203,9 @@ error_condition:
 const char *
 symbol_resolve(size_t addr, size_t *rela)
 {
-	if (s_symbol_num == 0 || s_symlen_max == 0 || s_symbols == NULL)
+	if (s_symbol_num == 0 || s_symlen_max == 0 || s_symbols == NULL) {
 		goto error_condition;
+	}
 	for (int i = 0; i < s_symbol_num; ++i) {
 		size_t start = s_symbols[i].addr;
 		size_t end = start + s_symbols[i].size;

@@ -47,7 +47,7 @@ struct log {
 	dev_t dev;
 	struct logheader lh;
 };
-struct log log;
+static struct log log;
 
 static void
 recover_from_log(void);
@@ -57,8 +57,9 @@ commit(void);
 void
 initlog(dev_t dev)
 {
-	if (sizeof(struct logheader) >= BSIZE)
+	if (sizeof(struct logheader) >= BSIZE) {
 		panic("initlog: too big logheader");
+	}
 
 	struct superblock sb;
 	initlock(&log.lock, "log");
@@ -73,10 +74,11 @@ initlog(dev_t dev)
 static void
 install_trans(void)
 {
-
 	for (size_t tail = 0; tail < log.lh.n; tail++) {
-		struct buf *lbuf = block_read(log.dev, log.start + tail + 1); // read log block
-		struct buf *dbuf = block_read(log.dev, log.lh.block[tail]); // read dst
+		struct block_buffer *lbuf =
+			block_read(log.dev, log.start + tail + 1); // read log block
+		struct block_buffer *dbuf =
+			block_read(log.dev, log.lh.block[tail]); // read dst
 		memmove(dbuf->data, lbuf->data, BSIZE); // copy block to dst
 		block_write(dbuf); // write dst to disk
 		block_release(lbuf);
@@ -88,7 +90,7 @@ install_trans(void)
 static void
 read_head(void)
 {
-	struct buf *buf = block_read(log.dev, log.start);
+	struct block_buffer *buf = block_read(log.dev, log.start);
 	struct logheader *lh = (struct logheader *)(buf->data);
 	log.lh.n = lh->n;
 	for (size_t i = 0; i < log.lh.n; i++) {
@@ -103,7 +105,7 @@ read_head(void)
 static void
 write_head(void)
 {
-	struct buf *buf = block_read(log.dev, log.start);
+	struct block_buffer *buf = block_read(log.dev, log.start);
 	struct logheader *hb = (struct logheader *)(buf->data);
 	hb->n = log.lh.n;
 	for (size_t i = 0; i < log.lh.n; i++) {
@@ -150,8 +152,9 @@ end_op(void)
 
 	acquire(&log.lock);
 	log.outstanding -= 1;
-	if (log.committing)
+	if (log.committing) {
 		panic("log.committing");
+	}
 	if (log.outstanding == 0) {
 		do_commit = 1;
 		log.committing = 1;
@@ -178,10 +181,11 @@ end_op(void)
 static void
 write_log(void)
 {
-
 	for (size_t tail = 0; tail < log.lh.n; tail++) {
-		struct buf *to = block_read(log.dev, log.start + tail + 1); // log block
-		struct buf *from = block_read(log.dev, log.lh.block[tail]); // cache block
+		struct block_buffer *to =
+			block_read(log.dev, log.start + tail + 1); // log block
+		struct block_buffer *from =
+			block_read(log.dev, log.lh.block[tail]); // cache block
 		memmove(to->data, from->data, BSIZE);
 		block_write(to); // write the log
 		block_release(from);
@@ -211,23 +215,27 @@ commit(void)
 //   log_write(bp)
 //   block_release(bp)
 void
-log_write(struct buf *b)
+log_write(struct block_buffer *b)
 {
 	size_t i;
 
-	if (log.lh.n >= LOGSIZE || log.lh.n >= log.size - 1)
+	if (log.lh.n >= LOGSIZE || log.lh.n >= log.size - 1) {
 		panic("too big a transaction");
-	if (log.outstanding < 1)
+	}
+	if (log.outstanding < 1) {
 		panic("log_write outside of trans");
+	}
 
 	acquire(&log.lock);
 	for (i = 0; i < log.lh.n; i++) {
-		if (log.lh.block[i] == b->blockno) // log absorbtion
+		if (log.lh.block[i] == b->blockno) { // log absorbtion
 			break;
+		}
 	}
 	log.lh.block[i] = b->blockno;
-	if (i == log.lh.n)
+	if (i == log.lh.n) {
 		log.lh.n++;
+	}
 	b->flags |= B_DIRTY; // prevent eviction
 	release(&log.lock);
 }

@@ -78,6 +78,7 @@ picinit(void)
 	outb(IO_PIC2, 0x68); // OCW3
 	outb(IO_PIC2, 0x0a); // OCW3
 
-	if (irqmask != 0xFFFF)
+	if (irqmask != 0xFFFF) {
 		picsetmask(irqmask);
+	}
 }

@@ -28,13 +28,13 @@ extern int ncpu;
 #define NBUCKET NCPU
 
 struct {
-	struct buf buf[NBUF];
+	struct block_buffer buf[NBUF];
 
 	// Linked list of all buffers, through prev/next.
 	// Sorted by how recently the buffer was used.
 	// head.next is most recent, head.prev is least.
 	// Hash bucket
-	struct buf bucket[NBUCKET];
+	struct block_buffer bucket[NBUCKET];
 	struct spinlock bucket_lock[NBUCKET];
 } block_cache;
 
@@ -47,7 +47,7 @@ hash(uint64_t blockno)
 void
 block_init(void)
 {
-	struct buf *b;
+	struct block_buffer *b;
 
 	for (size_t i = 0; i < min(NBUCKET, ncpu); i++) {
 		initlock(&block_cache.bucket_lock[i], "block_cache.bucket");
@@ -69,10 +69,10 @@ block_init(void)
 // Look through buffer cache for block on device dev.
 // If not found, allocate a buffer.
 // In either case, return locked buffer.
-static struct buf *
+static struct block_buffer *
 block_get(dev_t dev, uint64_t blockno) __acquires(&b->lock)
 {
-	struct buf *b;
+	struct block_buffer *b;
 	size_t hi = hash(blockno);
 
 	// Find cache from bucket hi.
@@ -123,10 +123,10 @@ block_get(dev_t dev, uint64_t blockno) __acquires(&b->lock)
 }
 
 // Return a locked buf with the contents of the indicated block.
-struct buf *
+struct block_buffer *
 block_read(dev_t dev, uint64_t blockno) __acquires(&b->lock)
 {
-	struct buf *b;
+	struct block_buffer *b;
 	b = block_get(dev, blockno);
 	if ((b->flags & B_VALID) == 0) {
 		iderw(b);
@@ -136,7 +136,7 @@ block_read(dev_t dev, uint64_t blockno) __acquires(&b->lock)
 
 // Write b's contents to disk.  Must be locked.
 void
-block_write(struct buf *b) __must_hold(&b->lock)
+block_write(struct block_buffer *b) __must_hold(&b->lock)
 {
 	kernel_assert(holdingsleep(&b->lock));
 	b->flags |= B_DIRTY;
@@ -146,7 +146,7 @@ block_write(struct buf *b) __must_hold(&b->lock)
 // Release a locked buffer.
 // Move to the head of the most-recently-used list.
 void
-block_release(struct buf *b) __releases(&b->lock)
+block_release(struct block_buffer *b) __releases(&b->lock)
 {
 	kernel_assert(holdingsleep(&b->lock));
 

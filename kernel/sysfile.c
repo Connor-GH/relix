@@ -49,17 +49,22 @@ argfd(int n, int *pfd, struct file **pf)
 	struct file *f;
 
 	PROPOGATE_ERR(argint(n, &fd));
-	if (fd < 0)
+	if (fd < 0) {
 		return -EBADF;
-	if (fd >= NOFILE)
+	}
+	if (fd >= NOFILE) {
 		return -ENFILE;
-	if ((f = myproc()->ofile[fd]) == NULL)
+	}
+	if ((f = myproc()->ofile[fd]) == NULL) {
 		return -EBADF;
+	}
 
-	if (pfd)
+	if (pfd) {
 		*pfd = fd;
-	if (pf)
+	}
+	if (pf) {
 		*pf = f;
+	}
 	return 0;
 }
 
@@ -121,12 +126,14 @@ sys_writev(void)
 
 	for (int i = 0; i < iovcnt; i++) {
 		ssize_t ret = filewrite(file, iovecs->iov_base, iovecs->iov_len);
-		if (ret < 0)
+		if (ret < 0) {
 			return ret;
+		}
 		accumulated_bytes += ret;
 	}
 	return accumulated_bytes;
 }
+
 size_t
 sys_close(void)
 {
@@ -146,8 +153,9 @@ sys_fstat(void)
 	PROPOGATE_ERR(argfd(0, NULL, &f));
 	PROPOGATE_ERR(argptr(1, (void *)&st, sizeof(*st)));
 
-	if (st == NULL)
+	if (st == NULL) {
 		return -EFAULT;
+	}
 	return filestat(f, st);
 }
 
@@ -164,8 +172,9 @@ sys_stat(void)
 	if ((ip = namei(path)) == NULL) {
 		return -ENOENT;
 	}
-	if (st == NULL)
+	if (st == NULL) {
 		return -EFAULT;
+	}
 
 	// Everything that can use stat is an inode.
 	inode_lock(ip);
@@ -235,10 +244,12 @@ isdirempty(struct inode *dp)
 	struct dirent de;
 
 	for (uint64_t off = 2 * sizeof(de); off < dp->size; off += sizeof(de)) {
-		if (inode_read(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+		if (inode_read(dp, (char *)&de, off, sizeof(de)) != sizeof(de)) {
 			panic("isdirempty: inode_read");
-		if (de.d_ino != 0)
+		}
+		if (de.d_ino != 0) {
 			return 0;
+		}
 	}
 	return 1;
 }
@@ -263,8 +274,9 @@ sys_unlink(void)
 	inode_lock(dp);
 
 	// Cannot unlink "." or "..".
-	if (namecmp(name, ".") == 0 || namecmp(name, "..") == 0)
+	if (namecmp(name, ".") == 0 || namecmp(name, "..") == 0) {
 		goto bad;
+	}
 
 	if ((ip = dirlookup(dp, name, &off)) == NULL) {
 		error = ENOENT;
@@ -274,8 +286,9 @@ sys_unlink(void)
 
 	inode_lock(ip);
 
-	if (ip->nlink < 1)
+	if (ip->nlink < 1) {
 		panic("unlink: nlink < 1");
+	}
 	if (S_ISDIR(ip->mode) && !isdirempty(ip)) {
 		inode_unlockput(ip);
 		error = ENOTEMPTY;
@@ -283,8 +296,9 @@ sys_unlink(void)
 	}
 
 	memset(&de, 0, sizeof(de));
-	if (inode_write(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+	if (inode_write(dp, (char *)&de, off, sizeof(de)) != sizeof(de)) {
 		panic("unlink: inode_write");
+	}
 	if (S_ISDIR(ip->mode)) {
 		dp->nlink--;
 		inode_update(dp);
@@ -323,8 +337,9 @@ sys_open(void)
 	}
 
 	// Myproc is NULL? Uh, ask it to try again later...
-	if (myproc() == NULL)
+	if (myproc() == NULL) {
 		return -EAGAIN;
+	}
 
 	return fileopen(path, flags, mode & ~(myproc()->umask));
 }
@@ -339,8 +354,9 @@ sys_mkdir(void)
 	PROPOGATE_ERR(argstr(0, &path));
 	PROPOGATE_ERR(argmode_t(1, &mode));
 
-	if (myproc() == NULL)
+	if (myproc() == NULL) {
 		return -EAGAIN;
+	}
 	begin_op();
 	if ((ip = filecreate(path, (S_IFDIR | mode) & ~myproc()->umask, 0, 0)) ==
 			NULL) {
@@ -421,8 +437,9 @@ sys_getcwd(void)
 	// Translate cwd from inode into path.
 	char *ret = inode_to_path(buf, size, myproc()->cwd);
 	// If we are negative, propogate the errno.
-	if (ret == NULL)
+	if (ret == NULL) {
 		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -440,28 +457,34 @@ sys_execve(void)
 	memset(argv, 0, sizeof(argv));
 	memset(envp, 0, sizeof(envp));
 	for (size_t i = 0;; i++) {
-		if (i >= NELEM(argv))
+		if (i >= NELEM(argv)) {
 			return -EINVAL;
-		if (fetchuintptr_t(uargv + sizeof(uintptr_t) * i, &uarg) < 0)
+		}
+		if (fetchuintptr_t(uargv + sizeof(uintptr_t) * i, &uarg) < 0) {
 			return -EINVAL;
+		}
 		if (uarg == 0) {
 			argv[i] = NULL;
 			break;
 		}
-		if (fetchstr(uarg, &argv[i]) < 0)
+		if (fetchstr(uarg, &argv[i]) < 0) {
 			return -EINVAL;
+		}
 	}
 	for (size_t i = 0;; i++) {
-		if (i >= NELEM(envp))
+		if (i >= NELEM(envp)) {
 			return -EINVAL;
-		if (fetchuintptr_t(uenvp + sizeof(uintptr_t) * i, &uenv) < 0)
+		}
+		if (fetchuintptr_t(uenvp + sizeof(uintptr_t) * i, &uenv) < 0) {
 			return -EINVAL;
+		}
 		if (uenv == 0) {
 			envp[i] = NULL;
 			break;
 		}
-		if (fetchstr(uenv, &envp[i]) < 0)
+		if (fetchstr(uenv, &envp[i]) < 0) {
 			return -EINVAL;
+		}
 	}
 	return execve(path, argv, envp);
 }
@@ -481,8 +504,9 @@ sys_pipe(void)
 	PROPOGATE_ERR(pipealloc(&rf, &wf));
 	fd0 = -1;
 	if ((fd0 = fdalloc(rf)) < 0 || (fd1 = fdalloc(wf)) < 0) {
-		if (fd0 >= 0)
+		if (fd0 >= 0) {
 			myproc()->ofile[fd0] = NULL;
+		}
 		// Ignore the return value here so that
 		// we can get a more accurate errno.
 		(void)fileclose(rf);
@@ -566,8 +590,9 @@ sys_symlink(void)
 		end_op();
 		return -ENOSPC;
 	}
-	if (inode_write(ip, target, 0, strlen(target) + 1) != strlen(target) + 1)
+	if (inode_write(ip, target, 0, strlen(target) + 1) != strlen(target) + 1) {
 		panic("symlink inode_write");
+	}
 
 	inode_unlockput(ip);
 	end_op();
@@ -604,11 +629,13 @@ sys_readlink(void)
 		return -EINVAL;
 	}
 
-	if (inode_read(ip, ubuf, 0, bufsize) < 0)
+	if (inode_read(ip, ubuf, 0, bufsize) < 0) {
 		panic("readlink inode_read");
+	}
 
-	if (copyout(myproc()->pgdir, (uintptr_t)ubuf, ubuf, bufsize) < 0)
+	if (copyout(myproc()->pgdir, (uintptr_t)ubuf, ubuf, bufsize) < 0) {
 		panic("readlink copyout");
+	}
 
 	inode_unlock(ip);
 	end_op();
@@ -627,8 +654,9 @@ sys_lseek(void)
 	PROPOGATE_ERR(argoff_t(1, &offset));
 	PROPOGATE_ERR(argint(2, &whence));
 
-	if (S_ISFIFO(file->ip->mode) || S_ISSOCK(file->ip->mode))
+	if (S_ISFIFO(file->ip->mode) || S_ISSOCK(file->ip->mode)) {
 		return -ESPIPE;
+	}
 
 	return fileseek(file, offset, whence);
 }
@@ -644,8 +672,9 @@ sys_ioctl(void)
 	PROPOGATE_ERR(argunsigned_long(1, &request));
 
 	// The file needs to be a char device.
-	if (!S_ISCHR(file->ip->mode))
+	if (!S_ISCHR(file->ip->mode)) {
 		return -ENOTTY;
+	}
 
 	switch (request) {
 	case PCIIOCGETCONF: {
@@ -653,8 +682,9 @@ sys_ioctl(void)
 
 		PROPOGATE_ERR(argptr(2, (char **)&pci_conf_p, sizeof(struct pci_conf *)));
 
-		if (pci_conf_p == NULL)
+		if (pci_conf_p == NULL) {
 			return -EFAULT;
+		}
 
 		// INVARIANT: pci_init must happen before pci_get_conf().
 		struct FatPointerArray_pci_conf pci_conf = pci_get_conf();
@@ -671,8 +701,9 @@ sys_ioctl(void)
 		PROPOGATE_ERR(
 			argptr(2, (char **)&scr_info, sizeof(struct fb_var_screeninfo *)));
 
-		if (scr_info == NULL)
+		if (scr_info == NULL) {
 			return -EFAULT;
+		}
 
 		struct fb_var_screeninfo info = { WIDTH, HEIGHT, BPP_DEPTH };
 		memcpy(scr_info, &info, sizeof(struct fb_var_screeninfo));
@@ -688,8 +719,9 @@ sys_ioctl(void)
 		struct termios *termios;
 		PROPOGATE_ERR(argptr(2, (char **)&termios, sizeof(struct termios *)));
 
-		if (termios == NULL)
+		if (termios == NULL) {
 			return -EFAULT;
+		}
 
 		struct termios *ret = get_term_settings(file->ip->minor);
 		// Copy here because userspace cannot use kernel pointers.
@@ -706,8 +738,9 @@ sys_ioctl(void)
 		struct termios *termios;
 		PROPOGATE_ERR(argptr(2, (char **)&termios, sizeof(struct termios *)));
 
-		if (termios == NULL)
+		if (termios == NULL) {
 			return -EFAULT;
+		}
 
 		set_term_settings(file->ip->minor, termios);
 		// Adjust whether chracters print.
@@ -737,8 +770,9 @@ sys_fcntl(void)
 		struct file *duped_file;
 		PROPOGATE_ERR(argint(2, &arg));
 		PROPOGATE_ERR(fd = fdalloc(file));
-		if ((duped_file = filedup(file)) == NULL)
+		if ((duped_file = filedup(file)) == NULL) {
 			return -EBADF;
+		}
 		if (!(fd >= arg)) {
 			fileclose(duped_file);
 			return -EINVAL;
@@ -751,8 +785,9 @@ sys_fcntl(void)
 		struct file *duped_file;
 		PROPOGATE_ERR(argint(2, &arg));
 		PROPOGATE_ERR(fd = fdalloc(file));
-		if ((duped_file = filedup(file)) == NULL)
+		if ((duped_file = filedup(file)) == NULL) {
 			return -EBADF;
+		}
 		if (!(fd >= arg)) {
 			fileclose(duped_file);
 			return -EINVAL;
@@ -834,23 +869,30 @@ sys_mmap(void)
 
 	PROPOGATE_ERR(argoff_t(5, &offset));
 
-	if (length == 0)
+	if (length == 0) {
 		return -EINVAL;
+	}
 	// We don't support MAP_PRIVATE for now.
-	if (!MMAP_HAS_FLAG(flags, MAP_SHARED) && !MMAP_HAS_FLAG(flags, MAP_ANONYMOUS))
+	if (!MMAP_HAS_FLAG(flags, MAP_SHARED) &&
+			!MMAP_HAS_FLAG(flags, MAP_ANONYMOUS)) {
 		return -EINVAL;
+	}
 
-	if (length % PGSIZE != 0 || (uintptr_t)user_virt_addr % PGSIZE != 0)
+	if (length % PGSIZE != 0 || (uintptr_t)user_virt_addr % PGSIZE != 0) {
 		return -EINVAL;
+	}
 	int perm = mmap_prot_to_perm(prot);
 	struct mmap_info info;
-	if (!MMAP_HAS_FLAG(flags, MAP_ANONYMOUS) && file != NULL && S_ISCHR(file->ip->mode)) {
+	if (!MMAP_HAS_FLAG(flags, MAP_ANONYMOUS) && file != NULL &&
+			S_ISCHR(file->ip->mode)) {
 		// "The file has been locked, or too much memory has been locked"
-		if (atomic_flag_is_set(&file->ip->lock.locked))
+		if (atomic_flag_is_set(&file->ip->lock.locked)) {
 			return -EAGAIN;
+		}
 		if (file->ip->major < 0 || file->ip->major >= NDEV ||
-				!devsw[file->ip->major].mmap)
+				!devsw[file->ip->major].mmap) {
 			return -ENODEV;
+		}
 		info = devsw[file->ip->major].mmap(file->ip->minor, length,
 																			 (uintptr_t)user_virt_addr, perm);
 		info.file = file;
@@ -859,8 +901,9 @@ sys_mmap(void)
 			(struct mmap_info){ length, 0, (uintptr_t)user_virt_addr, NULL, perm };
 	}
 	struct proc *proc = myproc();
-	if (proc->mmap_count > NMMAP)
+	if (proc->mmap_count > NMMAP) {
 		return -ENOMEM;
+	}
 
 	// Place it anywhere.
 	if (info.virt_addr == 0) {
@@ -885,8 +928,9 @@ sys_mmap(void)
 								 info.perm) < 0) {
 			// If we arrive here, odds are the physical address we were given is garbage.
 			void *ptr = kmalloc(info.length);
-			if (ptr == NULL)
+			if (ptr == NULL) {
 				return -ENOMEM;
+			}
 			info.addr = V2P(ptr);
 			if (mappages(proc->pgdir, user_virt_addr, info.length, info.addr,
 									 info.perm) < 0) {
@@ -914,8 +958,9 @@ sys_munmap(void)
 	PROPOGATE_ERR(argptr(0, (char **)&addr, sizeof(void *)));
 	PROPOGATE_ERR(argsize_t(1, &length));
 
-	if (length == 0)
+	if (length == 0) {
 		return -EINVAL;
+	}
 	int j = -1;
 	for (int i = 0; i < NMMAP; i++) {
 		if ((proc->mmap_info[i].virt_addr == (uintptr_t)addr) &&
@@ -925,13 +970,15 @@ sys_munmap(void)
 			j = i;
 		}
 	}
-	if (j == -1)
+	if (j == -1) {
 		return -EINVAL;
+	}
 	for (int i = 0; i < PGROUNDUP(proc->mmap_info[j].length); i += PGSIZE) {
 		unmap_user_page(proc->pgdir, (char *)proc->mmap_info[j].virt_addr);
 	}
-	if (addr != NULL && V2P(addr) < KERNBASE)
+	if (addr != NULL && V2P(addr) < KERNBASE) {
 		kfree(addr);
+	}
 	return 0;
 }
 
@@ -943,9 +990,9 @@ sys_fsync(void)
 	struct file *file;
 	PROPOGATE_ERR(argfd(0, &fd, &file));
 
-	if (fd == 0 || fd == 1 || fd == 2) {
-		if (fd == 0)
-			return -EINVAL;
+	if (fd == 0) {
+		return -EINVAL;
+	} else if (fd == 1 || fd == 2) {
 		return 0;
 	}
 	return 0;
@@ -1012,22 +1059,26 @@ sys_rename(void)
 
 			// Remove the old entry.
 			memset(&de, '\0', sizeof(de));
-			if (inode_write(dp, (char *)&de, off, sizeof(de)) != sizeof(de))
+			if (inode_write(dp, (char *)&de, off, sizeof(de)) != sizeof(de)) {
 				panic("rename: inode_write");
+			}
 
 			// In the case of "mv /foo /bar", we use the same directory pointer (inode).
 			// In that case, we do not want to try and lock the same inode twice.
-			if (new_dp != dp)
+			if (new_dp != dp) {
 				inode_lock(new_dp);
+			}
 			// Add the file to the directory.
 			// Reuse the inode number, but have a new name.
 			if (dirlink(new_dp, newelem, inode) < 0) {
-				if (new_dp != dp)
+				if (new_dp != dp) {
 					inode_unlockput(new_dp);
+				}
 				return -EEXIST;
 			}
-			if (new_dp != dp)
+			if (new_dp != dp) {
 				inode_unlockput(new_dp);
+			}
 
 			// Commit to disk.
 			inode_unlockput(dp);

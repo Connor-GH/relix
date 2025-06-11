@@ -1,12 +1,8 @@
 #pragma once
-#include <stdint.h>
 #include "lib/queue.h"
-void
-kbdintr(void);
-void
-kbdinit(void);
-int
-kbd_scancode_into_char(uint32_t data);
+#include <stdint.h>
+void kbdintr(void);
+void kbdinit(void);
+int kbd_scancode_into_char(uint32_t data);
 
-int
-kbd_enqueue(unsigned char value);
+int kbd_enqueue(unsigned char value);

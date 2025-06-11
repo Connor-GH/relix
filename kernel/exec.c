@@ -1,29 +1,30 @@
-#include <stdint.h>
-#include <stat.h>
-#include <elf.h>
+#include "console.h"
+#include "drivers/mmu.h"
+#include "fcntl_constants.h"
+#include "fs.h"
+#include "lib/compiler_attributes.h"
+#include "log.h"
+#include "macros.h"
 #include "param.h"
 #include "proc.h"
-#include "x86.h"
-#include "log.h"
-#include "fs.h"
-#include "console.h"
-#include <errno.h>
-#include <string.h>
-#include "fcntl_constants.h"
-#include "macros.h"
 #include "vm.h"
-#include "drivers/mmu.h"
-#include "lib/compiler_attributes.h"
+#include "x86.h"
+#include <elf.h>
+#include <errno.h>
+#include <stat.h>
+#include <stdint.h>
+#include <string.h>
 
 // count is argc/envc
 // vec is argv/envp
 static int
 push_user_stack(uintptr_t *count, char *const *vec, uintptr_t *ustack,
-								uintptr_t *pgdir, uintptr_t *sp, uint32_t idx)
+                uintptr_t *pgdir, uintptr_t *sp, uint32_t idx)
 {
 	for (*count = 0; vec[*count]; (*count)++) {
-		if (*count >= MAXARG)
+		if (*count >= MAXARG) {
 			return -E2BIG;
+		}
 		// move the stack down to account for an argument
 		*sp = (*sp - (strlen(vec[*count]) + 1)) & ~(sizeof(uintptr_t) - 1);
 		// copy this vector index onto the stack pointer finally.
@@ -38,7 +39,8 @@ push_user_stack(uintptr_t *count, char *const *vec, uintptr_t *ustack,
 	return 0;
 }
 
-__nonnull(1, 2) int execve(const char *path, char *const *argv, char *const *envp)
+__nonnull(1, 2) int execve(const char *path, char *const *argv,
+                           char *const *envp)
 {
 	const char *s, *last;
 	uintptr_t envc = 0;
@@ -61,11 +63,11 @@ __nonnull(1, 2) int execve(const char *path, char *const *argv, char *const *env
 
 	// hold back on GID/UID protection right now
 	/*if (ip->gid != curproc->cred.gid && ip->uid != curproc->cred.uid) {
-		cprintf("exec: user does not have matching uid/gid for this file\n");
-		cprintf("Requested gid: %d user gid: %d\n", ip->gid, curproc->cred.gid);
-		cprintf("Requested uid: %d user uid: %d\n", ip->uid, curproc->cred.uid);
-		inode_unlockput(ip);
-		return -1;
+	  cprintf("exec: user does not have matching uid/gid for this file\n");
+	  cprintf("Requested gid: %d user gid: %d\n", ip->gid, curproc->cred.gid);
+	  cprintf("Requested uid: %d user uid: %d\n", ip->uid, curproc->cred.uid);
+	  inode_unlockput(ip);
+	  return -1;
 	}*/
 	// TODO change "1" to check for user permissions
 	// add back when proper file permissions are added.
@@ -105,7 +107,7 @@ ok:
 	}
 
 	if (elf.e_ident[EI_OSABI] != ELFOSABI_SYSV &&
-		elf.e_ident[EI_OSABI] != ELFOSABI_LINUX) {
+	    elf.e_ident[EI_OSABI] != ELFOSABI_LINUX) {
 		goto bad;
 	}
 
@@ -120,17 +122,20 @@ ok:
 
 	uintptr_t sz = 0;
 	// Load program into memory.
-	for (size_t i = 0, off = elf.e_phoff; i < elf.e_phnum; i++, off += sizeof(ph)) {
+	for (size_t i = 0, off = elf.e_phoff; i < elf.e_phnum;
+	     i++, off += sizeof(ph)) {
 		if ((errno_tmp = inode_read(ip, (char *)&ph, off, sizeof(ph))) < 0) {
 			return_errno = errno_tmp;
 			goto bad;
 		}
-		if (ph.p_type != PT_LOAD)
+		if (ph.p_type != PT_LOAD) {
 			continue;
+		}
 
 		// Skip empty segments.
-		if (ph.p_memsz == 0)
+		if (ph.p_memsz == 0) {
 			continue;
+		}
 
 #if FULL_ELF_SUPPORT
 		if (ph.p_align % PGSIZE != 0) {
@@ -152,7 +157,8 @@ ok:
 			return_errno = -ENOMEM;
 			goto bad;
 		}
-		if ((errno_tmp = loaduvm(pgdir, (char *)ph.p_vaddr, ip, ph.p_offset, ph.p_filesz)) < 0) {
+		if ((errno_tmp = loaduvm(pgdir, (char *)ph.p_vaddr, ip, ph.p_offset,
+		                         ph.p_filesz)) < 0) {
 			return_errno = errno_tmp;
 			goto bad;
 		}
@@ -183,16 +189,16 @@ ok:
 	}
 
 	/*
-	* 0 = fake address
-	* ^ this is what gets popped off the stack when we try to return.
-	* 1 = argc
-	* ^ this is where main starts popping arguments off the stack
-	* 2 = argv
-	* 3 = envp
-	* 4 = argv_data ...
-	* ^ we need argv to point to this segment of memory
-	* 5 = envp_data ...
-	*/
+	 * 0 = fake address
+	 * ^ this is what gets popped off the stack when we try to return.
+	 * 1 = argc
+	 * ^ this is where main starts popping arguments off the stack
+	 * 2 = argv
+	 * 3 = envp
+	 * 4 = argv_data ...
+	 * ^ we need argv to point to this segment of memory
+	 * 5 = envp_data ...
+	 */
 	const uint32_t argv_size = argc + 1;
 	const uint32_t envc_size = envc + 1;
 
@@ -200,7 +206,8 @@ ok:
 	ustack[1] = argc;
 	// ustack[3 .. 3 + argv_size] is argv arguments
 	ustack[2] = sp - (argv_size + envc_size) * sizeof(uintptr_t); // argv pointer
-	// ustack[3 + argv_size + 1 .. 3 + argv_size + 1 + envp_size] is envp arguments
+	// ustack[3 + argv_size + 1 .. 3 + argv_size + 1 + envp_size] is envp
+	// arguments
 	ustack[3] = sp - (envc_size) * sizeof(uintptr_t);
 	uint32_t total_mainargs_size =
 		(4 + argv_size + envc_size) * sizeof(uintptr_t);
@@ -216,9 +223,11 @@ ok:
 	}
 
 	// Save program name for debugging.
-	for (last = s = path; *s; s++)
-		if (*s == '/')
+	for (last = s = path; *s; s++) {
+		if (*s == '/') {
 			last = s + 1;
+		}
+	}
 	__safestrcpy(curproc->name, last, sizeof(curproc->name));
 
 	// Commit to the user image.
@@ -238,8 +247,9 @@ ok:
 
 	// If parent is NULL, it's also possible we are init.
 	// TODO this needs to be a copy, not a reference
-	if (curproc->parent != NULL)
+	if (curproc->parent != NULL) {
 		curproc->cred = curproc->parent->cred;
+	}
 
 	// Only close files if we were passed FD_CLOEXEC.
 	for (int i = 0; i < NOFILE; i++) {
@@ -255,14 +265,16 @@ ok:
 	return 0;
 
 bad:
-	if (pgdir)
+	if (pgdir) {
 		freevm(pgdir);
+	}
 	if (ip) {
 		inode_unlockput(ip);
 		end_op();
 	}
-	if (return_errno == 0)
+	if (return_errno == 0) {
 		return -ENOEXEC;
-	else
+	} else {
 		return return_errno;
+	}
 }

@@ -1,26 +1,27 @@
 // init: The initial user-level program
 
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <stdio.h>
 #include <fcntl.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 extern char **environ;
 char *const argv[] = { "/bin/getty", "-a", "root", "tty0", NULL };
 
 static void
 make_file_device_with_logging(const char *filename, dev_t dev_no, int flags,
-															bool verbose)
+                              bool verbose)
 {
 	if (open(filename, flags) < 0) {
 		mknod(filename, 0700 | S_IFCHR, dev_no);
 	}
-	if (verbose)
+	if (verbose) {
 		fprintf(stdout, "%s created\n", filename);
+	}
 }
 
 static void
@@ -100,7 +101,8 @@ main(void)
 			return 1;
 		}
 		int wpid;
-		while ((wpid = wait(NULL)) >= 0 && wpid != pid)
+		while ((wpid = wait(NULL)) >= 0 && wpid != pid) {
 			fprintf(stderr, "zombie!\n");
+		}
 	}
 }

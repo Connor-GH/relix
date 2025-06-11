@@ -93,7 +93,8 @@ struct acpi_fadt {
 	uint8_t acpi_enable;
 	uint8_t acpi_disable; // opposite of above
 	uint8_t s4bios_req; // val to write to smi_cmd to enter S4BIOS mode
-	// if != 0, contains the val OSPM writes to smi to control cpu performance state
+	// if != 0, contains the val OSPM writes to smi to control cpu performance
+	// state
 	uint8_t pstate_cnt;
 	uint32_t pm1a_evt_blk; // port address of pm1a event register
 	uint32_t pm1b_evt_blk; // port address of pm1b event register
@@ -143,5 +144,4 @@ struct acpi_fadt {
 } __attribute__((__packed__));
 _Static_assert(sizeof(struct acpi_fadt) == 276, "ACPI FADT Struct malformed");
 
-int
-acpiinit(void);
+int acpiinit(void);

@@ -1,11 +1,11 @@
 // Test that fork fails gracefully.
 // Tiny executable so that the limit can be filling the proc table.
 
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <sys/wait.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #define N 1000
 
@@ -18,10 +18,12 @@ forktest(void)
 
 	for (n = 0; n < N; n++) {
 		int pid = fork();
-		if (pid < 0)
+		if (pid < 0) {
 			break;
-		if (pid == 0)
+		}
+		if (pid == 0) {
 			exit(0);
+		}
 	}
 
 	if (n == N) {

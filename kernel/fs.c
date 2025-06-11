@@ -9,29 +9,28 @@
 // routines.	The (higher-level) system call implementations
 // are in sysfile.c.
 
-#include "sleeplock.h"
-#include <stdint.h>
-#include <stat.h>
-#include <dirent.h>
-#include <time.h>
-#include <errno.h>
-#include <stdckdint.h>
 #include "fs.h"
-#include "param.h"
-#include "proc.h"
-#include "spinlock.h"
-#include "buf.h"
-#include "file.h"
-#include <string.h>
-#include "kernel_assert.h"
 #include "bio.h"
-#include "log.h"
+#include "buf.h"
 #include "console.h"
 #include "drivers/lapic.h"
+#include "file.h"
+#include "kernel_assert.h"
+#include "log.h"
 #include "macros.h"
+#include "param.h"
+#include "proc.h"
+#include "sleeplock.h"
+#include "spinlock.h"
+#include <dirent.h>
+#include <errno.h>
+#include <stat.h>
+#include <stdckdint.h>
+#include <stdint.h>
+#include <string.h>
+#include <time.h>
 
-static void
-inode_truncate(struct inode *);
+static void inode_truncate(struct inode *);
 // there should be one superblock per disk device, but we run with
 // only one device
 struct superblock global_sb;
@@ -93,8 +92,9 @@ block_free(dev_t dev, uint64_t b)
 	const size_t bi = b % BPB;
 	const size_t m = 1 << (bi % 8);
 
-	if ((bp->data[bi / 8] & m) == 0)
+	if ((bp->data[bi / 8] & m) == 0) {
 		panic("freeing free block");
+	}
 	bp->data[bi / 8] &= ~m;
 	log_write(bp);
 	block_release(bp);
@@ -181,7 +181,7 @@ inode_init(dev_t dev)
 	for (size_t i = 0; i < min(NBUCKET, ncpu); i++) {
 		initlock(&inode_cache.lock[i], "inode.bucket");
 	}
-	//initlock(&inode_cache.lock, "icache");
+	// initlock(&inode_cache.lock, "icache");
 	for (size_t j = 0; j < min(NBUCKET, ncpu); j++) {
 		for (size_t i = 0; i < NINODE; i++) {
 			initsleeplock(&inode_cache.inode[i][j].lock, "inode");
@@ -191,12 +191,11 @@ inode_init(dev_t dev)
 	read_superblock(dev, &global_sb);
 	cprintf("superblock: size %lu nblocks %lu ninodes %lu nlog %lu logstart %lu\
  inodestart %lu bmap start %lu\n",
-					global_sb.size, global_sb.nblocks, global_sb.ninodes, global_sb.nlog,
-					global_sb.logstart, global_sb.inodestart, global_sb.bmapstart);
+	        global_sb.size, global_sb.nblocks, global_sb.ninodes, global_sb.nlog,
+	        global_sb.logstart, global_sb.inodestart, global_sb.bmapstart);
 }
 
-static struct inode *
-inode_get(dev_t dev, uint32_t inum);
+static struct inode *inode_get(dev_t dev, uint32_t inum);
 
 // Allocate an inode on device dev.
 // Mark it as allocated by giving it type type.
@@ -204,9 +203,7 @@ inode_get(dev_t dev, uint32_t inum);
 struct inode *
 inode_alloc(dev_t dev, mode_t mode)
 {
-
 	for (uint32_t inum = 1; inum < global_sb.ninodes; inum++) {
-
 		struct block_buffer *bp = block_read(dev, IBLOCK(inum, global_sb));
 		struct dinode *dip = (struct dinode *)bp->data + inum % IPB;
 
@@ -234,7 +231,6 @@ inode_alloc(dev_t dev, mode_t mode)
 void
 inode_update(struct inode *ip)
 {
-
 	struct block_buffer *bp = block_read(ip->dev, IBLOCK(ip->inum, global_sb));
 	struct dinode *dip = (struct dinode *)bp->data + ip->inum % IPB;
 
@@ -266,41 +262,43 @@ inode_get(dev_t dev, uint32_t inum)
 
 	// Is the inode already cached?
 	for (ip = &inode_cache.inode[0][hash];
-			 ip < &inode_cache.inode[NINODE - 1][hash];
-			 ip++) {
+	     ip < &inode_cache.inode[NINODE - 1][hash]; ip++) {
 		if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {
 			ip->ref++;
 			release(&inode_cache.lock[hash]);
 			return ip;
 		}
-		if (empty == 0 && ip->ref == 0) // Remember empty slot.
+		if (empty == 0 && ip->ref == 0) { // Remember empty slot.
 			empty = ip;
+		}
 	}
 	if (empty == 0) {
 		for (size_t i = 0; i < min(NBUCKET, ncpu); i++) {
 			// Skip over the node that we already checked.
 			// This also avoids a deadlock.
-			if (i == hash)
+			if (i == hash) {
 				continue;
+			}
 			acquire(&inode_cache.lock[i]);
-			for (ip = &inode_cache.inode[0][i]; ip < &inode_cache.inode[NINODE - 1][i];
-			  	 ip++) {
-
+			for (ip = &inode_cache.inode[0][i];
+			     ip < &inode_cache.inode[NINODE - 1][i]; ip++) {
 				if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {
 					ip->ref++;
 					release(&inode_cache.lock[i]);
 					return ip;
 				}
-				if (empty == 0 && ip->ref == 0) // Remember empty slot.
+				if (empty == 0 && ip->ref == 0) { // Remember empty slot.
 					empty = ip;
+				}
 			}
 			release(&inode_cache.lock[i]);
 		}
 	}
 
 	// Recycle an inode cache entry.
-	if (empty == 0)
+	if (empty == 0) {
 		panic("inode_get: no inodes");
+	}
 
 	ip = empty;
 	ip->dev = dev;
@@ -326,9 +324,9 @@ inode_dup(struct inode *ip)
 void
 inode_lock(struct inode *ip) __acquires(&ip->lock)
 {
-
-	if (ip == 0 || ip->ref < 1)
+	if (ip == 0 || ip->ref < 1) {
 		panic("inode_lock");
+	}
 	kernel_assert(!holdingsleep(&ip->lock));
 
 	acquiresleep(&ip->lock);
@@ -350,8 +348,9 @@ inode_lock(struct inode *ip) __acquires(&ip->lock)
 		memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
 		block_release(bp);
 		ip->valid = 1;
-		if (ip->mode == 0)
+		if (ip->mode == 0) {
 			panic("inode_lock: no mode");
+		}
 	}
 }
 
@@ -359,8 +358,9 @@ inode_lock(struct inode *ip) __acquires(&ip->lock)
 void
 inode_unlock(struct inode *ip) __releases(&ip->lock)
 {
-	if (ip == 0 || ip->ref < 1)
+	if (ip == 0 || ip->ref < 1) {
 		panic("inode_unlock");
+	}
 	kernel_assert(holdingsleep(&ip->lock));
 
 	releasesleep(&ip->lock);
@@ -421,8 +421,9 @@ bmap(struct inode *ip, uint64_t bn) __must_hold(&ip->lock)
 
 	kernel_assert(holdingsleep(&ip->lock));
 	if (bn < NDIRECT) {
-		if ((addr = ip->addrs[bn]) == 0)
+		if ((addr = ip->addrs[bn]) == 0) {
 			ip->addrs[bn] = addr = block_alloc(ip->dev);
+		}
 		return addr;
 	}
 	bn -= NDIRECT;
@@ -443,7 +444,7 @@ bmap(struct inode *ip, uint64_t bn) __must_hold(&ip->lock)
 	}
 	bn -= NINDIRECT;
 
-	//if (bn >= NINDIRECT * NINDIRECT)
+	// if (bn >= NINDIRECT * NINDIRECT)
 	//	bn -= NINDIRECT * NINDIRECT;
 	if (bn < NINDIRECT * NINDIRECT) {
 		// Load indirect block, allocating if necessary.
@@ -562,28 +563,33 @@ inode_stat(struct inode *ip, struct stat *st) __must_hold(&ip->lock)
 // Read data from inode.
 // Caller must hold ip->lock.
 ssize_t
-inode_read(struct inode *ip, char *dst, off_t off, uint64_t n) __must_hold(&ip->lock)
+inode_read(struct inode *ip, char *dst, off_t off, uint64_t n)
+	__must_hold(&ip->lock)
 {
 	kernel_assert(holdingsleep(&ip->lock));
 	uint64_t m = 0;
 	struct block_buffer *bp;
 
 	if (S_ISCHR(ip->mode)) {
-		if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].read)
+		if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].read) {
 			return -ENODEV;
+		}
 		return devsw[ip->major].read(ip->minor, ip, dst, n);
 	}
 
 	off_t result;
-	if (off > ip->size || ckd_add(&result, off, n))
+	if (off > ip->size || ckd_add(&result, off, n)) {
 		return -EDOM;
-	if (off + n > ip->size)
+	}
+	if (off + n > ip->size) {
 		n = ip->size - off;
+	}
 
 	for (uint64_t tot = 0; tot < n; tot += m, off += m, dst += m) {
 		uintptr_t map = bmap(ip, off / BSIZE);
-		if (map == 0)
+		if (map == 0) {
 			return -ENOSPC;
+		}
 		bp = block_read(ip->dev, map);
 		m = min(n - tot, BSIZE - off % BSIZE);
 		memmove(dst, bp->data + off % BSIZE, m);
@@ -595,28 +601,33 @@ inode_read(struct inode *ip, char *dst, off_t off, uint64_t n) __must_hold(&ip->
 // Write data to inode.
 // Caller must hold ip->lock.
 ssize_t
-inode_write(struct inode *ip, char *src, off_t off, uint64_t n) __must_hold(&ip->lock)
+inode_write(struct inode *ip, char *src, off_t off, uint64_t n)
+	__must_hold(&ip->lock)
 {
 	kernel_assert(holdingsleep(&ip->lock));
 	uint64_t m;
 	struct block_buffer *bp;
 
 	if (S_ISCHR(ip->mode)) {
-		if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].write)
+		if (ip->major < 0 || ip->major >= NDEV || !devsw[ip->major].write) {
 			return -ENODEV;
+		}
 		return devsw[ip->major].write(ip->minor, ip, src, n);
 	}
 
 	off_t result;
-	if (off > ip->size || ckd_add(&result, off, n))
+	if (off > ip->size || ckd_add(&result, off, n)) {
 		return -EDOM;
-	if (off + n > MAXFILE * BSIZE)
+	}
+	if (off + n > MAXFILE * BSIZE) {
 		return -EDOM;
+	}
 
 	for (uint64_t tot = 0; tot < n; tot += m, off += m, src += m) {
 		uintptr_t map = bmap(ip, off / BSIZE);
-		if (map == 0)
+		if (map == 0) {
 			return -ENOSPC;
+		}
 		bp = block_read(ip->dev, map);
 		m = min(n - tot, BSIZE - off % BSIZE);
 		memmove(bp->data + off % BSIZE, src, m);
@@ -643,24 +654,29 @@ namecmp(const char *s, const char *t)
 // If found, set *poff to byte offset of entry.
 // Caller needs to hold dp->lock.
 struct inode *
-dirlookup(struct inode *dp, const char *name, uint64_t *poff) __must_hold(&dp->lock)
+dirlookup(struct inode *dp, const char *name, uint64_t *poff)
+	__must_hold(&dp->lock)
 {
 	kernel_assert(holdingsleep(&dp->lock));
 	uint32_t inum;
 	struct dirent de;
 
-	if (!S_ISDIR(dp->mode))
+	if (!S_ISDIR(dp->mode)) {
 		panic("dirlookup not DIR");
+	}
 
 	for (uint64_t off = 0; off < dp->size; off += sizeof(de)) {
-		if (inode_read(dp, (char *)&de, off, sizeof(de)) < 0)
+		if (inode_read(dp, (char *)&de, off, sizeof(de)) < 0) {
 			panic("dirlookup read");
-		if (de.d_ino == 0)
+		}
+		if (de.d_ino == 0) {
 			continue;
+		}
 		if (namecmp(name, de.d_name) == 0) {
 			// entry matches path element
-			if (poff)
+			if (poff) {
 				*poff = off;
+			}
 			inum = de.d_ino;
 			return inode_get(dp->dev, inum);
 		}
@@ -693,8 +709,9 @@ dirlink(struct inode *dp, const char *name, uint32_t inum)
 	}
 	// Look for an empty dirent.
 	for (; off < dp->size; off += sizeof(de)) {
-		if (inode_read(dp, (char *)&de, off, sizeof(de)) < 0)
+		if (inode_read(dp, (char *)&de, off, sizeof(de)) < 0) {
 			panic("dirlink read");
+		}
 		if (de.d_ino == 0) {
 			last_offset_from_inum = off;
 			break;
@@ -703,8 +720,9 @@ dirlink(struct inode *dp, const char *name, uint32_t inum)
 
 	strncpy(de.d_name, name, DIRSIZ);
 	de.d_ino = inum;
-	if (inode_write(dp, (char *)&de, off, sizeof(de)) < 0)
+	if (inode_write(dp, (char *)&de, off, sizeof(de)) < 0) {
 		panic("dirlink");
+	}
 	last_inum = inum;
 
 	return 0;
@@ -727,11 +745,12 @@ dirlink(struct inode *dp, const char *name, uint32_t inum)
 static const char *
 skipelem(const char *path, char *name)
 {
-
-	while (*path == '/')
+	while (*path == '/') {
 		path++;
-	if (*path == 0)
+	}
+	if (*path == 0) {
 		return 0;
+	}
 
 	const char *s = path;
 
@@ -741,9 +760,9 @@ skipelem(const char *path, char *name)
 
 	size_t len = path - s;
 
-	if (len >= DIRSIZ)
+	if (len >= DIRSIZ) {
 		memmove(name, s, DIRSIZ);
-	else {
+	} else {
 		memmove(name, s, len);
 		name[len] = 0;
 	}

@@ -6,6 +6,5 @@ struct iovec {
 };
 #ifdef __USER__
 #include <sys/types.h>
-ssize_t
-writev(int fd, const struct iovec *iov, int iovcnt);
+ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
 #endif

@@ -1,12 +1,11 @@
-#include <unistd.h>
+#include "macros.h"
+#include "x86.h"
+#include <ctype.h>
 #include <dirent.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include "x86.h"
-#include <stddef.h>
-#include <ctype.h>
-#include "macros.h"
-
+#include <unistd.h>
 
 char *
 strcpy(char *s, const char *t)
@@ -147,7 +146,8 @@ stpncpy(char *dst, const char *src, size_t n)
 static char *restrict __strtok_token = NULL;
 /*
  * Break a string into a sequence of zero or more nonempty tokens.
- * If the same string is being parsed as the previous invocation, str must be NULL.
+ * If the same string is being parsed as the previous invocation, str must be
+ * NULL.
  */
 char *
 strtok(char *restrict str, const char *restrict delimeter)
@@ -210,7 +210,7 @@ memcmp(const void *v1, const void *v2, size_t n)
 	return 0;
 }
 __deprecated("Removed in POSIX.1-2008") int bcmp(const void *v1, const void *v2,
-																								 size_t n)
+                                                 size_t n)
 {
 	return memcmp(v1, v2, n);
 }

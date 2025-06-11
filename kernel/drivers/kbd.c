@@ -1,20 +1,18 @@
-#include "errno.h"
-#include "proc.h"
-#include "spinlock.h"
-#include <stdint.h>
 #include "kbd.h"
-#include "x86.h"
 #include "console.h"
+#include "errno.h"
+#include "fcntl_constants.h"
 #include "fs.h"
-#include "mman.h"
 #include "ioapic.h"
 #include "kalloc.h"
-#include "traps.h"
-#include "string.h"
 #include "lib/queue.h"
-#include "fcntl_constants.h"
-
-
+#include "mman.h"
+#include "proc.h"
+#include "spinlock.h"
+#include "string.h"
+#include "traps.h"
+#include "x86.h"
+#include <stdint.h>
 
 // PC keyboard interface constants
 
@@ -50,289 +48,290 @@
 #define C(x) (x - '@')
 
 const uint8_t shiftcode[256] = { [0x1D] = CTL, [0x2A] = SHIFT, [0x36] = SHIFT,
-																 [0x38] = ALT, [0x9D] = CTL,	 [0xB8] = ALT };
+	                               [0x38] = ALT, [0x9D] = CTL,   [0xB8] = ALT };
 
 const uint8_t
 	togglecode[256] = { [0x3A] = CAPSLOCK, [0x45] = NUMLOCK, [0x46] = SCROLLLOCK };
 
 const uint8_t normalmap[256] = { NO,
-																 0x1B,
-																 '1',
-																 '2',
-																 '3',
-																 '4',
-																 '5',
-																 '6', // 0x00
-																 '7',
-																 '8',
-																 '9',
-																 '0',
-																 '-',
-																 '=',
-																 '\b',
-																 '\t',
-																 'q',
-																 'w',
-																 'e',
-																 'r',
-																 't',
-																 'y',
-																 'u',
-																 'i', // 0x10
-																 'o',
-																 'p',
-																 '[',
-																 ']',
-																 '\n',
-																 NO,
-																 'a',
-																 's',
-																 'd',
-																 'f',
-																 'g',
-																 'h',
-																 'j',
-																 'k',
-																 'l',
-																 ';', // 0x20
-																 '\'',
-																 '`',
-																 NO,
-																 '\\',
-																 'z',
-																 'x',
-																 'c',
-																 'v',
-																 'b',
-																 'n',
-																 'm',
-																 ',',
-																 '.',
-																 '/',
-																 NO,
-																 '*', // 0x30
-																 NO,
-																 ' ',
-																 NO,
-																 NO,
-																 NO,
-																 NO,
-																 NO,
-																 NO,
-																 NO,
-																 NO,
-																 NO,
-																 NO,
-																 NO,
-																 NO,
-																 NO,
-																 '7', // 0x40
-																 '8',
-																 '9',
-																 '-',
-																 '4',
-																 '5',
-																 '6',
-																 '+',
-																 '1',
-																 '2',
-																 '3',
-																 '0',
-																 '.',
-																 NO,
-																 NO,
-																 NO,
-																 NO, // 0x50
-																 [0x9C] = '\n', // KP_Enter
-																 [0xB5] = '/', // KP_Div
-																 [0xC8] = KEY_UP,
-																 [0xD0] = KEY_DN,
-																 [0xC9] = KEY_PGUP,
-																 [0xD1] = KEY_PGDN,
-																 [0xCB] = KEY_LF,
-																 [0xCD] = KEY_RT,
-																 [0x97] = KEY_HOME,
-																 [0xCF] = KEY_END,
-																 [0xD2] = KEY_INS,
-																 [0xD3] = KEY_DEL };
+	                               0x1B,
+	                               '1',
+	                               '2',
+	                               '3',
+	                               '4',
+	                               '5',
+	                               '6', // 0x00
+	                               '7',
+	                               '8',
+	                               '9',
+	                               '0',
+	                               '-',
+	                               '=',
+	                               '\b',
+	                               '\t',
+	                               'q',
+	                               'w',
+	                               'e',
+	                               'r',
+	                               't',
+	                               'y',
+	                               'u',
+	                               'i', // 0x10
+	                               'o',
+	                               'p',
+	                               '[',
+	                               ']',
+	                               '\n',
+	                               NO,
+	                               'a',
+	                               's',
+	                               'd',
+	                               'f',
+	                               'g',
+	                               'h',
+	                               'j',
+	                               'k',
+	                               'l',
+	                               ';', // 0x20
+	                               '\'',
+	                               '`',
+	                               NO,
+	                               '\\',
+	                               'z',
+	                               'x',
+	                               'c',
+	                               'v',
+	                               'b',
+	                               'n',
+	                               'm',
+	                               ',',
+	                               '.',
+	                               '/',
+	                               NO,
+	                               '*', // 0x30
+	                               NO,
+	                               ' ',
+	                               NO,
+	                               NO,
+	                               NO,
+	                               NO,
+	                               NO,
+	                               NO,
+	                               NO,
+	                               NO,
+	                               NO,
+	                               NO,
+	                               NO,
+	                               NO,
+	                               NO,
+	                               '7', // 0x40
+	                               '8',
+	                               '9',
+	                               '-',
+	                               '4',
+	                               '5',
+	                               '6',
+	                               '+',
+	                               '1',
+	                               '2',
+	                               '3',
+	                               '0',
+	                               '.',
+	                               NO,
+	                               NO,
+	                               NO,
+	                               NO, // 0x50
+	                               [0x9C] = '\n', // KP_Enter
+	                               [0xB5] = '/', // KP_Div
+	                               [0xC8] = KEY_UP,
+	                               [0xD0] = KEY_DN,
+	                               [0xC9] = KEY_PGUP,
+	                               [0xD1] = KEY_PGDN,
+	                               [0xCB] = KEY_LF,
+	                               [0xCD] = KEY_RT,
+	                               [0x97] = KEY_HOME,
+	                               [0xCF] = KEY_END,
+	                               [0xD2] = KEY_INS,
+	                               [0xD3] = KEY_DEL };
 
 const uint8_t shiftmap[256] = { NO,
-																033,
-																'!',
-																'@',
-																'#',
-																'$',
-																'%',
-																'^', // 0x00
-																'&',
-																'*',
-																'(',
-																')',
-																'_',
-																'+',
-																'\b',
-																'\t',
-																'Q',
-																'W',
-																'E',
-																'R',
-																'T',
-																'Y',
-																'U',
-																'I', // 0x10
-																'O',
-																'P',
-																'{',
-																'}',
-																'\n',
-																NO,
-																'A',
-																'S',
-																'D',
-																'F',
-																'G',
-																'H',
-																'J',
-																'K',
-																'L',
-																':', // 0x20
-																'"',
-																'~',
-																NO,
-																'|',
-																'Z',
-																'X',
-																'C',
-																'V',
-																'B',
-																'N',
-																'M',
-																'<',
-																'>',
-																'?',
-																NO,
-																'*', // 0x30
-																NO,
-																' ',
-																NO,
-																NO,
-																NO,
-																NO,
-																NO,
-																NO,
-																NO,
-																NO,
-																NO,
-																NO,
-																NO,
-																NO,
-																NO,
-																'7', // 0x40
-																'8',
-																'9',
-																'-',
-																'4',
-																'5',
-																'6',
-																'+',
-																'1',
-																'2',
-																'3',
-																'0',
-																'.',
-																NO,
-																NO,
-																NO,
-																NO, // 0x50
-																[0x9C] = '\n', // KP_Enter
-																[0xB5] = '/', // KP_Div
-																[0xC8] = KEY_UP,
-																[0xD0] = KEY_DN,
-																[0xC9] = KEY_PGUP,
-																[0xD1] = KEY_PGDN,
-																[0xCB] = KEY_LF,
-																[0xCD] = KEY_RT,
-																[0x97] = KEY_HOME,
-																[0xCF] = KEY_END,
-																[0xD2] = KEY_INS,
-																[0xD3] = KEY_DEL };
+	                              033,
+	                              '!',
+	                              '@',
+	                              '#',
+	                              '$',
+	                              '%',
+	                              '^', // 0x00
+	                              '&',
+	                              '*',
+	                              '(',
+	                              ')',
+	                              '_',
+	                              '+',
+	                              '\b',
+	                              '\t',
+	                              'Q',
+	                              'W',
+	                              'E',
+	                              'R',
+	                              'T',
+	                              'Y',
+	                              'U',
+	                              'I', // 0x10
+	                              'O',
+	                              'P',
+	                              '{',
+	                              '}',
+	                              '\n',
+	                              NO,
+	                              'A',
+	                              'S',
+	                              'D',
+	                              'F',
+	                              'G',
+	                              'H',
+	                              'J',
+	                              'K',
+	                              'L',
+	                              ':', // 0x20
+	                              '"',
+	                              '~',
+	                              NO,
+	                              '|',
+	                              'Z',
+	                              'X',
+	                              'C',
+	                              'V',
+	                              'B',
+	                              'N',
+	                              'M',
+	                              '<',
+	                              '>',
+	                              '?',
+	                              NO,
+	                              '*', // 0x30
+	                              NO,
+	                              ' ',
+	                              NO,
+	                              NO,
+	                              NO,
+	                              NO,
+	                              NO,
+	                              NO,
+	                              NO,
+	                              NO,
+	                              NO,
+	                              NO,
+	                              NO,
+	                              NO,
+	                              NO,
+	                              '7', // 0x40
+	                              '8',
+	                              '9',
+	                              '-',
+	                              '4',
+	                              '5',
+	                              '6',
+	                              '+',
+	                              '1',
+	                              '2',
+	                              '3',
+	                              '0',
+	                              '.',
+	                              NO,
+	                              NO,
+	                              NO,
+	                              NO, // 0x50
+	                              [0x9C] = '\n', // KP_Enter
+	                              [0xB5] = '/', // KP_Div
+	                              [0xC8] = KEY_UP,
+	                              [0xD0] = KEY_DN,
+	                              [0xC9] = KEY_PGUP,
+	                              [0xD1] = KEY_PGDN,
+	                              [0xCB] = KEY_LF,
+	                              [0xCD] = KEY_RT,
+	                              [0x97] = KEY_HOME,
+	                              [0xCF] = KEY_END,
+	                              [0xD2] = KEY_INS,
+	                              [0xD3] = KEY_DEL };
 
 const uint8_t ctlmap[256] = { NO,
-															NO,
-															NO,
-															NO,
-															NO,
-															NO,
-															NO,
-															NO,
-															NO,
-															NO,
-															NO,
-															NO,
-															NO,
-															NO,
-															NO,
-															NO,
-															C('Q'),
-															C('W'),
-															C('E'),
-															C('R'),
-															C('T'),
-															C('Y'),
-															C('U'),
-															C('I'),
-															C('O'),
-															C('P'),
-															NO,
-															NO,
-															'\r',
-															NO,
-															C('A'),
-															C('S'),
-															C('D'),
-															C('F'),
-															C('G'),
-															C('H'),
-															C('J'),
-															C('K'),
-															C('L'),
-															NO,
-															NO,
-															NO,
-															NO,
-															C('\\'),
-															C('Z'),
-															C('X'),
-															C('C'),
-															C('V'),
-															C('B'),
-															C('N'),
-															C('M'),
-															NO,
-															NO,
-															C('/'),
-															NO,
-															NO,
-															[0x9C] = '\r', // KP_Enter
-															[0xB5] = C('/'), // KP_Div
-															[0xC8] = KEY_UP,
-															[0xD0] = KEY_DN,
-															[0xC9] = KEY_PGUP,
-															[0xD1] = KEY_PGDN,
-															[0xCB] = KEY_LF,
-															[0xCD] = KEY_RT,
-															[0x97] = KEY_HOME,
-															[0xCF] = KEY_END,
-															[0xD2] = KEY_INS,
-															[0xD3] = KEY_DEL };
+	                            NO,
+	                            NO,
+	                            NO,
+	                            NO,
+	                            NO,
+	                            NO,
+	                            NO,
+	                            NO,
+	                            NO,
+	                            NO,
+	                            NO,
+	                            NO,
+	                            NO,
+	                            NO,
+	                            NO,
+	                            C('Q'),
+	                            C('W'),
+	                            C('E'),
+	                            C('R'),
+	                            C('T'),
+	                            C('Y'),
+	                            C('U'),
+	                            C('I'),
+	                            C('O'),
+	                            C('P'),
+	                            NO,
+	                            NO,
+	                            '\r',
+	                            NO,
+	                            C('A'),
+	                            C('S'),
+	                            C('D'),
+	                            C('F'),
+	                            C('G'),
+	                            C('H'),
+	                            C('J'),
+	                            C('K'),
+	                            C('L'),
+	                            NO,
+	                            NO,
+	                            NO,
+	                            NO,
+	                            C('\\'),
+	                            C('Z'),
+	                            C('X'),
+	                            C('C'),
+	                            C('V'),
+	                            C('B'),
+	                            C('N'),
+	                            C('M'),
+	                            NO,
+	                            NO,
+	                            C('/'),
+	                            NO,
+	                            NO,
+	                            [0x9C] = '\r', // KP_Enter
+	                            [0xB5] = C('/'), // KP_Div
+	                            [0xC8] = KEY_UP,
+	                            [0xD0] = KEY_DN,
+	                            [0xC9] = KEY_PGUP,
+	                            [0xD1] = KEY_PGDN,
+	                            [0xCB] = KEY_LF,
+	                            [0xCD] = KEY_RT,
+	                            [0x97] = KEY_HOME,
+	                            [0xCF] = KEY_END,
+	                            [0xD2] = KEY_INS,
+	                            [0xD3] = KEY_DEL };
 static int
 kbdgetc_raw(void)
 {
 	uint32_t st, data;
 
 	st = inb(KBSTATP);
-	if ((st & KBS_DIB) == 0)
+	if ((st & KBS_DIB) == 0) {
 		return -1;
+	}
 	data = inb(KBDATAP);
 	return data;
 }
@@ -362,10 +361,11 @@ kbd_scancode_into_char(uint32_t data)
 	shift ^= togglecode[data];
 	c = charcode[shift & (CTL | SHIFT)][data];
 	if (shift & CAPSLOCK) {
-		if ('a' <= c && c <= 'z')
+		if ('a' <= c && c <= 'z') {
 			c += 'A' - 'a';
-		else if ('A' <= c && c <= 'Z')
+		} else if ('A' <= c && c <= 'Z') {
 			c += 'a' - 'A';
+		}
 	}
 	return c;
 }
@@ -373,8 +373,9 @@ kbd_scancode_into_char(uint32_t data)
 void
 display_queue(struct queue_unsigned_char *q)
 {
-	if (q == NULL)
+	if (q == NULL) {
 		return;
+	}
 	uart_printf("elements: ");
 	unsigned char data;
 	int ret = dequeue_unsigned_char(q, &data, kfree);
@@ -403,13 +404,14 @@ kbd_enqueue(unsigned char value)
 {
 	int val;
 	acquire(&kbdlock.lock);
-	val = enqueue_unsigned_char(kbdlock.kbd_queue, value, kmalloc, KEYBOARD_QUEUE_SIZE);
+	val = enqueue_unsigned_char(kbdlock.kbd_queue, value, kmalloc,
+	                            KEYBOARD_QUEUE_SIZE);
 	release(&kbdlock.lock);
 	return val;
 }
 
 __nonnull(2, 3) static ssize_t
-kbdread(short minor, struct inode *ip, char *dst, size_t n)
+	kbdread(short minor, struct inode *ip, char *dst, size_t n)
 {
 get_element:;
 	acquire(&kbdlock.lock);

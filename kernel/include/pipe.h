@@ -9,12 +9,8 @@ struct pipe {
 	struct ring_buf *ring_buffer;
 };
 
-int
-pipealloc(struct file **, struct file **);
-void
-pipeclose(struct pipe *, int);
-int
-piperead(struct pipe *, char *, int);
-int
-pipewrite(struct pipe *, char *, int);
+int pipealloc(struct file **, struct file **);
+void pipeclose(struct pipe *, int);
+int piperead(struct pipe *, char *, int);
+int pipewrite(struct pipe *, char *, int);
 #endif

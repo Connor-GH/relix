@@ -1,9 +1,9 @@
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
-#include <stdbool.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 
 extern char *optarg;
 extern int optind, opterr, optopt;
@@ -51,17 +51,21 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
-	if (argc < 1)
+	if (argc < 1) {
 		usage();
+	}
 
-	if (zflag && nflag)
+	if (zflag && nflag) {
 		usage();
+	}
 
 	if (strcmp(argv[0], "]") == 0) {
-		if (zflag)
+		if (zflag) {
 			return test_zero(my_string);
-		if (nflag)
+		}
+		if (nflag) {
 			return test_not_zero(my_string);
+		}
 	}
 	usage();
 }

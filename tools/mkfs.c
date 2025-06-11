@@ -1,12 +1,12 @@
+#include <assert.h>
+#include <fcntl.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
-#include <assert.h>
+#include <unistd.h>
 #define USE_HOST_TOOLS
-#include <time.h>
 #include <stdint.h>
+#include <time.h>
 #define SYSROOT "sysroot/"
 
 // Avoid name clashes.
@@ -18,9 +18,9 @@
 #define mode_t relix_mode_t
 #define ino_t relix_ino_t
 #define USE_HOST_TOOLS
-#include "../kernel/include/fs.h"
-#include "../include/stat.h"
 #include "../include/dirent.h"
+#include "../include/stat.h"
+#include "../kernel/include/fs.h"
 #include "../kernel/include/param.h"
 
 #ifndef static_assert
@@ -49,20 +49,13 @@ static char zeroes[BSIZE];
 static uint32_t freeinode = 1;
 static uint64_t freeblock;
 
-static void
-balloc(size_t);
-static void
-wsect(off_t, void *);
-static void
-winode(uint32_t, struct dinode *);
-static void
-rinode(uint32_t inum, struct dinode *ip);
-static void
-rsect(off_t sec, void *buf);
-static uint32_t
-ialloc(mode_t type);
-static void
-iappend(uint32_t inum, void *p, ssize_t n);
+static void balloc(size_t);
+static void wsect(off_t, void *);
+static void winode(uint32_t, struct dinode *);
+static void rinode(uint32_t inum, struct dinode *ip);
+static void rsect(off_t sec, void *buf);
+static uint32_t ialloc(mode_t type);
+static void iappend(uint32_t inum, void *p, ssize_t n);
 
 // convert to intel byte order
 static uint16_t
@@ -186,11 +179,11 @@ main(int32_t argc, char *argv[])
 		"nmeta %lu (boot, super, log blocks %lu inode blocks %lu, bitmap blocks %lu) blocks %ld total %u\n",
 		nmeta, nlog, ninodeblocks, nbitmap, nblocks, FSSIZE);
 
-
 	freeblock = nmeta; // the first free block that we can allocate
 
-	for (size_t i = 0; i < FSSIZE; i++)
+	for (size_t i = 0; i < FSSIZE; i++) {
 		wsect(i, zeroes);
+	}
 
 	memset(buf, 0, sizeof(buf));
 	memmove(buf, &sb, sizeof(sb));
@@ -213,7 +206,7 @@ main(int32_t argc, char *argv[])
 	makedirs();
 
 	for (size_t i = 2; i < argc; i++) {
-		//assert(index(argv[i], '/') == 0);
+		// assert(index(argv[i], '/') == 0);
 
 		if ((fd = open(argv[i], 0)) < 0) {
 			perror(argv[i]);
@@ -235,16 +228,18 @@ main(int32_t argc, char *argv[])
 		}
 		// add NULL terminator
 		str[k] = '\0';
-		if (k > 0)
+		if (k > 0) {
 			strcpy(argv[i], str);
+		}
 		free(str);
 		// "../README" => "README"
 		// "../bin/rm" => bin/rm
 		while (*argv[i] == '.' || *argv[i] == '/') {
 			++argv[i];
 		}
-		if (strncmp(SYSROOT, argv[i], strlen(SYSROOT)) == 0)
+		if (strncmp(SYSROOT, argv[i], strlen(SYSROOT)) == 0) {
 			argv[i] += strlen(SYSROOT);
+		}
 
 		if (strncmp("bin/", argv[i], 4) == 0) {
 			name = (argv[i] += 4);
@@ -262,8 +257,9 @@ main(int32_t argc, char *argv[])
 
 		make_file(inum, name, ino);
 
-		while ((cc = read(fd, buf, sizeof(buf))) > 0)
+		while ((cc = read(fd, buf, sizeof(buf))) > 0) {
 			iappend(inum, buf, cc);
+		}
 
 		close(fd);
 	}
@@ -383,9 +379,9 @@ iappend(uint32_t inum, void *xp, ssize_t n)
 
 	rinode(inum, &din);
 	off = xlong(din.size);
-	//printf("append inum %d at off %lu sz %lu\n", inum, off, n);
+	// printf("append inum %d at off %lu sz %lu\n", inum, off, n);
 	while (n > 0) {
-		 // Block number needed.
+		// Block number needed.
 		fbn = off / BSIZE;
 		assert(fbn < MAXFILE);
 		if (fbn < NDIRECT) {
@@ -400,8 +396,7 @@ iappend(uint32_t inum, void *xp, ssize_t n)
 			rsect(xlong(din.addrs[NDIRECT]), (char *)indirect);
 			if (indirect[fbn - NDIRECT] == 0) {
 				indirect[fbn - NDIRECT] = xlong(freeblock++);
-				wsect(xlong(din.addrs[NDIRECT]),
-							(char *)indirect);
+				wsect(xlong(din.addrs[NDIRECT]), (char *)indirect);
 			}
 			x = xlong(indirect[fbn - NDIRECT]);
 		} else {
@@ -416,18 +411,15 @@ iappend(uint32_t inum, void *xp, ssize_t n)
 			if (indirect[double_index / NINDIRECT] == 0) {
 				indirect[double_index / NINDIRECT] = xlong(freeblock++);
 				// Write the first level of indirection.
-				wsect(xlong(din.addrs[NDIRECT + 1]),
-							(char *)indirect);
+				wsect(xlong(din.addrs[NDIRECT + 1]), (char *)indirect);
 			}
 			rsect(xlong(indirect[(double_index) / NINDIRECT]),
-						(char *)double_indirect);
-			if (xlong(double_indirect[double_index % NINDIRECT]) ==
-					0) {
-				double_indirect[double_index % NINDIRECT] =
-					xlong(freeblock++);
+			      (char *)double_indirect);
+			if (xlong(double_indirect[double_index % NINDIRECT]) == 0) {
+				double_indirect[double_index % NINDIRECT] = xlong(freeblock++);
 				// Write doubly indirect block.
 				wsect(xlong(indirect[double_index / NINDIRECT]),
-							(char *)double_indirect);
+				      (char *)double_indirect);
 			}
 			x = xlong(double_indirect[double_index % NINDIRECT]);
 		}

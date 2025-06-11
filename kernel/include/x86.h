@@ -1,21 +1,20 @@
 #pragma once
-#include <stdint.h>
-#include <stddef.h>
 #include "lib/compiler_attributes.h"
+#include <stddef.h>
+#include <stdint.h>
 // Routines to let C code use special x86 instructions.
 
 static __always_inline double
 __fabs(double x)
 {
 	double result;
-	__asm__ __volatile__(
-			"fldl %1\t\n" // "Float load" -- add value onto FPU stack
-			"fabs\t\n"
-			"fstpl %0\t\n"
-			: "=m" (result)
-			: "m" (x)
-			: "st" // FPU stack clobbered
-			);
+	__asm__ __volatile__("fldl %1\t\n" // "Float load" -- add value onto FPU stack
+	                     "fabs\t\n"
+	                     "fstpl %0\t\n"
+	                     : "=m"(result)
+	                     : "m"(x)
+	                     : "st" // FPU stack clobbered
+	);
 	return result;
 }
 
@@ -32,18 +31,18 @@ static __always_inline void
 insw(int port, void *addr, int cnt)
 {
 	__asm__ __volatile__("cld; rep insw"
-											 : "=D"(addr), "=c"(cnt)
-											 : "d"(port), "0"(addr), "1"(cnt)
-											 : "memory", "cc");
+	                     : "=D"(addr), "=c"(cnt)
+	                     : "d"(port), "0"(addr), "1"(cnt)
+	                     : "memory", "cc");
 }
 
 static __always_inline void
 insl(int port, void *addr, int cnt)
 {
 	__asm__ __volatile__("cld; rep insl"
-											 : "=D"(addr), "=c"(cnt)
-											 : "d"(port), "0"(addr), "1"(cnt)
-											 : "memory", "cc");
+	                     : "=D"(addr), "=c"(cnt)
+	                     : "d"(port), "0"(addr), "1"(cnt)
+	                     : "memory", "cc");
 }
 
 static __always_inline void
@@ -62,19 +61,16 @@ static __always_inline void
 outsl(int port, const void *addr, int cnt)
 {
 	__asm__ __volatile__("cld; rep outsl"
-											 : "=S"(addr), "=c"(cnt)
-											 : "d"(port), "0"(addr), "1"(cnt)
-											 : "cc");
+	                     : "=S"(addr), "=c"(cnt)
+	                     : "d"(port), "0"(addr), "1"(cnt)
+	                     : "cc");
 }
-
 
 static __always_inline uint64_t
 xgetbv(uint32_t ecx)
 {
 	uint32_t eax, edx;
-	__asm__ __volatile__("xgetbv"
-											 : "=a"(eax), "=d"(edx)
-											 : "c" (ecx));
+	__asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(ecx));
 	return (uint64_t)edx << 32 | (uint64_t)eax;
 }
 
@@ -83,74 +79,70 @@ xsetbv(uint32_t ecx, uint64_t value)
 {
 	uint32_t edx = value >> 32;
 	uint32_t eax = (uint32_t)value;
-	__asm__ __volatile__("xsetbv"
-											 :
-											 : "a" (eax), "c" (ecx), "d" (edx));
+	__asm__ __volatile__("xsetbv" : : "a"(eax), "c"(ecx), "d"(edx));
 }
 
 static __always_inline uint64_t
 read_cr4(void)
 {
 	uint64_t cr4;
-	__asm__ __volatile__("mov %%cr4, %0"
-												: "=r" (cr4));
+	__asm__ __volatile__("mov %%cr4, %0" : "=r"(cr4));
 	return cr4;
 }
 
 static __always_inline void
 write_cr4(uint64_t value)
 {
-	__asm__ __volatile__("mov %0, %%cr4" : : "r" (value));
+	__asm__ __volatile__("mov %0, %%cr4" : : "r"(value));
 }
-
 
 static __always_inline uint64_t
 read_cr0(void)
 {
 	uint64_t cr0;
-	__asm__ __volatile__("mov %%cr0, %0"
-												: "=r" (cr0));
+	__asm__ __volatile__("mov %%cr0, %0" : "=r"(cr0));
 	return cr0;
 }
 
 static __always_inline void
 write_cr0(uint64_t value)
 {
-	__asm__ __volatile__("mov %0, %%cr0" : : "r" (value));
+	__asm__ __volatile__("mov %0, %%cr0" : : "r"(value));
 }
-
 
 static __always_inline void
 stosb(void *addr, int data, int cnt)
 {
 	__asm__ __volatile__("cld; rep stosb"
-											 : "=D"(addr), "=c"(cnt)
-											 : "0"(addr), "1"(cnt), "a"(data)
-											 : "memory", "cc");
+	                     : "=D"(addr), "=c"(cnt)
+	                     : "0"(addr), "1"(cnt), "a"(data)
+	                     : "memory", "cc");
 }
 
 static __always_inline void
 stosl(void *addr, int data, int cnt)
 {
 	__asm__ __volatile__("cld; rep stosl"
-											 : "=D"(addr), "=c"(cnt)
-											 : "0"(addr), "1"(cnt), "a"(data)
-											 : "memory", "cc");
+	                     : "=D"(addr), "=c"(cnt)
+	                     : "0"(addr), "1"(cnt), "a"(data)
+	                     : "memory", "cc");
 }
 static __always_inline void *
 movsq(uint64_t *dst, uint64_t *src, size_t size)
 {
 	__asm__ __volatile__("rep movsq"
-											 : "+D"(dst), "+S"(src), "+c"(size)
-											 : : "memory");
+	                     : "+D"(dst), "+S"(src), "+c"(size)
+	                     :
+	                     : "memory");
 	return dst;
 }
 static __always_inline void *
 movsb(uint8_t *dst, uint8_t *src, size_t size)
 {
 	__asm__ __volatile__("rep movsb"
-											 : "+D"(dst), "+S"(src), "+c"(size)
-											 : : "memory");
+	                     : "+D"(dst), "+S"(src), "+c"(size)
+	                     :
+	                     : "memory");
 	return dst;
 }
 static __always_inline uint64_t
@@ -236,9 +228,9 @@ xchg(volatile uint32_t *addr, uintptr_t newval)
 
 	// The + in "+m" denotes a read-modify-write operand.
 	__asm__ __volatile__("lock; xchg %0, %1"
-											 : "+m"(*addr), "=a"(result)
-											 : "1"(newval)
-											 : "cc");
+	                     : "+m"(*addr), "=a"(result)
+	                     : "1"(newval)
+	                     : "cc");
 	return result;
 }
 
@@ -264,12 +256,12 @@ hlt(void)
 
 static __always_inline void
 cpuid(uint32_t id, uint32_t count, uint32_t *a, uint32_t *b, uint32_t *c,
-			uint32_t *d)
+      uint32_t *d)
 {
 	__asm__ __volatile__("movl %0, %%eax\t\n"
-											 "cpuid\t\n"
-											 : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d)
-											 : "0"(id), "2"(count));
+	                     "cpuid\t\n"
+	                     : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d)
+	                     : "0"(id), "2"(count));
 }
 
 static __always_inline uint64_t
@@ -277,8 +269,8 @@ rdmsr(uint32_t msr)
 {
 	uint32_t hi;
 	uint32_t lo;
-   __asm__ __volatile__("rdmsr" : "=a"(lo), "=d"(hi) : "c"(msr));
-	 return (uint64_t)hi << 32 | lo;
+	__asm__ __volatile__("rdmsr" : "=a"(lo), "=d"(hi) : "c"(msr));
+	return (uint64_t)hi << 32 | lo;
 }
 
 static __always_inline void
@@ -287,7 +279,7 @@ wrmsr(uint32_t msr, uint64_t val)
 	uint32_t lo, hi;
 	lo = val & 0xFFFFFFFF;
 	hi = val >> 32 & 0xFFFFFFFF;
-   __asm__ __volatile__("wrmsr" : : "a"(lo), "d"(hi), "c"(msr));
+	__asm__ __volatile__("wrmsr" : : "a"(lo), "d"(hi), "c"(msr));
 }
 
 // Layout of the trap frame built on the stack by the

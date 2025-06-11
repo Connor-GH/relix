@@ -2,14 +2,15 @@
 
 void *
 bsearch(const void *key, const void *base, size_t nmemb, size_t size,
-				int (*compar)(const void *, const void *))
+        int (*compar)(const void *, const void *))
 {
 	const void *pivot;
 	int rc;
 	size_t corr;
 
 	while (nmemb) {
-		/* algorithm needs -1 correction if remaining elements are an even number. */
+		/* algorithm needs -1 correction if remaining elements are an even number.
+		 */
 		corr = nmemb % 2;
 		nmemb /= 2;
 		pivot = (const char *)base + (nmemb * size);

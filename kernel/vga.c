@@ -1,11 +1,11 @@
 #include "vga.h"
 #include "boot/multiboot2.h"
 #include "file.h"
-#include "fs.h"
-#include "memlayout.h"
 #include "font.h"
+#include "fs.h"
 #include "kernel_assert.h"
 #include "macros.h"
+#include "memlayout.h"
 #include "mman.h"
 #include "uart.h"
 #include <stdbool.h>
@@ -74,7 +74,7 @@ static struct mmap_info
 vgammap(short minor, size_t length, uintptr_t addr, int perm)
 {
 	return (struct mmap_info){ WIDTH * HEIGHT * (BPP_DEPTH / 8),
-														 fb_common.framebuffer_addr, 0, NULL, perm };
+		                         fb_common.framebuffer_addr, 0, NULL, perm };
 }
 // INVARIANT: must be ran after vga_init().
 struct multiboot_tag_framebuffer_common
@@ -91,7 +91,7 @@ get_fb_common(void)
  */
 void
 vga_init(struct multiboot_tag_framebuffer *tag, struct fb_rgb rgb,
-				 struct multiboot_tag_framebuffer_common common)
+         struct multiboot_tag_framebuffer_common common)
 {
 	fb_data = tag;
 	fb_rgb = rgb;
@@ -145,9 +145,9 @@ x_y_to_fb_char_index(uint32_t x, uint32_t y, uint8_t font_width)
 
 static void
 render_font_glyph(const uint8_t character, const uint32_t x, const uint32_t y,
-									const uint8_t width, const uint8_t height,
-									const bool font[static 256][width * height],
-									const uint32_t foreground, const uint32_t background)
+                  const uint8_t width, const uint8_t height,
+                  const bool font[static 256][width * height],
+                  const uint32_t foreground, const uint32_t background)
 {
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++) {
@@ -237,7 +237,7 @@ vga_backspace(uint8_t font_width, uint8_t font_height, uint32_t background)
 // the speedup is around 2x.
 static void
 vga_scroll(uint32_t fb_width, uint32_t fb_height, uint8_t font_width,
-					 uint8_t font_height, const bool (*font)[])
+           uint8_t font_height, const bool (*font)[])
 {
 	uint32_t fb_in_bytes = fb_height * fb_width;
 
@@ -247,13 +247,13 @@ vga_scroll(uint32_t fb_width, uint32_t fb_height, uint8_t font_width,
 		uint32_t y = pixel_count_to_char_y_coord(i / font_height, font_width);
 		// We "have" to scroll on these chars.
 		if (!(damage_tracking_data.data[x][y] ==
-						damage_tracking_data.data[x][y - 1] &&
-					damage_tracking_data.fg[x][y] == damage_tracking_data.fg[x][y - 1] &&
-					damage_tracking_data.bg[x][y] == damage_tracking_data.bg[x][y - 1])) {
+		        damage_tracking_data.data[x][y - 1] &&
+		      damage_tracking_data.fg[x][y] == damage_tracking_data.fg[x][y - 1] &&
+		      damage_tracking_data.bg[x][y] == damage_tracking_data.bg[x][y - 1])) {
 			render_font_glyph(damage_tracking_data.data[x][y], x * font_width,
-												(y - 1) * font_height, font_width, font_height, font,
-												damage_tracking_data.fg[x][y],
-												damage_tracking_data.bg[x][y]);
+			                  (y - 1) * font_height, font_width, font_height, font,
+			                  damage_tracking_data.fg[x][y],
+			                  damage_tracking_data.bg[x][y]);
 			damage_tracking_data.data[x][y - 1] = damage_tracking_data.data[x][y];
 			damage_tracking_data.fg[x][y - 1] = damage_tracking_data.fg[x][y];
 			damage_tracking_data.bg[x][y - 1] = damage_tracking_data.bg[x][y];
@@ -269,7 +269,7 @@ vga_scroll(uint32_t fb_width, uint32_t fb_height, uint8_t font_width,
 		damage_tracking_data.bg[i][height - 1] = VGA_COLOR_BLACK;
 
 		clear_cells(i, height - 1, 1, 1, font_width, font_height, VGA_COLOR_WHITE,
-								VGA_COLOR_BLACK, font);
+		            VGA_COLOR_BLACK, font);
 	}
 	cursor_position = (struct CursorPosition){ 0, height - 1 };
 
@@ -284,8 +284,8 @@ vga_reset_char_index(void)
 
 void
 clear_cells(uint32_t x, uint32_t y, uint32_t x_len, uint32_t y_len,
-						uint8_t font_width, uint8_t font_height, uint32_t foreground,
-						uint32_t background, const bool (*font)[])
+            uint8_t font_width, uint8_t font_height, uint32_t foreground,
+            uint32_t background, const bool (*font)[])
 {
 	const uint32_t height = height_chars(font_height);
 	const uint32_t width = width_chars(font_width);
@@ -295,7 +295,7 @@ clear_cells(uint32_t x, uint32_t y, uint32_t x_len, uint32_t y_len,
 	for (uint32_t i = 0; i < x_len; i++) {
 		for (uint32_t j = 0; j < y_len; j++) {
 			render_font_glyph(' ', (i + x) * font_width, (j + y) * font_height,
-												font_width, font_height, font, foreground, background);
+			                  font_width, font_height, font, foreground, background);
 		}
 	}
 }
@@ -327,14 +327,14 @@ ansi_erase_in_front_of_cursor(void)
 	 * [m]              END
 	 */
 	clear_cells(cursor_position.x, cursor_position.y,
-							width_chars(font_data.width) - cursor_position.x,
-							height_chars(font_data.height) - cursor_position.y + 1,
-							font_data.width, font_data.height, foreground, background,
-							*font_data.font);
+	            width_chars(font_data.width) - cursor_position.x,
+	            height_chars(font_data.height) - cursor_position.y + 1,
+	            font_data.width, font_data.height, foreground, background,
+	            *font_data.font);
 	clear_cells(0, cursor_position.y, cursor_position.x - 1,
-							height_chars(font_data.height) - cursor_position.y + 1,
-							font_data.width, font_data.height, foreground, background,
-							*font_data.font);
+	            height_chars(font_data.height) - cursor_position.y + 1,
+	            font_data.width, font_data.height, foreground, background,
+	            *font_data.font);
 }
 
 // Consistent with the define found in console.c.
@@ -346,9 +346,9 @@ vga_write_char(int c, uint32_t foreground, uint32_t background)
 	struct font_data_8x16 font_data = { 8, 16, &font_default };
 	// Past last line.
 	if (fb_char_index >= WIDTH * height_chars(font_data.height) ||
-			// Last line and newline
-			((fb_char_index >= (WIDTH * (height_chars(font_data.height) - 1))) &&
-			 c == '\n')) {
+	    // Last line and newline
+	    ((fb_char_index >= (WIDTH * (height_chars(font_data.height) - 1))) &&
+	     c == '\n')) {
 		vga_scroll(WIDTH, HEIGHT, font_data.width, font_data.height, font_default);
 	} else if (c == '\n') {
 		vga_write_newline(WIDTH, font_data.width, HEIGHT);

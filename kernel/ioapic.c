@@ -2,11 +2,11 @@
 // http://www.intel.com/design/chipsets/datashts/29056601.pdf
 // See also picirq.c.
 
-#include <stdint.h>
-#include "traps.h"
 #include "ioapic.h"
 #include "console.h"
 #include "memlayout.h"
+#include "traps.h"
+#include <stdint.h>
 
 #define IOAPIC 0xFEC00000 // Default physical address of IO APIC
 
@@ -50,14 +50,14 @@ ioapicwrite(int reg, uint32_t data)
 void
 ioapicinit(void)
 {
-
 	ioapic = (volatile struct ioapic *)IO2V(IOAPIC);
 
 	int maxintr = (ioapicread(REG_VER) >> 16) & 0xFF;
 	int id = ioapicread(REG_ID) >> 24;
 
-	if (id != ioapicid)
+	if (id != ioapicid) {
 		vga_cprintf("ioapicinit: id isn't equal to ioapicid; not a MP\n");
+	}
 
 	// Mark all interrupts edge-triggered, active high, disabled,
 	// and not routed to any CPUs.

@@ -1,16 +1,16 @@
-#include <stdint.h>
-#include <errno.h>
-#include <sys/reboot.h>
-#include <sys/times.h>
-#include <time.h>
-#include <string.h>
-#include "x86.h"
+#include "console.h"
+#include "drivers/lapic.h"
+#include "kernel_signal.h"
 #include "proc.h"
 #include "syscall.h"
 #include "trap.h"
-#include "kernel_signal.h"
-#include "drivers/lapic.h"
-#include "console.h"
+#include "x86.h"
+#include <errno.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/reboot.h>
+#include <sys/times.h>
+#include <time.h>
 
 size_t
 sys_fork(void)

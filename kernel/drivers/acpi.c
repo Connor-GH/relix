@@ -23,17 +23,17 @@
  *
  */
 
+#include "acpi.h"
+#include "console.h"
+#include "kernel_assert.h"
+#include "lapic.h"
+#include "memlayout.h"
+#include "param.h"
+#include "proc.h"
+#include "stdint.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include "stdint.h"
-#include "param.h"
-#include "memlayout.h"
-#include "proc.h"
-#include "acpi.h"
-#include "kernel_assert.h"
-#include "console.h"
-#include "lapic.h"
 
 extern struct cpu cpus[NCPU];
 extern uint8_t ioapicid;
@@ -63,9 +63,9 @@ scan_rsdp(uint32_t base, uint32_t len)
 	uint8_t *p;
 
 	for (p = p2v(base); len >= sizeof(struct acpi_rsdp);
-			 len -= sizeof(len), p += sizeof(p)) {
+	     len -= sizeof(len), p += sizeof(p)) {
 		if (memcmp(p, SIG_RSDP, 8) == 0 &&
-				do_checksum_rsdp((struct acpi_rsdp *)p, 20)) {
+		    do_checksum_rsdp((struct acpi_rsdp *)p, 20)) {
 			return (struct acpi_rsdp *)p;
 		}
 	}
@@ -77,7 +77,7 @@ dump_rsdp(struct acpi_rsdp *rsdp)
 {
 	char rsdp_oem_id[7];
 	__strlcpy_nostrlen(rsdp_oem_id, (char *)rsdp->oem_id, sizeof(rsdp_oem_id),
-									 sizeof(rsdp->oem_id));
+	                   sizeof(rsdp->oem_id));
 
 	pr_debug_file("oem id: %s\n", rsdp_oem_id);
 	pr_debug_file("revision: %d\n", rsdp->revision + 1);
@@ -95,8 +95,9 @@ find_rsdp(void)
 	// PA is mapped in kmap; vm.c. TODO: mappages needs to be dynamic
 	pa = *((uint16_t *)(p2v(0x40 << 4 | 0x0E))); // EBDA pointer
 	rsdp = scan_rsdp(pa, 1 * kiB);
-	if (pa && (rsdp != NULL))
+	if (pa && (rsdp != NULL)) {
 		return rsdp;
+	}
 	pr_debug_file("rsdp not in EDBA; trying BIOS memory.\n");
 	return scan_rsdp(0xE0000, 0x20000);
 }
@@ -108,10 +109,12 @@ acpi_config_smp(struct acpi_madt *madt)
 	uint32_t nioapic = 0;
 	uint8_t *p, *e;
 
-	if (!madt)
+	if (!madt) {
 		return -1;
-	if (madt->header.length < sizeof(struct acpi_madt))
+	}
+	if (madt->header.length < sizeof(struct acpi_madt)) {
 		return -1;
+	}
 
 	lapic_addr = madt->lapic_addr_phys;
 
@@ -120,18 +123,22 @@ acpi_config_smp(struct acpi_madt *madt)
 
 	while (p < e) {
 		uint32_t len;
-		if ((e - p) < 2)
+		if ((e - p) < 2) {
 			break;
+		}
 		len = p[1];
-		if ((e - p) < len)
+		if ((e - p) < len) {
 			break;
+		}
 		switch (p[0]) {
 		case TYPE_LAPIC: {
 			struct madt_lapic *madt_lapic = (void *)p;
-			if (len < sizeof(*madt_lapic))
+			if (len < sizeof(*madt_lapic)) {
 				break;
-			if (!(madt_lapic->flags & APIC_LAPIC_ENABLED))
+			}
+			if (!(madt_lapic->flags & APIC_LAPIC_ENABLED)) {
 				break;
+			}
 			pr_debug_file("cpu#%d apicid %d\n", ncpu, madt_lapic->apic_id);
 			cpus[ncpu].apicid = madt_lapic->apic_id;
 			ncpu++;
@@ -139,10 +146,11 @@ acpi_config_smp(struct acpi_madt *madt)
 		}
 		case TYPE_IOAPIC: {
 			struct madt_ioapic *ioapic = (void *)p;
-			if (len < sizeof(*ioapic))
+			if (len < sizeof(*ioapic)) {
 				break;
+			}
 			pr_debug_file("ioapic#%d @%x id=%d base=%d\n", nioapic, ioapic->addr,
-									 ioapic->id, ioapic->interrupt_base);
+			              ioapic->id, ioapic->interrupt_base);
 			if (nioapic) {
 				pr_debug_file("warning: multiple ioapics are not supported");
 			} else {
@@ -166,8 +174,9 @@ acpi_config_smp(struct acpi_madt *madt)
 static void
 setup_fadt(struct acpi_fadt *fadt)
 {
-	if (!fadt)
+	if (!fadt) {
 		return;
+	}
 	pr_debug_file("Century: %d\n", fadt->century);
 }
 
@@ -177,11 +186,12 @@ try_setup_headers_xsdt(struct acpi_xsdt *xsdt)
 	struct acpi_madt *madt = NULL;
 	struct acpi_fadt *fadt;
 	int count = (xsdt->header.length - sizeof(struct acpi_desc_header)) /
-							sizeof(*xsdt->entry);
+	            sizeof(*xsdt->entry);
 	for (int n = 0; n < count; n++) {
 		struct acpi_desc_header *hdr = p2v(xsdt->entry[n]);
-		if (xsdt->entry[n] > PHYSLIMIT)
+		if (xsdt->entry[n] > PHYSLIMIT) {
 			goto notmapped;
+		}
 		uint8_t sig[5], id[7], tableid[9], creator[5];
 		memmove(sig, hdr->signature, 4);
 		sig[4] = '\0';
@@ -192,11 +202,11 @@ try_setup_headers_xsdt(struct acpi_xsdt *xsdt)
 		memmove(creator, hdr->creator_id, 4);
 		creator[4] = '\0';
 		pr_debug_file("%s %s %s %x %s %x\n", sig, id, tableid, hdr->oem_revision,
-								 creator, hdr->creator_revision);
+		              creator, hdr->creator_revision);
 
-		if (memcmp(hdr->signature, SIG_MADT, 4) == 0)
+		if (memcmp(hdr->signature, SIG_MADT, 4) == 0) {
 			madt = (void *)hdr;
-		else if (memcmp(hdr->signature, SIG_FADT, 4) == 0) {
+		} else if (memcmp(hdr->signature, SIG_FADT, 4) == 0) {
 			fadt = (void *)hdr;
 			setup_fadt(fadt);
 		}
@@ -215,11 +225,12 @@ try_setup_headers_rsdt(struct acpi_rsdt *rsdt)
 	struct acpi_madt *madt = NULL;
 	struct acpi_fadt *fadt;
 	int count = (rsdt->header.length - sizeof(struct acpi_desc_header)) /
-							sizeof(*rsdt->entry);
+	            sizeof(*rsdt->entry);
 	for (int n = 0; n < count; n++) {
 		struct acpi_desc_header *hdr = p2v(rsdt->entry[n]);
-		if (rsdt->entry[n] > PHYSLIMIT)
+		if (rsdt->entry[n] > PHYSLIMIT) {
 			goto notmapped;
+		}
 		uint8_t sig[5], id[7], tableid[9], creator[5];
 		memmove(sig, hdr->signature, 4);
 		sig[4] = '\0';
@@ -230,11 +241,11 @@ try_setup_headers_rsdt(struct acpi_rsdt *rsdt)
 		memmove(creator, hdr->creator_id, 4);
 		creator[4] = '\0';
 		pr_debug_file("%s %s %s %x %s %x\n", sig, id, tableid, hdr->oem_revision,
-								 creator, hdr->creator_revision);
+		              creator, hdr->creator_revision);
 
-		if (memcmp(hdr->signature, SIG_MADT, 4) == 0)
+		if (memcmp(hdr->signature, SIG_MADT, 4) == 0) {
 			madt = (void *)hdr;
-		else if (memcmp(hdr->signature, SIG_FADT, 4) == 0) {
+		} else if (memcmp(hdr->signature, SIG_FADT, 4) == 0) {
 			fadt = (void *)hdr;
 			setup_fadt(fadt);
 		}
@@ -255,13 +266,15 @@ acpiinit(void)
 	struct acpi_xsdt *xsdt;
 
 	rsdp = find_rsdp();
-	if (rsdp == NULL)
+	if (rsdp == NULL) {
 		panic("NULL rsdp");
+	}
 	dump_rsdp(rsdp);
-	if (rsdp->revision + 1 == 1 && rsdp->rsdt_addr_phys > PHYSLIMIT)
+	if (rsdp->revision + 1 == 1 && rsdp->rsdt_addr_phys > PHYSLIMIT) {
 		goto notmapped_rsdt;
-	else if (rsdp->revision + 1 > 1 && rsdp->xsdt_addr_phys > PHYSLIMIT)
+	} else if (rsdp->revision + 1 > 1 && rsdp->xsdt_addr_phys > PHYSLIMIT) {
 		goto notmapped_xsdt;
+	}
 	if (rsdp->revision + 1 > 1) {
 		xsdt = p2v(rsdp->xsdt_addr_phys);
 		pr_debug_file("xsdt physical address: P%#lx\n", rsdp->xsdt_addr_phys);
@@ -280,6 +293,7 @@ notmapped_rsdt:
 	pr_debug_file("rsdt_addr_phs %#x > %#llx\n", rsdp->rsdt_addr_phys, PHYSLIMIT);
 	return -1;
 notmapped_xsdt:
-	pr_debug_file("xsdt_addr_phs %#lx > %#llx\n", rsdp->xsdt_addr_phys, PHYSLIMIT);
+	pr_debug_file("xsdt_addr_phs %#lx > %#llx\n", rsdp->xsdt_addr_phys,
+	              PHYSLIMIT);
 	return -1;
 }

@@ -1,8 +1,8 @@
-#include <unistd.h>
+#include <setjmp.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <setjmp.h>
+#include <unistd.h>
 
 static volatile sig_atomic_t num = 1;
 jmp_buf buf;
@@ -20,8 +20,8 @@ sigint_handle2(int _)
 	num++;
 }
 
-
-int main(void)
+int
+main(void)
 {
 	if (signal(SIGINT, sigint_handle2) == SIG_ERR) {
 		perror("signal");
@@ -32,5 +32,4 @@ int main(void)
 		sleep(100);
 	}
 	return 0;
-
 }

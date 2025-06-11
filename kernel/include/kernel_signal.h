@@ -45,13 +45,13 @@ union sigval {
 };
 
 typedef struct {
-  int si_signo;  /* Signal number */
-  int si_code;   /* Signal code */
-  pid_t si_pid;    /* Sending process ID */
-  uid_t si_uid;    /* Real user ID of sending process */
-  void *si_addr;   /* Memory location which caused fault */
-  int si_status; /* Exit value or signal */
-  union sigval si_value;  /* Signal value */
+	int si_signo; /* Signal number */
+	int si_code; /* Signal code */
+	pid_t si_pid; /* Sending process ID */
+	uid_t si_uid; /* Real user ID of sending process */
+	void *si_addr; /* Memory location which caused fault */
+	int si_status; /* Exit value or signal */
+	union sigval si_value; /* Signal value */
 } siginfo_t;
 
 typedef void (*sighandler_t)(int);
@@ -66,7 +66,7 @@ struct sigaction {
 	void (*sa_restorer)(void);
 };
 
-#define SIG_ERR ((sighandler_t)-1) // Error
+#define SIG_ERR ((sighandler_t) - 1) // Error
 #define SIG_DFL ((sighandler_t)0) // Default action
 #define SIG_IGN ((sighandler_t)1) // Ignore
 
@@ -74,9 +74,8 @@ struct sigaction {
 #define SIG_BLOCK 2
 #define SIG_UNBLOCK 3
 
-
 #define SA_NOCLDSTOP 1
-#define SA_ONSTACK   2
+#define SA_ONSTACK 2
 #define SA_RESETHAND 3
 #define SA_RESTART 4
 #define SA_SIGINFO 5
@@ -88,6 +87,5 @@ struct sigaction {
 #define SIGSTKSZ 11
 
 #if __KERNEL__
-sighandler_t
-kernel_attach_signal(int signum, sighandler_t handler);
+sighandler_t kernel_attach_signal(int signum, sighandler_t handler);
 #endif

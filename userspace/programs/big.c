@@ -1,8 +1,8 @@
-#include <stdio.h>
 #include <fcntl.h>
+#include <kernel/include/fs.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <kernel/include/fs.h>
 
 int
 main(void)
@@ -25,8 +25,9 @@ main(void)
 			break;
 		}
 		sectors++;
-		if (sectors % 100 == 0)
+		if (sectors % 100 == 0) {
 			fprintf(stderr, ".");
+		}
 	}
 
 	fprintf(stdout, "\nwrote %d blocks\n", sectors);
@@ -45,7 +46,7 @@ main(void)
 		}
 		if (*(int *)buf != i) {
 			fprintf(stderr, "big: read the wrong data (%d) for sector %d\n",
-							*(int *)buf, i);
+			        *(int *)buf, i);
 			exit(1);
 		}
 	}

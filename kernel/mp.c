@@ -2,18 +2,17 @@
 // Search memory for MP description structures.
 // http://developer.intel.com/design/pentium/datashts/24201606.pdf
 
-#include <stdint.h>
-#include <stdint.h>
-#include <string.h>
-#include "drivers/memlayout.h"
-#include "drivers/lapic.h"
-#include "param.h"
 #include "mp.h"
-#include "x86.h"
-#include "proc.h"
 #include "console.h"
+#include "drivers/lapic.h"
+#include "drivers/memlayout.h"
 #include "kernel_assert.h"
 #include "lib/compiler_attributes.h"
+#include "param.h"
+#include "proc.h"
+#include "x86.h"
+#include <stdint.h>
+#include <string.h>
 
 struct cpu cpus[NCPU];
 int ncpu;
@@ -132,7 +131,7 @@ mpinit(void)
 			model = proc->signature[1];
 			model += ((a >> 16) & 0xF) << 4;
 			cprintf("CPU Model=%#x, Family=%#x Stepping=%#x\n", model, family,
-							(char)proc->signature[0] /*stepping*/);
+			        (char)proc->signature[0] /*stepping*/);
 			if (ncpu < NCPU) {
 				cpus[ncpu].apicid = proc->apicid; // apicid may differ from ncpu
 				ncpu++;

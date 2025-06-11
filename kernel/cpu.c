@@ -1,13 +1,13 @@
-#include "kalloc.h"
-#include "x86.h"
 #include "cpu.h"
+#include "console.h"
+#include "kalloc.h"
+#include "kernel_assert.h"
 #include "mmu.h"
 #include "proc.h"
-#include "console.h"
-#include "kernel_assert.h"
-#include <string.h>
+#include "x86.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 // bitops, cpuflags
 #define _UL(x) ((unsigned long)x)
@@ -41,9 +41,9 @@ fpu_init(void)
 	write_cr0(cr0);
 
 	__asm__ __volatile__("fninit\n"
-											 "fnstsw %0\n"
-											 "fnstcw %1\n"
-											 : "+m"(fsw), "+m"(fcw));
+	                     "fnstsw %0\n"
+	                     "fnstcw %1\n"
+	                     : "+m"(fsw), "+m"(fcw));
 	fpu_load_control_word(0x37F);
 	fpu_load_control_word(0x37E);
 	fpu_load_control_word(0x37A);
@@ -57,17 +57,17 @@ has_eflag(unsigned long mask)
 	unsigned long f0 = 0, f1 = 0;
 
 	__asm__ __volatile__("pushfq\n"
-											 "pushfq\n"
-											 "pop %0\n"
-											 "mov %0,%1\n"
-											 "xor %2,%1\n"
-											 "push %1\n"
-											 "popfq\n"
-											 "pushfq\n"
-											 "pop %1\n"
-											 "popfq\n"
-											 : "=&r"(f0), "=&r"(f1)
-											 : "ri"(mask));
+	                     "pushfq\n"
+	                     "pop %0\n"
+	                     "mov %0,%1\n"
+	                     "xor %2,%1\n"
+	                     "push %1\n"
+	                     "popfq\n"
+	                     "pushfq\n"
+	                     "pop %1\n"
+	                     "popfq\n"
+	                     : "=&r"(f0), "=&r"(f1)
+	                     : "ri"(mask));
 
 	return !!((f0 ^ f1) & mask);
 }
@@ -78,8 +78,9 @@ sse_init(CpuFeatures *features)
 	uint64_t cr4 = read_cr4();
 	cr4 |= CR4_OSFXSR;
 	cr4 |= CR4_OSXMMEXCPT;
-	if (features->fpu_misc.xsave)
+	if (features->fpu_misc.xsave) {
 		cr4 |= CR4_OSXSAVE;
+	}
 	write_cr4(cr4);
 }
 
@@ -176,7 +177,7 @@ model_family_stepping(void)
 	}
 	bytes[48] = '\0';
 	uart_printf("Cpu is \"%s\" (model=%x family=%x stepping=%x)\n", bytes, model,
-							family, processor_stepping);
+	            family, processor_stepping);
 }
 static void
 set_remaining_features(CpuFeatures *cpu_features)
@@ -249,21 +250,36 @@ set_remaining_features(CpuFeatures *cpu_features)
 	};
 
 	const struct cpuid_struct cpuidstruct_edx_1[31] = {
-		{ CPUID_FEAT_EDX_FPU, "fpu" },				 { CPUID_FEAT_EDX_VME, "vme" },
-		{ CPUID_FEAT_EDX_DE, "de" },					 { CPUID_FEAT_EDX_PSE, "pse" },
-		{ CPUID_FEAT_EDX_TSC, "tsc" },				 { CPUID_FEAT_EDX_MSR, "msr" },
-		{ CPUID_FEAT_EDX_PAE, "pae" },				 { CPUID_FEAT_EDX_MCE, "mce" },
-		{ CPUID_FEAT_EDX_CX8, "cx8" },				 { CPUID_FEAT_EDX_APIC, "apic" },
-		{ CPUID_FEAT_EDX_SEP, "sep" },				 { CPUID_FEAT_EDX_MTRR, "mtrr" },
-		{ CPUID_FEAT_EDX_PGE, "pge" },				 { CPUID_FEAT_EDX_MCA, "mca" },
-		{ CPUID_FEAT_EDX_CMOV, "cmov" },			 { CPUID_FEAT_EDX_PAT, "pat" },
-		{ CPUID_FEAT_EDX_PSE36, "pse36" },		 { CPUID_FEAT_EDX_PSN, "psn" },
-		{ CPUID_FEAT_EDX_CLFLUSH, "clflush" }, { CPUID_FEAT_EDX_DS, "ds" },
-		{ CPUID_FEAT_EDX_ACPI, "acpi" },			 { CPUID_FEAT_EDX_MMX, "mmx" },
-		{ CPUID_FEAT_EDX_FXSR, "fxsr" },			 { CPUID_FEAT_EDX_SSE, "sse" },
-		{ CPUID_FEAT_EDX_SSE2, "sse2" },			 { CPUID_FEAT_EDX_SS, "ss" },
-		{ CPUID_FEAT_EDX_HTT, "htt" },				 { CPUID_FEAT_EDX_TM, "tm" },
-		{ CPUID_FEAT_EDX_IA64, "ia64" },			 { CPUID_FEAT_EDX_PBE, "pbe" },
+		{ CPUID_FEAT_EDX_FPU, "fpu" },
+		{ CPUID_FEAT_EDX_VME, "vme" },
+		{ CPUID_FEAT_EDX_DE, "de" },
+		{ CPUID_FEAT_EDX_PSE, "pse" },
+		{ CPUID_FEAT_EDX_TSC, "tsc" },
+		{ CPUID_FEAT_EDX_MSR, "msr" },
+		{ CPUID_FEAT_EDX_PAE, "pae" },
+		{ CPUID_FEAT_EDX_MCE, "mce" },
+		{ CPUID_FEAT_EDX_CX8, "cx8" },
+		{ CPUID_FEAT_EDX_APIC, "apic" },
+		{ CPUID_FEAT_EDX_SEP, "sep" },
+		{ CPUID_FEAT_EDX_MTRR, "mtrr" },
+		{ CPUID_FEAT_EDX_PGE, "pge" },
+		{ CPUID_FEAT_EDX_MCA, "mca" },
+		{ CPUID_FEAT_EDX_CMOV, "cmov" },
+		{ CPUID_FEAT_EDX_PAT, "pat" },
+		{ CPUID_FEAT_EDX_PSE36, "pse36" },
+		{ CPUID_FEAT_EDX_PSN, "psn" },
+		{ CPUID_FEAT_EDX_CLFLUSH, "clflush" },
+		{ CPUID_FEAT_EDX_DS, "ds" },
+		{ CPUID_FEAT_EDX_ACPI, "acpi" },
+		{ CPUID_FEAT_EDX_MMX, "mmx" },
+		{ CPUID_FEAT_EDX_FXSR, "fxsr" },
+		{ CPUID_FEAT_EDX_SSE, "sse" },
+		{ CPUID_FEAT_EDX_SSE2, "sse2" },
+		{ CPUID_FEAT_EDX_SS, "ss" },
+		{ CPUID_FEAT_EDX_HTT, "htt" },
+		{ CPUID_FEAT_EDX_TM, "tm" },
+		{ CPUID_FEAT_EDX_IA64, "ia64" },
+		{ CPUID_FEAT_EDX_PBE, "pbe" },
 		{ 0 },
 	};
 	const struct cpuid_struct cpuidstruct_edx_0x80000001[31] = {
@@ -282,9 +298,8 @@ set_remaining_features(CpuFeatures *cpu_features)
 	uint32_t a, b, c, d;
 	cpuid(CPUID_EAX_GETFEATURES, 0, &a, &b, &c, &d);
 	for (size_t i = 0; i < 31; i++) {
-
 		if (c & cpuidstruct_ecx_1[i].feature &&
-				cpuidstruct_ecx_1[i].feature_string != NULL) {
+		    cpuidstruct_ecx_1[i].feature_string != NULL) {
 			pr_debug("%s ", cpuidstruct_ecx_1[i].feature_string);
 			switch (cpuidstruct_ecx_1[i].feature) {
 			case CPUID_FEAT_ECX_SSE3:
@@ -307,7 +322,7 @@ set_remaining_features(CpuFeatures *cpu_features)
 	}
 	for (size_t i = 0; i < 31; i++) {
 		if (d & cpuidstruct_edx_1[i].feature &&
-				cpuidstruct_edx_1[i].feature_string != NULL) {
+		    cpuidstruct_edx_1[i].feature_string != NULL) {
 			pr_debug("%s ", cpuidstruct_edx_1[i].feature_string);
 			switch (cpuidstruct_edx_1[i].feature) {
 			case CPUID_FEAT_EDX_FPU:
@@ -325,7 +340,7 @@ set_remaining_features(CpuFeatures *cpu_features)
 	cpuid(CPUID_EAX_GETFEATURES + 0x80000000, 0, &a, &b, &c, &d);
 	for (size_t i = 0; i < 31; i++) {
 		if (c & cpuidstruct_ecx_0x80000001[i].feature &&
-				cpuidstruct_ecx_0x80000001[i].feature_string != NULL) {
+		    cpuidstruct_ecx_0x80000001[i].feature_string != NULL) {
 			pr_debug("%s ", cpuidstruct_ecx_0x80000001[i].feature_string);
 			switch (cpuidstruct_ecx_1[i].feature) {
 			case CPUID_FEAT_ECX_EXT_SSE4A:
@@ -342,7 +357,7 @@ set_remaining_features(CpuFeatures *cpu_features)
 	}
 	for (size_t i = 0; i < 31; i++) {
 		if (d & cpuidstruct_edx_0x80000001[i].feature &&
-				cpuidstruct_edx_0x80000001[i].feature_string != NULL) {
+		    cpuidstruct_edx_0x80000001[i].feature_string != NULL) {
 			pr_debug("%s ", cpuidstruct_edx_0x80000001[i].feature_string);
 			switch (cpuidstruct_edx_0x80000001[i].feature) {
 			case CPUID_FEAT_EDX_EXT_FPU:
@@ -364,13 +379,13 @@ set_remaining_features(CpuFeatures *cpu_features)
 
 static void
 set_cpu_vendor_name(char cpu_vendor_name[static 13],
-										const uint32_t cpu_vendor[static 3])
+                    const uint32_t cpu_vendor[static 3])
 {
 	uint32_t bitmask = 0b11111111;
 
 	cpu_vendor_name[0] = (uint8_t)(cpu_vendor[0] & bitmask); // lower 7-0 bits
-	cpu_vendor_name[1] =
-		(uint8_t)((cpu_vendor[0] & (bitmask << 8)) >> 8); // 15-8 bits
+	cpu_vendor_name[1] = (uint8_t)((cpu_vendor[0] & (bitmask << 8)) >> 8); // 15-8
+	                                                                       // bits
 	cpu_vendor_name[2] =
 		(uint8_t)((cpu_vendor[0] & (bitmask << 16)) >> 16); // 23-16 bits
 	cpu_vendor_name[3] =

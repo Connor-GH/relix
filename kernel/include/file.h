@@ -1,14 +1,19 @@
 #ifndef _FILE_H
 #define _FILE_H
 #pragma once
-#include <stdint.h>
-#include <stat.h>
 #include "fs.h"
 #include "mman.h"
 #include "param.h"
+#include <stat.h>
+#include <stdint.h>
 #if __KERNEL__
 struct file {
-	enum { FD_NONE, FD_PIPE, FD_INODE, FD_FIFO, } type;
+	enum {
+		FD_NONE,
+		FD_PIPE,
+		FD_INODE,
+		FD_FIFO,
+	} type;
 	int flags; // Flags like FD_CLOEXEC.
 	int ref; // reference count
 	char readable;
@@ -25,7 +30,8 @@ struct devsw {
 	int (*close)(short minor);
 	ssize_t (*read)(short minor, struct inode *, char *, size_t);
 	ssize_t (*write)(short minor, struct inode *, char *, size_t);
-	struct mmap_info (*mmap)(short minor, size_t length, uintptr_t addr, int perm);
+	struct mmap_info (*mmap)(short minor, size_t length, uintptr_t addr,
+	                         int perm);
 };
 #endif
 
@@ -49,42 +55,30 @@ enum {
 	__DEVSW_last,
 };
 
-_Static_assert(__DEVSW_last <= NDEV, "Too many devices; adjust NDEV in param.h");
+_Static_assert(__DEVSW_last <= NDEV,
+               "Too many devices; adjust NDEV in param.h");
 #if __KERNEL__
 extern struct devsw devsw[];
 
 // Helper functions for file manipulation that
 // sysfile.c might like.
-struct file *
-filealloc(void);
-int
-fdalloc(struct file *f);
-struct inode *
-link_dereference(struct inode *ip, char *buff) __must_hold(&ip->lock);
-struct file *
-fd_to_struct_file(int fd);
-char *
-inode_to_path(char *buf, size_t n, struct inode *ip);
+struct file *filealloc(void);
+int fdalloc(struct file *f);
+struct inode *link_dereference(struct inode *ip, char *buff)
+	__must_hold(&ip->lock);
+struct file *fd_to_struct_file(int fd);
+char *inode_to_path(char *buf, size_t n, struct inode *ip);
 
 // Generalized functions for file operations.
-int
-fileclose(struct file *);
-struct inode *
-filecreate(char *path, mode_t mode, short major, short minor);
-int
-fileopen(char *path, int flags, mode_t mode);
-struct file *
-filedup(struct file *);
-void
-fileinit(void);
-ssize_t
-fileread(struct file *, char *, uint64_t n);
-int
-filestat(struct file *, struct stat *);
-ssize_t
-filewrite(struct file *, char *, uint64_t n);
-off_t
-fileseek(struct file *f, off_t offset, int whence);
+int fileclose(struct file *);
+struct inode *filecreate(char *path, mode_t mode, short major, short minor);
+int fileopen(char *path, int flags, mode_t mode);
+struct file *filedup(struct file *);
+void fileinit(void);
+ssize_t fileread(struct file *, char *, uint64_t n);
+int filestat(struct file *, struct stat *);
+ssize_t filewrite(struct file *, char *, uint64_t n);
+off_t fileseek(struct file *f, off_t offset, int whence);
 
 #endif
 #endif // !_FILE_H

@@ -1,6 +1,6 @@
+#include "libc_syscalls.h"
 #include <sys/ptrace.h>
 #include <sys/syscall.h>
-#include "libc_syscalls.h"
 
 int
 ptrace(char mask[static SYSCALL_AMT])

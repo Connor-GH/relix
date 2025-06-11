@@ -1,18 +1,18 @@
-#include <stdint.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <kernel/include/param.h>
+#include <fcntl.h>
+#include <kernel/drivers/memlayout.h>
 #include <kernel/include/fs.h>
+#include <kernel/include/param.h>
 #include <kernel/include/syscall.h>
 #include <kernel/include/traps.h>
-#include <kernel/drivers/memlayout.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <signal.h>
 #include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #pragma clang diagnostic ignored "-Wunknown-warning-option"
@@ -195,9 +195,11 @@ writetest(void)
 void
 writetest1(void)
 {
-	char *writetest1_buf = malloc(__NDIRECT + __NINDIRECT + __NINDIRECT * __NINDIRECT + 1);
+	char *writetest1_buf =
+		malloc(__NDIRECT + __NINDIRECT + __NINDIRECT * __NINDIRECT + 1);
 	int fd;
-	const size_t writetest_max = __NDIRECT + __NINDIRECT + __NINDIRECT * __NINDIRECT + 1;
+	const size_t writetest_max =
+		__NDIRECT + __NINDIRECT + __NINDIRECT * __NINDIRECT + 1;
 
 	fprintf(stdout, "big files test\n");
 
@@ -238,7 +240,8 @@ writetest1(void)
 			exit(0);
 		}
 		if (((size_t *)buf)[0] != n) {
-			fprintf(stdout, "read content of block %lu is %lu\n", n, ((size_t *)buf)[0]);
+			fprintf(stdout, "read content of block %lu is %lu\n", n,
+			        ((size_t *)buf)[0]);
 			exit(0);
 		}
 		n++;
@@ -329,8 +332,9 @@ pipe1(void)
 	if (pid == 0) {
 		close(fds[0]);
 		for (n = 0; n < 5; n++) {
-			for (i = 0; i < 1033; i++)
+			for (i = 0; i < 1033; i++) {
 				buf[i] = seq++;
+			}
 			if (write(fds[1], buf, 1033) != 1033) {
 				fprintf(stdout, "pipe1 oops 1\n");
 				exit(0);
@@ -350,8 +354,9 @@ pipe1(void)
 			}
 			total += n;
 			cc = cc * 2;
-			if (cc > sizeof(buf))
+			if (cc > sizeof(buf)) {
 				cc = sizeof(buf);
+			}
 		}
 		if (total != 5 * 1033) {
 			fprintf(stdout, "pipe1 oops 3 total %d\n", total);
@@ -375,21 +380,24 @@ preempt(void)
 
 	fprintf(stdout, "preempt: ");
 	pid1 = fork();
-	if (pid1 == 0)
+	if (pid1 == 0) {
 		for (;;)
 			;
+	}
 
 	pid2 = fork();
-	if (pid2 == 0)
+	if (pid2 == 0) {
 		for (;;)
 			;
+	}
 
 	pipe(pfds);
 	pid3 = fork();
 	if (pid3 == 0) {
 		close(pfds[0]);
-		if (write(pfds[1], "x", 1) != 1)
+		if (write(pfds[1], "x", 1) != 1) {
 			fprintf(stdout, "preempt write error");
+		}
 		close(pfds[1]);
 		for (;;)
 			;
@@ -451,8 +459,9 @@ largemem(void)
 		exit(EXIT_FAILURE);
 	}
 	srand((unsigned long)ptr);
-	for (int i = 0; i < 20 * 1024 * 1024; i++)
+	for (int i = 0; i < 20 * 1024 * 1024; i++) {
 		ptr[i] = rand();
+	}
 	fprintf(stderr, "%d %d %d\n", ptr[1], ptr[5], ptr[200010]);
 	free(ptr);
 	fprintf(stderr, "largemem test ok\n");
@@ -516,10 +525,11 @@ sharedfd(void)
 			break;
 		}
 	}
-	if (pid == 0)
+	if (pid == 0) {
 		exit(0);
-	else
+	} else {
 		wait(NULL);
+	}
 	close(fd);
 	fd = open("sharedfd", 0);
 	if (fd < 0) {
@@ -529,10 +539,12 @@ sharedfd(void)
 	nc = np = 0;
 	while ((n = read(fd, sharedfd_buf, sizeof(sharedfd_buf))) > 0) {
 		for (i = 0; i < sizeof(sharedfd_buf); i++) {
-			if (sharedfd_buf[i] == 'c')
+			if (sharedfd_buf[i] == 'c') {
 				nc++;
-			if (sharedfd_buf[i] == 'p')
+			}
+			if (sharedfd_buf[i] == 'p') {
 				np++;
+			}
 		}
 	}
 	close(fd);
@@ -666,14 +678,16 @@ createdelete(void)
 			createdelete_name[1] = '0' + i;
 			fd = open(createdelete_name, 0);
 			if ((i == 0 || i >= N / 2) && fd < 0) {
-				fprintf(stdout, "oops createdelete %s didn't exist\n", createdelete_name);
+				fprintf(stdout, "oops createdelete %s didn't exist\n",
+				        createdelete_name);
 				exit(0);
 			} else if ((i >= 1 && i < N / 2) && fd >= 0) {
 				fprintf(stdout, "oops createdelete %s did exist\n", createdelete_name);
 				exit(0);
 			}
-			if (fd >= 0)
+			if (fd >= 0) {
 				close(fd);
+			}
 		}
 	}
 
@@ -827,18 +841,20 @@ concreate(void)
 			}
 			close(fd);
 		}
-		if (pid == 0)
+		if (pid == 0) {
 			exit(0);
-		else
+		} else {
 			wait(NULL);
+		}
 	}
 
 	memset(fa, 0, sizeof(fa));
 	fd = open(".", 0);
 	n = 0;
 	while (read(fd, &de, sizeof(de)) > 0) {
-		if (de.inum == 0)
+		if (de.inum == 0) {
 			continue;
+		}
 		if (de.name[0] == 'C' && de.name[2] == '\0') {
 			i = de.name[1] - '0';
 			if (i < 0 || i >= sizeof(fa)) {
@@ -878,10 +894,11 @@ concreate(void)
 			unlink(file);
 			unlink(file);
 		}
-		if (pid == 0)
+		if (pid == 0) {
 			exit(0);
-		else
+		} else {
 			wait(NULL);
+		}
 	}
 
 	fprintf(stdout, "concreate ok\n");
@@ -915,10 +932,11 @@ linkunlink(void)
 		}
 	}
 
-	if (pid)
+	if (pid) {
 		wait(NULL);
-	else
+	} else {
 		exit(0);
+	}
 
 	fprintf(stdout, "linkunlink ok\n");
 }
@@ -1213,8 +1231,9 @@ bigfile(void)
 			fprintf(stdout, "read bigfile failed\n");
 			exit(0);
 		}
-		if (cc == 0)
+		if (cc == 0) {
 			break;
+		}
 		if (cc != 300) {
 			fprintf(stdout, "short read bigfile\n");
 			exit(0);
@@ -1262,7 +1281,7 @@ dirsiz(void)
 	fd = open("123456789012345/123456789012345/123456789012345", O_CREATE, 0777);
 	if (fd < 0) {
 		fprintf(stdout,
-						"create 123456789012345/123456789012345/123456789012345 failed\n");
+		        "create 123456789012345/123456789012345/123456789012345 failed\n");
 		exit(0);
 	}
 	close(fd);
@@ -1273,7 +1292,7 @@ dirsiz(void)
 	fd = open("12345678901234/12345678901234/12345678901234", O_CREATE, 0777);
 	if (fd < 0) {
 		fprintf(stdout,
-						"open 12345678901234/12345678901234/12345678901234 failed\n");
+		        "open 12345678901234/12345678901234/12345678901234 failed\n");
 		exit(0);
 	}
 	close(fd);
@@ -1406,11 +1425,13 @@ iref(void)
 		mkdir("", 0700);
 		link("README", "");
 		fd = open("", O_CREATE, 0777);
-		if (fd >= 0)
+		if (fd >= 0) {
 			close(fd);
+		}
 		fd = open("xx", O_CREATE, 0777);
-		if (fd >= 0)
+		if (fd >= 0) {
 			close(fd);
+		}
 		unlink("xx");
 	}
 
@@ -1430,10 +1451,12 @@ forktest(void)
 
 	for (n = 0; n < 1000; n++) {
 		pid = fork();
-		if (pid < 0)
+		if (pid < 0) {
 			break;
-		if (pid == 0)
+		}
+		if (pid == 0) {
 			exit(0);
+		}
 	}
 
 	if (n == 1000) {
@@ -1489,8 +1512,9 @@ sbrktest(void)
 		fprintf(stdout, "sbrk test failed post-fork\n");
 		exit(0);
 	}
-	if (pid == 0)
+	if (pid == 0) {
 		exit(0);
+	}
 	wait(NULL);
 
 	// can one grow address space to something big?
@@ -1500,7 +1524,7 @@ sbrktest(void)
 	p = sbrk(amt);
 	if (p != a) {
 		fprintf(stdout,
-						"sbrk test failed to grow big address space; enough phys mem?\n");
+		        "sbrk test failed to grow big address space; enough phys mem?\n");
 		exit(0);
 	}
 	lastaddr = (char *)(BIG - 1);
@@ -1516,7 +1540,7 @@ sbrktest(void)
 	c = sbrk(0);
 	if (c != a - 4096) {
 		fprintf(stdout, "sbrk deallocation produced wrong address, a %p c %p\n", a,
-						c);
+		        c);
 		exit(0);
 	}
 
@@ -1568,18 +1592,21 @@ sbrktest(void)
 			sbrk(BIG - (uintptr_t)sbrk(0));
 			write(fds[1], "x", 1);
 			// sit around until killed
-			for (;;)
+			for (;;) {
 				sleep(1000);
+			}
 		}
-		if (pids[i] != -1)
+		if (pids[i] != -1) {
 			read(fds[0], &scratch, 1);
+		}
 	}
 	// if those failed allocations freed up the pages they did allocate,
 	// we'll be able to allocate here
 	c = sbrk(4096);
 	for (i = 0; i < sizeof(pids) / sizeof(pids[0]); i++) {
-		if (pids[i] == -1)
+		if (pids[i] == -1) {
 			continue;
+		}
 		kill(pids[i], SIGKILL);
 		wait(NULL);
 	}
@@ -1588,8 +1615,9 @@ sbrktest(void)
 		exit(0);
 	}
 
-	if ((char *)sbrk(0) > oldbrk)
+	if ((char *)sbrk(0) > oldbrk) {
 		sbrk(-((char *)sbrk(0) - oldbrk));
+	}
 
 	fprintf(stdout, "sbrk test OK\n");
 }
@@ -1600,12 +1628,12 @@ validateint(__attribute__((unused)) int *p)
 	int res;
 #ifndef X86_64
 	asm("mov %%esp, %%ebx\n\t"
-			"mov %3, %%rsp\n\t"
-			"int %2\n\t"
-			"mov %%ebx, %%esp"
-			: "=a"(res)
-			: "a"(SYS_sleep), "n"(T_SYSCALL), "c"(p)
-			: "ebx");
+	    "mov %3, %%rsp\n\t"
+	    "int %2\n\t"
+	    "mov %%ebx, %%esp"
+	    : "=a"(res)
+	    : "a"(SYS_sleep), "n"(T_SYSCALL), "c"(p)
+	    : "ebx");
 #endif
 }
 
@@ -1669,9 +1697,10 @@ bigargtest(void)
 	if (pid == 0) {
 		static char *args[MAXARG];
 		int i;
-		for (i = 0; i < MAXARG - 1; i++)
+		for (i = 0; i < MAXARG - 1; i++) {
 			args[i] =
 				"bigargs test: failed\n                                                                                                                                                                                                       ";
+		}
 		args[MAXARG - 1] = NULL;
 		fprintf(stdout, "bigarg test\n");
 		exec("echo", args);
@@ -1719,14 +1748,16 @@ fsfull(void)
 		int total = 0;
 		while (1) {
 			int cc = write(fd, buf, 512);
-			if (cc < 512)
+			if (cc < 512) {
 				break;
+			}
 			total += cc;
 		}
 		fprintf(stdout, "wrote %d bytes\n", total);
 		close(fd);
-		if (total == 0)
+		if (total == 0) {
 			break;
+		}
 	}
 
 	while (nfiles >= 0) {

@@ -1,6 +1,5 @@
 #pragma once
 #include "kernel/include/types.h"
-#include <time.h>
 
 // Nonstandard macros uses to make devices.
 #define makedev(maj, min) ((dev_t)(((dev_t)(maj) << 32) | (dev_t)(min)))

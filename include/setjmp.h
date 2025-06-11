@@ -1,6 +1,6 @@
 #pragma once
-#include <stdint.h>
 #include <signal.h>
+#include <stdint.h>
 
 typedef uint64_t __jmp_buf[8];
 
@@ -14,12 +14,8 @@ typedef struct __jmp_buf_tag jmp_buf[1];
 
 typedef jmp_buf sigjmp_buf;
 
-int
-setjmp(jmp_buf env) __attribute__((returns_twice));
-void
-longjmp(jmp_buf env, int val) __attribute__((noreturn));
+int setjmp(jmp_buf env) __attribute__((returns_twice));
+void longjmp(jmp_buf env, int val) __attribute__((noreturn));
 
-int
-sigsetjmp(jmp_buf env, int savemask) __attribute__((returns_twice));
-void
-siglongjmp(jmp_buf env, int val) __attribute__((noreturn));
+int sigsetjmp(jmp_buf env, int savemask) __attribute__((returns_twice));
+void siglongjmp(jmp_buf env, int val) __attribute__((noreturn));

@@ -145,30 +145,17 @@ struct winsize {
 	unsigned short ws_col;
 };
 
-speed_t
-cfgetispeed(const struct termios *);
-speed_t
-cfgetospeed(const struct termios *);
-int
-cfsetispeed(struct termios *, speed_t);
-int
-cfsetospeed(struct termios *, speed_t);
-int
-tcdrain(int);
-int
-tcflow(int, int);
-int
-tcflush(int, int);
-int
-tcgetattr(int, struct termios *);
-pid_t
-tcgetsid(int);
-int
-tcsendbreak(int, int);
-int
-tcsetattr(int, int, const struct termios *);
+speed_t cfgetispeed(const struct termios *);
+speed_t cfgetospeed(const struct termios *);
+int cfsetispeed(struct termios *, speed_t);
+int cfsetospeed(struct termios *, speed_t);
+int tcdrain(int);
+int tcflow(int, int);
+int tcflush(int, int);
+int tcgetattr(int, struct termios *);
+pid_t tcgetsid(int);
+int tcsendbreak(int, int);
+int tcsetattr(int, int, const struct termios *);
 
-int
-tcgetwinsize(int fd, struct winsize *);
-int
-tcsetwinsize(int fd, const struct winsize *);
+int tcgetwinsize(int fd, struct winsize *);
+int tcsetwinsize(int fd, const struct winsize *);

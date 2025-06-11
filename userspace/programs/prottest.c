@@ -1,7 +1,7 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 static void
 nulltest(int zero)
@@ -13,7 +13,7 @@ nulltest(int zero)
 int
 main(int argc, char **argv)
 {
-	nulltest(argc-1);
+	nulltest(argc - 1);
 	fprintf(stderr, "Tests passed! (This is not a good thing!)\n");
 	return 1;
 }

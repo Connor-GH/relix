@@ -1,9 +1,9 @@
-#include <sys/syscall.h>
-#include <sys/ptrace.h>
-#include <stdio.h>
 #include <stdbool.h>
-#include <unistd.h>
+#include <stdio.h>
 #include <string.h>
+#include <sys/ptrace.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 // remove "SYS_"
 // sizeof minus one because of the null terminator
@@ -14,8 +14,9 @@ int
 from_name_to_digit(char *string)
 {
 	for (int i = 0; i < SYSCALL_AMT; i++) {
-		if (strcmp(syscall_names[i], string) == 0)
+		if (strcmp(syscall_names[i], string) == 0) {
 			return i;
+		}
 	}
 	return -1;
 }
@@ -28,8 +29,8 @@ main(int argc, char **argv)
 	int argv_count_start = 0;
 	if (argc < 4) {
 		fprintf(stderr,
-						"Not enough arguments supplied.\n"
-						"Usage: ptrace [syscall] [/path/to/prog] [prog] [arguments]\n");
+		        "Not enough arguments supplied.\n"
+		        "Usage: ptrace [syscall] [/path/to/prog] [prog] [arguments]\n");
 		return 1;
 	}
 	for (int i = 1; i < argc; i++) {

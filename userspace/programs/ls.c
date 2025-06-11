@@ -1,15 +1,14 @@
 #include "stat.h"
-#include <sys/stat.h>
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <dirent.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
-#include <errno.h>
-#include <stdlib.h>
 
 #define KiB (1024UL)
 #define MiB (1024 * KiB)
@@ -71,8 +70,9 @@ fmtname(char *path, int fmt_flag)
 	p++;
 
 	// Return blank-padded name.
-	if (strlen(p) >= __DIRSIZ)
+	if (strlen(p) >= __DIRSIZ) {
 		return p;
+	}
 	memmove(buf, p, strlen(p));
 	switch (fmt_flag) {
 	default:
@@ -95,8 +95,9 @@ fmtname(char *path, int fmt_flag)
 		indicator = "*";
 		break;
 	}
-	if (!skip_fmt)
+	if (!skip_fmt) {
 		strncat(buf, indicator, 2);
+	}
 	if (fmt_flag == FMT_LINK) {
 		char sprintf_buf[__DIRSIZ];
 		char readlink_buf[__DIRSIZ];
@@ -114,13 +115,13 @@ fmtname(char *path, int fmt_flag)
 static char *
 mode_to_perm(mode_t mode, char ret[static 11])
 {
-	ret[0] = S_ISREG(mode) 		? '-' :
-					 S_ISDIR(mode)		? 'd' :
-					 S_ISBLK(mode)		? 'b' :
-					 S_ISCHR(mode)		? 'c' :
-					 S_ISLNK(mode)		? 'l' :
-					 S_ISFIFO(mode)   ? 'p' :
-															'?';
+	ret[0] = S_ISREG(mode)  ? '-' :
+	         S_ISDIR(mode)  ? 'd' :
+	         S_ISBLK(mode)  ? 'b' :
+	         S_ISCHR(mode)  ? 'c' :
+	         S_ISLNK(mode)  ? 'l' :
+	         S_ISFIFO(mode) ? 'p' :
+	                          '?';
 	ret[1] = mode & S_IRUSR ? 'r' : '-';
 	ret[2] = mode & S_IWUSR ? 'w' : '-';
 	ret[3] = mode & S_IXUSR ? 'x' : '-';
@@ -135,7 +136,7 @@ mode_to_perm(mode_t mode, char ret[static 11])
 }
 static void
 ls_format(char *buf, struct stat st, bool pflag, bool lflag, bool hflag,
-					bool iflag)
+          bool iflag)
 {
 	int fmt_ret = 0;
 	char human_bytes_buf[12];
@@ -159,19 +160,20 @@ ls_format(char *buf, struct stat st, bool pflag, bool lflag, bool hflag,
 	}
 	if (lflag) {
 		// inodes
-		if (iflag)
+		if (iflag) {
 			fprintf(stdout, "%9d ", st.st_ino);
+		}
 		char ret[11];
 		fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
-		if (hflag)
+		if (hflag) {
 			fprintf(stdout, "%4d %4d %s ", st.st_uid, st.st_gid,
-							to_human_bytes(st.st_size, human_bytes_buf));
-		else
+			        to_human_bytes(st.st_size, human_bytes_buf));
+		} else {
 			fprintf(stdout, "%4d %4d %6lu ", st.st_uid, st.st_gid, st.st_size);
+		}
 		struct tm *lt = localtime(&st.st_mtime);
-		fprintf(stdout, "%02d-%02d %02d:%02d ",
-					lt->tm_mon, lt->tm_mday,
-					lt->tm_hour, lt->tm_min);
+		fprintf(stdout, "%02d-%02d %02d:%02d ", lt->tm_mon, lt->tm_mday,
+		        lt->tm_hour, lt->tm_min);
 
 		if (S_ISLNK(st.st_mode)) {
 			fprintf(stdout, "%s\n", fmtname(buf, FMT_LINK));
@@ -218,8 +220,9 @@ ls(char *path, bool lflag, bool iflag, bool pflag, bool hflag)
 		char *p = buf + strlen(buf);
 		*p++ = '/';
 		while (read(fd, &de, sizeof(de)) == sizeof(de)) {
-			if (de.d_ino == 0)
+			if (de.d_ino == 0) {
 				continue;
+			}
 			strcpy(p, de.d_name);
 			if (stat(buf, &st) < 0) {
 				fprintf(stderr, "ls: cannot stat %s\n", buf);

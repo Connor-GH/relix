@@ -1,19 +1,19 @@
+#include <elf.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <elf.h>
-#include <fcntl.h>
 #include <unistd.h>
 
 void
 print_section_headers(__attribute__((unused)) int fd, struct Elf64_Ehdr *header,
-											struct Elf64_Shdr *section_headers, const char *strtab)
+                      struct Elf64_Shdr *section_headers, const char *strtab)
 {
 	printf("Section Headers:\n");
 	printf("%-30s %-10s %-10s\n", "Section Name", "Type", "Addr");
 	for (size_t i = 0; i < header->e_shnum; i++) {
 		printf("%-30s %-10d %-10lx\n", &strtab[section_headers[i].sh_name],
-					 section_headers[i].sh_type, section_headers[i].sh_addr);
+		       section_headers[i].sh_type, section_headers[i].sh_addr);
 	}
 }
 
@@ -26,11 +26,11 @@ compare(const void *c1, const void *c2)
 }
 void
 print_symbol_table(int fd, struct Elf64_Ehdr *header,
-									 struct Elf64_Shdr *section_headers, const char *strtab)
+                   struct Elf64_Shdr *section_headers, const char *strtab)
 {
 	for (size_t i = 0; i < header->e_shnum; i++) {
 		if (section_headers[i].sh_type == SHT_SYMTAB ||
-				section_headers[i].sh_type == SHT_DYNSYM) {
+		    section_headers[i].sh_type == SHT_DYNSYM) {
 			printf("Symbol Table (%s):\n", &strtab[section_headers[i].sh_name]);
 
 			struct Elf64_Shdr *symbol_table_header = &section_headers[i];
@@ -48,7 +48,7 @@ print_symbol_table(int fd, struct Elf64_Ehdr *header,
 			}
 
 			if ((size_t)read(fd, symbols, symbol_table_header->sh_size) !=
-					symbol_table_header->sh_size) {
+			    symbol_table_header->sh_size) {
 				perror("read");
 				free(symbols);
 				continue;
@@ -73,7 +73,7 @@ print_symbol_table(int fd, struct Elf64_Ehdr *header,
 			}
 
 			if ((size_t)read(fd, symbol_strtab, strtab_header->sh_size) !=
-					strtab_header->sh_size) {
+			    strtab_header->sh_size) {
 				perror("read");
 				free(symbols);
 				free(symbol_strtab);
@@ -82,13 +82,13 @@ print_symbol_table(int fd, struct Elf64_Ehdr *header,
 
 			printf("%-30s %-10s %-10s\n", "Function Name", "Addr", "Size");
 			qsort(symbols, symbol_table_header->sh_size / sizeof(struct Elf64_Sym),
-						sizeof(struct Elf64_Sym), compare);
+			      sizeof(struct Elf64_Sym), compare);
 			for (size_t j = 0;
-					 j < symbol_table_header->sh_size / sizeof(struct Elf64_Sym); j++) {
+			     j < symbol_table_header->sh_size / sizeof(struct Elf64_Sym); j++) {
 				// Only print function symbols (function type: STT_FUNC)
 				if (ELF64_ST_TYPE(symbols[j].st_info) == STT_FUNC) {
 					printf("%-30s %#-10lx %#-10lx\n", &symbol_strtab[symbols[j].st_name],
-								 symbols[j].st_value, symbols[j].st_size);
+					       symbols[j].st_value, symbols[j].st_size);
 				}
 			}
 
@@ -142,7 +142,7 @@ main(int argc, char *argv[])
 	}
 
 	if (read(fd, section_headers, header.e_shentsize * header.e_shnum) !=
-			header.e_shentsize * header.e_shnum) {
+	    header.e_shentsize * header.e_shnum) {
 		perror("read");
 		free(section_headers);
 		close(fd);
@@ -170,7 +170,7 @@ main(int argc, char *argv[])
 		}
 
 		if ((size_t)read(fd, (void *)strtab, strtab_header->sh_size) !=
-				strtab_header->sh_size) {
+		    strtab_header->sh_size) {
 			perror("read");
 			free(section_headers);
 			free((void *)strtab);
@@ -179,22 +179,22 @@ main(int argc, char *argv[])
 		}
 	}
 
-
-    // Print ELF Header
-    printf("ELF Header:\n");
-    printf("\tMagic:   ");
-    for (int i = 0; i < EI_NIDENT; i++)
-        printf("%02x ", header.e_ident[i]);
-    printf("\n");
-    printf("\tClass:                    %d\n", header.e_ident[EI_CLASS]);
-    printf("\tData:                     %d\n", header.e_ident[EI_DATA]);
-    printf("\tVersion:                  %d\n", header.e_ident[EI_VERSION]);
-    printf("\tOS/ABI:                   %d\n", header.e_ident[EI_OSABI]);
-    printf("\tABI Version:              %d\n", header.e_ident[EI_ABIVERSION]);
-    printf("\tType:                     %d\n", header.e_type);
-    printf("\tEntry point address:      %#lx\n", header.e_entry);
-    printf("\tStart of program headers: %lu\n", header.e_phoff);
-    printf("\tStart of section headers: %lu\n", header.e_shoff);
+	// Print ELF Header
+	printf("ELF Header:\n");
+	printf("\tMagic:   ");
+	for (int i = 0; i < EI_NIDENT; i++) {
+		printf("%02x ", header.e_ident[i]);
+	}
+	printf("\n");
+	printf("\tClass:                    %d\n", header.e_ident[EI_CLASS]);
+	printf("\tData:                     %d\n", header.e_ident[EI_DATA]);
+	printf("\tVersion:                  %d\n", header.e_ident[EI_VERSION]);
+	printf("\tOS/ABI:                   %d\n", header.e_ident[EI_OSABI]);
+	printf("\tABI Version:              %d\n", header.e_ident[EI_ABIVERSION]);
+	printf("\tType:                     %d\n", header.e_type);
+	printf("\tEntry point address:      %#lx\n", header.e_entry);
+	printf("\tStart of program headers: %lu\n", header.e_phoff);
+	printf("\tStart of section headers: %lu\n", header.e_shoff);
 
 	// Print section headers with their names
 	print_section_headers(fd, &header, section_headers, strtab);
@@ -202,8 +202,9 @@ main(int argc, char *argv[])
 	print_symbol_table(fd, &header, section_headers, strtab);
 
 	free(section_headers);
-	if (strtab)
+	if (strtab) {
 		free((void *)strtab);
+	}
 	close(fd);
 	return EXIT_SUCCESS;
 }

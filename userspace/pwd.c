@@ -1,15 +1,14 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
-#include <stddef.h>
 #include <pwd.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 static FILE *s_file_passwd = NULL;
 static struct passwd s_passwd_entry;
 static char s_buf[1024] = { 0 };
-
 
 void
 endpwent(void)
@@ -26,8 +25,9 @@ setpwent(void)
 	if (s_file_passwd == NULL) {
 		s_file_passwd = fopen("/etc/passwd", "r");
 
-		if (s_file_passwd == NULL)
+		if (s_file_passwd == NULL) {
 			perror("fopen /etc/passwd");
+		}
 	}
 	rewind(s_file_passwd);
 }
@@ -40,8 +40,9 @@ getpwent(void)
 	size_t n;
 
 	char *ret = fgets(s_buf, sizeof(s_buf), s_file_passwd);
-	if (ret == NULL)
+	if (ret == NULL) {
 		return NULL;
+	}
 
 	// Get rid of the newline at the end of the buffer.
 	s_buf[strcspn(s_buf, "\n")] = '\0';

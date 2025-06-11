@@ -13,16 +13,16 @@
 // * Only one process at a time can use a buffer,
 //     so do not keep them longer than necessary.
 
+#include "buf.h"
+#include "console.h"
+#include "ide.h"
+#include "kernel_assert.h"
+#include "macros.h"
+#include "param.h"
+#include "sleeplock.h"
+#include "spinlock.h"
 #include <stddef.h>
 #include <stdint.h>
-#include "kernel_assert.h"
-#include "param.h"
-#include "spinlock.h"
-#include "sleeplock.h"
-#include "console.h"
-#include "buf.h"
-#include "ide.h"
-#include "macros.h"
 
 extern int ncpu;
 #define NBUCKET NCPU
@@ -77,7 +77,8 @@ block_get(dev_t dev, uint64_t blockno) __acquires(&b->lock)
 
 	// Find cache from bucket hi.
 	acquire(&block_cache.bucket_lock[hi]);
-	for (b = block_cache.bucket[hi].next; b != &block_cache.bucket[hi]; b = b->next) {
+	for (b = block_cache.bucket[hi].next; b != &block_cache.bucket[hi];
+	     b = b->next) {
 		if (b->dev == dev && b->blockno == blockno) {
 			b->refcnt++;
 			release(&block_cache.bucket_lock[hi]);
@@ -88,7 +89,8 @@ block_get(dev_t dev, uint64_t blockno) __acquires(&b->lock)
 	// Not cached; recycle an unused buffer.
 	// Even if refcnt==0, B_DIRTY indicates a buffer is in use
 	// because log.c has modified it but not yet committed it.
-	for (b = block_cache.bucket[hi].prev; b != &block_cache.bucket[hi]; b = b->prev) {
+	for (b = block_cache.bucket[hi].prev; b != &block_cache.bucket[hi];
+	     b = b->prev) {
 		if (b->refcnt == 0 && (b->flags & B_DIRTY) == 0) {
 			b->dev = dev;
 			b->blockno = blockno;
@@ -104,10 +106,11 @@ block_get(dev_t dev, uint64_t blockno) __acquires(&b->lock)
 	for (size_t j = 0; j < min(NBUCKET, ncpu); j++) {
 		size_t i = (hi + j) % min(NBUCKET, ncpu);
 		acquire(&block_cache.bucket_lock[i]);
-		for (b = block_cache.bucket[i].next; b != &block_cache.bucket[i]; b = b->next) {
+		for (b = block_cache.bucket[i].next; b != &block_cache.bucket[i];
+		     b = b->next) {
 			if (b->refcnt == 0 && (b->flags & B_DIRTY) == 0) {
-				//b->prev->next = b->next;
-				//b->next->prev = b->prev;
+				// b->prev->next = b->next;
+				// b->next->prev = b->prev;
 				b->dev = dev;
 				b->blockno = blockno;
 				b->flags = 0;

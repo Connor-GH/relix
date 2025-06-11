@@ -28,17 +28,17 @@
 #include "vm.h"
 
 #include <defs.h>
-#include <stdint.h>
-#include <stat.h>
-#include <stdlib.h>
-#include <sys/uio.h>
 #include <dirent.h>
-#include <time.h>
-#include <fcntl.h>
 #include <errno.h>
-#include <stddef.h>
-#include <string.h>
+#include <fcntl.h>
+#include <stat.h>
 #include <stdatomic.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/uio.h>
+#include <time.h>
 
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
@@ -332,7 +332,7 @@ sys_open(void)
 	// sets it to zero if the flags that require it are not set.
 	PROPOGATE_ERR(argmode_t(2, &mode));
 	if (!(((flags & O_CREAT) == O_CREAT)) &&
-			!(((flags & O_TMPFILE) == O_TMPFILE))) {
+	    !(((flags & O_TMPFILE) == O_TMPFILE))) {
 		mode = 0777; // mode is ignored.
 	}
 
@@ -359,7 +359,7 @@ sys_mkdir(void)
 	}
 	begin_op();
 	if ((ip = filecreate(path, (S_IFDIR | mode) & ~myproc()->umask, 0, 0)) ==
-			NULL) {
+	    NULL) {
 		end_op();
 		return -ENOENT;
 	}
@@ -874,7 +874,7 @@ sys_mmap(void)
 	}
 	// We don't support MAP_PRIVATE for now.
 	if (!MMAP_HAS_FLAG(flags, MAP_SHARED) &&
-			!MMAP_HAS_FLAG(flags, MAP_ANONYMOUS)) {
+	    !MMAP_HAS_FLAG(flags, MAP_ANONYMOUS)) {
 		return -EINVAL;
 	}
 
@@ -884,17 +884,17 @@ sys_mmap(void)
 	int perm = mmap_prot_to_perm(prot);
 	struct mmap_info info;
 	if (!MMAP_HAS_FLAG(flags, MAP_ANONYMOUS) && file != NULL &&
-			S_ISCHR(file->ip->mode)) {
+	    S_ISCHR(file->ip->mode)) {
 		// "The file has been locked, or too much memory has been locked"
 		if (atomic_flag_is_set(&file->ip->lock.locked)) {
 			return -EAGAIN;
 		}
 		if (file->ip->major < 0 || file->ip->major >= NDEV ||
-				!devsw[file->ip->major].mmap) {
+		    !devsw[file->ip->major].mmap) {
 			return -ENODEV;
 		}
 		info = devsw[file->ip->major].mmap(file->ip->minor, length,
-																			 (uintptr_t)user_virt_addr, perm);
+		                                   (uintptr_t)user_virt_addr, perm);
 		info.file = file;
 	} else {
 		info =
@@ -913,11 +913,11 @@ sys_mmap(void)
 		uintptr_t user_phys_addr;
 		if (info.addr == 0) {
 			PROPOGATE_ERR(alloc_user_bytes(myproc()->pgdir, info.length,
-																		 info.virt_addr, &user_phys_addr));
+			                               info.virt_addr, &user_phys_addr));
 			info.addr = user_phys_addr;
 		} else {
 			PROPOGATE_ERR(mappages(myproc()->pgdir, (void *)info.virt_addr,
-														 info.length, info.addr, info.perm));
+			                       info.length, info.addr, info.perm));
 		}
 
 		myproc()->heapsz += info.length;
@@ -925,15 +925,16 @@ sys_mmap(void)
 		return (size_t)info.virt_addr;
 	} else {
 		if (mappages(proc->pgdir, user_virt_addr, info.length, info.addr,
-								 info.perm) < 0) {
-			// If we arrive here, odds are the physical address we were given is garbage.
+		             info.perm) < 0) {
+			// If we arrive here, odds are the physical address we were given is
+			// garbage.
 			void *ptr = kmalloc(info.length);
 			if (ptr == NULL) {
 				return -ENOMEM;
 			}
 			info.addr = V2P(ptr);
 			if (mappages(proc->pgdir, user_virt_addr, info.length, info.addr,
-									 info.perm) < 0) {
+			             info.perm) < 0) {
 				kfree(ptr);
 				return -ENOMEM;
 			}
@@ -964,9 +965,9 @@ sys_munmap(void)
 	int j = -1;
 	for (int i = 0; i < NMMAP; i++) {
 		if ((proc->mmap_info[i].virt_addr == (uintptr_t)addr) &&
-				((proc->mmap_info[i].length == length) ||
-				 (proc->mmap_info[i].file &&
-					S_ISCHR(proc->mmap_info[i].file->ip->mode)))) {
+		    ((proc->mmap_info[i].length == length) ||
+		     (proc->mmap_info[i].file &&
+		      S_ISCHR(proc->mmap_info[i].file->ip->mode)))) {
 			j = i;
 		}
 	}
@@ -1063,8 +1064,9 @@ sys_rename(void)
 				panic("rename: inode_write");
 			}
 
-			// In the case of "mv /foo /bar", we use the same directory pointer (inode).
-			// In that case, we do not want to try and lock the same inode twice.
+			// In the case of "mv /foo /bar", we use the same directory pointer
+			// (inode). In that case, we do not want to try and lock the same inode
+			// twice.
 			if (new_dp != dp) {
 				inode_lock(new_dp);
 			}

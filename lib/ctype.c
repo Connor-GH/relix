@@ -16,7 +16,7 @@ int
 isspace(int c)
 {
 	return c == ' ' || c == '\f' || c == '\n' || c == '\r' || c == '\t' ||
-				 c == '\v';
+	       c == '\v';
 }
 int
 isalpha(int c)
@@ -39,10 +39,8 @@ isprint(int c)
 int
 ispunct(int c)
 {
-	return (33 <= c && c <= 47) ||
-		(58 <= c && c <= 64) ||
-		(91 <= c && c <= 96) ||
-		(123 <= c && c <= 126);
+	return (33 <= c && c <= 47) || (58 <= c && c <= 64) || (91 <= c && c <= 96) ||
+	       (123 <= c && c <= 126);
 }
 
 int
@@ -60,20 +58,22 @@ islower(int c)
 int
 toupper(int c)
 {
-	if ('a' <= c && c <= 'z')
+	if ('a' <= c && c <= 'z') {
 		return c - 0x20;
-	else if ('A' <= c && c <= 'Z')
+	} else if ('A' <= c && c <= 'Z') {
 		return c;
+	}
 	return c;
 }
 
 int
 tolower(int c)
 {
-	if ('A' <= c && c <= 'Z')
+	if ('A' <= c && c <= 'Z') {
 		return c + 0x20;
-	else if ('a' <= c && c <= 'z')
+	} else if ('a' <= c && c <= 'z') {
 		return c;
+	}
 	return c;
 }
 

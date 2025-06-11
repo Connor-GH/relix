@@ -2,21 +2,21 @@
 // File descriptors
 //
 
-#include "fs.h"
-#include <errno.h>
-#include <string.h>
-#include <dirent.h>
-#include "param.h"
-#include "spinlock.h"
 #include "file.h"
 #include "console.h"
-#include "pipe.h"
+#include "fcntl_constants.h"
+#include "fs.h"
 #include "lib/ring_buffer.h"
 #include "log.h"
-#include "proc.h"
-#include "fcntl_constants.h"
 #include "lseek.h"
+#include "param.h"
+#include "pipe.h"
+#include "proc.h"
+#include "spinlock.h"
+#include <dirent.h>
+#include <errno.h>
 #include <stdbool.h>
+#include <string.h>
 
 struct devsw devsw[NDEV];
 static struct {
@@ -61,8 +61,9 @@ filedup(struct file *f)
 {
 	acquire(&ftable.lock);
 
-	if (unlikely(f->ref < 1))
+	if (unlikely(f->ref < 1)) {
 		panic("filedup");
+	}
 	f->ref++;
 	release(&ftable.lock);
 
@@ -96,16 +97,19 @@ link_dereference(struct inode *ip, char *buff) __must_hold(&ip->lock)
 	struct inode *new_ip = ip;
 	while (S_ISLNK(new_ip->mode)) {
 		ref_count--;
-		if (ref_count == 0)
+		if (ref_count == 0) {
 			goto bad;
+		}
 
-		if (inode_read(new_ip, buff, 0, new_ip->size) < 0)
+		if (inode_read(new_ip, buff, 0, new_ip->size) < 0) {
 			goto bad;
+		}
 
 		inode_unlock(new_ip);
 
-		if ((new_ip = namei(buff)) == NULL)
+		if ((new_ip = namei(buff)) == NULL) {
 			goto bad;
+		}
 		inode_lock(new_ip);
 	}
 	return new_ip;
@@ -122,12 +126,14 @@ filecreate(char *path, mode_t mode, short major, short minor)
 	char name[DIRSIZ];
 
 	// POSIX says that creat(2) makes an IFREG if IFMT is 0.
-	if ((mode & S_IFMT) == 0)
+	if ((mode & S_IFMT) == 0) {
 		mode |= S_IFREG;
+	}
 
 	// get inode of path, and put the name in name.
-	if ((dp = nameiparent(path, name)) == NULL)
+	if ((dp = nameiparent(path, name)) == NULL) {
 		return NULL;
+	}
 	inode_lock(dp);
 
 	// /dp/name is present
@@ -150,8 +156,9 @@ filecreate(char *path, mode_t mode, short major, short minor)
 		return NULL;
 	}
 
-	if ((ip = inode_alloc(dp->dev, mode)) == NULL)
+	if ((ip = inode_alloc(dp->dev, mode)) == NULL) {
 		panic("create: inode_alloc");
+	}
 
 	inode_lock(ip);
 	ip->major = major;
@@ -177,12 +184,14 @@ filecreate(char *path, mode_t mode, short major, short minor)
 		dp->nlink++; // for ".."
 		inode_update(dp);
 		// No ip->nlink++ for ".": avoid cyclic ref count.
-		if (dirlink(ip, ".", ip->inum) < 0 || dirlink(ip, "..", dp->inum) < 0)
+		if (dirlink(ip, ".", ip->inum) < 0 || dirlink(ip, "..", dp->inum) < 0) {
 			panic("create dots");
+		}
 	}
 
-	if (dirlink(dp, name, ip->inum) < 0)
+	if (dirlink(dp, name, ip->inum) < 0) {
 		panic("create: dirlink");
+	}
 
 	inode_unlockput(dp);
 
@@ -195,8 +204,9 @@ fileopen(char *path, int flags, mode_t mode)
 	int fd;
 	struct inode *ip;
 
-	if (path == NULL)
+	if (path == NULL) {
 		return -EFAULT;
+	}
 
 	begin_op();
 
@@ -332,8 +342,9 @@ get_fd:
 	if ((f = filealloc()) == NULL || (fd = fdalloc(f)) < 0) {
 		// Fileclose returns int but
 		// we ignore it because we error out regardless.
-		if (f)
+		if (f) {
 			(void)fileclose(f);
+		}
 		inode_unlockput(ip);
 		end_op();
 		return -EBADF;
@@ -346,17 +357,17 @@ get_fd:
 	f->off = (flags & O_APPEND) ? f->ip->size : 0;
 	f->readable = !((flags & O_ACCMODE) == O_WRONLY);
 	f->writable = ((flags & O_ACCMODE) == O_WRONLY) ||
-								((flags & O_ACCMODE) == O_RDWR);
+	              ((flags & O_ACCMODE) == O_RDWR);
 	return fd;
 }
 // Close file f.  (Decrement ref count, close when reaches 0.)
 int
 fileclose(struct file *f)
 {
-
 	acquire(&ftable.lock);
-	if (unlikely(f->ref < 1))
+	if (unlikely(f->ref < 1)) {
 		panic("fileclose: file already closed");
+	}
 	// Is the file open somewhere else?
 	// If so, just leave with success.
 	if (--f->ref > 0) {
@@ -364,7 +375,8 @@ fileclose(struct file *f)
 		return 0;
 	}
 	if (S_ISCHR(f->ip->mode)) {
-		if (f->ip->major < 0 || f->ip->major >= NDEV || devsw[f->ip->major].close == NULL) {
+		if (f->ip->major < 0 || f->ip->major >= NDEV ||
+		    devsw[f->ip->major].close == NULL) {
 			release(&ftable.lock);
 			return -ENODEV;
 		}
@@ -409,17 +421,18 @@ filestat(struct file *f, struct stat *st)
 ssize_t
 fileread(struct file *f, char *addr, uint64_t n)
 {
-
-	if (f->readable == 0)
+	if (f->readable == 0) {
 		return -EINVAL;
+	}
 	if (f->type == FD_PIPE || f->type == FD_FIFO) {
 		return piperead(f->pipe, addr, n);
 	} else if (f->type == FD_INODE) {
 		inode_lock(f->ip);
 		ssize_t r = inode_read(f->ip, addr, f->off, n);
 		inode_unlock(f->ip);
-		if (r < 0)
+		if (r < 0) {
 			return r;
+		}
 
 		// We have read this many bytes, so
 		// increase the offset.
@@ -451,11 +464,12 @@ fileseek(struct file *f, off_t n, int whence)
 ssize_t
 filewrite(struct file *f, char *addr, uint64_t n)
 {
-
-	if (f->writable == 0)
+	if (f->writable == 0) {
 		return -EROFS;
-	if (f->type == FD_PIPE || f->type == FD_FIFO)
+	}
+	if (f->type == FD_PIPE || f->type == FD_FIFO) {
 		return pipewrite(f->pipe, addr, n);
+	}
 	if (f->type == FD_INODE) {
 		// write a few blocks at a time to avoid exceeding
 		// the maximum log transaction size, including
@@ -467,8 +481,9 @@ filewrite(struct file *f, char *addr, uint64_t n)
 		size_t i = 0;
 		while (i < n) {
 			size_t n1 = n - i;
-			if (n1 > max)
+			if (n1 > max) {
 				n1 = max;
+			}
 
 			// begin_op()/end_op() is here because
 			// we only need to setup the log
@@ -479,13 +494,15 @@ filewrite(struct file *f, char *addr, uint64_t n)
 			inode_unlock(f->ip);
 			end_op();
 
-			if (r < 0)
+			if (r < 0) {
 				return r;
+			}
 
 			f->off += r;
 
-			if (r != n1)
+			if (r != n1) {
 				panic("short filewrite");
+			}
 			i += r;
 		}
 		return i == n ? n : -EDOM;
@@ -495,7 +512,7 @@ filewrite(struct file *f, char *addr, uint64_t n)
 
 static int
 name_of_inode(struct inode *ip, struct inode *parent, char buf[static DIRSIZ],
-							size_t n)
+              size_t n)
 {
 	struct dirent de;
 	for (off_t off = 0; off < parent->size; off += sizeof(de)) {

@@ -1,12 +1,12 @@
+#include "ahci.h"
+#include "console.h"
+#include "kalloc.h"
+#include "kernel_assert.h"
+#include "macros.h"
+#include "memlayout.h"
 #include <pci.h>
 #include <stdint.h>
-#include "console.h"
-#include "ahci.h"
-#include "memlayout.h"
 #include <string.h>
-#include "kernel_assert.h"
-#include "kalloc.h"
-#include "macros.h"
 
 #define SATA_SIG_ATA 0x00000101 // SATA drive
 #define SATA_SIG_ATAPI 0xEB140101 // SATAPI drive
@@ -65,10 +65,12 @@ stop_cmd(HBAPort *port)
 
 	// Wait until Fr (bit14), Cr (bit15) are cleared
 	while (1) {
-		if (port->cmd & HBA_PxCMD_FR)
+		if (port->cmd & HBA_PxCMD_FR) {
 			continue;
-		if (port->cmd & HBA_PxCMD_CR)
+		}
+		if (port->cmd & HBA_PxCMD_CR) {
 			continue;
+		}
 		break;
 	}
 }
@@ -80,8 +82,9 @@ find_cmdslot(HBAPort *port)
 	// If not set in Sact and Ci, the slot is free
 	uint32_t slots = (port->sact | port->ci);
 	for (int i = 0; i < 32; i++) {
-		if ((slots & (1 << i)) == 0)
+		if ((slots & (1 << i)) == 0) {
 			return i;
+		}
 	}
 	uart_printf("Cannot find free command list entry\n");
 	return -1;
@@ -105,7 +108,8 @@ ata_clear_pending_interrupts(HBAPort *port)
 static HBACmdHeader *
 ata_setup_command_header(HBAPort *port, uint32_t count, int slot, bool writing)
 {
-	HBACmdHeader *cmdheader = (HBACmdHeader *)((uintptr_t)P2V((uintptr_t)port->clb));
+	HBACmdHeader *cmdheader =
+		(HBACmdHeader *)((uintptr_t)P2V((uintptr_t)port->clb));
 
 	cmdheader += slot;
 	// Command FIS length
@@ -115,7 +119,7 @@ ata_setup_command_header(HBAPort *port, uint32_t count, int slot, bool writing)
 	if (writing) {
 		cmdheader->w = 1;
 		cmdheader->c = 1; // Read from device
-		//cmdheader->p = 1; // Read from device
+		// cmdheader->p = 1; // Read from device
 	} else {
 		cmdheader->w = 0;
 	}
@@ -128,19 +132,20 @@ ata_setup_command_header(HBAPort *port, uint32_t count, int slot, bool writing)
 static HBACmdTbl *
 ata_setup_command_table(HBACmdHeader *cmdheader, uint16_t *buf, uint16_t *count)
 {
-	HBACmdTbl *cmdtbl = (HBACmdTbl *)P2V((uintptr_t)cmdheader->ctba | ((uintptr_t)cmdheader->ctbau << 32));
+	HBACmdTbl *cmdtbl = (HBACmdTbl *)P2V((uintptr_t)cmdheader->ctba |
+	                                     ((uintptr_t)cmdheader->ctbau << 32));
 
 	memset(cmdtbl, 0,
-				 sizeof(HBACmdTbl) + (cmdheader->prdtl - 1) * sizeof(HBAPRDTEntry));
+	       sizeof(HBACmdTbl) + (cmdheader->prdtl - 1) * sizeof(HBAPRDTEntry));
 
 	int i = 0;
 	// 8K bytes (16 sectors) per PRDT
 	for (; i < cmdheader->prdtl - 1; i++) {
 		cmdtbl->prdt_entry[i].dba = V2P((uintptr_t)buf) & 0xFFFFFFFF;
 		cmdtbl->prdt_entry[i].dbau = V2P((uintptr_t)buf) >> 32 & 0xFFFFFFFF;
-		cmdtbl->prdt_entry[i].dbc =
-			8 * 1024 -
-			1; // 8K bytes (this value should always be set to 1 less than the actual value)
+		cmdtbl->prdt_entry[i].dbc = 8 * 1024 - 1; // 8K bytes (this value should
+		                                          // always be set to 1 less than
+		                                          // the actual value)
 		cmdtbl->prdt_entry[i].i = 1;
 		buf += 4 * 1024; // 4K words
 		*count -= 16; // 16 sectors
@@ -156,7 +161,8 @@ ata_setup_command_table(HBACmdHeader *cmdheader, uint16_t *buf, uint16_t *count)
 }
 
 static FISRegH2D *
-ata_setup_command_fis(HBACmdTbl *cmdtbl, uint64_t start, uint16_t count, uint8_t command)
+ata_setup_command_fis(HBACmdTbl *cmdtbl, uint64_t start, uint16_t count,
+                      uint8_t command)
 {
 	uint32_t startl = start & 0xFFFFFFFF;
 	uint32_t starth = (start >> 32) & 0xFFFFFFFF;
@@ -186,7 +192,8 @@ static bool
 wait_on_disk(HBAPort *port, int slot)
 {
 	int spin = 0;
-	// The below loop waits until the port is no longer busy before issuing a new command
+	// The below loop waits until the port is no longer busy before issuing a new
+	// command
 	while ((port->tfd & (ATA_DEV_BUSY | ATA_DEV_DRQ)) && spin < 1000000) {
 		spin++;
 	}
@@ -198,15 +205,14 @@ wait_on_disk(HBAPort *port, int slot)
 	port->ci = 1 << slot;
 
 	while (1) {
-
 		// In some longer duration reads, it may be helpful to spin on the Dps bit
 		// in the PxIs port field as well (1 << 5)
-		if ((port->ci & (1 << slot)) == 0)
+		if ((port->ci & (1 << slot)) == 0) {
 			break;
+		}
 
 		// Task file error status
-		if (port->is & HBA_PxIS_TFES)
-		{
+		if (port->is & HBA_PxIS_TFES) {
 			uart_printf("Read disk error\n");
 			return false;
 		}
@@ -220,48 +226,49 @@ wait_on_disk(HBAPort *port, int slot)
 }
 
 bool
-read_port(HBAPort *port, uint64_t start, uint16_t count,
-		 uint16_t *buf)
+read_port(HBAPort *port, uint64_t start, uint16_t count, uint16_t *buf)
 {
 	ata_clear_pending_interrupts(port);
 	// Spin lock timeout counter
 	int spin = 0;
 	int slot = find_cmdslot(port);
-	if (slot == -1)
+	if (slot == -1) {
 		return false;
+	}
 
 	HBACmdHeader *cmdheader = ata_setup_command_header(port, count, slot, false);
 
 	HBACmdTbl *cmdtbl = ata_setup_command_table(cmdheader, buf, &count);
 
-	FISRegH2D *cmdfis = ata_setup_command_fis(cmdtbl, start, count, ATA_CMD_READ_DMA_EX);
+	FISRegH2D *cmdfis =
+		ata_setup_command_fis(cmdtbl, start, count, ATA_CMD_READ_DMA_EX);
 
 	return wait_on_disk(port, slot);
 }
 
 bool
-write_port(HBAPort *port, uint64_t start, uint16_t count,
-		 uint16_t *buf)
+write_port(HBAPort *port, uint64_t start, uint16_t count, uint16_t *buf)
 {
 	ata_clear_pending_interrupts(port);
 	// Spin lock timeout counter
 	int spin = 0;
 	int slot = find_cmdslot(port);
-	if (slot == -1)
+	if (slot == -1) {
 		return false;
+	}
 
 	HBACmdHeader *cmdheader = ata_setup_command_header(port, count, slot, true);
 
 	HBACmdTbl *cmdtbl = ata_setup_command_table(cmdheader, buf, &count);
 
-	FISRegH2D *cmdfis = ata_setup_command_fis(cmdtbl, start, count, ATA_CMD_WRITE_DMA_EX);
+	FISRegH2D *cmdfis =
+		ata_setup_command_fis(cmdtbl, start, count, ATA_CMD_WRITE_DMA_EX);
 
 	return wait_on_disk(port, slot);
 }
 
 bool
-disk_identify(HBAPort *port,
-		 IdentifyDevicePIO *buf)
+disk_identify(HBAPort *port, IdentifyDevicePIO *buf)
 {
 	ata_clear_pending_interrupts(port);
 	// Spin lock timeout counter
@@ -269,18 +276,20 @@ disk_identify(HBAPort *port,
 	uint16_t count = 1;
 	uint64_t start = 0;
 	int slot = find_cmdslot(port);
-	if (slot == -1)
+	if (slot == -1) {
 		return false;
+	}
 
 	HBACmdHeader *cmdheader = ata_setup_command_header(port, count, slot, false);
 
 	cmdheader->prdtl = 1;
-	HBACmdTbl *cmdtbl = ata_setup_command_table(cmdheader, (uint16_t *)buf, &count);
+	HBACmdTbl *cmdtbl =
+		ata_setup_command_table(cmdheader, (uint16_t *)buf, &count);
 
-	FISRegH2D *cmdfis = ata_setup_command_fis(cmdtbl, start, count, ATA_CMD_IDENTIFY_PIO);
+	FISRegH2D *cmdfis =
+		ata_setup_command_fis(cmdtbl, start, count, ATA_CMD_IDENTIFY_PIO);
 
 	return wait_on_disk(port, slot);
-
 }
 
 // Check device type
@@ -291,10 +300,12 @@ check_type(HBAPort *port)
 	uint8_t ipm = (ssts >> 8) & 0xF;
 	uint8_t det = ssts & 0xF;
 
-	if (det != HBA_PORT_DET_PRESENT) // Check drive status
+	if (det != HBA_PORT_DET_PRESENT) { // Check drive status
 		return AHCI_DEV_NULL;
-	if (ipm != HBA_PORT_IPM_ACTIVE)
+	}
+	if (ipm != HBA_PORT_IPM_ACTIVE) {
 		return AHCI_DEV_NULL;
+	}
 	switch (port->sig) {
 	case SATA_SIG_ATAPI:
 		return AHCI_DEV_SATAPI;
@@ -314,7 +325,6 @@ void
 port_rebase(HBAPort *port, int portno)
 {
 	stop_cmd(port); // Stop command engine
-
 
 	/*
 	 * Todo:
@@ -338,11 +348,12 @@ port_rebase(HBAPort *port, int portno)
 
 	// Command table offset: 40K + 8K*portno
 	// Command table size = 256*32 = 8K per port
-	HBACmdHeader *cmdheader = (HBACmdHeader *)((uintptr_t)P2V((uintptr_t)port->clb));
+	HBACmdHeader *cmdheader =
+		(HBACmdHeader *)((uintptr_t)P2V((uintptr_t)port->clb));
 	kernel_assert((uintptr_t)cmdheader % 128 == 0);
 	memset(cmdheader, 0, sizeof(*cmdheader) * 32);
 	for (int i = 0; i < 32; i++) {
- 		// 8 prdt entries per command table
+		// 8 prdt entries per command table
 		cmdheader[i].prdtl = 8;
 		// 256 bytes per command table, 64+16+48+16*8
 		// Command table offset: 40K + 8K*portno + cmdheader_index*256
@@ -357,8 +368,8 @@ port_rebase(HBAPort *port, int portno)
 static void
 ata_string_to_cstring(char *buf, size_t size)
 {
-	for (size_t i = 0; i < size-1; i+=2) {
-		swap(buf[i], buf[i+1]);
+	for (size_t i = 0; i < size - 1; i += 2) {
+		swap(buf[i], buf[i + 1]);
 	}
 }
 
@@ -367,7 +378,6 @@ ata_parse_identify_device_info(IdentifyDevicePIO info)
 {
 	// Assures that ATA_CMD_READ_DMA_EX and ATA_CMD_WRITE_DMA_EX are aupported.
 	kernel_assert(info.commands_feature_sets_supported2 & (1 << 10));
-
 
 	char model_num_buf[41];
 	memcpy(model_num_buf, info.model_number, 40);
@@ -382,15 +392,14 @@ ata_parse_identify_device_info(IdentifyDevicePIO info)
 	additional_product_id[8] = '\0';
 
 	// This field is optional.
-	if (additional_product_id[0] != '\0')
+	if (additional_product_id[0] != '\0') {
 		pr_debug_file("Additional id: %s\n", additional_product_id);
-
+	}
 
 	// Trivial disk info
 	pr_debug_file("is_ata_device=(%s), %d:1 logical:physical sectors\n",
-							BOOL_STRING(IS_ATA_DEVICE(info.general_configuration)),
-					 		1 << (info.physical_or_logical_sector_size & 0xF)
-	);
+	              BOOL_STRING(IS_ATA_DEVICE(info.general_configuration)),
+	              1 << (info.physical_or_logical_sector_size & 0xF));
 
 #if defined(SATA_MAJOR_AND_MINOR) && SATA_MAJOR_AND_MINOR
 	pr_debug_file("Transport Major: ");
@@ -402,7 +411,8 @@ ata_parse_identify_device_info(IdentifyDevicePIO info)
 		} else if (info.transport_major_version_number & (1 << 1)) {
 			pr_debug("ATA/ATAPI-7");
 		} else {
-			pr_debug("(unknown PATA %x)", info.transport_major_version_number & ~(0b1111 << 12));
+			pr_debug("(unknown PATA %x)",
+			         info.transport_major_version_number & ~(0b1111 << 12));
 		}
 		break;
 	}
@@ -458,29 +468,64 @@ ata_parse_identify_device_info(IdentifyDevicePIO info)
 
 	pr_debug_file("ACS Minor: ");
 	switch (info.minor_version_number) {
-	case 0xFFFF: case 0: pr_debug_file("(not reported)"); break;
-	case 0x1F: pr_debug_file("ACS-3 revision 3b"); break;
-	case 0x27: pr_debug_file("ATA8-ACS version 3c"); break;
-	case 0x28: pr_debug_file("ATA8-ACS version 6"); break;
-	case 0x29: pr_debug_file("ATA8-ACS version 4"); break;
-	case 0x31: pr_debug_file("ACS-2 revision 2"); break;
-	case 0x33: pr_debug_file("ATA8-ACS version 3e"); break;
-	case 0x39: pr_debug_file("ATA8-ACS version 4c"); break;
-	case 0x42: pr_debug_file("ATA8-ACS version 3f"); break;
-	case 0x52: pr_debug_file("ATA8-ACS version 3b"); break;
-	case 0x5e: pr_debug_file("ACS-4 revision 5"); break;
-	case 0x6d: pr_debug_file("ACS-3 revision 5"); break;
-	case 0x82: pr_debug_file("ACS-2 ANSI INCITS 482-2012"); break;
-	case 0x107: pr_debug_file("ATA8-ACS version 2d"); break;
-	case 0x10a: pr_debug_file("ACS-3 ANSI INCITS 522-2014"); break;
-	case 0x110: pr_debug_file("ACS-2 revision 3"); break;
-	case 0x11b: pr_debug_file("ACS-3 revision 4"); break;
-	default: pr_debug_file("(unknown)"); break;
+	case 0xFFFF:
+	case 0:
+		pr_debug_file("(not reported)");
+		break;
+	case 0x1F:
+		pr_debug_file("ACS-3 revision 3b");
+		break;
+	case 0x27:
+		pr_debug_file("ATA8-ACS version 3c");
+		break;
+	case 0x28:
+		pr_debug_file("ATA8-ACS version 6");
+		break;
+	case 0x29:
+		pr_debug_file("ATA8-ACS version 4");
+		break;
+	case 0x31:
+		pr_debug_file("ACS-2 revision 2");
+		break;
+	case 0x33:
+		pr_debug_file("ATA8-ACS version 3e");
+		break;
+	case 0x39:
+		pr_debug_file("ATA8-ACS version 4c");
+		break;
+	case 0x42:
+		pr_debug_file("ATA8-ACS version 3f");
+		break;
+	case 0x52:
+		pr_debug_file("ATA8-ACS version 3b");
+		break;
+	case 0x5e:
+		pr_debug_file("ACS-4 revision 5");
+		break;
+	case 0x6d:
+		pr_debug_file("ACS-3 revision 5");
+		break;
+	case 0x82:
+		pr_debug_file("ACS-2 ANSI INCITS 482-2012");
+		break;
+	case 0x107:
+		pr_debug_file("ATA8-ACS version 2d");
+		break;
+	case 0x10a:
+		pr_debug_file("ACS-3 ANSI INCITS 522-2014");
+		break;
+	case 0x110:
+		pr_debug_file("ACS-2 revision 3");
+		break;
+	case 0x11b:
+		pr_debug_file("ACS-3 revision 4");
+		break;
+	default:
+		pr_debug_file("(unknown)");
+		break;
 	}
 	pr_debug_file("\n");
 #endif
-
-
 }
 
 void
@@ -494,12 +539,12 @@ probe_port(HBAMem *abar_)
 			if (dt == AHCI_DEV_SATA) {
 				uart_printf("Sata drive found at port %d\n", i);
 				port_rebase(&abar_->ports[i], i);
-				IdentifyDevicePIO pio = {0};
+				IdentifyDevicePIO pio = { 0 };
 				disk_identify(&abar->ports[i], &pio);
 				ata_parse_identify_device_info(pio);
 
 #if __KERNEL_DEBUG__
-				uint16_t buf[256] = {1, 2, 3, 0};
+				uint16_t buf[256] = { 1, 2, 3, 0 };
 				pr_debug_file("Reading first 512 bytes...\n");
 				read_port(&abar_->ports[i], 0, 1, buf);
 

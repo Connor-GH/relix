@@ -1,9 +1,10 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
-int main(void)
+int
+main(void)
 {
 	char buf[PATH_MAX];
 	if (getcwd(buf, sizeof(buf)) == NULL) {

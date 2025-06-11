@@ -1,16 +1,16 @@
-#include <sys/types.h>
-#include <sys/times.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
+#include <sys/times.h>
+#include <sys/types.h>
 
-#include <stdlib.h>
+#include <dirent.h>
+#include <errno.h>
 #include <limits.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-#include <dirent.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <errno.h>
 
 #include "libc_syscalls.h"
 
@@ -19,7 +19,6 @@ fork(void)
 {
 	return __syscall_ret(__syscall0(SYS_fork));
 }
-
 
 void __noreturn
 _exit(int status)
@@ -43,34 +42,36 @@ pipe(int pipefd[2])
 ssize_t
 read(int fd, void *buf, size_t count)
 {
-	if (fd < 0)
+	if (fd < 0) {
 		return __syscall_ret(-EBADF);
+	}
 	return __syscall_ret(__syscall3(SYS_read, fd, (long)buf, count));
 }
 
 ssize_t
 write(int fd, const void *buf, size_t count)
 {
-	if (fd < 0)
+	if (fd < 0) {
 		return __syscall_ret(-EBADF);
+	}
 	return __syscall_ret(__syscall3(SYS_write, fd, (long)buf, count));
 }
 
 int
 close(int fd)
 {
-	if (fd < 0)
+	if (fd < 0) {
 		return __syscall_ret(-EBADF);
+	}
 	return __syscall_ret(__syscall1(SYS_close, fd));
 }
-
 
 int
 execve(const char *pathname, char *const argv[], char *const envp[])
 {
-	return __syscall_ret(__syscall3(SYS_execve, (long)pathname, (long)argv, (long)envp));
+	return __syscall_ret(
+		__syscall3(SYS_execve, (long)pathname, (long)argv, (long)envp));
 }
-
 
 int
 unlink(const char *pathname)
@@ -150,7 +151,6 @@ getgid(void)
 	return __syscall_ret(__syscall0(SYS_getgid));
 }
 
-
 int
 symlink(const char *target, const char *linkpath)
 {
@@ -160,7 +160,8 @@ symlink(const char *target, const char *linkpath)
 ssize_t
 readlink(const char *restrict pathname, char *restrict linkpath, size_t buf)
 {
-	return __syscall_ret(__syscall3(SYS_readlink, (long)pathname, (long)linkpath, buf));
+	return __syscall_ret(
+		__syscall3(SYS_readlink, (long)pathname, (long)linkpath, buf));
 }
 
 off_t
@@ -185,27 +186,29 @@ getcwd(char *buf, size_t n)
 	// but I will make an exception this *once*.
 	if (buf == NULL) {
 		size_t alloc_size;
-		if (n == 0)
+		if (n == 0) {
 			alloc_size = PATH_MAX;
-		else
+		} else {
 			alloc_size = n;
+		}
 
 		buf = malloc(alloc_size);
-		if (buf == NULL)
+		if (buf == NULL) {
 			return NULL;
+		}
 
 		return buf;
 	}
 
 	int ret = __syscall_ret(__syscall2(SYS_getcwd, (long)buf, n));
-	if (ret < 0)
+	if (ret < 0) {
 		return NULL;
-	else
+	} else {
 		return buf;
+	}
 }
 
-__deprecated("Removed in POSIX.1-2008; use fork()") pid_t
-vfork(void)
+__deprecated("Removed in POSIX.1-2008; use fork()") pid_t vfork(void)
 {
 	return __syscall_ret(__syscall0(SYS_vfork));
 }
@@ -240,8 +243,9 @@ char *
 ttyname(int fd)
 {
 	int ret = ttyname_r(fd, ttyname_buf, sizeof(ttyname_buf));
-	if (ret < 0)
+	if (ret < 0) {
 		return NULL;
+	}
 	return ttyname_buf;
 }
 
@@ -255,8 +259,9 @@ ttyname_r(int fd, char *buf, size_t buflen)
 	}
 	// Go through /dev to find devices (for tty).
 	DIR *dir = opendir("/dev");
-	if (dir == NULL)
+	if (dir == NULL) {
 		return -1;
+	}
 	struct dirent *d;
 	while ((d = readdir(dir)) != NULL) {
 		// We found the right file. Put its pathname in buf.

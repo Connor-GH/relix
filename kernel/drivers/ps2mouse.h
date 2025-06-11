@@ -7,7 +7,5 @@
 #define MOUSE_YSIGN 1 << 5
 #define MOUSE_ALWAYS_SET 0xC0
 
-void
-ps2mouseintr(void);
-void
-ps2mouseinit(void);
+void ps2mouseintr(void);
+void ps2mouseinit(void);

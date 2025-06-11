@@ -1,10 +1,7 @@
 #pragma once
-int
-abs(int j);
-double
-fabs(double x);
-double
-pow(double x, double y);
+int abs(int j);
+double fabs(double x);
+double pow(double x, double y);
 
 #define NAN (__builtin_nanf(""))
 #define INFINITY (__builtin_inff())
@@ -22,5 +19,5 @@ pow(double x, double y);
 #define isfinite(x) __builtin_isfinite(x)
 #define isnormal(x) __builtin_isnormal(x)
 #define isnan(x) __builtin_isnan(x)
-#define fpclassify(x) __builtin_fpclassify(FP_NAN, FP_INFINITE, \
-		FP_NORMAL, FP_SUBNORMAL, FP_ZERO, x)
+#define fpclassify(x) \
+	__builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, x)

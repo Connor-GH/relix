@@ -1,7 +1,7 @@
+#include "libc_syscalls.h"
+#include <stdarg.h>
 #include <sys/ioctl.h>
 #include <sys/syscall.h>
-#include <stdarg.h>
-#include "libc_syscalls.h"
 
 int
 ioctl(int fd, unsigned long request, ...)

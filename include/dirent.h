@@ -19,11 +19,7 @@ struct __DIR {
 };
 typedef struct __DIR DIR;
 
-DIR *
-opendir(const char *name);
-DIR *
-fdopendir(int fd);
-int
-closedir(DIR *dir);
-struct dirent *
-readdir(DIR *dirp);
+DIR *opendir(const char *name);
+DIR *fdopendir(int fd);
+int closedir(DIR *dir);
+struct dirent *readdir(DIR *dirp);

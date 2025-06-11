@@ -1,8 +1,8 @@
 #include "boot/multiboot2.h"
-#include "vga.h"
-#include <stdint.h>
 #include "console.h"
 #include "symbols.h"
+#include "vga.h"
+#include <stdint.h>
 
 const char *
 multiboot_mmap_type(int type)

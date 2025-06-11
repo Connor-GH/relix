@@ -4,8 +4,8 @@
 
 #include <elf.h>
 #include <stddef.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*
  * There is no P2V because this is so early
@@ -43,7 +43,7 @@ compare_symbols(const void *c1, const void *c2)
 
 void
 symbol_table_init(const struct Elf64_Shdr *sections, uint16_t entsize,
-									uint16_t num)
+                  uint16_t num)
 {
 	if (sections == NULL) {
 		log_no_symbols("sections == NULL");

@@ -1,6 +1,6 @@
-#include <unistd.h>
-#include <stdio.h>
 #include <setjmp.h>
+#include <stdio.h>
+#include <unistd.h>
 
 jmp_buf buf;
 
@@ -22,5 +22,4 @@ main(void)
 		func();
 	}
 	return 0;
-
 }

@@ -1,7 +1,7 @@
 #pragma once
+#include "lib/compiler_attributes.h"
 #include <stdint.h>
 #include <time.h>
-#include "lib/compiler_attributes.h"
 extern volatile uint32_t *lapic;
 
 // Local APIC registers, divided by 4 for use as uint[] indices.
@@ -40,16 +40,10 @@ extern volatile uint32_t *lapic;
 #define TICR (0x0380 / 4) // Timer Initial Count
 #define TCCR (0x0390 / 4) // Timer Current Count
 #define TDCR (0x03E0 / 4) // Timer Divide Configuration
-time_t
-rtc_now(void);
-int
-lapicid(void);
-void
-lapiceoi(void);
-void
-lapicinit(void);
+time_t rtc_now(void);
+int lapicid(void);
+void lapiceoi(void);
+void lapicinit(void);
 __suppress_sanitizer("alignment") void lapicstartap(uint8_t a, uint32_t b);
-void
-lapicw(int index, int value);
-void
-microdelay(int);
+void lapicw(int index, int value);
+void microdelay(int);

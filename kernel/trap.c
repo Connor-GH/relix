@@ -1,25 +1,24 @@
 #include "kalloc.h"
 #include "memlayout.h"
-#include <stdint.h>
 #include <signal.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <time.h>
 
-#include "drivers/mmu.h"
 #include "drivers/lapic.h"
+#include "drivers/mmu.h"
 #include "drivers/ps2mouse.h"
 
+#include "console.h"
+#include "ide.h"
+#include "kbd.h"
 #include "proc.h"
-#include "x86.h"
+#include "spinlock.h"
+#include "syscall.h"
 #include "trap.h"
 #include "traps.h"
-#include "spinlock.h"
-#include "ide.h"
-#include "syscall.h"
-#include "kbd.h"
 #include "uart.h"
-#include "console.h"
+#include "x86.h"
 
 enum {
 	PAGE_FAULT_PRESENT = 1 << 0,
@@ -160,20 +159,20 @@ trap(struct trapframe *tf)
 	case T_IRQ0 + 7:
 	case T_IRQ0 + IRQ_SPURIOUS:
 		uart_printf("cpu%d: spurious interrupt at %#lx:%#lx\n", my_cpu_id(), tf->cs,
-								tf->rip);
+		            tf->rip);
 		lapiceoi();
 		break;
 	case T_BRKPT:
 	case T_DEBUG:
 		uart_printf("cpu%d: breakpoint/trap at %#lx:%#lx\n", my_cpu_id(), tf->cs,
-								tf->rip);
+		            tf->rip);
 		regdump(tf);
 		kill(myproc()->pid, SIGTRAP);
 		break;
 	case T_ILLOP:
 		uart_printf("Illegal instruction\n");
 		uart_printf("from cpu %d rip %lx (cr2=%#lx)\n", my_cpu_id(), tf->rip,
-								rcr2());
+		            rcr2());
 		if ((tf->cs & 3) == DPL_USER) {
 			kill(myproc()->pid, SIGILL);
 		} else {
@@ -185,13 +184,13 @@ trap(struct trapframe *tf)
 		if ((tf->cs & 3) == DPL_USER) {
 			kill(myproc()->pid, SIGSEGV);
 			uart_printf("Process %s killed with SIGSEGV: sp=%#lx\n", myproc()->name,
-									tf->rsp);
+			            tf->rsp);
 			uart_printf("from cpu %d rip %lx (cr2=%#lx)\n", my_cpu_id(), tf->rip,
-									rcr2());
+			            rcr2());
 		} else {
 			uart_printf("BUG: General protection fault in the kernel!\n");
 			uart_printf("from cpu %d rip %lx (cr2=%#lx)\n", my_cpu_id(), tf->rip,
-									rcr2());
+			            rcr2());
 			panic("kernel general protection fault");
 		}
 		break;
@@ -211,7 +210,7 @@ trap(struct trapframe *tf)
 		uintptr_t idx = addr & 0b111111111111;
 		decipher_page_fault_error_code(tf->err);
 		uart_printf("This is at [%ld][%ld][%ld][%ld][%ld]\n", pml4, pdpt, pde, pte,
-								idx);
+		            idx);
 		uintptr_t *pde_ = &myproc()->pgdir[PDX(addr)];
 		// We can only attempt CoW if the page tables are
 		// not severely messed up. If they are NULL, we just
@@ -255,27 +254,27 @@ out:
 	}
 	case T_DIVIDE:
 		uart_printf("%s[%d]: trap divide by zero error: %#lx\n", myproc()->name,
-								myproc()->pid, tf->rip);
+		            myproc()->pid, tf->rip);
 		kill(myproc()->pid, SIGFPE);
 		break;
 	case T_SIMDERR:
 	case T_FPERR:
 		uart_printf("%s[%d]: floating point error: %#lx\n", myproc()->name,
-								myproc()->pid, tf->rip);
+		            myproc()->pid, tf->rip);
 		kill(myproc()->pid, SIGFPE);
 		break;
 	default:
 		if (myproc() == NULL || (tf->cs & 3) == 0) {
 			// In kernel, it must be our mistake.
 			uart_printf("unexpected trap %ld from cpu %d rip %lx (cr2=%#lx)\n",
-									tf->trapno, my_cpu_id(), tf->rip, rcr2());
+			            tf->trapno, my_cpu_id(), tf->rip, rcr2());
 			panic("trap");
 		}
 		// In user space, assume process misbehaved.
 		uart_printf("pid %d %s: trap %ld err %ld on cpu %d "
-								"rip %#lx addr %#lx--kill proc\n",
-								myproc()->pid, myproc()->name, tf->trapno, tf->err, my_cpu_id(),
-								tf->rip, rcr2());
+		            "rip %#lx addr %#lx--kill proc\n",
+		            myproc()->pid, myproc()->name, tf->trapno, tf->err, my_cpu_id(),
+		            tf->rip, rcr2());
 		myproc()->killed = 1;
 	}
 
@@ -289,7 +288,7 @@ out:
 	// Force process to give up CPU on clock tick.
 	// If interrupts were on while locks held, would need to check nlock.
 	if (myproc() && myproc()->state == RUNNING &&
-			tf->trapno == T_IRQ0 + IRQ_TIMER) {
+	    tf->trapno == T_IRQ0 + IRQ_TIMER) {
 		yield();
 	}
 

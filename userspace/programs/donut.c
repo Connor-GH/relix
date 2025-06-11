@@ -62,7 +62,8 @@ main(void)
 	int16_t sAcB = 11583, cAcB = 11583;
 
 	for (int _foo = 0; _foo < 10; _foo++) {
-		// yes this is a multiply but dz is 5 so it's (sb + (sb<<2)) >> 6 effectively
+		// yes this is a multiply but dz is 5 so it's (sb + (sb<<2)) >> 6
+		// effectively
 		int p0x = dz * sB >> 6;
 		int p0y = dz * sAcB >> 6;
 		int p0z = -dz * cAcB >> 6;
@@ -88,7 +89,7 @@ main(void)
 			int16_t vzi14 = ysA + xcAsB + cAcB;
 
 			for (int i = 0; i < 79;
-					 i++, vxi14 += xincX, vyi14 -= xincY, vzi14 += xincZ) {
+			     i++, vxi14 += xincX, vyi14 -= xincY, vzi14 += xincZ) {
 				int t = 512; // (256 * dz) - r2i - r1i;
 
 				int16_t px = p0x + (vxi14 >> 5); // assuming t = 512, t*vxi>>8 == vxi<<1

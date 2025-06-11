@@ -29,11 +29,9 @@ struct pci_conf {
 #if __KERNEL__
 #include <stddef.h>
 struct FatPointerArray_pci_conf {
-    struct pci_conf *ptr;
-    size_t len;
+	struct pci_conf *ptr;
+	size_t len;
 };
-extern void
-pci_init(void);
-extern struct FatPointerArray_pci_conf
-pci_get_conf(void);
+extern void pci_init(void);
+extern struct FatPointerArray_pci_conf pci_get_conf(void);
 #endif

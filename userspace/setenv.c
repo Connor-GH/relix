@@ -63,9 +63,11 @@ putenv(char *str)
 
 		// The variable could be set multiple times.
 		while (__findenv(str, (int)(ptr - str), &offset)) {
-			for (newenviron = &environ[offset];; newenviron++)
-				if (!(*newenviron = *(newenviron + 1)))
+			for (newenviron = &environ[offset];; newenviron++) {
+				if (!(*newenviron = *(newenviron + 1))) {
 					break;
+				}
+			}
 		}
 		return (0);
 	}
@@ -78,11 +80,13 @@ putenv(char *str)
 	}
 	newenviron = realloc(lastenv, (cnt + 2) * sizeof(char *));
 
-	if (newenviron == NULL)
+	if (newenviron == NULL) {
 		return -1;
+	}
 
-	if (lastenv != environ && environ != NULL)
+	if (lastenv != environ && environ != NULL) {
 		memcpy(newenviron, environ, cnt * sizeof(char *));
+	}
 
 	lastenv = environ = newenviron;
 	environ[cnt] = str;
@@ -116,8 +120,9 @@ setenv(const char *name, const char *value, int rewrite)
 	value_length = strlen(value);
 	if ((newentry = __findenv(name, (int)(np - name), &offset)) != NULL) {
 		int tmpoff = offset + 1;
-		if (!rewrite)
+		if (!rewrite) {
 			return 0;
+		}
 #if 0 /* XXX - existing entry may not be writable */
 		if (strlen(newentry) >= value_length) {	/* old larger; copy over */
 			while ((*newentry++ = *value++))
@@ -127,9 +132,11 @@ setenv(const char *name, const char *value, int rewrite)
 #endif
 		/* could be set multiple times */
 		while (__findenv(name, (int)(np - name), &tmpoff)) {
-			for (newenviron = &environ[tmpoff];; newenviron++)
-				if (!(*newenviron = *(newenviron + 1)))
+			for (newenviron = &environ[tmpoff];; newenviron++) {
+				if (!(*newenviron = *(newenviron + 1))) {
 					break;
+				}
+			}
 		}
 	} else { /* create new slot */
 		size_t cnt = 0;
@@ -141,23 +148,27 @@ setenv(const char *name, const char *value, int rewrite)
 		}
 		newenviron = realloc(lastenv, (cnt + 2) * sizeof(char *));
 
-		if (!newenviron)
+		if (!newenviron) {
 			return -1;
+		}
 
-		if (lastenv != environ && environ != NULL)
+		if (lastenv != environ && environ != NULL) {
 			memcpy(newenviron, environ, cnt * sizeof(char *));
+		}
 
 		lastenv = environ = newenviron;
 		offset = cnt;
 		environ[cnt + 1] = NULL;
 	}
 	if (!(environ[offset] = /* name + `=' + value */
-				malloc((int)(np - name) + value_length + 2)))
+	      malloc((int)(np - name) + value_length + 2))) {
 		return -1;
+	}
 
 	// The new environ entry is going to be placed in this slot.
 	// Prepare it and then copy over the bytes.
-	for (newentry = environ[offset]; (*newentry = *name++) && *newentry != '='; newentry++)
+	for (newentry = environ[offset]; (*newentry = *name++) && *newentry != '=';
+	     newentry++)
 		;
 	for (*newentry++ = '='; (*newentry++ = *value++);)
 		;
@@ -188,9 +199,11 @@ unsetenv(const char *name)
 
 	/* could be set multiple times */
 	while (__findenv(name, (int)(np - name), &offset)) {
-		for (newenviron = &environ[offset];; newenviron++)
-			if (!(*newenviron = *(newenviron + 1)))
+		for (newenviron = &environ[offset];; newenviron++) {
+			if (!(*newenviron = *(newenviron + 1))) {
 				break;
+			}
+		}
 	}
 	return 0;
 }

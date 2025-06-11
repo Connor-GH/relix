@@ -1,7 +1,7 @@
 #pragma once
 #if __KERNEL__
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #pragma GCC diagnostic ignored "-Wattributes"
 
@@ -125,12 +125,12 @@ typedef struct FISDMASetup {
 	// Trying AHCI spec might work.
 	uint64_t dma_buffer_id;
 	// uint32_t 3
-	uint32_t rsvd; //More reserved
+	uint32_t rsvd; // More reserved
 	// uint32_t 4
 	// Byte offset into buffer. First 2 bits must be 0
 	uint32_t dma_buf_offset;
 	// uint32_t 5
-	 // Number of bytes to transfer. Bit 0 must be 0
+	// Number of bytes to transfer. Bit 0 must be 0
 	uint32_t transfer_count;
 	// uint32_t 6
 	uint32_t reserved;
@@ -200,8 +200,7 @@ typedef struct HBACmdHeader {
 	uint32_t rsv1[4]; // Reserved
 } HBACmdHeader __attribute__((packed));
 
-void
-probe_port(HBAMem *abar);
+void probe_port(HBAMem *abar);
 typedef struct HBAPRDTEntry {
 	uint32_t dba; // Data base address
 	uint32_t dbau; // Data base address upper 32 bits
@@ -519,11 +518,7 @@ typedef struct IdentifyDevicePIO {
 
 } IdentifyDevicePIO;
 
-
-bool
-read_port(HBAPort *port, uint64_t start, uint16_t count, uint16_t *buf);
-bool
-write_port(HBAPort *port, uint64_t start, uint16_t count, uint16_t *buf);
-void
-ahci_init(uint32_t abar_);
+bool read_port(HBAPort *port, uint64_t start, uint16_t count, uint16_t *buf);
+bool write_port(HBAPort *port, uint64_t start, uint16_t count, uint16_t *buf);
+void ahci_init(uint32_t abar_);
 #endif

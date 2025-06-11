@@ -1,18 +1,18 @@
 // The local APIC manages internal (non-I/O) interrupts.
 // See Chapter 8 & Appendix C of Intel processor manual volume 3.
 
-#include <stdint.h>
-#include <stddef.h>
-#include <time.h>
+#include "lapic.h"
+#include "kernel_assert.h"
+#include "lib/compiler_attributes.h"
+#include "memlayout.h"
+#include "spinlock.h"
+#include "stdbool.h"
 #include "traps.h"
 #include "x86.h"
-#include "memlayout.h"
-#include "stdbool.h"
-#include "lib/compiler_attributes.h"
-#include "kernel_assert.h"
-#include "lapic.h"
+#include <stddef.h>
+#include <stdint.h>
 #include <string.h>
-#include "spinlock.h"
+#include <time.h>
 
 volatile uint32_t *lapic; // Initialized in mp.c
 
@@ -28,8 +28,9 @@ lapicw(int index, int value)
 void
 lapicinit(void)
 {
-	if (!lapic)
+	if (!lapic) {
 		return;
+	}
 
 	// Enable local APIC; set spurious interrupt vector.
 	lapicw(SVR, ENABLE | (T_IRQ0 + IRQ_SPURIOUS));
@@ -57,8 +58,9 @@ lapicinit(void)
 
 	// Disable performance counter overflow interrupts
 	// on machines that provide that interrupt entry.
-	if (((lapic[VER] >> 16) & 0xFF) >= 4)
+	if (((lapic[VER] >> 16) & 0xFF) >= 4) {
 		lapicw(PCINT, MASKED);
+	}
 
 	// Map error interrupt to IRQ_ERROR.
 	lapicw(ERROR, T_IRQ0 + IRQ_ERROR);
@@ -84,8 +86,9 @@ lapicinit(void)
 int
 lapicid(void)
 {
-	if (!lapic)
+	if (!lapic) {
 		return 0;
+	}
 	return lapic[ID] >> 24;
 }
 
@@ -93,8 +96,9 @@ lapicid(void)
 void
 lapiceoi(void)
 {
-	if (lapic)
+	if (lapic) {
 		lapicw(EOI, 0);
+	}
 }
 
 // Spin for a given number of microseconds.
@@ -102,8 +106,9 @@ lapiceoi(void)
 void
 microdelay(int us)
 {
-	for (int i = 0; i < us; i++)
+	for (int i = 0; i < us; i++) {
 		inb(0x80);
+	}
 }
 
 #define CMOS_PORT 0x70
@@ -112,7 +117,7 @@ microdelay(int us)
 // Start additional processor running entry code at addr.
 // See Appendix B of MultiProcessor Specification.
 __suppress_sanitizer("alignment") void lapicstartap(uint8_t apicid,
-																										uint32_t addr)
+                                                    uint32_t addr)
 {
 	int i;
 	uint16_t *wrv;
@@ -192,9 +197,10 @@ static inline unsigned
 days_in_month(unsigned year, unsigned month)
 {
 	static const unsigned table[] = { 31, 28, 31, 30, 31, 30,
-																		31, 31, 30, 31, 30, 31 };
-	if (month == 2 && is_leap_year(year))
+		                                31, 31, 30, 31, 30, 31 };
+	if (month == 2 && is_leap_year(year)) {
 		return 29;
+	}
 	return table[month - 1];
 }
 
@@ -202,8 +208,9 @@ static inline unsigned
 day_of_year(unsigned year, unsigned month, unsigned day)
 {
 	unsigned result = day - 1;
-	for (unsigned m = 1; m < month; ++m)
+	for (unsigned m = 1; m < month; ++m) {
 		result += days_in_month(year, m);
+	}
 	return result;
 }
 static unsigned
@@ -211,8 +218,9 @@ days_since_epoch(unsigned year, unsigned month, unsigned day)
 {
 	kernel_assert(year >= 1970);
 	unsigned days = day_of_year(year, month, day);
-	for (unsigned y = 1970; y < year; ++y)
+	for (unsigned y = 1970; y < year; ++y) {
 		days += days_in_year(y);
+	}
 	return days;
 }
 
@@ -259,8 +267,9 @@ rtc_now(void)
 		}
 		if ((sb & (1 << 1)) == 0) {
 			hour %= 12;
-			if (is_pm)
+			if (is_pm) {
 				hour += 12;
+			}
 		}
 		year += 2000;
 	} else {

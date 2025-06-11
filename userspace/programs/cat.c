@@ -1,9 +1,9 @@
-#include <stdlib.h>
-#include <unistd.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <errno.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 void
 cat(int fd)
@@ -35,7 +35,7 @@ main(int argc, const char *argv[])
 		if ((fd = open(argv[i], 0)) < 0) {
 			int saved_errno = errno;
 			fprintf(stderr, "%s: cannot open file: %s\n", argv[0],
-							strerror(saved_errno));
+			        strerror(saved_errno));
 			return 0;
 		}
 		cat(fd);

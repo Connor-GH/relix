@@ -1,6 +1,6 @@
+#include "libc_syscalls.h"
 #include <sys/reboot.h>
 #include <sys/syscall.h>
-#include "libc_syscalls.h"
 
 int
 reboot(int op)

@@ -1,22 +1,22 @@
 #include "kernel/include/param.h"
 #include "libc_syscalls.h"
-#include <sys/syscall.h>
 #include "printf.h"
 #include "stat.h"
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <string.h>
 #include <errno.h>
-#include <stdlib.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <limits.h>
-#include <fcntl.h>
-#include <sys/uio.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
+#include <sys/uio.h>
+#include <unistd.h>
 
 FILE *stdin;
 FILE *stdout;
@@ -73,11 +73,11 @@ flush(FILE *stream)
 		return -1;
 	}
 
-	//fwrite(stream->write_buffer, 1, stream->write_buffer_index, stream);
+	// fwrite(stream->write_buffer, 1, stream->write_buffer_index, stream);
 	writev(stream->fd,
-				 &(const struct iovec){ stream->write_buffer,
-																stream->write_buffer_index },
-				 1);
+	       &(const struct iovec){ stream->write_buffer,
+	                              stream->write_buffer_index },
+	       1);
 	stream->write_buffer_index = 0;
 	return 0;
 }
@@ -96,8 +96,9 @@ fflush(FILE *stream)
 int
 fileno(FILE *stream)
 {
-	if (stream != NULL)
+	if (stream != NULL) {
 		return stream->fd;
+	}
 	errno = EBADF;
 	return -1;
 }
@@ -153,13 +154,14 @@ bad_mode:
 FILE *
 fopen(const char *restrict pathname, const char *restrict mode)
 {
-	const mode_t file_mode = S_IWGRP | S_IRGRP | S_IWOTH | S_IROTH | S_IWUSR | S_IRUSR;
+	const mode_t file_mode = S_IWGRP | S_IRGRP | S_IWOTH | S_IROTH | S_IWUSR |
+	                         S_IRUSR;
 	return fdopen(open(pathname, string_to_flags(mode), file_mode), mode);
 }
 
 FILE *
 freopen(const char *restrict pathname, const char *restrict mode,
-				FILE *restrict stream)
+        FILE *restrict stream)
 {
 	if (stream && !stream->error && stream->fd != -1) {
 		fclose(stream);
@@ -171,10 +173,11 @@ freopen(const char *restrict pathname, const char *restrict mode,
 int
 feof(FILE *stream)
 {
-	if (stream)
+	if (stream) {
 		return stream->eof;
-	else
+	} else {
 		return -1;
+	}
 }
 
 // Mandated by POSIX
@@ -186,18 +189,21 @@ fdopen(int fd, const char *restrict mode)
 		return NULL;
 	}
 	FILE *fp = malloc(sizeof(FILE));
-	if (fp == NULL)
+	if (fp == NULL) {
 		return NULL;
+	}
 	fp->flags = string_to_flags(mode);
-	if (fp->flags == -1)
+	if (fp->flags == -1) {
 		return NULL;
+	}
 	fp->mode = S_IWGRP | S_IRGRP | S_IWOTH | S_IROTH | S_IWUSR | S_IRUSR;
 	fp->fd = fd;
 	fp->eof = false;
 	fp->error = false;
 	fp->write_buffer = malloc(WRITE_BUFFER_SIZE);
-	if (fp->write_buffer == NULL)
+	if (fp->write_buffer == NULL) {
 		return NULL;
+	}
 	fp->write_buffer_size = WRITE_BUFFER_SIZE;
 	fp->write_buffer_index = 0;
 	fp->stdio_flush = true;
@@ -226,8 +232,9 @@ fclose(FILE *stream)
 		return EOF;
 	}
 	fflush(stream);
-	if (stream->write_buffer != NULL)
+	if (stream->write_buffer != NULL) {
 		free(stream->write_buffer);
+	}
 	if (close(stream->fd) < 0) {
 		stream->error = true;
 		return EOF;
@@ -270,10 +277,11 @@ getchar(void)
 static void
 static_fgetc(FILE *stream, char c, char *buf)
 {
-	if (global_idx_fgetc < __DIRSIZ - 1)
+	if (global_idx_fgetc < __DIRSIZ - 1) {
 		buf[global_idx_fgetc++] = getc(stream);
-	else
+	} else {
 		buf[global_idx_fgetc++] = '\0';
+	}
 }
 
 char *
@@ -294,8 +302,9 @@ fgets(char *buf, int max, FILE *restrict stream)
 			return NULL;
 		}
 		buf[i++] = c;
-		if (c == '\n' || c == '\r')
+		if (c == '\n' || c == '\r') {
 			break;
+		}
 	}
 	buf[i] = '\0';
 	return buf;
@@ -308,14 +317,14 @@ fgets(char *buf, int max, FILE *restrict stream)
 static void
 fd_putc(FILE *fp, char c, char *__attribute__((unused)) buf)
 {
-	if (fp == NULL)
+	if (fp == NULL) {
 		return;
+	}
 	fp->write_buffer[fp->write_buffer_index++] = c;
-	if (fp &&
-		((fp->buffer_mode == _IOFBF &&
-		fp->write_buffer_index >= fp->write_buffer_size - 1) ||
-	(fp->buffer_mode == _IONBF) ||
-	(fp->buffer_mode == _IOLBF && c == '\n'))) {
+	if (fp && ((fp->buffer_mode == _IOFBF &&
+	            fp->write_buffer_index >= fp->write_buffer_size - 1) ||
+	           (fp->buffer_mode == _IONBF) ||
+	           (fp->buffer_mode == _IOLBF && c == '\n'))) {
 		flush(fp);
 	}
 }
@@ -347,9 +356,10 @@ int
 vfprintf(FILE *restrict stream, const char *restrict fmt, va_list argp)
 {
 	int ret = __libc_vprintf_template(fd_putc, ansi_noop, stream, NULL, fmt, argp,
-														SIZE_MAX);
-	if (stream && stream->stdio_flush)
+	                                  SIZE_MAX);
+	if (stream && stream->stdio_flush) {
 		flush(stream);
+	}
 	return ret;
 }
 
@@ -357,8 +367,8 @@ int
 vsnprintf(char *restrict str, size_t n, const char *restrict fmt, va_list argp)
 {
 	global_idx = 0;
-	int idx = __libc_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp,
-														 n);
+	int idx =
+		__libc_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp, n);
 	str[idx] = '\0';
 	return idx;
 }
@@ -367,7 +377,7 @@ vsprintf(char *restrict str, const char *restrict fmt, va_list argp)
 {
 	global_idx = 0;
 	return __libc_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp,
-														SIZE_MAX);
+	                               SIZE_MAX);
 }
 int
 snprintf(char *restrict str, size_t n, const char *restrict fmt, ...)
@@ -398,8 +408,8 @@ vfscanf(FILE *restrict stream, const char *restrict fmt, va_list argp)
 {
 	static char static_buffer[__DIRSIZ];
 	global_idx_fgetc = 0;
-	return __libc_vprintf_template(static_fgetc,
-														ansi_noop, stream, static_buffer, fmt, argp, -1);
+	return __libc_vprintf_template(static_fgetc, ansi_noop, stream, static_buffer,
+	                               fmt, argp, -1);
 }
 
 int
@@ -439,14 +449,15 @@ sscanf(const char *restrict str, const char *restrict fmt, ...)
 				char *cont = "this has to be initialized to something";
 				int d = strtol(str + i, &cont, 10);
 				*va_arg(listp, int *) = d;
-				i += cont - (str+i) - format_size;
+				i += cont - (str + i) - format_size;
 				format_size = 0;
 				state = 0;
 				break;
 			}
 			default: {
-				if (count > 0)
+				if (count > 0) {
 					count--;
+				}
 				state = 0;
 				break;
 			}
@@ -455,9 +466,9 @@ sscanf(const char *restrict str, const char *restrict fmt, ...)
 		} else {
 			// ??
 		}
-			i++;
+		i++;
 skip_str_forward:
-			j++;
+		j++;
 	}
 	va_end(listp);
 	return count;
@@ -478,8 +489,9 @@ __attribute__((format(printf, 2, 3))) int
 dprintf(int fd, const char *restrict fmt, ...)
 {
 	FILE *fp = fdopen(fd, "w");
-	if (fp == NULL)
+	if (fp == NULL) {
 		return -1;
+	}
 	int ret;
 	va_list listp;
 	va_start(listp, fmt);
@@ -581,8 +593,9 @@ remove(const char *pathname)
 		return 0;
 		// rmdir
 	} else if (S_ISREG(st.st_mode)) {
-		if (unlink(pathname) < 0)
+		if (unlink(pathname) < 0) {
 			return -1;
+		}
 		return 0;
 	}
 	return -1;
@@ -628,8 +641,9 @@ ftell(FILE *stream)
 void
 rewind(FILE *stream)
 {
-	if (stream == NULL)
+	if (stream == NULL) {
 		return;
+	}
 	(void)fseek(stream, 0L, SEEK_SET);
 	clearerr(stream);
 }

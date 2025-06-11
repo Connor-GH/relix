@@ -1,12 +1,9 @@
 #pragma once
-#include <sys/types.h>
 #include <signal.h>
-pid_t
-wait(int *status);
+#include <sys/types.h>
+pid_t wait(int *status);
 struct rusage;
-pid_t
-wait3(int *status, int options,
-		struct rusage *rusage);
+pid_t wait3(int *status, int options, struct rusage *rusage);
 
 // Our pid_t for wait is laid out like this:
 // 0b00000000000000000000000000000000
@@ -32,8 +29,4 @@ wait3(int *status, int options,
 // Options.
 #define WNOHANG 0x1
 
-enum idtype_t {
-	P_ALL,
-	P_PGID,
-	P_PID
-};
+enum idtype_t { P_ALL, P_PGID, P_PID };

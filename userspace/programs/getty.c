@@ -1,6 +1,6 @@
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
 
 extern char **environ;
 int
@@ -28,13 +28,13 @@ main(int argc, char **argv)
 	}
 
 	if (aflag) {
-		execve("/bin/login", (char *const []){"/bin/login", "-f", user, NULL}, environ);
+		execve("/bin/login", (char *const[]){ "/bin/login", "-f", user, NULL },
+		       environ);
 	} else {
-		execve("/bin/login", (char *const []){"/bin/login", NULL}, environ);
+		execve("/bin/login", (char *const[]){ "/bin/login", NULL }, environ);
 	}
 	perror("execve");
 	fprintf(stderr, "init: exec() login failed\n");
 
 	return 0;
-
 }

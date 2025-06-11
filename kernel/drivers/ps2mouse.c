@@ -1,20 +1,20 @@
-#include "errno.h"
-#include "lib/queue.h"
-#include "x86.h"
-#include "traps.h"
-#include "ioapic.h"
-#include "spinlock.h"
 #include "ps2mouse.h"
-#include "kalloc.h"
-#include "proc.h"
-#include "fcntl_constants.h"
 #include "console.h"
+#include "errno.h"
+#include "fcntl_constants.h"
+#include "ioapic.h"
+#include "kalloc.h"
+#include "lib/queue.h"
+#include "proc.h"
+#include "spinlock.h"
+#include "traps.h"
+#include "x86.h"
 
 #include "mman.h"
 #include "string.h"
+#include <stdbool.h>
 #include <stdint.h>
 #include <sys/types.h>
-#include <stdbool.h>
 
 #define MOUSE_STATUS 0x64
 #define MOUSE_DATA 0x60
@@ -98,7 +98,7 @@ mouse_read(void)
 }
 
 __nonnull(2, 3) static ssize_t
-mouseread(__unused short minor, struct inode *ip, char *dst, size_t n)
+	mouseread(__unused short minor, struct inode *ip, char *dst, size_t n)
 {
 get_element:;
 	acquire(&mouselock.lock);
@@ -130,7 +130,7 @@ mousewrite(__unused short minor, __unused struct inode *ip,
 
 static struct mmap_info
 mousemmap_noop(__unused short minor, __unused size_t length,
-							 __unused uintptr_t addr, __unused int perm)
+               __unused uintptr_t addr, __unused int perm)
 {
 	return (struct mmap_info){};
 }
@@ -209,15 +209,17 @@ ps2mouseintr(void)
 		if (count == 3) {
 			count = 0;
 
-			struct mouse_packet coords = { .data = { mouse_data[0], mouse_data[1], mouse_data[2] } };
+			struct mouse_packet coords = { .data = { mouse_data[0], mouse_data[1],
+				                                       mouse_data[2] } };
 			int val;
 			acquire(&mouselock.lock);
 			val = enqueue_mouse_packet(mouselock.mouse_queue, coords, kmalloc,
-																 MOUSE_QUEUE_SIZE);
+			                           MOUSE_QUEUE_SIZE);
 			release(&mouselock.lock);
 
-			if (val == QUEUE_OOM)
+			if (val == QUEUE_OOM) {
 				panic("Cannot allocate memory for mouse queue");
+			}
 		}
 	}
 }

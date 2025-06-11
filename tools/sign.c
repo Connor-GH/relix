@@ -1,16 +1,17 @@
+#include <assert.h> // assert
+#include <fcntl.h> // O_RDWR
 #include <stdio.h> // fprintf
 #include <stdlib.h> // EXIT_FAILURE
-#include <fcntl.h> // O_RDWR
-#include <unistd.h> // read, write, close, lseek
-#include <assert.h> // assert
 #include <string.h> // memset, memcpy
+#include <unistd.h> // read, write, close, lseek
 
 #define BUF_SIZE 1024
 int
 main(int argc, char **argv)
 {
-	if (argc != 2)
+	if (argc != 2) {
 		exit(EXIT_FAILURE);
+	}
 	int fd = open(argv[1], O_RDWR, 0666);
 	if (fd == -1) {
 		perror("open");

@@ -55,8 +55,8 @@
 #define SYS_fcntl 52
 #define SYSCALL_AMT 52
 #ifndef __ASSEMBLER__
-#include <stddef.h>
 #include "types.h"
+#include <stddef.h>
 __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_fork] = "fork",
 	[SYS__exit] = "_exit",
@@ -118,54 +118,32 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
  * All of the generic integer type "arg" and "fetch" family of functions
  * are defined from macro generation.
  */
-int
-argint(int, int *);
-int
-argunsigned_int(int, unsigned int *);
-int
-argunsigned_long(int, unsigned long *);
-int
-arguintptr_t(int n, uintptr_t *ip);
-int
-argintptr_t(int n, intptr_t *ip);
-int
-argssize_t(int n, ssize_t *sp);
-int
-argsize_t(int n, size_t *sp);
-int
-argoff_t(int n, off_t *sp);
-int
-argmode_t(int n, mode_t *sp);
-int
-argdev_t(int n, dev_t *sp);
-int
-argpid_t(int n, pid_t *sp);
-int
-arguid_t(int n, uid_t *sp);
-int
-arggid_t(int n, gid_t *sp);
+int argint(int, int *);
+int argunsigned_int(int, unsigned int *);
+int argunsigned_long(int, unsigned long *);
+int arguintptr_t(int n, uintptr_t *ip);
+int argintptr_t(int n, intptr_t *ip);
+int argssize_t(int n, ssize_t *sp);
+int argsize_t(int n, size_t *sp);
+int argoff_t(int n, off_t *sp);
+int argmode_t(int n, mode_t *sp);
+int argdev_t(int n, dev_t *sp);
+int argpid_t(int n, pid_t *sp);
+int arguid_t(int n, uid_t *sp);
+int arggid_t(int n, gid_t *sp);
 
-int
-fetchint(uintptr_t, int *);
-int
-fetchunsigned_int(uintptr_t, unsigned int *);
-int
-fetchunsigned_long(uintptr_t, unsigned long *);
-int
-fetchuintptr_t(uintptr_t addr, uintptr_t *ip);
+int fetchint(uintptr_t, int *);
+int fetchunsigned_int(uintptr_t, unsigned int *);
+int fetchunsigned_long(uintptr_t, unsigned long *);
+int fetchuintptr_t(uintptr_t addr, uintptr_t *ip);
 
-int
-argptr(int, char **, int);
-ssize_t
-argstr(int, char **);
-ssize_t
-fetchstr(uintptr_t, char **);
-void
-syscall(void);
+int argptr(int, char **, int);
+ssize_t argstr(int, char **);
+ssize_t fetchstr(uintptr_t, char **);
+void syscall(void);
 
 // Init function for syscall/sysret.
-void
-syscall_init(void);
+void syscall_init(void);
 
 /*
  * Designed for functions that return int, where

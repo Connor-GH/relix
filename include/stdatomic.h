@@ -31,17 +31,17 @@
  * Originally based on the FreeBSD header in sys/sys/stdatomic.h
  */
 #pragma once
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 /*
  * Macro to test if we're using a specific version of gcc or later.
  */
 #if defined(__GNUC__)
-#define	__GNUC_PREREQ__(ma, mi)	\
+#define __GNUC_PREREQ__(ma, mi) \
 	(__GNUC__ > (ma) || __GNUC__ == (ma) && __GNUC_MINOR__ >= (mi))
 #else
-#define	__GNUC_PREREQ__(ma, mi)	0
+#define __GNUC_PREREQ__(ma, mi) 0
 #endif
 
 #if (__has_extension(c_atomic) || __has_extension(cxx_atomic)) && \
@@ -234,13 +234,13 @@ typedef _Atomic(uintmax_t) atomic_uintmax_t;
 
 #if defined(__CLANG_ATOMICS)
 #define atomic_compare_exchange_strong_explicit(object, expected, desired, \
-																								success, failure)          \
+                                                success, failure)          \
 	__c11_atomic_compare_exchange_strong(object, expected, desired, success, \
-																			 failure)
+	                                     failure)
 #define atomic_compare_exchange_weak_explicit(object, expected, desired, \
-																							success, failure)          \
+                                              success, failure)          \
 	__c11_atomic_compare_exchange_weak(object, expected, desired, success, \
-																		 failure)
+	                                   failure)
 #define atomic_exchange_explicit(object, desired, order) \
 	__c11_atomic_exchange(object, desired, order)
 #define atomic_fetch_add_explicit(object, operand, order) \
@@ -258,10 +258,10 @@ typedef _Atomic(uintmax_t) atomic_uintmax_t;
 	__c11_atomic_store(object, desired, order)
 #elif defined(__GNUC_ATOMICS)
 #define atomic_compare_exchange_strong_explicit(object, expected, desired, \
-																								success, failure)          \
+                                                success, failure)          \
 	__atomic_compare_exchange_n(object, expected, desired, 0, success, failure)
 #define atomic_compare_exchange_weak_explicit(object, expected, desired, \
-																							success, failure)          \
+                                              success, failure)          \
 	__atomic_compare_exchange_n(object, expected, desired, 1, success, failure)
 #define atomic_exchange_explicit(object, desired, order) \
 	__atomic_exchange_n(object, desired, order)
@@ -282,19 +282,19 @@ typedef _Atomic(uintmax_t) atomic_uintmax_t;
 #define __atomic_apply_stride(object, operand) \
 	(((__typeof__((object)->__val))0) + (operand))
 #define atomic_compare_exchange_strong_explicit(object, expected, desired, \
-																								success, failure)          \
+                                                success, failure)          \
 	__extension__({                                                          \
 		__typeof__(expected) __ep = (expected);                                \
 		__typeof__(*__ep) __e = *__ep;                                         \
 		(void)(success);                                                       \
 		(void)(failure);                                                       \
 		(_Bool)((*__ep = __sync_val_compare_and_swap(&(object)->__val, __e,    \
-																								 desired)) == __e);        \
+		                                             desired)) == __e);        \
 	})
 #define atomic_compare_exchange_weak_explicit(object, expected, desired,      \
-																							success, failure)               \
+                                              success, failure)               \
 	atomic_compare_exchange_strong_explicit(object, expected, desired, success, \
-																					failure)
+	                                        failure)
 #if __has_builtin(__sync_swap)
 /* Clang provides a full-barrier atomic exchange - use it if available. */
 #define atomic_exchange_explicit(object, desired, order) \
@@ -374,7 +374,7 @@ atomic_flag_is_set(volatile atomic_flag *__object)
 
 static __inline _Bool
 atomic_flag_test_and_set_explicit(volatile atomic_flag *__object,
-																	memory_order __order)
+                                  memory_order __order)
 {
 	return (atomic_exchange_explicit(&__object->__flag, 1, __order));
 }

@@ -8,12 +8,12 @@
 //      asm volatile("");
 
 #include <fcntl.h>
+#include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <unistd.h>
 #include <sys/wait.h>
-#include <stddef.h>
+#include <unistd.h>
 
 int
 main(void)
@@ -25,24 +25,28 @@ main(void)
 	fprintf(stdout, "stressfs starting\n");
 	memset(data, 'a', sizeof(data));
 
-	for (i = 0; i < 4; i++)
-		if (fork() > 0)
+	for (i = 0; i < 4; i++) {
+		if (fork() > 0) {
 			break;
+		}
+	}
 
 	fprintf(stdout, "write %d\n", i);
 
 	path[8] += i;
 	fd = open(path, O_CREATE | O_RDWR);
-	for (i = 0; i < 20; i++)
+	for (i = 0; i < 20; i++) {
 		//    fprintf(fd, "%d\n", i);
 		write(fd, data, sizeof(data));
+	}
 	close(fd);
 
 	fprintf(stdout, "read\n");
 
 	fd = open(path, O_RDONLY);
-	for (i = 0; i < 20; i++)
+	for (i = 0; i < 20; i++) {
 		read(fd, data, sizeof(data));
+	}
 	close(fd);
 
 	wait(NULL);

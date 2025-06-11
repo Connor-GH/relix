@@ -7,14 +7,13 @@
 
 // Note that this code only gets run when we do not use a multiboot loader.
 
-#include <stdint.h>
-#include <elf.h>
 #include "x86.h"
+#include <elf.h>
+#include <stdint.h>
 
 #define SECTSIZE 512
 
-void
-readseg(uint8_t *, uint32_t, uint32_t);
+void readseg(uint8_t *, uint32_t, uint32_t);
 
 void
 bootmain(void)
@@ -30,8 +29,9 @@ bootmain(void)
 	readseg((uint8_t *)elf, 4096, 0);
 
 	// Is this an ELF executable?
-	if (elf->magic != ELF_MAGIC_NUMBER)
+	if (elf->magic != ELF_MAGIC_NUMBER) {
 		return; // let bootasm.S handle error
+	}
 
 	// Load each program segment (ignores ph flags).
 	ph = (struct Elf32_Phdr *)((uint8_t *)elf + elf->e_phoff);
@@ -39,8 +39,9 @@ bootmain(void)
 	for (uint8_t *pa; ph < eph; ph++) {
 		pa = (uint8_t *)(uintptr_t)ph->p_paddr;
 		readseg(pa, ph->p_filesz, ph->p_offset);
-		if (ph->p_memsz > ph->p_filesz)
+		if (ph->p_memsz > ph->p_filesz) {
 			stosb(pa + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);
+		}
 	}
 
 	// Call the entry point from the ELF header.
@@ -89,6 +90,7 @@ readseg(uint8_t *pa, uint32_t count, uint32_t offset)
 	// If this is too slow, we could read lots of sectors at a time.
 	// We'd write more to memory than asked, but it doesn't matter --
 	// we load in increasing order.
-	for (uint8_t *epa = pa + count; pa < epa; pa += SECTSIZE, offset++)
+	for (uint8_t *epa = pa + count; pa < epa; pa += SECTSIZE, offset++) {
 		readsect(pa, offset);
+	}
 }

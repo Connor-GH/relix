@@ -1,13 +1,12 @@
-#include <unistd.h>
+#include <stdckdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <stdckdint.h>
 #include <sys/param.h>
+#include <unistd.h>
 
 // Memory allocator by Kernighan and Ritchie,
 // The C programming Language, 2nd ed.  Section 8.7.
-
 
 struct header {
 	struct header *ptr;
@@ -16,7 +15,7 @@ struct header {
 
 typedef struct header Header;
 
-static Header base = {NULL, 0};
+static Header base = { NULL, 0 };
 static Header *freep = NULL;
 
 #define ptr_to_header(ptr) (((Header *)ptr) - 1)
@@ -36,9 +35,11 @@ free(void *ap)
 	}
 
 	bp = (Header *)ap - 1;
-	for (p = freep; !(bp > p && bp < p->ptr); p = p->ptr)
-		if (p >= p->ptr && (bp > p || bp < p->ptr))
+	for (p = freep; !(bp > p && bp < p->ptr); p = p->ptr) {
+		if (p >= p->ptr && (bp > p || bp < p->ptr)) {
 			break;
+		}
+	}
 
 	if (bp + bp->size == p->ptr) {
 		bp->size += p->ptr->size;
@@ -69,10 +70,12 @@ morecore(size_t nu)
 	}
 	// TODO this will be uncommented when the full
 	// sbrk->mmap migration is complete.
-	//p = mmap(NULL, nu * sizeof(Header), PROT_READ | PROT_WRITE, MAP_ANONYMOUS, -1, 0);
+	// p = mmap(NULL, nu * sizeof(Header), PROT_READ | PROT_WRITE, MAP_ANONYMOUS,
+	// -1, 0);
 	p = sbrk(nu * sizeof(Header));
-	if (p == (char *)-1)
+	if (p == (char *)-1) {
 		return NULL;
+	}
 	hp = (Header *)p;
 	hp->size = nu;
 	free((void *)(hp + 1));
@@ -117,9 +120,11 @@ malloc(size_t nbytes)
 			freep = prevp;
 			return (void *)(p + 1);
 		}
-		if (p == freep)
-			if ((p = morecore(nunits)) == NULL)
+		if (p == freep) {
+			if ((p = morecore(nunits)) == NULL) {
 				return NULL;
+			}
+		}
 	}
 }
 
@@ -132,8 +137,9 @@ realloc(void *ptr, size_t size)
 {
 	// C spec: "If ptr is a null pointer, the realloc function behaves
 	// like the malloc function for the specified size"
-	if (ptr == NULL)
+	if (ptr == NULL) {
 		return malloc(size);
+	}
 
 	Header *old_ptr_hdr = ptr_to_header(ptr);
 	void *new_ptr = malloc(size);
@@ -144,13 +150,13 @@ realloc(void *ptr, size_t size)
 	//
 	// - "The realloc function returns ... a null pointer if the new
 	// object has not been allocated".
-	if (new_ptr == NULL)
+	if (new_ptr == NULL) {
 		return NULL;
+	}
 	memcpy(new_ptr, ptr, MIN(old_ptr_hdr->size, size));
 	free(ptr);
 	return new_ptr;
 }
-
 
 // Undefined behavior:
 // - either nmemb or sz are 0.
@@ -161,12 +167,14 @@ calloc(size_t nmemb, size_t sz)
 	// C spec: "The calloc function returns ... a null pointer if the
 	// space cannot be allocated or if the product nmemb * size would
 	// wraparound size_t".
-	if (ckd_mul(&res, nmemb, sz))
+	if (ckd_mul(&res, nmemb, sz)) {
 		return NULL;
+	}
 
 	void *ptr = malloc(res);
-	if (ptr == NULL)
+	if (ptr == NULL) {
 		return NULL;
+	}
 	memset(ptr, 0, res);
 	return ptr;
 }

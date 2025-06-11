@@ -1,18 +1,18 @@
 // Simple PIO-based (non-DMA) IDE driver code.
 
+#include "buf.h"
+#include "console.h"
+#include "file.h"
+#include "fs.h"
+#include "ioapic.h"
+#include "lib/compiler_attributes.h"
 #include "mman.h"
 #include "param.h"
 #include "proc.h"
 #include "sleeplock.h"
-#include "x86.h"
-#include "traps.h"
 #include "spinlock.h"
-#include "fs.h"
-#include "file.h"
-#include "buf.h"
-#include "ioapic.h"
-#include "console.h"
-#include "lib/compiler_attributes.h"
+#include "traps.h"
+#include "x86.h"
 
 #define SECTOR_SIZE 512
 #define IDE_BSY 0x80
@@ -33,8 +33,7 @@ static struct spinlock idelock;
 static struct block_buffer *idequeue;
 
 static int havedisk1;
-static void
-idestart(struct block_buffer *);
+static void idestart(struct block_buffer *);
 
 // Wait for IDE disk to become ready.
 static int
@@ -44,8 +43,9 @@ idewait(int checkerr)
 
 	while (((r = inb(0x1f7)) & (IDE_BSY | IDE_DRDY)) != IDE_DRDY)
 		;
-	if (checkerr && (r & (IDE_DF | IDE_ERR)) != 0)
+	if (checkerr && (r & (IDE_DF | IDE_ERR)) != 0) {
 		return -1;
+	}
 	return 0;
 }
 
@@ -79,11 +79,9 @@ idemmap(short minor, size_t length, uintptr_t addr, int perm)
 	return (struct mmap_info){};
 }
 
-
 __cold void
 ideinit(void)
 {
-
 	initlock(&idelock, "ide");
 	ioapicenable(IRQ_IDE, ncpu - 1);
 	idewait(0);
@@ -111,8 +109,9 @@ ideinit(void)
 static void
 idestart(struct block_buffer *b)
 {
-	if (unlikely(b == NULL))
+	if (unlikely(b == NULL)) {
 		panic("idestart");
+	}
 	if (b->blockno >= FSSIZE) {
 		uart_printf("blockno: %ld\n", b->blockno);
 		panic("incorrect blockno");
@@ -153,8 +152,9 @@ ideintr(void)
 	idequeue = b->qnext;
 
 	// Read data if needed.
-	if (!(b->flags & B_DIRTY) && idewait(1) >= 0)
+	if (!(b->flags & B_DIRTY) && idewait(1) >= 0) {
 		insl(0x1f0, b->data, BSIZE / 4);
+	}
 
 	// Wake process waiting for this buf.
 	b->flags |= B_VALID;
@@ -162,8 +162,9 @@ ideintr(void)
 	wakeup(b);
 
 	// Start disk on next buf in queue.
-	if (idequeue != NULL)
+	if (idequeue != NULL) {
 		idestart(idequeue);
+	}
 
 	release(&idelock);
 }
@@ -176,18 +177,21 @@ iderw(struct block_buffer *b)
 {
 	struct block_buffer **pp;
 
-	if (!holdingsleep(&b->lock))
+	if (!holdingsleep(&b->lock)) {
 		panic("iderw: buf not locked");
-	if ((b->flags & (B_VALID | B_DIRTY)) == B_VALID)
+	}
+	if ((b->flags & (B_VALID | B_DIRTY)) == B_VALID) {
 		panic("iderw: nothing to do");
-	if (b->dev != 0 && !havedisk1)
+	}
+	if (b->dev != 0 && !havedisk1) {
 		panic("iderw: ide disk 1 not present");
+	}
 
-	acquire(&idelock); //DOC:acquire-lock
+	acquire(&idelock); // DOC:acquire-lock
 
 	// Append b to idequeue.
 	b->qnext = NULL;
-	for (pp = &idequeue; *pp; pp = &(*pp)->qnext) //DOC:insert-queue
+	for (pp = &idequeue; *pp; pp = &(*pp)->qnext) // DOC:insert-queue
 		;
 	*pp = b;
 
@@ -203,5 +207,3 @@ iderw(struct block_buffer *b)
 
 	release(&idelock);
 }
-
-

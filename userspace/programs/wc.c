@@ -1,8 +1,8 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 char buf[512];
 
@@ -17,11 +17,12 @@ wc(int fd, const char *name)
 	while ((n = read(fd, buf, sizeof(buf))) > 0) {
 		for (i = 0; i < n; i++) {
 			c++;
-			if (buf[i] == '\n')
+			if (buf[i] == '\n') {
 				l++;
-			if (strchr(" \r\t\n\v", buf[i]))
+			}
+			if (strchr(" \r\t\n\v", buf[i])) {
 				inword = 0;
-			else if (!inword) {
+			} else if (!inword) {
 				w++;
 				inword = 1;
 			}

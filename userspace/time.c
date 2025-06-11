@@ -1,13 +1,13 @@
-#include <time.h>
-#include <sys/stat.h>
 #include <stdbool.h>
+#include <sys/stat.h>
+#include <time.h>
 #include <unistd.h>
 
 static struct tm s_time;
 
 int daylight;
 long timezone;
-char *tzname[2] = {NULL, NULL};
+char *tzname[2] = { NULL, NULL };
 
 void
 tzset(void)
@@ -20,8 +20,9 @@ tzset(void)
 struct tm *
 localtime(const time_t *timep)
 {
-	if (timep == NULL)
+	if (timep == NULL) {
 		return NULL;
+	}
 	time_t unix_seconds = *timep;
 
 	// TODO parse daylight savings time and timezone.
@@ -58,8 +59,9 @@ localtime(const time_t *timep)
 	// and we have include current day.
 	extra_days = days_till_now + 1;
 
-	if (curr_year % 400 == 0 || (curr_year % 4 == 0 && curr_year % 100 != 0))
+	if (curr_year % 400 == 0 || (curr_year % 4 == 0 && curr_year % 100 != 0)) {
 		flag = 1;
+	}
 
 	// Calculating month and date.
 	month = 0;
@@ -67,8 +69,9 @@ localtime(const time_t *timep)
 	if (flag == 1) {
 		while (true) {
 			if (index == 1) {
-				if (extra_days - 29 < 0)
+				if (extra_days - 29 < 0) {
 					break;
+				}
 
 				month += 1;
 				extra_days -= 29;
@@ -97,9 +100,9 @@ localtime(const time_t *timep)
 		month += 1;
 		date = extra_days;
 	} else {
-		if (month == 2 && flag == 1)
+		if (month == 2 && flag == 1) {
 			date = 29;
-		else {
+		} else {
 			date = days_of_month[month - (month >= 1 ? 1 : 0)];
 		}
 	}
@@ -109,8 +112,9 @@ localtime(const time_t *timep)
 	seconds = (extra_time % 3600) % 60;
 
 	int wday = (3 + s_time.tm_mday) % 7;
-	if (wday < 0)
+	if (wday < 0) {
 		wday += 7;
+	}
 	s_time.tm_mday = date;
 	s_time.tm_mon = month;
 	s_time.tm_year = curr_year;
@@ -126,4 +130,3 @@ localtime(const time_t *timep)
 
 	return &s_time;
 }
-

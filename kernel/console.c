@@ -2,31 +2,29 @@
 // Input is from the keyboard or serial port.
 // Output is written to the screen and serial port.
 
-#include "mman.h"
-#include "termios.h"
-#include "vga.h"
 #include "console.h"
-#include "file.h"
 #include "boot/multiboot2.h"
+#include "drivers/lapic.h"
+#include "file.h"
+#include "kbd.h"
+#include "lib/compiler_attributes.h"
+#include "lib/queue.h"
+#include "macros.h"
+#include "mman.h"
 #include "proc.h"
 #include "spinlock.h"
-#include "lib/queue.h"
-#include "uart.h"
-#include "x86.h"
-#include "kbd.h"
-#include "drivers/lapic.h"
-#include "lib/compiler_attributes.h"
-#include "macros.h"
 #include "symbols.h"
+#include "termios.h"
+#include "uart.h"
+#include "vga.h"
+#include "x86.h"
 
-#include <stdint.h>
-#include <stdint.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
-extern size_t
-let_rust_handle_it(const char *fmt);
+extern size_t let_rust_handle_it(const char *fmt);
 
 int echo_out = 1;
 static int panicked = 0;
@@ -38,9 +36,8 @@ static int zero_form = 0;
 
 typedef void (*putfunc_t)(int, uint32_t, uint32_t);
 __nonnull(1) static void vcprintf(putfunc_t putfunc, const char *fmt,
-																	va_list argp, int locking);
-static void
-consputc3(int c, uint32_t foreg, uint32_t backg);
+                                  va_list argp, int locking);
+static void consputc3(int c, uint32_t foreg, uint32_t backg);
 /*
  * This resource protects any static variable in this file, but mainly:
  * - console_buffer
@@ -52,7 +49,7 @@ static struct {
 	int locking;
 } cons;
 
-static struct termios tty_settings[NTTY] = {0};
+static struct termios tty_settings[NTTY] = { 0 };
 
 // This should always be in bounds, provided that
 // only the minor from ip->minor is passed in, and
@@ -74,8 +71,9 @@ set_term_settings(int minor, struct termios *termios)
 		.c_ispeed = termios->c_ispeed,
 		.c_ospeed = termios->c_ospeed,
 	};
-	for (int i = 0; i < NCCS; i++)
+	for (int i = 0; i < NCCS; i++) {
 		local.c_cc[i] = termios->c_cc[i];
+	}
 
 	tty_settings[minor] = local;
 }
@@ -83,7 +81,7 @@ set_term_settings(int minor, struct termios *termios)
 // color is default if it is set to 0xff
 static void
 set_term_color(uint32_t foreground, uint32_t background, bool changed_fg,
-							 bool changed_bg)
+               bool changed_bg)
 {
 	if (foreground == 0 && background == 0) {
 		static_foreg = VGA_COLOR_WHITE;
@@ -153,12 +151,14 @@ void
 ansi_change_color(bool bold, uint32_t color, uint8_t c, bool fg)
 {
 	// All attributes, [0, 29].
-	if (color <= 29)
+	if (color <= 29) {
 		return;
-	if (fg)
+	}
+	if (fg) {
 		set_term_color(color, 0, true, false);
-	else
+	} else {
 		set_term_color(0, color, false, true);
+	}
 }
 static void
 uartputc_wrapper(char c, char *buf)
@@ -176,7 +176,7 @@ __nonnull(1) void uart_printf(const char *fmt, ...)
 	va_list argp;
 	va_start(argp, fmt);
 	kernel_vprintf_template(uartputc_wrapper, NULL, NULL, fmt, argp, &cons.lock,
-													false, -1);
+	                        false, -1);
 	va_end(argp);
 }
 
@@ -188,12 +188,12 @@ vga_write_char_wrapper(char c, char *buf)
 
 __attribute__((deprecated("Use vga_cprintf or uart_printf")))
 __attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *fmt,
-																																...)
+                                                                ...)
 {
 	va_list argp;
 	va_start(argp, fmt);
 	kernel_vprintf_template(vga_write_char_wrapper, let_rust_handle_it, NULL, fmt,
-													argp, &cons.lock, true, -1);
+	                        argp, &cons.lock, true, -1);
 	va_end(argp);
 }
 __attribute__((format(printf, 1, 2)))
@@ -202,7 +202,7 @@ __nonnull(1) void vga_cprintf(const char *fmt, ...)
 	va_list argp;
 	va_start(argp, fmt);
 	kernel_vprintf_template(vga_write_char_wrapper, let_rust_handle_it, NULL, fmt,
-													argp, &cons.lock, true, -1);
+	                        argp, &cons.lock, true, -1);
 	va_end(argp);
 }
 size_t global_string_index = 0;
@@ -219,7 +219,7 @@ __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...)
 	va_start(argp, fmt);
 	global_string_index = 0;
 	kernel_vprintf_template(string_putc_wrapper, ansi_noop, str, fmt, argp,
-													&cons.lock, true, -1);
+	                        &cons.lock, true, -1);
 	va_end(argp);
 }
 
@@ -240,8 +240,9 @@ panic(const char *s)
 		size_t relative_pos;
 		const char *name = symbol_resolve(pcs[i], &relative_pos);
 
-		if (name != NULL && relative_pos != 0)
+		if (name != NULL && relative_pos != 0) {
 			vga_cprintf("%s+%#lx\n", name, relative_pos);
+		}
 	}
 	vga_cprintf("\033[0m");
 	panicked = 1; // freeze other CPU
@@ -276,7 +277,6 @@ consputc(int c)
 static void
 consputc3(int c, uint32_t foreg, uint32_t backg)
 {
-
 	if (c == BACKSPACE) {
 		uartputc('\b');
 		uartputc(' ');
@@ -284,8 +284,9 @@ consputc3(int c, uint32_t foreg, uint32_t backg)
 	} else {
 		uartputc(c);
 	}
-	if (echo_out)
+	if (echo_out) {
 		vga_write_char(c, static_foreg, static_backg);
+	}
 }
 
 #define INPUT_BUF 128
@@ -321,10 +322,11 @@ consoleintr(int (*getc)(void))
 			break;
 		case C('U'): // Kill line.
 			while (input.e != input.w &&
-						 input.buf[(input.e - 1) % INPUT_BUF] != '\n') {
+			       input.buf[(input.e - 1) % INPUT_BUF] != '\n') {
 				input.e--;
-				if (echo_out)
+				if (echo_out) {
 					vga_write_char(BACKSPACE, static_foreg, static_backg);
+				}
 			}
 			break;
 		case C('H'):
@@ -338,21 +340,27 @@ consoleintr(int (*getc)(void))
 			if (c != 0 && input.e - input.r < INPUT_BUF) {
 				c = (c == '\r') ? '\n' : c;
 				input.buf[input.e++ % INPUT_BUF] = c;
-				if (c != C('D'))
-					if (echo_out)
+				if (c != C('D')) {
+					if (echo_out) {
 						vga_write_char(c, static_foreg, static_backg);
+					}
+				}
 				if (c == '\n' || c == C('D') || input.e == input.r + INPUT_BUF) {
-					if (c == C('D'))
-						if (echo_out)
+					if (c == C('D')) {
+						if (echo_out) {
 							vga_write_char('\n', static_foreg, static_backg);
+						}
+					}
 					input.w = input.e;
 					wakeup(&input.r);
 				} else if (c == C('C')) {
 					struct proc *p = myproc();
-					if (p == NULL)
+					if (p == NULL) {
 						p = last_proc_ran();
-					if (p == NULL)
+					}
+					if (p == NULL) {
 						break;
+					}
 					kill(p->pid, SIGINT);
 				}
 			}
@@ -393,8 +401,9 @@ __nonnull(2, 3) static ssize_t
 		}
 		*dst++ = c;
 		--n;
-		if (c == '\n')
+		if (c == '\n') {
 			break;
+		}
 	}
 	release(&cons.lock);
 	inode_lock(ip);
@@ -402,8 +411,8 @@ __nonnull(2, 3) static ssize_t
 	return target - n;
 }
 /*
- * INVARIANT: None of the console_{height,width}_{text,pixels} functions should be
- * called before parse_multiboot(struct multiboot_info *).
+ * INVARIANT: None of the console_{height,width}_{text,pixels} functions should
+ * be called before parse_multiboot(struct multiboot_info *).
  */
 int
 console_width_pixels(void)
@@ -451,7 +460,7 @@ consoleclose_noop(short minor)
 
 __nonnull(2, 3) static ssize_t
 	uartread(short minor, __attribute__((unused)) struct inode *ip, char *buf,
-					 size_t n)
+           size_t n)
 {
 	return n;
 }
@@ -488,12 +497,13 @@ uartclose_noop(short minor)
 
 __nonnull(2, 3) static ssize_t
 	ttyread(short minor, __attribute__((unused)) struct inode *ip, char *buf,
-					size_t n)
+          size_t n)
 {
-	if (minor >= MINOR_TTY_SERIAL)
+	if (minor >= MINOR_TTY_SERIAL) {
 		return uartread(minor, ip, buf, n);
-	else
+	} else {
 		return consoleread(minor, ip, buf, n);
+	}
 }
 
 /* clang-format off */
@@ -511,30 +521,32 @@ ttywrite(short minor, __attribute__((unused)) struct inode *ip,
 static struct mmap_info
 ttymmap_noop(short minor, size_t length, uintptr_t addr, int perm)
 {
-	if (minor >= MINOR_TTY_SERIAL)
+	if (minor >= MINOR_TTY_SERIAL) {
 		return uartmmap_noop(minor, length, addr, perm);
-	else
+	} else {
 		return consolemmap_noop(minor, length, addr, perm);
+	}
 }
 
 static int
 ttyopen_noop(short minor, int flags)
 {
-	if (minor >= MINOR_TTY_SERIAL)
+	if (minor >= MINOR_TTY_SERIAL) {
 		return uartopen_noop(minor, flags);
-	else
+	} else {
 		return consoleopen_noop(minor, flags);
+	}
 }
 
 static int
 ttyclose_noop(short minor)
 {
-	if (minor >= MINOR_TTY_SERIAL)
+	if (minor >= MINOR_TTY_SERIAL) {
 		return uartclose_noop(minor);
-	else
+	} else {
 		return consoleclose_noop(minor);
+	}
 }
-
 
 void
 consoleinit(void)

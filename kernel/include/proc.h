@@ -1,6 +1,8 @@
 #pragma once
 #if __KERNEL__
 // Per-CPU state
+#include "../drivers/mmu.h"
+#include "../include/file.h"
 #include "fs.h"
 #include "kernel_signal.h"
 #include "mman.h"
@@ -8,10 +10,8 @@
 #include "spinlock.h"
 #include "syscall.h"
 #include "types.h"
-#include <stdint.h>
 #include <stdbool.h>
-#include "../drivers/mmu.h"
-#include "../include/file.h"
+#include <stdint.h>
 
 struct cred {
 	uid_t uid;
@@ -25,8 +25,8 @@ struct cpu {
 	uint64_t user_stack;
 	uint8_t apicid; // Local APIC ID
 	struct context *scheduler; // swtch() here to enter scheduler
-	struct taskstate64 *tss
-		__attribute__((aligned(16))); // Used by x86 to find stack for interrupt
+	struct taskstate64 *tss __attribute__((aligned(16))); // Used by x86 to find
+	                                                      // stack for interrupt
 	union {
 		struct segdesc gdt[NSEGS]; // x86 global descriptor table
 #if X86_64
@@ -105,44 +105,24 @@ struct proc {
 //   fixed-size stack
 //   expandable heap
 
-int
-my_cpu_id(void);
-void
-exit(int) __attribute__((noreturn));
-pid_t
-fork(bool virtual);
-int
-growproc(intptr_t);
-int
-kill(pid_t, int);
-struct cpu *
-mycpu(void);
-struct proc *
-myproc(void);
-void
-pinit(void);
-void
-procdump(void);
-void
-scheduler(void) __attribute__((noreturn));
-void
-sched(void);
-void
-setproc(struct proc *);
-void
-sleep(void *, struct spinlock *);
-void
-userinit(void);
-int
-wait(int *);
-void
-wakeup(void *);
-void
-sleep_on_ms(time_t ms);
-void
-yield(void);
-struct proc *
-last_proc_ran(void);
-bool
-is_in_group(gid_t group, struct cred *cred);
+int my_cpu_id(void);
+void exit(int) __attribute__((noreturn));
+pid_t fork(bool virtual);
+int growproc(intptr_t);
+int kill(pid_t, int);
+struct cpu *mycpu(void);
+struct proc *myproc(void);
+void pinit(void);
+void procdump(void);
+void scheduler(void) __attribute__((noreturn));
+void sched(void);
+void setproc(struct proc *);
+void sleep(void *, struct spinlock *);
+void userinit(void);
+int wait(int *);
+void wakeup(void *);
+void sleep_on_ms(time_t ms);
+void yield(void);
+struct proc *last_proc_ran(void);
+bool is_in_group(gid_t group, struct cred *cred);
 #endif

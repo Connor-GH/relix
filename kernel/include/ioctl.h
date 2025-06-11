@@ -1,24 +1,26 @@
 #pragma once
 /* Exported to userspace */
-#include <pci.h>
 #include "fb.h"
-#include <termios.h>
+#include <pci.h>
 #include <sys/types.h>
+#include <termios.h>
 #define _IOC_RW 0b11
 #define _IOC_RO 0b01
 #define _IOC_WO 0b10
 #define _IOC_NONE 0
 // 8-bit magic, 2 bit rw, 14 bit size, 8 bit number (for that magic)
 // 8 + 2 + 14 + 8 = 32 bits
-// In other words, 255 different drivers, 255 different subcommands for each driver.
-// In the future, this constant may change.
-#define _IOC(drv_magic, rw, size, number) (unsigned long)((drv_magic << 24) | (number << 16) | (size << 2) | rw)
+// In other words, 255 different drivers, 255 different subcommands for each
+// driver. In the future, this constant may change.
+#define _IOC(drv_magic, rw, size, number) \
+	(unsigned long)((drv_magic << 24) | (number << 16) | (size << 2) | rw)
 
 // PCI ioctls.
 #define PCIIOCGETCONF _IOC('P', _IOC_RW, sizeof(struct pci_conf), 0)
 
 // Framebuffer (/dev/fb0).
-#define FBIOCGET_VSCREENINFO _IOC('F', _IOC_RW, sizeof(struct fb_var_screeninfo), 0)
+#define FBIOCGET_VSCREENINFO \
+	_IOC('F', _IOC_RW, sizeof(struct fb_var_screeninfo), 0)
 
 // Termios
 // Get attributes.

@@ -8,8 +8,8 @@
 #include "sleeplock.h"
 #include "types.h"
 #else
-#include <kernel/include/types.h>
 #include <kernel/include/sleeplock.h>
+#include <kernel/include/types.h>
 #endif
 // Constants that userspace testers might be interested in.
 // To not pollute the namespace, they have double underscores.
@@ -101,40 +101,25 @@ struct dinode {
 
 #if !defined(USE_HOST_TOOLS) || __KERNEL__
 #include "stat.h"
-void
-read_superblock(dev_t dev, struct superblock *sb);
-int
-dirlink(struct inode *, const char *, uint32_t);
-struct inode *
-dirlookup(struct inode *, const char *, uint64_t *);
-struct inode *
-inode_alloc(dev_t, mode_t);
-struct inode *
-inode_dup(struct inode *);
-void
-inode_init(dev_t dev);
-void
-inode_lock(struct inode *ip) __acquires(&ip->lock);
-void
-inode_put(struct inode *);
-void
-inode_unlock(struct inode *ip) __releases(&ip->lock);
-void
-inode_unlockput(struct inode *ip) __releases(&ip->lock);
-void
-inode_update(struct inode *);
-int
-namecmp(const char *, const char *);
-struct inode *
-namei(const char *);
-struct inode *
-nameiparent(const char *, char *);
-ssize_t
-inode_read(struct inode *ip, char *, off_t off, uint64_t n) __must_hold(&ip->lock);
-void
-inode_stat(struct inode *ip, struct stat *) __must_hold(&ip->lock);
-ssize_t
-inode_write(struct inode *ip, char *, off_t off, uint64_t n) __must_hold(&ip->lock);
+void read_superblock(dev_t dev, struct superblock *sb);
+int dirlink(struct inode *, const char *, uint32_t);
+struct inode *dirlookup(struct inode *, const char *, uint64_t *);
+struct inode *inode_alloc(dev_t, mode_t);
+struct inode *inode_dup(struct inode *);
+void inode_init(dev_t dev);
+void inode_lock(struct inode *ip) __acquires(&ip->lock);
+void inode_put(struct inode *);
+void inode_unlock(struct inode *ip) __releases(&ip->lock);
+void inode_unlockput(struct inode *ip) __releases(&ip->lock);
+void inode_update(struct inode *);
+int namecmp(const char *, const char *);
+struct inode *namei(const char *);
+struct inode *nameiparent(const char *, char *);
+ssize_t inode_read(struct inode *ip, char *, off_t off, uint64_t n)
+	__must_hold(&ip->lock);
+void inode_stat(struct inode *ip, struct stat *) __must_hold(&ip->lock);
+ssize_t inode_write(struct inode *ip, char *, off_t off, uint64_t n)
+	__must_hold(&ip->lock);
 #endif
 #endif
 #endif // !_FS_H

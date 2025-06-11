@@ -1,15 +1,15 @@
 // Mutual exclusion spin locks.
 
-#include "drivers/memlayout.h"
-#include "drivers/mmu.h"
-#include "x86.h"
-#include "proc.h"
 #include "spinlock.h"
 #include "console.h"
+#include "drivers/memlayout.h"
+#include "drivers/mmu.h"
 #include "kernel_assert.h"
-#include <string.h>
-#include <stdint.h>
+#include "proc.h"
+#include "x86.h"
 #include <stdatomic.h>
+#include <stdint.h>
+#include <string.h>
 
 void
 initlock(struct spinlock *lk, char *name)
@@ -86,7 +86,7 @@ getcallerpcs_with_bp(uintptr_t pcs[], uintptr_t *rbp, size_t size)
 
 	for (i = 0; i < size; i++) {
 		if (rbp == NULL || rbp < (uintptr_t *)KERNBASE ||
-				rbp == (uintptr_t *)0xffffffff) {
+		    rbp == (uintptr_t *)0xffffffff) {
 			break;
 		}
 		pcs[i] = rbp[1]; // saved %rip

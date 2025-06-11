@@ -1,21 +1,21 @@
 #include "kernel/include/fs.h"
 #include "kernel/include/kernel_signal.h"
-#include <errno.h>
-#include <setjmp.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
+#include <assert.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
-#include <assert.h>
+#include <kernel/include/x86.h>
+#include <setjmp.h>
+#include <signal.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <kernel/include/x86.h>
 #include <string.h>
-#include <unistd.h>
-#include <stddef.h>
-#include <signal.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 #include <time.h>
+#include <unistd.h>
 
 int errno;
 extern char **environ;
@@ -23,12 +23,14 @@ extern char **environ;
 DIR *
 fdopendir(int fd)
 {
-	if (fd == -1)
+	if (fd == -1) {
 		return NULL;
+	}
 	struct dirent de;
 	struct __linked_list_dirent *ll = malloc(sizeof(*ll));
-	if (ll == NULL)
+	if (ll == NULL) {
 		return NULL;
+	}
 	DIR *dirp = (DIR *)malloc(sizeof(DIR));
 	if (dirp == NULL) {
 		free(ll);
@@ -38,7 +40,7 @@ fdopendir(int fd)
 	ll->prev = NULL;
 
 	while (read(fd, &de, sizeof(de)) == sizeof(de) &&
-				 strcmp(de.d_name, "") != 0) {
+	       strcmp(de.d_name, "") != 0) {
 		ll->data = de;
 		ll->next = malloc(sizeof(*ll));
 		ll->next->prev = ll;
@@ -64,8 +66,9 @@ readdir(DIR *dirp)
 	}
 	struct dirent *to_ret = &dirp->list->data;
 	dirp->list = dirp->list->next;
-	if (strcmp(to_ret->d_name, "") == 0 && to_ret->d_ino == 0)
+	if (strcmp(to_ret->d_name, "") == 0 && to_ret->d_ino == 0) {
 		return NULL;
+	}
 	return to_ret;
 }
 
@@ -73,8 +76,9 @@ DIR *
 opendir(const char *path)
 {
 	int fd = open(path, O_RDONLY /*| O_DIRECTORY*/);
-	if (fd == -1)
+	if (fd == -1) {
 		return NULL;
+	}
 	return fdopendir(fd);
 }
 int
@@ -85,8 +89,9 @@ closedir(DIR *dir)
 		return -1;
 	}
 	int rc = close(dir->fd);
-	if (rc == 0)
+	if (rc == 0) {
 		dir->fd = -1;
+	}
 	if (dir->list == NULL) {
 		errno = -EBADF;
 		return -1;
@@ -120,8 +125,9 @@ atoi(const char *s)
 {
 	int n = 0;
 
-	while ('0' <= *s && *s <= '9')
+	while ('0' <= *s && *s <= '9') {
 		n = n * 10 + *s++ - '0';
+	}
 	return n;
 }
 
@@ -138,8 +144,9 @@ strtoll(const char *restrict s, char **restrict endptr, int base)
 	}
 	size_t i = 0;
 	// skip whitespace
-	while (isspace(s[i]))
+	while (isspace(s[i])) {
 		i++;
+	}
 	if (s[i] == '+') {
 		i++;
 		positive = true;
@@ -159,18 +166,20 @@ strtoll(const char *restrict s, char **restrict endptr, int base)
 		}
 	}
 	if (base <= 10) {
-		while ('0' <= s[i] && s[i] <= '9')
+		while ('0' <= s[i] && s[i] <= '9') {
 			num = num * base + s[i++] - '0';
+		}
 		if (endptr != NULL && *endptr != NULL) {
 			*endptr = (char *)(s + i + 1);
 		}
 		return num;
 	} else if (base <= 36) {
 		while (s[i] != '\0' &&
-					 (('0' <= s[i] && s[i] <= '9') || ('a' <= s[i] && s[i] <= 'z') ||
-						('A' <= s[i] && s[i] <= 'Z'))) {
-			if ('0' <= s[i] && s[i] <= '9')
+		       (('0' <= s[i] && s[i] <= '9') || ('a' <= s[i] && s[i] <= 'z') ||
+		        ('A' <= s[i] && s[i] <= 'Z'))) {
+			if ('0' <= s[i] && s[i] <= '9') {
 				num = num * base + s[i++] - '0';
+			}
 			if ('a' <= s[i] && s[i] <= 'z') {
 				num = num * base + s[i++] - 'a';
 			} else if ('A' <= s[i] && s[i] <= 'Z') {
@@ -224,10 +233,10 @@ strtoul(const char *s, char **endptr, int base)
 
 void
 assert_fail(const char *assertion, const char *file, int lineno,
-						const char *func)
+            const char *func)
 {
 	fprintf(stderr, "%s:%d: %s: Assertion `%s' failed.\n", file, lineno, func,
-					assertion);
+	        assertion);
 	fprintf(stderr, "Aborting.\n");
 	exit(-1);
 }
@@ -294,7 +303,6 @@ isatty(int fd)
 	return fd == 0;
 }
 
-
 int
 raise(int sig)
 {
@@ -358,10 +366,12 @@ static const char *signal_map[] = {
 char *
 strsignal(int sig)
 {
-	if (sig < 0)
+	if (sig < 0) {
 		return NULL;
-	if (sig >= NSIG)
+	}
+	if (sig >= NSIG) {
 		return NULL;
+	}
 	return (char *)signal_map[sig];
 }
 
@@ -389,8 +399,9 @@ atof(const char *nptr)
 	}
 
 	// Next are the digits.
-	for (val = 0.0; isdigit(nptr[i]); i++)
+	for (val = 0.0; isdigit(nptr[i]); i++) {
 		val = 10.0 * val + (nptr[i] - '0');
+	}
 
 	// Decimal point.
 	if (nptr[i] == '.') {
@@ -406,7 +417,6 @@ atof(const char *nptr)
 	}
 	return sign * val / power;
 }
-
 
 static uint64_t s_next_rand = 1;
 
@@ -461,7 +471,6 @@ execvp(const char *file, char *const argv[])
 static void
 sleep_noop(int signum)
 {
-
 }
 
 unsigned int

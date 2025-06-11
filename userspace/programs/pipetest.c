@@ -1,10 +1,10 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 void
 validate_data(const char *original, const char *received, size_t size)
@@ -57,7 +57,7 @@ run_tests(void)
 
 			exit(EXIT_SUCCESS);
 
-		// Parent
+			// Parent
 		} else {
 			ssize_t bytes_read = read(pipefd[0], received_data, test_size);
 			if (bytes_read < 0) {

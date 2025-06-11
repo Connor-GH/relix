@@ -1,7 +1,7 @@
-#include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 int
 main(void)
@@ -22,7 +22,7 @@ main(void)
 			exit(-1);
 		}
 		printf("Child returned with %d: end of process: %d\n", WEXITSTATUS(status),
-					 pid);
+		       pid);
 		return 0;
 	} else {
 		fprintf(stderr, "Error with fork()\n");

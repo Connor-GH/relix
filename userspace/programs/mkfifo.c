@@ -1,7 +1,7 @@
 #include <errno.h>
 #include <stdio.h>
-#include <sys/stat.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 int
@@ -15,8 +15,9 @@ main(int argc, char **argv)
 		case 'm':
 			errno = 0;
 			mode = strtol(optarg, NULL, 8);
-			if (errno != 0)
+			if (errno != 0) {
 				mode = 0644;
+			}
 			break;
 		default:
 			break;

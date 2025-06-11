@@ -1,10 +1,10 @@
-#include "kernel_assert.h"
+#include "ticketlock.h"
 #include "console.h"
+#include "kernel_assert.h"
 #include "proc.h"
 #include "stddef.h"
-#include <stdint.h>
 #include <stdatomic.h>
-#include "ticketlock.h"
+#include <stdint.h>
 
 int
 holding_ticketlock(struct ticketlock *tl)

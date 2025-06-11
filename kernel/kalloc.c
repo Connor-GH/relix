@@ -2,25 +2,23 @@
 // memory for user processes, kernel stacks, page table pages,
 // and pipe buffers. Allocates 4096-byte pages.
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdint.h>
-#include "lib/compiler_attributes.h"
+#include "kalloc.h"
+#include "boot/multiboot2.h"
+#include "console.h"
 #include "drivers/memlayout.h"
 #include "drivers/mmu.h"
-#include "spinlock.h"
-#include "kalloc.h"
-#include "console.h"
+#include "kernel_ld_syms.h"
+#include "lib/compiler_attributes.h"
+#include "macros.h"
 #include "param.h"
 #include "proc.h"
-#include "macros.h"
+#include "spinlock.h"
 #include <stddef.h>
-#include "boot/multiboot2.h"
+#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
-#include "kernel_ld_syms.h"
 
-static void
-freerange(void *vstart, void *vend);
+static void freerange(void *vstart, void *vend);
 
 struct run {
 	struct run *next;
@@ -85,7 +83,7 @@ kpage_free(char *v) __releases(kpage)
 	}
 
 	if ((uintptr_t)v % PGSIZE || v < __kernel_end ||
-			(V2P(v) >= available_memory && likely(available_memory > 0))) {
+	    (V2P(v) >= available_memory && likely(available_memory > 0))) {
 		panic("kpage_free");
 	}
 

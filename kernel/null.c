@@ -1,5 +1,5 @@
-#include "fs.h"
 #include "file.h"
+#include "fs.h"
 
 static ssize_t
 nulldrvwrite(short minor, struct inode *ip, char *buf, size_t n)

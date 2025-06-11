@@ -1,12 +1,12 @@
 #include "termios.h"
-#include <sys/param.h>
+#include <ext.h>
+#include <pwd.h>
+#include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <ext.h>
+#include <sys/param.h>
 #include <unistd.h>
-#include <stddef.h>
-#include <pwd.h>
 
 extern char **environ;
 
@@ -35,8 +35,9 @@ main(int argc, char **argv)
 	if (fflag) {
 		entry = getpwnam(username);
 
-		if (entry != NULL)
+		if (entry != NULL) {
 			uid = entry->pw_uid;
+		}
 		goto autologin;
 	}
 try_again:
@@ -69,8 +70,9 @@ try_again:
 	if (uid == -1) {
 		entry = getpwnam(username);
 
-		if (entry != NULL)
+		if (entry != NULL) {
 			uid = entry->pw_uid;
+		}
 		if (uid == -1) {
 			fprintf(stderr, "User does not exist!\n");
 			goto try_again;
@@ -82,8 +84,9 @@ try_again:
 	if (strcmp(passwd, actual_password) == 0) {
 		fprintf(stdout, "Password is correct!\n");
 autologin:;
-		if (uid == 0)
+		if (uid == 0) {
 			setuid(uid);
+		}
 		char *const sh_argv[] = { "/bin/sh", NULL };
 		execve("/bin/sh", sh_argv, environ);
 		printf("execv sh failed\n");

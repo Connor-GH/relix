@@ -69,32 +69,32 @@ struct segdesc {
 // Normal segment
 #define SEG(type, base, lim, dpl)                     \
 	(struct segdesc){ ((lim) >> 12) & 0xffff,           \
-										(uint32_t)(base) & 0xffff,        \
-										((uintptr_t)(base) >> 16) & 0xff, \
-										type,                             \
-										1,                                \
-										dpl,                              \
-										1,                                \
-										(uintptr_t)(lim) >> 28,           \
-										0,                                \
-										0,                                \
-										1,                                \
-										1,                                \
-										(uintptr_t)(base) >> 24 }
+		                (uint32_t)(base) & 0xffff,        \
+		                ((uintptr_t)(base) >> 16) & 0xff, \
+		                type,                             \
+		                1,                                \
+		                dpl,                              \
+		                1,                                \
+		                (uintptr_t)(lim) >> 28,           \
+		                0,                                \
+		                0,                                \
+		                1,                                \
+		                1,                                \
+		                (uintptr_t)(base) >> 24 }
 #define SEG16(type, base, lim, dpl)                   \
 	(struct segdesc){ (lim) & 0xffff,                   \
-										(uint32_t)(base) & 0xffff,        \
-										((uintptr_t)(base) >> 16) & 0xff, \
-										type,                             \
-										1,                                \
-										dpl,                              \
-										1,                                \
-										(uintptr_t)(lim) >> 16,           \
-										0,                                \
-										0,                                \
-										1,                                \
-										0,                                \
-										(uintptr_t)(base) >> 24 }
+		                (uint32_t)(base) & 0xffff,        \
+		                ((uintptr_t)(base) >> 16) & 0xff, \
+		                type,                             \
+		                1,                                \
+		                dpl,                              \
+		                1,                                \
+		                (uintptr_t)(lim) >> 16,           \
+		                0,                                \
+		                0,                                \
+		                1,                                \
+		                0,                                \
+		                (uintptr_t)(base) >> 24 }
 #endif
 
 #define DPL_KERNEL 0x0

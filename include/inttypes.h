@@ -108,4 +108,3 @@ struct imaxdiv_t {};
 #define PRIuFAST32 PRIu32
 #define PRIuFAST16 PRIu16
 #define PRIuFAST8 PRIu8
-

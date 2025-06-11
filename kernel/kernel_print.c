@@ -1,9 +1,9 @@
 #include "spinlock.h"
 #include <stdarg.h>
 #include <stdbool.h>
-#include <string.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 enum {
 	FLAG_PADZERO = 1 << 0,
@@ -18,7 +18,7 @@ enum {
 
 static int
 printint(void (*put_function)(char, char *), char *put_func_buf, int64_t xx,
-				 int base, bool sgn, int flags, int padding)
+         int base, bool sgn, int flags, int padding)
 {
 	static const char digits[] = "0123456789abcdef";
 	char buf[64];
@@ -77,7 +77,7 @@ printint(void (*put_function)(char, char *), char *put_func_buf, int64_t xx,
 	}
 
 	if (!IS_SET(flags, FLAG_LJUST) && !IS_SET(flags, FLAG_PADZERO) &&
-			padding != 0) {
+	    padding != 0) {
 		while (i < padding) {
 			buf[i++] = ' ';
 		}
@@ -102,7 +102,7 @@ pow_10(int n)
 
 static void
 print_string(void (*put_function)(char c, char *buf), char *s, int flags,
-						 char *restrict buf, int str_pad)
+             char *restrict buf, int str_pad)
 {
 	if (s == NULL) {
 		s = "(null)";
@@ -127,9 +127,9 @@ print_string(void (*put_function)(char c, char *buf), char *s, int flags,
 // Print to the given fd. Only understands %d, %x, %p, %s.
 int
 kernel_vprintf_template(void (*put_function)(char c, char *buf),
-												size_t (*ansi_func)(const char *), char *restrict buf,
-												const char *fmt, va_list argp, struct spinlock *lock,
-												bool locking, size_t print_n_chars)
+                        size_t (*ansi_func)(const char *), char *restrict buf,
+                        const char *fmt, va_list argp, struct spinlock *lock,
+                        bool locking, size_t print_n_chars)
 {
 	char *s;
 	int c = 0, i = 0, state = 0;
@@ -180,7 +180,7 @@ kernel_vprintf_template(void (*put_function)(char c, char *buf),
 numerical_padding:
 				str_pad = str_pad * 10 + (c - '0');
 				// soon...
-				//if (IS_SET(flags, FLAG_PADZERO)) {}
+				// if (IS_SET(flags, FLAG_PADZERO)) {}
 				// str_pad = c - '0';
 				goto skip_state_reset;
 				break;

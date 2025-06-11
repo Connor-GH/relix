@@ -1,6 +1,6 @@
 #include "libc_syscalls.h"
-#include <sys/syscall.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 
 int
 mknod(const char *pathname, mode_t mode, dev_t device)

@@ -1,12 +1,12 @@
-#include "buf.h"
-#include "param.h"
-#include "spinlock.h"
-#include "fs.h"
 #include "log.h"
-#include "console.h"
-#include <string.h>
 #include "bio.h"
+#include "buf.h"
+#include "console.h"
+#include "fs.h"
+#include "param.h"
 #include "proc.h"
+#include "spinlock.h"
+#include <string.h>
 
 // Simple logging that allows concurrent FS system calls.
 //
@@ -49,10 +49,8 @@ struct log {
 };
 static struct log log;
 
-static void
-recover_from_log(void);
-static void
-commit(void);
+static void recover_from_log(void);
+static void commit(void);
 
 void
 initlog(dev_t dev)
@@ -77,8 +75,8 @@ install_trans(void)
 	for (size_t tail = 0; tail < log.lh.n; tail++) {
 		struct block_buffer *lbuf =
 			block_read(log.dev, log.start + tail + 1); // read log block
-		struct block_buffer *dbuf =
-			block_read(log.dev, log.lh.block[tail]); // read dst
+		struct block_buffer *dbuf = block_read(log.dev, log.lh.block[tail]); // read
+		                                                                     // dst
 		memmove(dbuf->data, lbuf->data, BSIZE); // copy block to dst
 		block_write(dbuf); // write dst to disk
 		block_release(lbuf);

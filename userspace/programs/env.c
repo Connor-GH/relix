@@ -1,5 +1,5 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
 extern char **environ;
@@ -8,8 +8,9 @@ int
 main(int argc, char **argv)
 {
 	if (argc == 1) {
-		for (int i = 0; environ[i]; i++)
+		for (int i = 0; environ[i]; i++) {
 			printf("%s\n", environ[i]);
+		}
 		exit(EXIT_SUCCESS);
 	}
 	int i = 1;

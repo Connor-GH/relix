@@ -1,12 +1,13 @@
 #include "ext.h"
-#include <stdlib.h>
+#include <assert.h>
+#include <fcntl.h>
 #include <gui.h>
 #include <stdio.h>
-#include <fcntl.h>
+#include <stdlib.h>
 #include <sys/ioctl.h>
-#include <assert.h>
 
-int main(void)
+int
+main(void)
 {
 	void *fb = libgui_init("/dev/fb0");
 	struct fb_var_screeninfo screeninfo;
@@ -23,11 +24,15 @@ int main(void)
 	time_t start = uptime();
 	assert(screeninfo.yres == 480 && screeninfo.xres == 640);
 	for (int i = 0; i < 30 * 10; i++) {
-		libgui_fill_rect_ptr(fb, &(struct rectangle){0, 0, screeninfo.xres, screeninfo.yres}, 0x666666);
-		libgui_fill_rect_ptr(fb, &(struct rectangle){0, 0, screeninfo.xres, screeninfo.yres}, 0x000000);
+		libgui_fill_rect_ptr(
+			fb, &(struct rectangle){ 0, 0, screeninfo.xres, screeninfo.yres },
+			0x666666);
+		libgui_fill_rect_ptr(
+			fb, &(struct rectangle){ 0, 0, screeninfo.xres, screeninfo.yres },
+			0x000000);
 	}
 	time_t diff = uptime() - start;
-	printf("fps: %f\n", 300./(diff/1000.));
+	printf("fps: %f\n", 300. / (diff / 1000.));
 	libgui_fini(fb);
 	return 0;
 }

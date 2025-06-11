@@ -1,17 +1,16 @@
+#include "syscall.h"
+#include "console.h"
 #include "mmu.h"
+#include "msr.h"
+#include "proc.h"
 #include "spinlock.h"
 #include "trap.h"
+#include "x86.h"
+#include <defs.h>
 #include <errno.h>
-#include "kernel_assert.h"
 #include <fcntl.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <defs.h>
-#include "proc.h"
-#include "x86.h"
-#include "syscall.h"
-#include "console.h"
-#include "msr.h"
 #include <stdnoreturn.h>
 
 #define SYSCALL_ARG_FETCH(T)                                   \
@@ -113,7 +112,7 @@ argptr(int n, char **pp, int size)
 	PROPOGATE_ERR(arguintptr_t(n, &ptr));
 
 	if (size < 0 ||
-			((uintptr_t)ptr >= curproc->sz || (uintptr_t)ptr + size > curproc->sz)) {
+	    ((uintptr_t)ptr >= curproc->sz || (uintptr_t)ptr + size > curproc->sz)) {
 		return -EFAULT;
 	}
 	*pp = (char *)ptr;
@@ -133,110 +132,58 @@ argstr(int n, char **pp)
 	return fetchstr(addr, pp);
 }
 
-extern size_t
-sys_chdir(void);
-extern size_t
-sys_close(void);
-extern size_t
-sys_dup(void);
-extern size_t
-sys_execve(void);
-extern size_t
-sys__exit(void);
-extern size_t
-sys_fork(void);
-extern size_t
-sys_fstat(void);
-extern size_t
-sys_getpid(void);
-extern size_t
-sys_kill(void);
-extern size_t
-sys_link(void);
-extern size_t
-sys_mkdir(void);
-extern size_t
-sys_mknod(void);
-extern size_t
-sys_open(void);
-extern size_t
-sys_pipe(void);
-extern size_t
-sys_read(void);
-extern size_t
-sys_sbrk(void);
-extern size_t
-sys_alarm(void);
-extern size_t
-sys_unlink(void);
-extern size_t
-sys_wait(void);
-extern size_t
-sys_write(void);
-extern size_t
-sys_uptime(void);
-extern size_t
-sys_time(void);
-extern size_t
-sys_chmod(void);
-extern size_t
-sys_reboot(void);
-extern size_t
-sys_setgid(void);
-extern size_t
-sys_setuid(void);
-extern size_t
-sys_ptrace(void);
-extern size_t
-sys_symlink(void);
-extern size_t
-sys_readlink(void);
-extern size_t
-sys_lseek(void);
-extern size_t
-sys_fsync(void);
-extern size_t
-sys_writev(void);
-extern size_t
-sys_ioctl(void);
-extern size_t
-sys_mmap(void);
-extern size_t
-sys_munmap(void);
-extern size_t
-sys_signal(void);
-extern size_t
-sys_getcwd(void);
-extern size_t
-sys_sigprocmask(void);
-extern size_t
-sys_vfork(void);
-extern size_t
-sys_wait3(void);
-extern size_t
-sys_sigsuspend(void);
-extern size_t
-sys_umask(void);
-extern size_t
-sys_sigaction(void);
-extern size_t
-sys_rename(void);
-extern size_t
-sys_getuid(void);
-extern size_t
-sys_getgid(void);
-extern size_t
-sys_getppid(void);
-extern size_t
-sys_times(void);
-extern size_t
-sys_stat(void);
-extern size_t
-sys_fchmod(void);
-extern size_t
-sys_access(void);
-extern size_t
-sys_fcntl(void);
+extern size_t sys_chdir(void);
+extern size_t sys_close(void);
+extern size_t sys_dup(void);
+extern size_t sys_execve(void);
+extern size_t sys__exit(void);
+extern size_t sys_fork(void);
+extern size_t sys_fstat(void);
+extern size_t sys_getpid(void);
+extern size_t sys_kill(void);
+extern size_t sys_link(void);
+extern size_t sys_mkdir(void);
+extern size_t sys_mknod(void);
+extern size_t sys_open(void);
+extern size_t sys_pipe(void);
+extern size_t sys_read(void);
+extern size_t sys_sbrk(void);
+extern size_t sys_alarm(void);
+extern size_t sys_unlink(void);
+extern size_t sys_wait(void);
+extern size_t sys_write(void);
+extern size_t sys_uptime(void);
+extern size_t sys_time(void);
+extern size_t sys_chmod(void);
+extern size_t sys_reboot(void);
+extern size_t sys_setgid(void);
+extern size_t sys_setuid(void);
+extern size_t sys_ptrace(void);
+extern size_t sys_symlink(void);
+extern size_t sys_readlink(void);
+extern size_t sys_lseek(void);
+extern size_t sys_fsync(void);
+extern size_t sys_writev(void);
+extern size_t sys_ioctl(void);
+extern size_t sys_mmap(void);
+extern size_t sys_munmap(void);
+extern size_t sys_signal(void);
+extern size_t sys_getcwd(void);
+extern size_t sys_sigprocmask(void);
+extern size_t sys_vfork(void);
+extern size_t sys_wait3(void);
+extern size_t sys_sigsuspend(void);
+extern size_t sys_umask(void);
+extern size_t sys_sigaction(void);
+extern size_t sys_rename(void);
+extern size_t sys_getuid(void);
+extern size_t sys_getgid(void);
+extern size_t sys_getppid(void);
+extern size_t sys_times(void);
+extern size_t sys_stat(void);
+extern size_t sys_fchmod(void);
+extern size_t sys_access(void);
+extern size_t sys_fcntl(void);
 
 static size_t (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,
@@ -293,8 +240,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_fcntl] = sys_fcntl,
 };
 
-noreturn static void
-syscall_do(void);
+noreturn static void syscall_do(void);
 
 __attribute__((noinline)) void
 syscall_init(void)
@@ -333,8 +279,7 @@ syscall_init(void)
 	wrmsr(MSR_KERNEL_GS_BASE, (uint64_t)mycpu());
 }
 
-void
-syswrap(struct trapframe *tf);
+void syswrap(struct trapframe *tf);
 
 noreturn __attribute__((naked)) static void
 syscall_do(void)
@@ -349,7 +294,7 @@ syscall_do(void)
 
 		"pushq %%gs:%c[user_stack]\n" // user rsp.
 		// We used %gs for all we need it for (CPU-local data).
-		// Swap it back.
+	  // Swap it back.
 		"swapgs\n"
 		"sti\n"
 
@@ -438,7 +383,7 @@ syscall(void)
 			yticks = ticks;
 
 			cprintf("pid %d: syscall %s => %ld (%lu ticks)", curproc->pid,
-							syscall_names[num], curproc->tf->rax, yticks - xticks);
+			        syscall_names[num], curproc->tf->rax, yticks - xticks);
 			if ((signed)curproc->tf->rax < 0) {
 				cprintf(" \"%s\"", errno_codes[-(signed)curproc->tf->rax]);
 			}

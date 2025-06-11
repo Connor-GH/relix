@@ -23,18 +23,17 @@
  *
  */
 
+#include "vm.h"
 #include "boot/multiboot2.h"
 #include "console.h"
 #include "errno.h"
+#include "fs.h"
+#include "kalloc.h"
 #include "memlayout.h"
 #include "mmu.h"
-#include "proc.h"
-#include "kalloc.h"
-#include "console.h"
-#include "vm.h"
-#include "fs.h"
 #include "msr.h"
 #include "param.h"
+#include "proc.h"
 #include "vga.h"
 #include "x86.h"
 #include <stdint.h>
@@ -75,7 +74,7 @@ walkpgdir(uintptr_t *pgdir, const void *va, bool alloc)
 // be page-aligned.
 int
 mappages_perm(uintptr_t *pgdir, void *va, uintptr_t size, uintptr_t pa,
-							int perm)
+              int perm)
 {
 	char *a, *last;
 	pte_t *pte;
@@ -132,7 +131,7 @@ inituvm(uintptr_t *pgdir, char *init, uint32_t sz)
 // and the pages from addr to addr+sz must already be mapped.
 int
 loaduvm(uintptr_t *pgdir, char *addr, struct inode *ip, uint32_t offset,
-				uint32_t sz)
+        uint32_t sz)
 {
 	uintptr_t i, pa, n;
 	pte_t *pte;
@@ -192,7 +191,7 @@ allocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 
 int
 alloc_user_bytes(uintptr_t *pgdir, const size_t size, const uintptr_t virt_addr,
-								 uintptr_t *phys_addr)
+                 uintptr_t *phys_addr)
 {
 	if (size == 0) {
 		return -EINVAL;
@@ -215,7 +214,7 @@ alloc_user_bytes(uintptr_t *pgdir, const size_t size, const uintptr_t virt_addr,
 		const uintptr_t proper_virt_addr = i + PGROUNDUP(virt_addr);
 
 		if (mappages(pgdir, (char *)proper_virt_addr, PGSIZE, V2P(mem),
-								 PTE_W | PTE_U) < 0) {
+		             PTE_W | PTE_U) < 0) {
 			/* dealloc_user_bytes ... */
 			kfree(mem);
 			return -ENOMEM;
@@ -264,7 +263,7 @@ deallocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 	for (; a < oldsz; a += PGSIZE) {
 		pte = walkpgdir(pgdir, (char *)a, 0);
 		if (!pte) {
-			//a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
+			// a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
 			a += (NPTENTRIES - 1) * PGSIZE;
 		} else if ((*pte & PTE_P) != 0) {
 			pa = PTE_ADDR(*pte);
@@ -290,7 +289,6 @@ deallocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 void
 freevm(uintptr_t *pgdir)
 {
-
 	if (pgdir == NULL) {
 		panic("freevm: no pgdir");
 	}
@@ -612,7 +610,7 @@ kvmalloc(void)
 	uintptr_t fb_addr = fb_common.framebuffer_addr;
 	for (n = 0; n < 16; n++) {
 		iopgdir[n] = (fb_addr + (n << PDXSHIFT)) | PDE_PS | PTE_P | PTE_W |
-								 PTE_PWT | PTE_PCD;
+		             PTE_PWT | PTE_PCD;
 	}
 	switchkvm();
 }

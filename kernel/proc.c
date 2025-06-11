@@ -1,31 +1,31 @@
-#include "mman.h"
-#include "stat.h"
-#include <signal.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <stddef.h>
-#include <string.h>
-#include "drivers/mmu.h"
-#include "kernel_assert.h"
-#include "drivers/lapic.h"
-#include "defs.h"
-#include "param.h"
-#include "x86.h"
 #include "proc.h"
-#include "spinlock.h"
-#include "kalloc.h"
 #include "console.h"
-#include "vm.h"
-#include "log.h"
-#include "swtch.h"
-#include "syscall.h"
+#include "defs.h"
+#include "drivers/lapic.h"
+#include "drivers/mmu.h"
 #include "file.h"
 #include "fs.h"
-#include "trap.h"
-#include "lib/compiler_attributes.h"
-#include "types.h"
+#include "kalloc.h"
+#include "kernel_assert.h"
 #include "kernel_signal.h"
+#include "lib/compiler_attributes.h"
+#include "log.h"
+#include "mman.h"
+#include "param.h"
+#include "spinlock.h"
+#include "stat.h"
+#include "swtch.h"
+#include "syscall.h"
+#include "trap.h"
+#include "types.h"
+#include "vm.h"
+#include "x86.h"
+#include <errno.h>
+#include <signal.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define W_EXITCODE(ret, signal) ((ret) << 8 | (signal))
 
@@ -37,13 +37,10 @@ struct {
 static struct proc *initproc;
 
 int nextpid = 1;
-extern void
-forkret(void);
-extern void
-trapret(void);
+extern void forkret(void);
+extern void trapret(void);
 
-static void
-wakeup1(void *chan);
+static void wakeup1(void *chan);
 
 void
 pinit(void)
@@ -73,7 +70,6 @@ static int pass = 0;
 struct cpu *
 mycpu(void)
 {
-
 	if (readrflags() & FL_IF) {
 		panic("mycpu called with interrupts enabled");
 	}
@@ -201,7 +197,7 @@ userinit(void)
 		panic("userinit: out of memory?");
 	}
 	inituvm(p->pgdir, _binary_bin_initcode_start,
-					(uintptr_t)_binary_bin_initcode_size);
+	        (uintptr_t)_binary_bin_initcode_size);
 	p->sz = PGSIZE;
 	memset(p->tf, 0, sizeof(*p->tf));
 	p->tf->cs = (SEG_UCODE << 3) | DPL_USER;
@@ -282,7 +278,7 @@ fork(bool virtual)
 		for (int j = 0; np->mmap_info[j].length != 0; j++) {
 			struct mmap_info info = np->mmap_info[j];
 			if (mappages(np->pgdir, (void *)info.virt_addr, info.length, info.addr,
-									 info.perm) < 0) {
+			             info.perm) < 0) {
 				panic("Could not map page");
 			}
 		}
@@ -418,7 +414,7 @@ wait(int *wstatus)
 		}
 
 		// Wait for children to exit.  (See wakeup1 call in proc_exit.)
-		sleep(curproc, &ptable.lock); //DOC: wait-sleep
+		sleep(curproc, &ptable.lock); // DOC: wait-sleep
 	}
 }
 
@@ -429,7 +425,7 @@ last_proc_ran(void)
 	acquire(&ptable.lock);
 	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
 		if (p != initproc && p->pid != 2 &&
-				(p->state == RUNNING || p->state == SLEEPING)) {
+		    (p->state == RUNNING || p->state == SLEEPING)) {
 			release(&ptable.lock);
 			return p;
 		}
@@ -527,7 +523,7 @@ sched(void)
 void
 yield(void)
 {
-	acquire(&ptable.lock); //DOC: yieldlock
+	acquire(&ptable.lock); // DOC: yieldlock
 	myproc()->state = RUNNABLE;
 	sched();
 	release(&ptable.lock);
@@ -576,8 +572,8 @@ sleep(void *chan, struct spinlock *lk)
 	// guaranteed that we won't miss any wakeup
 	// (wakeup runs with ptable.lock locked),
 	// so it's okay to release lk.
-	if (lk != &ptable.lock) { //DOC: sleeplock0
-		acquire(&ptable.lock); //DOC: sleeplock1
+	if (lk != &ptable.lock) { // DOC: sleeplock0
+		acquire(&ptable.lock); // DOC: sleeplock1
 		release(lk);
 	}
 	// Go to sleep.
@@ -590,7 +586,7 @@ sleep(void *chan, struct spinlock *lk)
 	p->chan = NULL;
 
 	// Reacquire original lock.
-	if (lk != &ptable.lock) { //DOC: sleeplock2
+	if (lk != &ptable.lock) { // DOC: sleeplock2
 		release(&ptable.lock);
 		acquire(lk);
 	}
@@ -601,7 +597,6 @@ sleep(void *chan, struct spinlock *lk)
 static void
 wakeup1(void *chan)
 {
-
 	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
 		if (p->state == SLEEPING && p->chan == chan) {
 			p->state = RUNNABLE;
@@ -644,7 +639,6 @@ copy_signal_to_stack(struct proc *proc, int signal)
 int
 kill(pid_t pid, int signal)
 {
-
 	acquire(&ptable.lock);
 	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
 		if (p->pid == pid) {
@@ -707,7 +701,7 @@ sighandler_t
 kernel_attach_signal(int signum, sighandler_t handler)
 {
 	if (signum == SIGFPE || signum == SIGSEGV || signum == SIGBUS ||
-			signum == SIGILL) {
+	    signum == SIGILL) {
 		return SIG_ERR;
 	}
 	if (signum >= __SIG_last || signum < 0) {
@@ -726,7 +720,7 @@ void
 procdump(void)
 {
 	static char *states[] = {
-		[UNUSED] = "unused",		 [EMBRYO] = "embryo",		[SLEEPING] = "sleep",
+		[UNUSED] = "unused",     [EMBRYO] = "embryo",   [SLEEPING] = "sleep",
 		[RUNNABLE] = "runnable", [RUNNING] = "running", [ZOMBIE] = "zombie",
 		[STOPPED] = "stopped",
 	};

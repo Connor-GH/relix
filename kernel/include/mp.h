@@ -19,8 +19,8 @@ struct mpconf { // configuration table header
 	uint16_t length; // total table length
 	uint8_t version; // [14]; actually just the revision
 	uint8_t checksum; // all bytes must add up to 0
-	uint8_t
-		product[20]; // product id; first 4 is opem string; last 16 is product string
+	uint8_t product[20]; // product id; first 4 is opem string; last 16 is product
+	                     // string
 	uint32_t *oemtable; // OEM table pointer
 	uint16_t oemlength; // OEM table length
 	uint16_t entry; // entry count
@@ -62,6 +62,5 @@ struct mpbus {
 #define MPIOINTR 0x03 // One per bus interrupt source
 #define MPLINTR 0x04 // One per system interrupt source
 
-void
-mpinit(void);
+void mpinit(void);
 #endif

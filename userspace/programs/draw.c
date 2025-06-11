@@ -1,10 +1,11 @@
-#include <stdlib.h>
+#include <fcntl.h>
 #include <gui.h>
 #include <stdio.h>
-#include <fcntl.h>
+#include <stdlib.h>
 #include <sys/ioctl.h>
 
-int main(void)
+int
+main(void)
 {
 	void *fb = libgui_init("/dev/fb0");
 	struct fb_var_screeninfo screeninfo;
@@ -23,8 +24,14 @@ int main(void)
 		exit(EXIT_FAILURE);
 	}
 	close(fd);
-	libgui_fill_rect_ptr(fb, &(struct rectangle){0, 0, screeninfo.xres, screeninfo.yres - 40}, 0x666666);
-	libgui_fill_rect_ptr(fb, &(struct rectangle){.x = 0, .y = screeninfo.yres - 40, .xlen = screeninfo.xres, .ylen = 40}, 0x123456);
+	libgui_fill_rect_ptr(
+		fb, &(struct rectangle){ 0, 0, screeninfo.xres, screeninfo.yres - 40 },
+		0x666666);
+	libgui_fill_rect_ptr(
+		fb,
+		&(struct rectangle){
+			.x = 0, .y = screeninfo.yres - 40, .xlen = screeninfo.xres, .ylen = 40 },
+		0x123456);
 	libgui_fini(fb);
 	return 0;
 }

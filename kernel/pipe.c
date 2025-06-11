@@ -1,12 +1,12 @@
+#include "pipe.h"
 #include "errno.h"
+#include "file.h"
+#include "kalloc.h"
 #include "kernel_signal.h"
+#include "lib/ring_buffer.h"
 #include "proc.h"
 #include "spinlock.h"
-#include "file.h"
-#include "pipe.h"
-#include "kalloc.h"
 #include <limits.h>
-#include "lib/ring_buffer.h"
 
 #define PIPESIZE PIPE_BUF
 
@@ -82,7 +82,6 @@ pipeclose(struct pipe *p, int writable)
 int
 pipewrite(struct pipe *p, char *addr, int n)
 {
-
 	acquire(&p->lock);
 
 	// The pipe is not open for reading and
@@ -94,7 +93,7 @@ pipewrite(struct pipe *p, char *addr, int n)
 	}
 	for (int i = 0; i < n; i++) {
 		while (p->ring_buffer->nwrite ==
-					 p->ring_buffer->nread + p->ring_buffer->size) {
+		       p->ring_buffer->nread + p->ring_buffer->size) {
 			if (p->readopen == 0 || myproc()->killed) {
 				release(&p->lock);
 				return -EPIPE;

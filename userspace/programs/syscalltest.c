@@ -1,10 +1,8 @@
 #include "ext.h"
-#include <time.h>
-#include <unistd.h>
 #include <stdio.h>
 #include <sys/syscall.h>
-
-
+#include <time.h>
+#include <unistd.h>
 
 #define NUM_ITERS 100000
 int
@@ -19,7 +17,7 @@ main(void)
 		// the loop away.
 		if (time == NUM_ITERS) {
 			printf("This is here only for the "
-					"loop to not be optimized out\n");
+			       "loop to not be optimized out\n");
 		}
 	}
 	return 0;

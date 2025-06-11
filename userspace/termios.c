@@ -1,7 +1,7 @@
-#include <sys/types.h>
+#include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
-#include <errno.h>
+#include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -40,8 +40,9 @@ tcgetpgrp(int fd)
 {
 	int s;
 
-	if (ioctl(fd, TIOCGPGRP, &s) < 0)
+	if (ioctl(fd, TIOCGPGRP, &s) < 0) {
 		return (pid_t)-1;
+	}
 
 	return (pid_t)s;
 }
@@ -51,8 +52,9 @@ tcgetsid(int fd)
 {
 	int s;
 
-	if (ioctl(fd, TIOCGSID, &s) < 0)
+	if (ioctl(fd, TIOCGSID, &s) < 0) {
 		return (pid_t)-1;
+	}
 
 	return (pid_t)s;
 }
@@ -87,12 +89,12 @@ cfsetispeed(struct termios *t, speed_t speed)
 void
 cfmakeraw(struct termios *t)
 {
-	t->c_iflag &= ~(IXOFF | INPCK | BRKINT | PARMRK | ISTRIP | INLCR |
-									IGNCR | ICRNL | IXON | IGNPAR);
+	t->c_iflag &= ~(IXOFF | INPCK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR |
+	                ICRNL | IXON | IGNPAR);
 	t->c_iflag |= IGNBRK;
 	t->c_oflag &= ~OPOST;
-	t->c_lflag &= ~(ECHO | ECHOE | ECHOK | ECHONL | ICANON | ISIG | IEXTEN |
-									NOFLSH | TOSTOP);
+	t->c_lflag &=
+		~(ECHO | ECHOE | ECHOK | ECHONL | ICANON | ISIG | IEXTEN | NOFLSH | TOSTOP);
 	t->c_cflag &= ~(CSIZE | PARENB);
 	t->c_cflag |= CS8 | CREAD;
 	t->c_cc[VMIN] = 1;
@@ -106,8 +108,9 @@ tcsendbreak(int fd, int len)
 
 	sleepytime.tv_sec = 0;
 	sleepytime.tv_usec = 400000;
-	if (ioctl(fd, TIOCSBRK) == -1)
+	if (ioctl(fd, TIOCSBRK) == -1) {
 		return -1;
+	}
 	// TODO:
 	// The BSD implementation puts this here
 	// in order to wait for the terminal to
@@ -116,8 +119,9 @@ tcsendbreak(int fd, int len)
 #if 0
 	(void)select(0, 0, 0, 0, &sleepytime);
 #endif
-	if (ioctl(fd, TIOCCBRK) == -1)
+	if (ioctl(fd, TIOCCBRK) == -1) {
 		return -1;
+	}
 	return 0;
 }
 
@@ -130,7 +134,6 @@ tcdrain(int fd)
 int
 tcflush(int fd, int which)
 {
-
 	// The kernel will decipher the type of flush to be done.
 	return ioctl(fd, TIOCFLUSH, &which);
 }
@@ -148,11 +151,13 @@ tcflow(int fd, int action)
 		return ioctl(fd, TIOCSTART, 0);
 	case TCION:
 	case TCIOFF:
-		if (tcgetattr(fd, &term) == -1)
+		if (tcgetattr(fd, &term) == -1) {
 			return -1;
+		}
 		c = term.c_cc[action == TCIOFF ? VSTOP : VSTART];
-		if (c != _POSIX_VDISABLE && write(fd, &c, sizeof(c)) == -1)
+		if (c != _POSIX_VDISABLE && write(fd, &c, sizeof(c)) == -1) {
 			return -1;
+		}
 		return 0;
 	default:
 		errno = EINVAL;

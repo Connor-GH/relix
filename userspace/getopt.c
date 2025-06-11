@@ -44,11 +44,11 @@ static char sccsid[] = "@(#)egetopt.c	8.1 (Berkeley) 6/6/93";
 #endif
 
 #include <ctype.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 /*
  * egetopt:	get option letter from argument vector (an extended
@@ -95,7 +95,7 @@ getopt(int nargc, char *const *nargv, const char *ostr)
 		 * update scanning pointer
 		 */
 		if ((optind >= nargc) ||
-				((*(place = nargv[optind]) != '-') && (*place != '+'))) {
+		    ((*(place = nargv[optind]) != '-') && (*place != '+'))) {
 			place = emsg;
 			return (-1);
 		}
@@ -115,22 +115,24 @@ getopt(int nargc, char *const *nargv, const char *ostr)
 	 * check option letter
 	 */
 	if ((optopt = (int)*place++) == (int)':' || (optopt == (int)'?') ||
-			!(oli = strchr(ostr, optopt))) {
+	    !(oli = strchr(ostr, optopt))) {
 		/*
 		 * if the user didn't specify '-' as an option,
 		 * assume it means -1 when by itself.
 		 */
-		if ((optopt == (int)'-') && !*place)
+		if ((optopt == (int)'-') && !*place) {
 			return (-1);
+		}
 		if (strchr(ostr, '#') &&
-				(isdigit(optopt) ||
-				 (((optopt == (int)'-') || (optopt == (int)'+')) && isdigit(*place)))) {
+		    (isdigit(optopt) ||
+		     (((optopt == (int)'-') || (optopt == (int)'+')) && isdigit(*place)))) {
 			/*
 			 * # option: +/- with a number is ok
 			 */
 			for (p = place; *p != '\0'; ++p) {
-				if (!isdigit(*p))
+				if (!isdigit(*p)) {
 					break;
+				}
 			}
 			optarg = place - 1;
 
@@ -145,13 +147,15 @@ getopt(int nargc, char *const *nargv, const char *ostr)
 			return (delim);
 		}
 
-		if (!*place)
+		if (!*place) {
 			++optind;
+		}
 		if (opterr) {
-			if (!(p = strrchr(*nargv, '/')))
+			if (!(p = strrchr(*nargv, '/'))) {
 				p = *nargv;
-			else
+			} else {
 				++p;
+			}
 			(void)fprintf(stderr, "%s: illegal option -- %c\n", p, optopt);
 		}
 		return (BADCH);
@@ -160,15 +164,17 @@ getopt(int nargc, char *const *nargv, const char *ostr)
 		/*
 		 * '+' is only allowed with numbers
 		 */
-		if (!*place)
+		if (!*place) {
 			++optind;
+		}
 		if (opterr) {
-			if (!(p = strrchr(*nargv, '/')))
+			if (!(p = strrchr(*nargv, '/'))) {
 				p = *nargv;
-			else
+			} else {
 				++p;
+			}
 			(void)fprintf(stderr, "%s: illegal '+' delimiter with option -- %c\n", p,
-										optopt);
+			              optopt);
 		}
 		return (BADCH);
 	}
@@ -178,8 +184,9 @@ getopt(int nargc, char *const *nargv, const char *ostr)
 		 * don't need argument
 		 */
 		optarg = NULL;
-		if (!*place)
+		if (!*place) {
 			++optind;
+		}
 		return (optopt);
 	}
 
@@ -199,12 +206,13 @@ getopt(int nargc, char *const *nargv, const char *ostr)
 		 */
 		place = emsg;
 		if (opterr) {
-			if (!(p = strrchr(*nargv, '/')))
+			if (!(p = strrchr(*nargv, '/'))) {
 				p = *nargv;
-			else
+			} else {
 				++p;
+			}
 			(void)fprintf(stderr, "%s: option requires an argument -- %c\n", p,
-										optopt);
+			              optopt);
 		}
 		return (BADCH);
 	} else {

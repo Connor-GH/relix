@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <sys/stat.h>
 #include <stdlib.h> // for atoi_base (nonstandard)
+#include <sys/stat.h>
 // TODO atoi_base is pretty much strol
 
 int

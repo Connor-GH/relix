@@ -1,27 +1,24 @@
-#include <stdlib.h>
-#include <unistd.h>
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
+#include <unistd.h>
 
-void
-__fini_stdio(void);
+void __fini_stdio(void);
 static void
 cleanup(void)
 {
 	__fini_stdio();
 }
 
-void
-__init_stdio(void);
+void __init_stdio(void);
 
 static void
 startup(void)
 {
 	__init_stdio();
 }
-
 
 char *const *environ;
 void
@@ -31,8 +28,9 @@ _start(int argc, char *const *argv, char *const *envp)
 	assert(environ != NULL);
 	optind = 1;
 	opterr = 1;
-	if (argc >= 1 && strcmp(argv[0], "init") == 0)
+	if (argc >= 1 && strcmp(argv[0], "init") == 0) {
 		goto skip_init_and_atexit;
+	}
 	startup();
 	atexit(cleanup);
 skip_init_and_atexit:
@@ -40,10 +38,10 @@ skip_init_and_atexit:
 #pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
 #pragma GCC diagnostic push
 	/* Possible parameters:
- * - int argc, char **argv, char **envp
- * - int argc, char **argv
- * - void
- */
+	 * - int argc, char **argv, char **envp
+	 * - int argc, char **argv
+	 * - void
+	 */
 	exit(main(argc, argv));
 #pragma GCC diagnostic pop
 }

@@ -1,11 +1,11 @@
-#include <errno.h>
-#include <unistd.h>
+#include "kernel/include/x86.h"
+#include <ctype.h>
 #include <dirent.h>
+#include <errno.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include "kernel/include/x86.h"
-#include <stddef.h>
-#include <ctype.h>
+#include <unistd.h>
 
 #define min(x, y) ((x) < (y) ? (x) : (y))
 
@@ -58,20 +58,24 @@ strstr(const char *s1, const char *s2)
 int
 strncmp(const char *p, const char *q, size_t n)
 {
-	while (n > 0 && *p && *p == *q)
+	while (n > 0 && *p && *p == *q) {
 		n--, p++, q++;
-	if (n == 0)
+	}
+	if (n == 0) {
 		return 0;
+	}
 	return (uint8_t)*p - (uint8_t)*q;
 }
 
 int
 strncasecmp(const char *p, const char *q, size_t n)
 {
-	while (n > 0 && *p && tolower(*p) == tolower(*q))
+	while (n > 0 && *p && tolower(*p) == tolower(*q)) {
 		n--, p++, q++;
-	if (n == 0)
+	}
+	if (n == 0) {
 		return 0;
+	}
 	return (uint8_t)*p - (uint8_t)*q;
 }
 int
@@ -102,9 +106,11 @@ strnlen(const char *s, size_t size)
 char *
 strchr(const char *s, int c)
 {
-	for (; *s; s++)
-		if (*s == c)
+	for (; *s; s++) {
+		if (*s == c) {
 			return (char *)s;
+		}
+	}
 	return NULL;
 }
 
@@ -112,8 +118,9 @@ void *
 memchr(const void *s, int c, size_t n)
 {
 	for (size_t i = 0; i < n; i++) {
-		if (((const char *)s)[i] == c)
+		if (((const char *)s)[i] == c) {
 			return (void *)s + i;
+		}
 	}
 	return NULL;
 }
@@ -121,9 +128,11 @@ memchr(const void *s, int c, size_t n)
 void *
 memrchr(const void *s, int c, size_t n)
 {
-	for (size_t i = n; i > 0; i--)
-		if (((const char *)s)[i-1] == c)
+	for (size_t i = n; i > 0; i--) {
+		if (((const char *)s)[i - 1] == c) {
 			return (char *)s + i - 1;
+		}
+	}
 	return NULL;
 }
 
@@ -139,23 +148,24 @@ strncpy(char *dst, const char *src, size_t n)
 	char *start = dst;
 	while (n > 0 && *src != '\0') {
 		*dst++ = *src++;
-    n--;
-  }
+		n--;
+	}
 
 	while (n > 0) {
-    *dst++ = '\0';
-    n--;
-  }
+		*dst++ = '\0';
+		n--;
+	}
 
-  return start;
+	return start;
 }
 char *
 stpncpy(char *dst, const char *src, size_t n)
 {
 	while (n-- > 0 && (*dst++ = *src++) != 0)
 		;
-	while (n-- > 1)
+	while (n-- > 1) {
 		*dst++ = '\0';
+	}
 	return dst;
 }
 
@@ -168,7 +178,8 @@ bcopy(const void *src, void *dst, size_t n)
 static char *restrict __strtok_token = NULL;
 /*
  * Break a string into a sequence of zero or more nonempty tokens.
- * If the same string is being parsed as the previous invocation, str must be NULL.
+ * If the same string is being parsed as the previous invocation, str must be
+ * NULL.
  */
 char *
 strtok(char *restrict str, const char *restrict delimeter)
@@ -219,15 +230,16 @@ memcmp(const void *v1, const void *v2, size_t n)
 	dst = v1;
 	s2 = v2;
 	while (n-- > 0) {
-		if (*dst != *s2)
+		if (*dst != *s2) {
 			return *dst - *s2;
+		}
 		dst++, s2++;
 	}
 
 	return 0;
 }
 __deprecated("Removed in POSIX.1-2008") int bcmp(const void *v1, const void *v2,
-																								 size_t n)
+                                                 size_t n)
 {
 	return memcmp(v1, v2, n);
 }
@@ -238,11 +250,13 @@ memmove(void *dst, const void *src, size_t n)
 {
 	char *dest = (char *)dst;
 	const char *source = (const char *)src;
-	if (dest == source || n == 0)
+	if (dest == source || n == 0) {
 		return dst;
+	}
 
-	if (dest == NULL)
+	if (dest == NULL) {
 		return NULL;
+	}
 	// If source is lower than dest in memory,
 	// we don't have to worry about clobbering it going forwards.
 	if (dest < source) {
@@ -311,8 +325,9 @@ __safestrcpy(char *s, const char *t, size_t n)
 	char *os;
 
 	os = s;
-	if (n <= 0)
+	if (n <= 0) {
 		return os;
+	}
 	while (--n > 0 && (*s++ = *t++) != 0)
 		;
 	*s = 0;
@@ -396,8 +411,9 @@ strpbrk(const char *s1, const char *s2)
 char *
 strndup(const char *s, size_t n)
 {
-	if (s == NULL)
+	if (s == NULL) {
 		return NULL;
+	}
 	char *new_s = malloc(n);
 	if (new_s == NULL) {
 		errno = ENOMEM;
@@ -411,5 +427,4 @@ char *
 strdup(const char *s)
 {
 	return strndup(s, strlen(s) + 1);
-
 }

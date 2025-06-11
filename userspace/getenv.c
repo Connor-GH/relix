@@ -52,9 +52,11 @@ __findenv(const char *name, int len, int *offset)
 	}
 
 	for (p = environ + *offset; (cp = *p) != NULL; ++p) {
-		for (np = name, i = len; i && *cp; i--)
-			if (*cp++ != *np++)
+		for (np = name, i = len; i && *cp; i--) {
+			if (*cp++ != *np++) {
 				break;
+			}
+		}
 		if (i == 0 && *cp++ == '=') {
 			*offset = p - environ;
 			return cp;

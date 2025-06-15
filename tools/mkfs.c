@@ -251,7 +251,12 @@ main(int32_t argc, char *argv[])
 			name = argv[i];
 			ino = rootino;
 		}
-		strncpy(de.d_name, name, DIRSIZ);
+
+		if (strlen(name) > DIRSIZ - 1) {
+			fprintf(stderr, "WARNING: filename being truncated: '%s'\n", name);
+		}
+		strncpy(de.d_name, name, DIRSIZ - 1);
+		de.d_name[DIRSIZ - 1] = '\0';
 
 		inum = ialloc(S_IFREG | S_IAUSR);
 

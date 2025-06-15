@@ -127,19 +127,19 @@ inituvm(uintptr_t *pgdir, char *init, uint32_t sz)
 	memmove(mem, init, sz);
 }
 
-// Load a program segment into pgdir.  addr must be page-aligned
+// Load a program segment into pgdir. addr must be page-aligned
 // and the pages from addr to addr+sz must already be mapped.
 int
-loaduvm(uintptr_t *pgdir, char *addr, struct inode *ip, uint32_t offset,
-        uint32_t sz)
+loaduvm(uintptr_t *pgdir, char *addr, struct inode *ip, off_t offset,
+        uintptr_t sz)
 {
-	uintptr_t i, pa, n;
+	uintptr_t pa, n;
 	pte_t *pte;
 
 	if ((uintptr_t)addr % PGSIZE != 0) {
 		panic("loaduvm: addr must be page aligned");
 	}
-	for (i = 0; i < sz; i += PGSIZE) {
+	for (uintptr_t i = 0; i < sz; i += PGSIZE) {
 		if ((pte = walkpgdir(pgdir, addr + i, false)) == NULL) {
 			panic("loaduvm: address should exist");
 		}
@@ -149,7 +149,7 @@ loaduvm(uintptr_t *pgdir, char *addr, struct inode *ip, uint32_t offset,
 		} else {
 			n = PGSIZE;
 		}
-		if (inode_read(ip, p2v(pa), offset + i, n) != n) {
+		if (inode_read(ip, p2v(pa), offset + (off_t)i, n) != n) {
 			return -1;
 		}
 	}
@@ -264,7 +264,7 @@ deallocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 		pte = walkpgdir(pgdir, (char *)a, 0);
 		if (!pte) {
 			// a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
-			a += (NPTENTRIES - 1) * PGSIZE;
+			a += (uintptr_t)(NPTENTRIES - 1) * PGSIZE;
 		} else if ((*pte & PTE_P) != 0) {
 			pa = PTE_ADDR(*pte);
 			if (pa == 0) {
@@ -361,13 +361,14 @@ copyuvm(uintptr_t *pgdir, size_t sz)
 {
 	uintptr_t *d;
 	pte_t *pte;
-	uintptr_t pa, i, flags;
+	uintptr_t pa;
+	int flags;
 	char *mem;
 
 	if ((d = setupkvm()) == NULL) {
 		return NULL;
 	}
-	for (i = 0; i < sz; i += PGSIZE) {
+	for (uintptr_t i = 0; i < sz; i += PGSIZE) {
 		if ((pte = walkpgdir(pgdir, (void *)i, false)) == NULL) {
 			panic("copyuvm: pte should exist");
 		}

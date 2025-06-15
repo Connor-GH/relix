@@ -157,7 +157,10 @@ ok:
 			return_errno = -ENOMEM;
 			goto bad;
 		}
-		if ((errno_tmp = loaduvm(pgdir, (char *)ph.p_vaddr, ip, ph.p_offset,
+		// The ph.p_offset cast is okay because we shouldn't
+		// get a program header offset of 2^63.
+		// INVARIANT: ph.p+offset < 2^63
+		if ((errno_tmp = loaduvm(pgdir, (char *)ph.p_vaddr, ip, (off_t)ph.p_offset,
 		                         ph.p_filesz)) < 0) {
 			return_errno = errno_tmp;
 			goto bad;

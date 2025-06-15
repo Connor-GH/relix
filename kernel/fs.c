@@ -48,7 +48,7 @@ read_superblock(dev_t dev, struct superblock *sb)
 
 // Zero a block.
 static void
-bzero(dev_t dev, uint64_t bno)
+block_zero(dev_t dev, uint64_t bno)
 {
 	struct block_buffer *bp;
 
@@ -75,7 +75,7 @@ block_alloc(dev_t dev)
 				bp->data[bi / 8] |= m; // Mark block in use.
 				log_write(bp);
 				block_release(bp);
-				bzero(dev, b + bi);
+				block_zero(dev, b + bi);
 				return b + bi;
 			}
 		}
@@ -551,7 +551,7 @@ inode_stat(struct inode *ip, struct stat *st) __must_hold(&ip->lock)
 	st->st_dev = ip->dev;
 	st->st_ino = ip->inum;
 	st->st_nlink = ip->nlink;
-	st->st_size = ip->size;
+	st->st_size = (off_t)ip->size;
 	st->st_mode = ip->mode;
 	st->st_uid = ip->uid;
 	st->st_gid = ip->gid;
@@ -585,7 +585,7 @@ inode_read(struct inode *ip, char *dst, off_t off, uint64_t n)
 		n = ip->size - off;
 	}
 
-	for (uint64_t tot = 0; tot < n; tot += m, off += m, dst += m) {
+	for (uint64_t tot = 0; tot < n; tot += m, off += (off_t)m, dst += m) {
 		uintptr_t map = bmap(ip, off / BSIZE);
 		if (map == 0) {
 			return -ENOSPC;
@@ -595,7 +595,7 @@ inode_read(struct inode *ip, char *dst, off_t off, uint64_t n)
 		memmove(dst, bp->data + off % BSIZE, m);
 		block_release(bp);
 	}
-	return n;
+	return (off_t)n;
 }
 
 // Write data to inode.
@@ -623,7 +623,7 @@ inode_write(struct inode *ip, char *src, off_t off, uint64_t n)
 		return -EDOM;
 	}
 
-	for (uint64_t tot = 0; tot < n; tot += m, off += m, src += m) {
+	for (uint64_t tot = 0; tot < n; tot += m, off += (off_t)m, src += m) {
 		uintptr_t map = bmap(ip, off / BSIZE);
 		if (map == 0) {
 			return -ENOSPC;
@@ -639,7 +639,7 @@ inode_write(struct inode *ip, char *src, off_t off, uint64_t n)
 		ip->size = off;
 		inode_update(ip);
 	}
-	return n;
+	return (off_t)n;
 }
 
 // Directories
@@ -666,7 +666,7 @@ dirlookup(struct inode *dp, const char *name, uint64_t *poff)
 	}
 
 	for (uint64_t off = 0; off < dp->size; off += sizeof(de)) {
-		if (inode_read(dp, (char *)&de, off, sizeof(de)) < 0) {
+		if (inode_read(dp, (char *)&de, (off_t)off, sizeof(de)) < 0) {
 			panic("dirlookup read");
 		}
 		if (de.d_ino == 0) {
@@ -709,7 +709,7 @@ dirlink(struct inode *dp, const char *name, uint32_t inum)
 	}
 	// Look for an empty dirent.
 	for (; off < dp->size; off += sizeof(de)) {
-		if (inode_read(dp, (char *)&de, off, sizeof(de)) < 0) {
+		if (inode_read(dp, (char *)&de, (off_t)off, sizeof(de)) < 0) {
 			panic("dirlink read");
 		}
 		if (de.d_ino == 0) {
@@ -720,7 +720,7 @@ dirlink(struct inode *dp, const char *name, uint32_t inum)
 
 	strncpy(de.d_name, name, DIRSIZ);
 	de.d_ino = inum;
-	if (inode_write(dp, (char *)&de, off, sizeof(de)) < 0) {
+	if (inode_write(dp, (char *)&de, (off_t)off, sizeof(de)) < 0) {
 		panic("dirlink");
 	}
 	last_inum = inum;

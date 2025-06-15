@@ -43,7 +43,7 @@ const uint32_t COLOR_RED;
 	(((1 << fb_rgb.framebuffer_blue_mask_size) - 1) \
 	 << fb_rgb.framebuffer_blue_field_position)
 #define INTERNAL_COLOR_WHITE \
-	INTERNAL_COLOR_BLUE | INTERNAL_COLOR_GREEN | INTERNAL_COLOR_RED
+	(INTERNAL_COLOR_BLUE | INTERNAL_COLOR_GREEN | INTERNAL_COLOR_RED)
 #define INTERNAL_COLOR_BLACK 0
 
 static ssize_t
@@ -73,7 +73,7 @@ vgaclose_noop(short minor)
 static struct mmap_info
 vgammap(short minor, size_t length, uintptr_t addr, int perm)
 {
-	return (struct mmap_info){ WIDTH * HEIGHT * (BPP_DEPTH / 8),
+	return (struct mmap_info){ (size_t)WIDTH * HEIGHT * (BPP_DEPTH / 8),
 		                         fb_common.framebuffer_addr, 0, NULL, perm };
 }
 // INVARIANT: must be ran after vga_init().
@@ -113,8 +113,9 @@ vga_write(uint32_t x, uint32_t y, uint32_t color)
 	}
 
 	void *fb = IO2V(fb_common.framebuffer_addr);
-	multiboot_uint32_t *pixel =
-		fb + fb_common.framebuffer_pitch * y + (fb_common.framebuffer_bpp / 8) * x;
+	size_t pixel_offset =
+		fb_common.framebuffer_pitch * y + (fb_common.framebuffer_bpp / 8) * x;
+	multiboot_uint32_t *pixel = fb + pixel_offset;
 	*pixel = color;
 }
 
@@ -242,7 +243,8 @@ vga_scroll(uint32_t fb_width, uint32_t fb_height, uint8_t font_width,
 	uint32_t fb_in_bytes = fb_height * fb_width;
 
 	// Initiate scroll.
-	for (int i = (fb_width * font_height); i < fb_in_bytes; i += font_width) {
+	for (uint32_t i = (fb_width * font_height); i < fb_in_bytes;
+	     i += font_width) {
 		uint32_t x = pixel_count_to_char_x_coord(i, font_width);
 		uint32_t y = pixel_count_to_char_y_coord(i / font_height, font_width);
 		// We "have" to scroll on these chars.

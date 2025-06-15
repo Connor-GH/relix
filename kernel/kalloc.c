@@ -165,8 +165,8 @@ typedef struct header Header;
 static Header base; // Empty list to get started.
 static Header *freep; // Start of free list.
 
-#define ptr_to_header(ptr) (((Header *)ptr) - 1)
-#define header_to_ptr(hdr) ((void *)(hdr + 1))
+#define ptr_to_header(ptr) (((Header *)(ptr)) - 1)
+#define header_to_ptr(hdr) ((void *)((hdr) + 1))
 
 void
 kfree(void *ap) __releases(kmem)

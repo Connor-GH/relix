@@ -223,7 +223,7 @@ struct segdesc {
 
 // Address in page table or page directory entry
 #define PTE_ADDR(pte) ((uintptr_t)(pte) & ~0xFFF)
-#define PTE_FLAGS(pte) ((uintptr_t)(pte) & 0xFFF)
+#define PTE_FLAGS(pte) ((int)(pte) & 0xFFF)
 
 #ifndef __ASSEMBLER__
 typedef uintptr_t pte_t;

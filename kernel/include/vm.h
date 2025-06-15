@@ -6,12 +6,14 @@ void seginit(void);
 void kvmalloc(void);
 uintptr_t *setupkvm(void);
 char *uva2ka(uintptr_t *, char *);
-uintptr_t allocuvm(uintptr_t *, uintptr_t, uintptr_t);
+uintptr_t allocuvm(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz);
 uintptr_t allocuvm_cow(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz);
 uintptr_t deallocuvm(uintptr_t *, uintptr_t, uintptr_t);
 void freevm(uintptr_t *);
 void inituvm(uintptr_t *, char *, uint32_t);
-int loaduvm(uintptr_t *, char *, struct inode *, uint32_t, uint32_t);
+/// INVARIANT: offset + sz < 2^63
+int loaduvm(uintptr_t *pgdir, char *addr, struct inode *ip, off_t offset,
+            uintptr_t sz);
 uintptr_t *copyuvm(uintptr_t *, size_t);
 void switchuvm(struct proc *);
 void switchkvm(void);

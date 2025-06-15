@@ -1,4 +1,5 @@
 ---
+# "-misc-include-cleaner" is only temporary.
 Checks: "
         linuxkernel-*,
         clang-analyzer-*,
@@ -6,6 +7,13 @@ Checks: "
         performance-*,
         portability-*,
         -performance-no-int-to-ptr,
+        -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+        bugprone-*,
+        -bugprone-assignment-in-if-condition,
+        -bugprone-easily-swappable-parameters,
+        -bugprone-casting-through-void,
+        -misc-include-cleaner,
+        -misc-unused-parameters,
 "
 WarningsAsErrors: ''
 HeaderFilterRegex: ''

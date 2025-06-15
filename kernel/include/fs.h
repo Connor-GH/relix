@@ -59,7 +59,7 @@ struct inode {
 	uint64_t atime; // access
 	uint64_t mtime; // modification
 	uint64_t size; // Size of file (bytes)
-	uint32_t mode; // File type and permissions
+	mode_t mode; // File type and permissions
 	uint16_t gid;
 	uint16_t uid;
 	uint64_t addrs[NDIRECT + 1 + 1]; // Data block addresses
@@ -74,7 +74,7 @@ struct dinode {
 	uint64_t atime; // access
 	uint64_t mtime; // modification
 	uint64_t size; // Size of file (bytes)
-	uint32_t mode; // File type and permissions
+	mode_t mode; // File type and permissions
 	uint16_t gid;
 	uint16_t uid;
 	uint64_t addrs[NDIRECT + 1 + 1]; // Data block addresses
@@ -88,13 +88,13 @@ struct dinode {
 #define IPB (BSIZE / sizeof(struct dinode))
 
 // Block containing inode i
-#define IBLOCK(i, sb) ((i) / IPB + sb.inodestart)
+#define IBLOCK(i, sb) ((i) / IPB + (sb).inodestart)
 
 // Bitmap bits per block
-#define BPB (BSIZE * 8U)
+#define BPB (BSIZE * 8LU)
 
 // Block of free map containing bit for block b
-#define BBLOCK(b, sb) (b / BPB + sb.bmapstart)
+#define BBLOCK(b, sb) ((b) / BPB + (sb).bmapstart)
 
 // Directory is a file containing a sequence of dirent structures.
 #define ROOTINO 1U // root i-number

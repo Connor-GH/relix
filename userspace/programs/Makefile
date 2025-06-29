@@ -9,7 +9,7 @@ endef
 
 define _
 	$(CC) $(CFLAGS) $(UCFLAGS) $(LINKER_FLAGS) -Wl,-z,noexecstack -Wl,-O1 -Wl,-N,-e,_start -Wl,--section-start=.text=0x1000 -o $@ $^
-	$(OBJCOPY) --remove-section .note.gnu.property $@
+	$(OBJCOPY) --remove-section .note.gnu.* $@
 endef
 
 $(BIN)/%.o: $(UPROGS_DIR)/%.c
@@ -34,4 +34,4 @@ $(call prog,fps) $(call rust_libs,gui) $(ULIBS)
 # link together, then remove the .note.gnu.property that GCC generates.
 $(SYSROOT)/$(BIN)/_%: $(BIN)/%.o $(ULIB_STATIC) $(SHAREDLIBS_STATIC)
 	$(CC) $(CFLAGS) $(UCFLAGS) $(LINKER_FLAGS) -Wl,-z,noexecstack -Wl,-O1 -Wl,-N,-e,_start -Wl,--section-start=.text=0x1000 -o $@ $^
-	$(OBJCOPY) --remove-section .note.gnu.property $@
+	$(OBJCOPY) --remove-section .note.gnu.* $@

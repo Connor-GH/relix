@@ -10,7 +10,7 @@ nulldrvwrite(short minor, struct inode *ip, char *buf, size_t n)
 static ssize_t
 nulldrvread(short minor, struct inode *ip, char *buf, size_t n)
 {
-	return 0;
+	return n;
 }
 
 static struct mmap_info

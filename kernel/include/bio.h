@@ -1,8 +1,8 @@
 #pragma once
 #if __KERNEL__
 #include "lib/compiler_attributes.h"
-#include "types.h"
 #include <stdint.h>
+#include <sys/types.h>
 
 void block_init(void);
 struct block_buffer *block_read(dev_t dev, uint64_t blockno)

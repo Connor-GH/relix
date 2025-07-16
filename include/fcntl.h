@@ -1,5 +1,5 @@
 #pragma once
-#include "kernel/include/fcntl_constants.h"
+#include <bits/fcntl_constants.h>
 #include <sys/types.h>
 int open(const char *, int flags, ...);
 int creat(const char *, mode_t mode);

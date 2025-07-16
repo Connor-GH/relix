@@ -11,6 +11,6 @@ struct pipe {
 
 int pipealloc(struct file **, struct file **);
 void pipeclose(struct pipe *, int);
-int piperead(struct pipe *, char *, int);
-int pipewrite(struct pipe *, char *, int);
+ssize_t piperead(struct pipe *, char *, size_t n);
+ssize_t pipewrite(struct pipe *, char *, size_t n);
 #endif

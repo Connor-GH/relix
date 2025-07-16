@@ -1,6 +1,6 @@
-use bindings::kalloc::{kfree, kmalloc};
 use core::alloc::{GlobalAlloc, Layout};
 use core::ffi::c_void;
+use kernel_bindings::bindings::{kfree, kmalloc};
 
 pub struct KernelAllocator;
 

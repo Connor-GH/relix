@@ -6,20 +6,17 @@
 #include <stdint.h>
 #ifndef USE_HOST_TOOLS
 #include "sleeplock.h"
-#include "types.h"
+#include <bits/__BSIZE.h>
+#include <bits/__DIRSIZ.h>
+#include <bits/__MAXFILE.h>
+#include <sys/types.h>
 #else
+#include "include/bits/__BSIZE.h"
+#include "include/bits/__DIRSIZ.h"
+#include "include/bits/__MAXFILE.h"
+#include "include/sys/types.h"
 #include <kernel/include/sleeplock.h>
-#include <kernel/include/types.h>
 #endif
-// Constants that userspace testers might be interested in.
-// To not pollute the namespace, they have double underscores.
-#define __DIRSIZ 254U
-#define __NDIRECT 8UL
-#define __NINDIRECT (__BSIZE / sizeof(uintptr_t))
-#define __MAXFILE (__NDIRECT + __NINDIRECT + (__NINDIRECT * __NINDIRECT))
-#define __NDINDIRECT_PER_ENTRY __NDIRECT
-#define __NDINDIRECT_ENTRY __NDIRECT
-#define __BSIZE 2048 // block size
 #if __KERNEL__ || defined(USE_HOST_TOOLS)
 #define NDIRECT __NDIRECT
 #define NINDIRECT __NINDIRECT
@@ -100,7 +97,7 @@ struct dinode {
 #define ROOTINO 1U // root i-number
 
 #if !defined(USE_HOST_TOOLS) || __KERNEL__
-#include "stat.h"
+#include <sys/stat.h>
 void read_superblock(dev_t dev, struct superblock *sb);
 int dirlink(struct inode *, const char *, uint32_t);
 struct inode *dirlookup(struct inode *, const char *, uint64_t *);

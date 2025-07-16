@@ -13,7 +13,7 @@
 int
 from_name_to_digit(char *string)
 {
-	for (int i = 0; i < SYSCALL_AMT; i++) {
+	for (int i = 1; i < SYSCALL_AMT; i++) {
 		if (strcmp(syscall_names[i], string) == 0) {
 			return i;
 		}

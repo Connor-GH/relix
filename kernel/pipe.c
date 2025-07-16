@@ -79,8 +79,9 @@ pipeclose(struct pipe *p, int writable)
 		release(&p->lock);
 	}
 }
-int
-pipewrite(struct pipe *p, char *addr, int n)
+
+ssize_t
+pipewrite(struct pipe *p, char *addr, size_t n)
 {
 	acquire(&p->lock);
 
@@ -109,10 +110,10 @@ pipewrite(struct pipe *p, char *addr, int n)
 	return n;
 }
 
-int
-piperead(struct pipe *p, char *addr, int n)
+ssize_t
+piperead(struct pipe *p, char *addr, size_t n)
 {
-	int i;
+	ssize_t i;
 
 	acquire(&p->lock);
 	while (p->ring_buffer->nread == p->ring_buffer->nwrite && p->writeopen) {

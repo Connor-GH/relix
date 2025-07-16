@@ -1,7 +1,6 @@
 #include "kernel/include/param.h"
 #include "libc_syscalls.h"
 #include "printf.h"
-#include "stat.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -21,6 +20,8 @@
 FILE *stdin;
 FILE *stdout;
 FILE *stderr;
+
+int errno;
 
 static FILE *open_files[NFILE];
 static size_t open_files_index = 0;
@@ -646,4 +647,16 @@ rewind(FILE *stream)
 	}
 	(void)fseek(stream, 0L, SEEK_SET);
 	clearerr(stream);
+}
+
+int
+fseek(FILE *stream, long offset, int whence)
+{
+	if (stream) {
+		clearerr(stream);
+		return lseek(stream->fd, offset, whence);
+	} else {
+		errno = EBADF;
+		return -1;
+	}
 }

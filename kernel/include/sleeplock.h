@@ -11,13 +11,14 @@ struct sleeplock {
 	struct spinlock lk; // spinlock protecting this sleep lock
 
 	// For debugging:
-	char *name; // Name of lock.
+	const char *name; // Name of lock.
 	int pid; // Process holding lock
 };
 #if __KERNEL__
 void acquiresleep(struct sleeplock *s) __acquires(s);
 void releasesleep(struct sleeplock *s) __releases(s);
 int holdingsleep(struct sleeplock *);
-void initsleeplock(struct sleeplock *, char *);
+void initsleeplock(struct sleeplock *, const char *);
+
 #endif
 #endif // !_SLEEPLOCK_H

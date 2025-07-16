@@ -13,6 +13,15 @@
 #define __releases(x) __attribute__((context(x, 1, 0)))
 #define __acquire(x) __context__(x, 1)
 #define __release(x) __context__(x, -1)
+
+/* TODO fix annotations so clang understands them too.
+#elif defined(__clang__)
+#define __must_hold(x) __attribute__((requires_capability(x)))
+#define __acquires(x) __attribute__((locks_excluded(x)))
+#define __releases(x) __attribute__((lock_returned(x)))
+#define __acquire(x) __attribute__((acquire_capability(x)))
+#define __release(x) __attribute__((release_capability(x)))
+*/
 #else
 #define __must_hold(x)
 #define __acquires(x)

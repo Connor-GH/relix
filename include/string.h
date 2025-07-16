@@ -1,5 +1,8 @@
 #pragma once
-#include <stddef.h>
+#include <bits/NULL.h>
+#include <bits/size_t.h>
+
+typedef __size_t size_t;
 char *strcpy(char *, const char *);
 char *strchr(const char *, int c);
 char *strrchr(const char *str, int c);

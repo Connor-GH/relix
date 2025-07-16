@@ -1,8 +1,9 @@
-#include "stat.h"
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +15,14 @@
 #define MiB (1024 * KiB)
 #define GiB (1024 * MiB)
 #define TiB (1024 * GiB)
+
+bool lflag = false;
+bool iflag = false;
+bool pflag = false;
+bool hflag = false;
+bool Fflag = false;
+bool Lflag = false;
+
 struct ls_time {
 	uint64_t sec;
 	uint64_t min;
@@ -57,7 +66,7 @@ to_human_bytes(uint32_t number, char human_name[static 7])
 static char *
 fmtname(char *path, int fmt_flag)
 {
-	static char buf[__DIRSIZ + 1];
+	static char buf[PATH_MAX + 1];
 	char *p;
 	char *indicator = "";
 	bool skip_fmt = false;
@@ -70,7 +79,7 @@ fmtname(char *path, int fmt_flag)
 	p++;
 
 	// Return blank-padded name.
-	if (strlen(p) >= __DIRSIZ) {
+	if (strlen(p) >= PATH_MAX) {
 		return p;
 	}
 	memmove(buf, p, strlen(p));
@@ -84,29 +93,44 @@ fmtname(char *path, int fmt_flag)
 		break;
 	case FMT_LINK:
 		indicator = "@";
+		skip_fmt = true;
+		char sprintf_buf[PATH_MAX] = {};
+		char readlink_buf[PATH_MAX] = {};
+		if (!Lflag) {
+			if (readlink(buf, readlink_buf, PATH_MAX) < 0) {
+				fprintf(stderr, "readlink `%s'", buf);
+				perror("readlink");
+				exit(1);
+			}
+			if (Fflag) {
+				strncat(buf, indicator, 2);
+			}
+			sprintf(sprintf_buf, "%s -> %s", buf, readlink_buf);
+			memcpy(buf, sprintf_buf, PATH_MAX);
+		}
+
 		break;
 	case FMT_SOCK:
 		indicator = "=";
+		if (!Fflag && pflag) {
+			skip_fmt = true;
+		}
 		break;
 	case FMT_FIFO:
 		indicator = "|";
+		if (!Fflag && pflag) {
+			skip_fmt = true;
+		}
 		break;
 	case FMT_EXE:
 		indicator = "*";
+		if (!Fflag && pflag) {
+			skip_fmt = true;
+		}
 		break;
 	}
 	if (!skip_fmt) {
 		strncat(buf, indicator, 2);
-	}
-	if (fmt_flag == FMT_LINK) {
-		char sprintf_buf[__DIRSIZ];
-		char readlink_buf[__DIRSIZ];
-		if (readlink(buf, readlink_buf, __DIRSIZ) < 0) {
-			perror("readlink");
-			exit(1);
-		}
-		sprintf(sprintf_buf, "%s -> %s", p, readlink_buf);
-		memcpy(buf, sprintf_buf, __DIRSIZ);
 	}
 
 	return buf;
@@ -135,12 +159,11 @@ mode_to_perm(mode_t mode, char ret[static 11])
 	return ret;
 }
 static void
-ls_format(char *buf, struct stat st, bool pflag, bool lflag, bool hflag,
-          bool iflag)
+ls_format(char *buf, struct stat st)
 {
 	int fmt_ret = 0;
 	char human_bytes_buf[12];
-	if (pflag) {
+	if (pflag || S_ISLNK(st.st_mode)) {
 		switch (st.st_mode & S_IFMT) {
 		case S_IFDIR:
 			fmt_ret = FMT_DIR;
@@ -175,24 +198,20 @@ ls_format(char *buf, struct stat st, bool pflag, bool lflag, bool hflag,
 		fprintf(stdout, "%02d-%02d %02d:%02d ", lt->tm_mon, lt->tm_mday,
 		        lt->tm_hour, lt->tm_min);
 
-		if (S_ISLNK(st.st_mode)) {
-			fprintf(stdout, "%s\n", fmtname(buf, FMT_LINK));
-		} else {
-			fprintf(stdout, "%s\n", fmtname(buf, pflag ? fmt_ret : 0));
-		}
+		fprintf(stdout, "%s\n", fmtname(buf, fmt_ret));
 	} else {
-		fprintf(stdout, "%s ", fmtname(buf, pflag ? fmt_ret : 0));
+		fprintf(stdout, "%s ", fmtname(buf, fmt_ret));
 	}
 }
 
 // this ls(1) tries to follow __minimal__ POSIX stuff.
 static void
-ls(char *path, bool lflag, bool iflag, bool pflag, bool hflag)
+ls(char *path)
 {
 	int fd;
-	struct dirent de;
+	struct dirent *de;
 	struct stat st;
-	char buf[512];
+	char buf[PATH_MAX] = {};
 
 	if ((fd = open(path, O_RDONLY | O_NONBLOCK)) < 0) {
 		fprintf(stderr, "ls: cannot open %s\n", path);
@@ -208,31 +227,35 @@ ls(char *path, bool lflag, bool iflag, bool pflag, bool hflag)
 	}
 
 	switch (st.st_mode & S_IFMT) {
-	case S_IFREG:
-		ls_format(path, st, pflag, lflag, hflag, iflag);
-		break;
 	case S_IFDIR: {
-		if (strlen(path) + 1 + __DIRSIZ + 1 > sizeof buf) {
+		if (strlen(path) + 1 > sizeof buf) {
 			fprintf(stderr, "ls: path too long\n");
 			break;
 		}
 		strcpy(buf, path);
 		char *p = buf + strlen(buf);
 		*p++ = '/';
-		while (read(fd, &de, sizeof(de)) == sizeof(de)) {
-			if (de.d_ino == 0) {
+		DIR *dir = fdopendir(fd);
+		if (dir == NULL) {
+			perror("fdopendir");
+			exit(EXIT_FAILURE);
+		}
+		while ((de = readdir(dir)) != NULL) {
+			if (de->d_ino == 0) {
 				continue;
 			}
-			strcpy(p, de.d_name);
-			if (stat(buf, &st) < 0) {
+			strcpy(p, de->d_name);
+			if ((Lflag ? stat : lstat)(buf, &st) < 0) {
 				fprintf(stderr, "ls: cannot stat %s\n", buf);
 				perror("stat");
 				continue;
 			}
-			ls_format(buf, st, pflag, lflag, hflag, iflag);
+			ls_format(buf, st);
 		}
+		closedir(dir);
 	} break;
 	default:
+		ls_format(path, st);
 		break;
 	}
 	fprintf(stdout, "%s", lflag ? "" : "\n");
@@ -243,15 +266,11 @@ int
 main(int argc, char *argv[])
 {
 	int i;
-	bool lflag = false;
-	bool iflag = false;
-	bool pflag = false;
-	bool hflag = false;
 	// index for filenames or directory names
 	int arg_idx = 1;
 
 	if (argc < 2) {
-		ls(".", lflag, iflag, pflag, hflag);
+		ls(".");
 		return 0;
 	}
 	for (int j = 1; j < argc; j++) {
@@ -264,11 +283,17 @@ main(int argc, char *argv[])
 				case 'i':
 					iflag = true;
 					break;
+				case 'F':
+					Fflag = true;
+					[[fallthrough]];
 				case 'p':
 					pflag = true;
 					break;
 				case 'h':
 					hflag = true;
+					break;
+				case 'L':
+					Lflag = true;
 					break;
 				default:
 					break;
@@ -280,14 +305,14 @@ main(int argc, char *argv[])
 		}
 	}
 	if (arg_idx == argc) {
-		ls(".", lflag, iflag, pflag, hflag);
+		ls(".");
 		return 0;
 	}
 
 	for (i = arg_idx; i < argc; i++) {
 		struct stat unused;
 		if (stat(argv[i], &unused) >= 0) {
-			ls(argv[i], lflag, iflag, pflag, hflag);
+			ls(argv[i]);
 		} else {
 			int err_no = errno;
 			printf("ls: can't open `%s'", argv[i]);

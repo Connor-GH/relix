@@ -1,7 +1,6 @@
 #include "kbd.h"
 #include "console.h"
 #include "errno.h"
-#include "fcntl_constants.h"
 #include "fs.h"
 #include "ioapic.h"
 #include "kalloc.h"
@@ -12,6 +11,7 @@
 #include "string.h"
 #include "traps.h"
 #include "x86.h"
+#include <bits/fcntl_constants.h>
 #include <stdint.h>
 
 // PC keyboard interface constants

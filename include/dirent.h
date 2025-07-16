@@ -1,11 +1,15 @@
 #pragma once
 #ifndef USE_HOST_TOOLS
-#include "stdint.h"
+#include <bits/__DIRSIZ.h>
+#include <bits/stdint.h>
+#else
+#include "include/bits/__DIRSIZ.h"
+#include "include/bits/stdint.h"
 #endif
-#include "stdio.h"
+
 // POSIX definition of dirent
 struct dirent {
-	uint16_t d_ino;
+	__uint16_t d_ino;
 	char d_name[__DIRSIZ];
 };
 struct __linked_list_dirent {

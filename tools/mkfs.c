@@ -12,14 +12,32 @@
 // Avoid name clashes.
 #define stat relix_stat
 #define dev_t relix_dev_t
+#define __time_t __relix_time_t
+#define time_t relix_time_t
+#define __clock_t __relix_clock_t
+#define clock_t relix_clock_t
+#define __suseconds_t __relix_suseconds_t
+#define suseconds_t relix_suseconds_t
+#define __nlink_t __relix_nlink_t
+#define nlink_t relix_nlink_t
+#define __uid_t __relix_uid_t
 #define uid_t relix_uid_t
+#define __gid_t __relix_gid_t
 #define gid_t relix_gid_t
+#define __id_t __relix_id_t
 #define id_t relix_id_t
-#define mode_t relix_mode_t
+#define __ino_t __relix_ino_t
 #define ino_t relix_ino_t
+#define __mode_t __relix_mode_t
+#define mode_t relix_mode_t
+#undef __size_t
+#define __size_t __relix_size_t
+#define size_t relix_size_t
+
+#define timespec relix_timespec
 #define USE_HOST_TOOLS
 #include "../include/dirent.h"
-#include "../include/stat.h"
+#include "../include/sys/stat.h"
 #include "../kernel/include/fs.h"
 #include "../kernel/include/param.h"
 

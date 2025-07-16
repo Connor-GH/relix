@@ -1,5 +1,5 @@
-use bindings::uart::uartputc;
 use core::ffi::c_int;
+use kernel_bindings::bindings::uartputc;
 use spin::Mutex;
 extern crate alloc;
 
@@ -50,7 +50,7 @@ macro_rules! debug {
 macro_rules! debugln {
     ($($arg:tt)*) => ($crate::debug!("{}\n", format_args!($($arg)*)))
 }
-pub use super::print;
-pub use super::println;
 pub use super::debug;
 pub use super::debugln;
+pub use super::print;
+pub use super::println;

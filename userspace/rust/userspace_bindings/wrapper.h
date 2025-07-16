@@ -18,9 +18,9 @@
 #include <pwd.h>
 #include <setjmp.h>
 #include <signal.h>
-#include <stat.h>
 #include <stdarg.h>
 #include <stdbool.h>
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>

@@ -9,9 +9,9 @@
 #include "param.h"
 #include "spinlock.h"
 #include "syscall.h"
-#include "types.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 struct cred {
 	uid_t uid;

@@ -1,4 +1,4 @@
-#include "kernel/include/x86.h"
+#include <__intrinsics.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <errno.h>

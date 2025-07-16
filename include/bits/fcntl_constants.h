@@ -10,6 +10,7 @@
 #define O_TRUNC 01000
 #define O_APPEND 02000
 #define O_NONBLOCK 04000
+#define O_NOFOLLOW 010000
 #define O_DIRECTORY 0200000
 #define O_TMPFILE (020000000 | O_DIRECTORY)
 
@@ -36,3 +37,7 @@
 #define X_OK (1 << 0)
 #define W_OK (1 << 1)
 #define R_OK (1 << 2)
+
+#define AT_FDCWD -42
+
+#define AT_SYMLINK_NOFOLLOW (1 << 0)

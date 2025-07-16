@@ -2,20 +2,20 @@
 #![feature(c_variadic)]
 #![feature(ptr_metadata)]
 #![feature(layout_for_ptr)]
-#![allow(non_snake_case,non_upper_case_globals)]
+#![allow(non_snake_case, non_upper_case_globals)]
 #![allow(non_camel_case_types)]
 pub mod bindings;
-use self::bindings::putchar;
 use self::bindings::printf;
-use self::bindings::{exit, malloc, free};
+use self::bindings::putchar;
+use self::bindings::{exit, free, malloc};
 use spin::Mutex;
-
 
 #[panic_handler]
 fn rs_panic(info: &core::panic::PanicInfo) -> ! {
-
     //println!("{info}");
-    unsafe { printf(c"Rust panic [no other information]\n".as_ptr()); }
+    unsafe {
+        printf(c"Rust panic [no other information]\n".as_ptr());
+    }
     unsafe {
         exit(1);
     }
@@ -41,16 +41,16 @@ pub fn print(args: core::fmt::Arguments) {
     CONSOLE_WRITER.lock().write_fmt(args).unwrap();
 }
 pub mod printing {
-#[macro_export]
-#[deprecated]
-macro_rules! print {
-    ($($arg:tt)*) => ($crate::print(format_args!($($arg)*)))
-}
-#[macro_export]
-#[deprecated]
-macro_rules! println {
-    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)))
-}
+    #[macro_export]
+    #[deprecated]
+    macro_rules! print {
+        ($($arg:tt)*) => ($crate::print(format_args!($($arg)*)))
+    }
+    #[macro_export]
+    #[deprecated]
+    macro_rules! println {
+        ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)))
+    }
 }
 use core::alloc::{GlobalAlloc, Layout};
 use core::ffi::c_void;

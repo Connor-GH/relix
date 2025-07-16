@@ -83,7 +83,7 @@ lapicinit(void)
 	initlock(&rtc_lock, "rtc");
 }
 
-int
+uint8_t
 lapicid(void)
 {
 	if (!lapic) {

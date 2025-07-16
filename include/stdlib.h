@@ -2,14 +2,17 @@
 #define EXIT_SUCCESS 0
 #define EXIT_FAILURE !EXIT_SUCCESS
 
-#include <stddef.h>
+#include <bits/NULL.h>
+#include <bits/size_t.h>
+#include <bits/wchar_t.h>
+typedef __size_t size_t;
+typedef __wchar_t wchar_t;
 // qsort is implemented as a library shared
 // by the kernel and userspace.
 void qsort(void *base, size_t nmemb, size_t size,
            int (*)(const void *, const void *));
 
 #ifndef __KERNEL__
-#include <stdint.h>
 
 #define RAND_MAX 32767 // Minimum via POSIX.
 int rand(void);
@@ -18,7 +21,7 @@ __attribute__((noreturn)) void exit(int status);
 __attribute__((malloc)) void *malloc(size_t);
 __attribute__((malloc)) void *calloc(size_t nmemb, size_t sz);
 void free(void *);
-int atoi_base(const char *, uint32_t base);
+int atoi_base(const char *, int base);
 __attribute__((malloc)) void *realloc(void *ptr, size_t size);
 
 char *__findenv(const char *name, int len, int *offset);

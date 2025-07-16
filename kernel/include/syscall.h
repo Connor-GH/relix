@@ -49,15 +49,16 @@
 #define SYS_getgid 46
 #define SYS_getppid 47
 #define SYS_times 48
-#define SYS_stat 49
+#define SYS_lstat 49
 #define SYS_fchmod 50
 #define SYS_access 51
 #define SYS_fcntl 52
 #define SYSCALL_AMT 52
 #ifndef __ASSEMBLER__
-#include "types.h"
 #include <stddef.h>
+#include <sys/types.h>
 __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
+	[0] = "",
 	[SYS_fork] = "fork",
 	[SYS__exit] = "_exit",
 	[SYS_wait] = "wait",
@@ -106,7 +107,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_getgid] = "getgid",
 	[SYS_getppid] = "getppid",
 	[SYS_times] = "times",
-	[SYS_stat] = "stat",
+	[SYS_lstat] = "lstat",
 	[SYS_fchmod] = "fchmod",
 	[SYS_access] = "access",
 	[SYS_fcntl] = "fcntl",

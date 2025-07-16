@@ -1,7 +1,6 @@
 #include "ps2mouse.h"
 #include "console.h"
 #include "errno.h"
-#include "fcntl_constants.h"
 #include "ioapic.h"
 #include "kalloc.h"
 #include "lib/queue.h"
@@ -9,6 +8,7 @@
 #include "spinlock.h"
 #include "traps.h"
 #include "x86.h"
+#include <bits/fcntl_constants.h>
 
 #include "mman.h"
 #include "string.h"

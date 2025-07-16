@@ -1,12 +1,12 @@
 #pragma once
 
-void assert_fail(const char *assertion, const char *file, int lineno,
-                 const char *func);
+void __assert_fail(const char *assertion, const char *file, int lineno,
+                   const char *func);
 
-static inline void
-no_op(void)
-{
-}
-
+#ifdef NDEBUG
+#define assert(expression)
+#else
 #define assert(expression) \
-	expression ? no_op() : assert_fail(#expression, __FILE__, __LINE__, __func__)
+	expression ? (void)0 :   \
+							 __assert_fail(#expression, __FILE__, __LINE__, __func__)
+#endif

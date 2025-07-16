@@ -5,9 +5,9 @@
 //
 
 #include "console.h"
+#include "defs.h"
 #include "exec.h"
 #include "fb.h"
-#include "fcntl_constants.h"
 #include "file.h"
 #include "fs.h"
 #include "ioctl.h"
@@ -23,20 +23,20 @@
 #include "proc.h"
 #include "syscall.h"
 #include "termios.h"
-#include "types.h"
 #include "vga.h"
 #include "vm.h"
-
-#include <defs.h>
+#include <bits/fcntl_constants.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stat.h>
 #include <stdatomic.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/sysmacros.h>
+#include <sys/types.h>
 #include <sys/uio.h>
 #include <time.h>
 
@@ -160,13 +160,13 @@ sys_fstat(void)
 }
 
 size_t
-sys_stat(void)
+sys_lstat(void)
 {
 	struct stat *st;
 	char *path;
 	struct inode *ip = NULL;
 	PROPOGATE_ERR(argstr(0, &path));
-	PROPOGATE_ERR(argptr(1, (void *)&st, sizeof(*st)));
+	PROPOGATE_ERR(argptr(1, (char **)&st, sizeof(*st)));
 
 	// Find the inode from the name.
 	if ((ip = namei(path)) == NULL) {
@@ -179,7 +179,7 @@ sys_stat(void)
 	// Everything that can use stat is an inode.
 	inode_lock(ip);
 	inode_stat(ip, st);
-	inode_unlock(ip);
+	inode_unlockput(ip);
 	return 0;
 }
 
@@ -406,14 +406,7 @@ sys_chdir(void)
 		return -EINVAL;
 	}
 	inode_lock(ip);
-	if (S_ISLNK(ip->mode)) {
-		if ((ip = link_dereference(ip, path)) == 0) {
-			inode_unlockput(ip);
-			end_op();
-			// POSIX says to return this if there is a "dangling symbolic link".
-			return -ENOENT;
-		}
-	}
+
 	if (!S_ISDIR(ip->mode)) {
 		inode_unlockput(ip);
 		end_op();
@@ -590,6 +583,10 @@ sys_symlink(void)
 		end_op();
 		return -ENOSPC;
 	}
+	// Write the string, including the NUL terminator. We need the NUL as we use
+	// it when dereferencing in resolve_name().
+	// TODO: this causes an extra byte for the size of a symlink. We should be
+	// handling this better.
 	if (inode_write(ip, target, 0, strlen(target) + 1) != strlen(target) + 1) {
 		panic("symlink inode_write");
 	}
@@ -603,43 +600,20 @@ sys_symlink(void)
 size_t
 sys_readlink(void)
 {
-	char *target, *ubuf;
+	char *target;
+	char *ubuf;
 	size_t bufsize = 0;
 	PROPOGATE_ERR(argstr(0, &target));
 	PROPOGATE_ERR(argstr(1, &ubuf));
 	PROPOGATE_ERR(argsize_t(2, &bufsize));
 
-	struct inode *ip;
+	const char *restrict pathname = target;
+	char *restrict buf = ubuf;
+
 	begin_op();
-	if ((ip = namei(target)) == NULL) {
-		return -ENOENT;
-	}
-
-	inode_lock(ip);
-
-	if (!S_ISLNK(ip->mode)) {
-		inode_unlock(ip);
-		end_op();
-		return -EINVAL;
-	}
-
-	if (ip->size > bufsize) {
-		inode_unlock(ip);
-		end_op();
-		return -EINVAL;
-	}
-
-	if (inode_read(ip, ubuf, 0, bufsize) < 0) {
-		panic("readlink inode_read");
-	}
-
-	if (copyout(myproc()->pgdir, (uintptr_t)ubuf, ubuf, bufsize) < 0) {
-		panic("readlink copyout");
-	}
-
-	inode_unlock(ip);
+	ssize_t ret = filereadlink(pathname, buf, bufsize);
 	end_op();
-	return 0;
+	return ret;
 }
 
 size_t

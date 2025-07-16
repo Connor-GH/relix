@@ -180,7 +180,7 @@ extern size_t sys_getuid(void);
 extern size_t sys_getgid(void);
 extern size_t sys_getppid(void);
 extern size_t sys_times(void);
-extern size_t sys_stat(void);
+extern size_t sys_lstat(void);
 extern size_t sys_fchmod(void);
 extern size_t sys_access(void);
 extern size_t sys_fcntl(void);
@@ -234,7 +234,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_getgid] = sys_getgid,
 	[SYS_getppid] = sys_getppid,
 	[SYS_times] = sys_times,
-	[SYS_stat] = sys_stat,
+	[SYS_lstat] = sys_lstat,
 	[SYS_fchmod] = sys_fchmod,
 	[SYS_access] = sys_access,
 	[SYS_fcntl] = sys_fcntl,

@@ -12,7 +12,7 @@
 #include <string.h>
 
 void
-initlock(struct spinlock *lk, char *name)
+initlock(struct spinlock *lk, const char *name)
 {
 	lk->name = name;
 	lk->locked = ATOMIC_FLAG_INIT;
@@ -41,7 +41,7 @@ acquire(struct spinlock *lk) __acquires(lk)
 	__sync_synchronize();
 	// Record info about lock acquisition for debugging.
 	lk->cpu = mycpu();
-	getcallerpcs(&lk, lk->pcs);
+	getcallerpcs(lk->pcs);
 }
 
 // Release the lock.
@@ -71,7 +71,7 @@ release(struct spinlock *lk) __releases(lk)
 
 // Record the current call stack in pcs[] by following the %rbp chain.
 void
-getcallerpcs(void *v, uintptr_t pcs[])
+getcallerpcs(uintptr_t pcs[])
 {
 	uintptr_t *rbp;
 #if X86_64

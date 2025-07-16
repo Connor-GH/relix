@@ -32,9 +32,10 @@ acquire_ticketlock(struct ticketlock *tl)
 	uint64_t my_ticket = atomic_fetch_add(&tl->next_ticket, 1);
 	uint64_t now_serving = atomic_load(&tl->now_serving);
 	while (now_serving != my_ticket) {
+		now_serving = atomic_load(&tl->now_serving);
 	}
 	tl->cpu = mycpu();
-	getcallerpcs(&tl, tl->pcs);
+	getcallerpcs(tl->pcs);
 }
 
 void

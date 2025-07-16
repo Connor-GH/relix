@@ -18,7 +18,6 @@ ifneq ($(KUBSAN),)
 endif
 KERNEL_INC = $(IVARS) \
 						 -I$(KERNELDIR)/include \
-						 -I$(KERNELDIR)/drivers/include \
 						 -I$(KERNELDIR)/drivers \
 							$(KERNEL_EXTRAS)
 

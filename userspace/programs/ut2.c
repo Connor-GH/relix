@@ -1,6 +1,8 @@
 #include "kernel/drivers/memlayout.h"
 #include "kernel/drivers/mmu.h"
 #include "kernel/include/param.h"
+#include <bits/__BSIZE.h>
+#include <bits/__MAXFILE.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -11,6 +13,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
 //
 // Tests xv6 system calls.  usertests without arguments runs them all
 // and usertests <name> runs <name> test. The test runner creates for
@@ -171,9 +174,9 @@ copyinstr2(char *s)
 	}
 
 	char *args[] = { "xx", 0 };
-	ret = exec(b, args);
+	ret = execv(b, args);
 	if (ret != -1) {
-		printf("exec(%s) returned %d, not -1\n", b, fd);
+		printf("execv(%s) returned %d, not -1\n", b, fd);
 		exit(1);
 	}
 
@@ -189,9 +192,9 @@ copyinstr2(char *s)
 		}
 		big[PGSIZE] = '\0';
 		char *args2[] = { big, big, big, 0 };
-		ret = exec("echo", args2);
+		ret = execv("echo", args2);
 		if (ret != -1) {
-			printf("exec(echo, BIG) returned %d, not -1\n", fd);
+			printf("execv(echo, BIG) returned %d, not -1\n", fd);
 			exit(1);
 		}
 		exit(747); // OK
@@ -200,7 +203,7 @@ copyinstr2(char *s)
 	int st = 0;
 	wait(&st);
 	if (st != 747) {
-		printf("exec(echo, BIG) succeeded, should have failed\n");
+		printf("execv(echo, BIG) succeeded, should have failed\n");
 		exit(1);
 	}
 }
@@ -242,9 +245,9 @@ copyinstr3(char *s)
 	}
 
 	char *args[] = { "xx", 0 };
-	ret = exec(b, args);
+	ret = execv(b, args);
 	if (ret != -1) {
-		printf("exec(%s) returned %d, not -1\n", b, fd);
+		printf("execv(%s) returned %d, not -1\n", b, fd);
 		exit(1);
 	}
 }
@@ -710,7 +713,7 @@ exectest(char *s)
 			printf("%s: wrong fd\n", s);
 			exit(1);
 		}
-		if (exec("echo", echoargv) < 0) {
+		if (execv("echo", echoargv) < 0) {
 			printf("%s: exec echo failed\n", s);
 			exit(1);
 		}
@@ -2348,9 +2351,9 @@ bigargtest(char *s)
 			args[i] = big;
 		}
 		args[MAXARG - 1] = 0;
-		// this exec() should fail (and return) because the
+		// this execv() should fail (and return) because the
 		// arguments are too large.
-		exec("echo", args);
+		execv("echo", args);
 		fd = open("bigarg-ok", O_CREATE);
 		close(fd);
 		exit(0);
@@ -2510,7 +2513,7 @@ pgbug(char *s)
 {
 	char *argv[1];
 	argv[0] = 0;
-	exec(big, argv);
+	execv(big, argv);
 	pipe(big);
 
 	exit(0);
@@ -2612,7 +2615,7 @@ sbrk8000(char *s)
 	*(top - 1) = *(top - 1) + 1;
 }
 
-// regression test. test whether exec() leaks memory if one of the
+// regression test. test whether execv() leaks memory if one of the
 // arguments is invalid. the test passes if the kernel doesn't panic.
 void
 badarg(char *s)
@@ -2621,7 +2624,7 @@ badarg(char *s)
 		char *argv[2];
 		argv[0] = (char *)0xffffffff;
 		argv[1] = 0;
-		exec("echo", argv);
+		execv("echo", argv);
 	}
 
 	exit(0);
@@ -2832,7 +2835,7 @@ badwrite(char *s)
 	exit(0);
 }
 
-// test the exec() code that cleans up if it runs out
+// test the execv() code that cleans up if it runs out
 // of memory. it's really a test that such a condition
 // doesn't cause a panic.
 void
@@ -2853,7 +2856,7 @@ execout(char *s)
 				*(char *)(a + 4096 - 1) = 1;
 			}
 
-			// free a few pages, in order to let exec() make some
+			// free a few pages, in order to let execv() make some
 			// progress.
 			for (int i = 0; i < avail; i++) {
 				sbrk(-4096);
@@ -2861,7 +2864,7 @@ execout(char *s)
 
 			close(1);
 			char *args[] = { "echo", "x", 0 };
-			exec("echo", args);
+			execv("echo", args);
 			exit(0);
 		} else {
 			wait((int *)0);

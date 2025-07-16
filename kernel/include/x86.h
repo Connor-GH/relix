@@ -4,20 +4,6 @@
 #include <stdint.h>
 // Routines to let C code use special x86 instructions.
 
-static __always_inline double
-__fabs(double x)
-{
-	double result;
-	__asm__ __volatile__("fldl %1\t\n" // "Float load" -- add value onto FPU stack
-	                     "fabs\t\n"
-	                     "fstpl %0\t\n"
-	                     : "=m"(result)
-	                     : "m"(x)
-	                     : "st" // FPU stack clobbered
-	);
-	return result;
-}
-
 static __always_inline uint8_t
 inb(uint16_t port)
 {
@@ -45,6 +31,15 @@ insl(int port, void *addr, int cnt)
 	                     : "memory", "cc");
 }
 
+static __always_inline uint32_t
+inl(uint16_t port)
+{
+	uint32_t data;
+
+	__asm__ __volatile__("inl %1,%0" : "=a"(data) : "d"(port));
+	return data;
+}
+
 static __always_inline void
 outb(uint16_t port, uint8_t data)
 {
@@ -64,6 +59,12 @@ outsl(int port, const void *addr, int cnt)
 	                     : "=S"(addr), "=c"(cnt)
 	                     : "d"(port), "0"(addr), "1"(cnt)
 	                     : "cc");
+}
+
+static __always_inline void
+outl(uint16_t port, uint32_t data)
+{
+	__asm__ __volatile__("outl %0,%1" : : "a"(data), "d"(port));
 }
 
 static __always_inline uint64_t

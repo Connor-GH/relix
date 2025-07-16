@@ -1,6 +1,5 @@
 #include "console.h"
 #include "drivers/mmu.h"
-#include "fcntl_constants.h"
 #include "fs.h"
 #include "lib/compiler_attributes.h"
 #include "log.h"
@@ -9,11 +8,12 @@
 #include "proc.h"
 #include "vm.h"
 #include "x86.h"
+#include <bits/fcntl_constants.h>
 #include <elf.h>
 #include <errno.h>
-#include <stat.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/stat.h>
 
 // count is argc/envc
 // vec is argv/envp

@@ -22,17 +22,19 @@ __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...);
 #define pr_debug_file(...) uart_printf(__FILE_NAME__ ": " __VA_ARGS__)
 #define pr_debug(...) uart_printf(__VA_ARGS__)
 #else
-#define pr_debug(...) \
-	{                   \
-	}
-#define pr_debug_file(...) \
-	{                        \
-	}
+#define pr_debug(...)
+#define pr_debug_file(...)
 #endif
 
 void consputc(int);
 void consoleintr(int (*)(void));
-__noreturn void panic(const char *);
+__cold void panic_print_before(void);
+__noreturn __cold void panic_print_after(void);
+#define panic(...)          \
+	panic_print_before();     \
+	vga_cprintf(__VA_ARGS__); \
+	panic_print_after()
+
 int kernel_vprintf_template(void (*put_function)(char c, char *buf),
                             size_t (*ansi_func)(const char *),
                             char *restrict buf, const char *fmt, va_list argp,

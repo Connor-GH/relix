@@ -6,13 +6,17 @@
 #include <dirent.h>
 #include <errno.h>
 #include <limits.h>
+#include <signal.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <unistd.h>
 
 #include "libc_syscalls.h"
+
+extern char **environ;
 
 pid_t
 fork(void)
@@ -74,6 +78,44 @@ execve(const char *pathname, char *const argv[], char *const envp[])
 }
 
 int
+execv(const char *prog, char *const *argv)
+{
+	return execve(prog, argv, (char *const[]){ "", NULL });
+}
+
+int
+execvp(const char *file, char *const argv[])
+{
+	char str[__DIRSIZ];
+
+	char *path_env = getenv("PATH");
+	if (path_env == NULL) {
+		return -1;
+	}
+
+	char *path = strdup(path_env); // TODO leak of this memory
+	if (path != NULL) {
+		char *s = strtok(path, ":");
+		while (s != NULL) {
+			sprintf(str, "%s/%s", s, file);
+			errno = 0;
+			execve(str, argv, environ);
+			s = strtok(NULL, ":");
+		}
+	}
+	// Now check current directory.
+	if (getcwd(str, __DIRSIZ) == NULL) {
+		return -1;
+	}
+
+	if (strncat(stpcpy(str, "/"), file, strlen(file) + 1) == NULL) {
+		return -1;
+	}
+	execve(str, argv, environ);
+	return -1;
+}
+
+int
 unlink(const char *pathname)
 {
 	return __syscall_ret(__syscall1(SYS_unlink, (long)pathname));
@@ -88,7 +130,12 @@ link(const char *oldpath, const char *newpath)
 int
 chdir(const char *path)
 {
-	return __syscall_ret(__syscall1(SYS_chdir, (long)path));
+	char buf[PATH_MAX];
+	ssize_t ret = readlink(path, buf, sizeof(buf));
+	if (ret < 0) {
+		__syscall_ret(ret);
+	}
+	return __syscall_ret(__syscall1(SYS_chdir, (long)buf));
 }
 
 int
@@ -273,4 +320,28 @@ ttyname_r(int fd, char *buf, size_t buflen)
 	}
 	closedir(dir);
 	return -1;
+}
+
+int
+dup2(int oldfd, int newfd)
+{
+	return dup(oldfd);
+}
+
+int
+isatty(int fd)
+{
+	return fd == 0;
+}
+
+static void
+sleep_noop(int signum)
+{
+}
+
+unsigned int
+sleep(unsigned int seconds)
+{
+	signal(SIGALRM, sleep_noop);
+	return alarm(seconds);
 }

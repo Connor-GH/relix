@@ -1,29 +1,29 @@
 #pragma once
 
-#include "kernel/include/lseek.h"
-#include <stddef.h>
-#include <sys/types.h>
-#include <time.h>
+#include <bits/NULL.h>
+#include <bits/seek_constants.h>
+#include <bits/size_t.h>
+#include <bits/stdint.h>
+#include <bits/types.h>
+
+typedef __ssize_t ssize_t;
+typedef __size_t size_t;
+typedef __pid_t pid_t;
+typedef __uid_t uid_t;
+typedef __gid_t gid_t;
+typedef __off_t off_t;
+typedef __intptr_t intptr_t;
+
 int fork(void) __attribute__((returns_twice));
 int vfork(void) __attribute__((returns_twice));
 void _exit(int) __attribute__((noreturn));
 int pipe(int pipefd[2]);
 int execve(const char *, char *const *, char *const *);
-static inline int
-exec(const char *prog, char *const *argv)
-{
-	return execve(prog, argv, (char *const[]){ "", NULL });
-}
 int execvp(const char *file, char *const *argv);
-// our exec() is technically execv()
-static inline int
-execv(const char *prog, char *const *argv)
-{
-	return exec(prog, argv);
-}
+int execv(const char *prog, char *const *argv);
 ssize_t write(int, const void *, size_t);
 ssize_t read(int, void *, size_t);
-int close(int);
+int close(int fd);
 int unlink(const char *);
 int link(const char *, const char *);
 int symlink(const char *target, const char *linkpath);

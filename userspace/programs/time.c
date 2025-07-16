@@ -1,5 +1,4 @@
 #include <ext.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/wait.h>
@@ -20,7 +19,7 @@ main(int argc, char **argv)
 	}
 	sprintf(path, "/bin/%s", argv[1]);
 	if (fork() == 0) {
-		exec(path, argv + 1);
+		execv(path, argv + 1);
 	}
 	wait(NULL);
 	printf("wall time %ldms\n", (uptime() - before));

@@ -1,9 +1,11 @@
 #pragma once
 // https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/inttypes.h.html
 // The <inttypes.h> header shall include the <stdint.h> header.
+#include <bits/wchar_t.h>
 #include <stdint.h>
 
 struct imaxdiv_t {};
+typedef __wchar_t wchar_t;
 #define __PRI64_PREFIX "l"
 #define __PRIPTR_PREFIX "l"
 

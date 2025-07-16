@@ -23,8 +23,12 @@ fn main() {
         .no_hash(".*")
         .formatter(bindgen::Formatter::Rustfmt)
         .enable_function_attribute_detection()
-
-        .clang_args(["-I../../../", "-I../../../include", "-D__USER__=1", "-fno-builtin"])
+        .clang_args([
+            "-I../../../",
+            "-I../../../include",
+            "-D__USER__=1",
+            "-fno-builtin",
+        ])
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))

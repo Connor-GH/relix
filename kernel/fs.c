@@ -24,10 +24,10 @@
 #include "spinlock.h"
 #include <dirent.h>
 #include <errno.h>
-#include <stat.h>
 #include <stdckdint.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <time.h>
 
 static void inode_truncate(struct inode *);
@@ -169,23 +169,18 @@ block_free(dev_t dev, uint64_t b)
 // dev, and inum.  One must hold ip->lock in order to
 // read or write that inode's ip->valid, ip->size, ip->type, &c.
 
-#define NBUCKET NCPU
 static struct {
-	struct spinlock lock[NBUCKET];
-	struct inode inode[NINODE][NBUCKET];
-} inode_cache;
+	struct spinlock lock;
+	struct inode inode[NINODE];
+} inode_table;
 
 void
 inode_init(dev_t dev)
 {
-	for (size_t i = 0; i < min(NBUCKET, ncpu); i++) {
-		initlock(&inode_cache.lock[i], "inode.bucket");
-	}
-	// initlock(&inode_cache.lock, "icache");
-	for (size_t j = 0; j < min(NBUCKET, ncpu); j++) {
-		for (size_t i = 0; i < NINODE; i++) {
-			initsleeplock(&inode_cache.inode[i][j].lock, "inode");
-		}
+	initlock(&inode_table.lock, "inode_cache");
+
+	for (size_t i = 0; i < NINODE; i++) {
+		initsleeplock(&inode_table.inode[i].lock, "inode");
 	}
 
 	read_superblock(dev, &global_sb);
@@ -257,46 +252,22 @@ inode_get(dev_t dev, uint32_t inum)
 	struct inode *ip;
 	struct inode *empty = NULL;
 
-	const size_t hash = dev % min(NBUCKET, ncpu);
-	acquire(&inode_cache.lock[hash]);
+	acquire(&inode_table.lock);
 
 	// Is the inode already cached?
-	for (ip = &inode_cache.inode[0][hash];
-	     ip < &inode_cache.inode[NINODE - 1][hash]; ip++) {
+	for (ip = &inode_table.inode[0]; ip < &inode_table.inode[NINODE - 1]; ip++) {
 		if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {
 			ip->ref++;
-			release(&inode_cache.lock[hash]);
+			release(&inode_table.lock);
 			return ip;
 		}
-		if (empty == 0 && ip->ref == 0) { // Remember empty slot.
+		if (empty == NULL && ip->ref == 0) { // Remember empty slot.
 			empty = ip;
-		}
-	}
-	if (empty == 0) {
-		for (size_t i = 0; i < min(NBUCKET, ncpu); i++) {
-			// Skip over the node that we already checked.
-			// This also avoids a deadlock.
-			if (i == hash) {
-				continue;
-			}
-			acquire(&inode_cache.lock[i]);
-			for (ip = &inode_cache.inode[0][i];
-			     ip < &inode_cache.inode[NINODE - 1][i]; ip++) {
-				if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {
-					ip->ref++;
-					release(&inode_cache.lock[i]);
-					return ip;
-				}
-				if (empty == 0 && ip->ref == 0) { // Remember empty slot.
-					empty = ip;
-				}
-			}
-			release(&inode_cache.lock[i]);
 		}
 	}
 
 	// Recycle an inode cache entry.
-	if (empty == 0) {
+	if (empty == NULL) {
 		panic("inode_get: no inodes");
 	}
 
@@ -305,7 +276,7 @@ inode_get(dev_t dev, uint32_t inum)
 	ip->inum = inum;
 	ip->ref = 1;
 	ip->valid = 0;
-	release(&inode_cache.lock[hash]);
+	release(&inode_table.lock);
 
 	return ip;
 }
@@ -315,7 +286,9 @@ inode_get(dev_t dev, uint32_t inum)
 struct inode *
 inode_dup(struct inode *ip)
 {
-	__sync_add_and_fetch(&ip->ref, 1);
+	acquire(&inode_table.lock);
+	ip->ref++;
+	release(&inode_table.lock);
 	return ip;
 }
 
@@ -324,8 +297,10 @@ inode_dup(struct inode *ip)
 void
 inode_lock(struct inode *ip) __acquires(&ip->lock)
 {
-	if (ip == 0 || ip->ref < 1) {
-		panic("inode_lock");
+	if (ip == NULL) {
+		panic("inode_lock: ip == NULL");
+	} else if (ip->ref < 1) {
+		panic("inode_lock: ip->ref < 1: %d", ip->ref);
 	}
 	kernel_assert(!holdingsleep(&ip->lock));
 
@@ -376,22 +351,27 @@ inode_unlock(struct inode *ip) __releases(&ip->lock)
 void
 inode_put(struct inode *ip)
 {
-	acquiresleep(&ip->lock);
-	if (ip->valid && ip->nlink == 0) {
-		acquire(&inode_cache.lock[1]);
-		int r = ip->ref;
-		release(&inode_cache.lock[1]);
-		if (r == 1) {
-			// inode has no links and no other references: truncate and free.
-			inode_truncate(ip);
-			ip->mode = 0;
-			inode_update(ip);
-			ip->valid = 0;
-		}
-	}
-	releasesleep(&ip->lock);
+	acquire(&inode_table.lock);
+	if (ip->ref == 1 && ip->valid && ip->nlink == 0) {
+		// inode has no links and no other references: truncate and free.
 
-	__sync_sub_and_fetch(&ip->ref, 1);
+		// ip->ref == 1 means no other process can have ip locked,
+		// so this acquiresleep() won't block or deadlock.
+		acquiresleep(&ip->lock);
+
+		release(&inode_table.lock);
+
+		inode_truncate(ip);
+		ip->mode = 0;
+		inode_update(ip);
+		ip->valid = 0;
+
+		releasesleep(&ip->lock);
+
+		acquire(&inode_table.lock);
+	}
+	ip->ref--;
+	release(&inode_table.lock);
 }
 
 // Common idiom: unlock, then put.
@@ -686,8 +666,6 @@ dirlookup(struct inode *dp, const char *name, uint64_t *poff)
 }
 
 // Write a new directory entry (name, inum) into the directory dp.
-static uint32_t last_inum = 0;
-static uint64_t last_offset_from_inum = 0;
 int
 dirlink(struct inode *dp, const char *name, uint32_t inum)
 {
@@ -700,20 +678,13 @@ dirlink(struct inode *dp, const char *name, uint32_t inum)
 		inode_put(ip);
 		return -EEXIST;
 	}
-	if (inum == last_inum) {
-		if (last_offset_from_inum + sizeof(de) < dp->size) {
-			off = last_offset_from_inum + sizeof(de);
-		} else {
-			off = 0;
-		}
-	}
+
 	// Look for an empty dirent.
 	for (; off < dp->size; off += sizeof(de)) {
 		if (inode_read(dp, (char *)&de, (off_t)off, sizeof(de)) < 0) {
 			panic("dirlink read");
 		}
 		if (de.d_ino == 0) {
-			last_offset_from_inum = off;
 			break;
 		}
 	}
@@ -723,7 +694,6 @@ dirlink(struct inode *dp, const char *name, uint32_t inum)
 	if (inode_write(dp, (char *)&de, (off_t)off, sizeof(de)) < 0) {
 		panic("dirlink");
 	}
-	last_inum = inum;
 
 	return 0;
 }

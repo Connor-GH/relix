@@ -27,7 +27,10 @@ impl Perform for Log {
     fn hook(&mut self, params: &Params, intermediates: &[u8], ignore: bool, c: u8) {
         debugln!(
             "[hook] params={:?}, intermediates={:?}, ignore={:?}, char={:?}",
-            params, intermediates, ignore, c
+            params,
+            intermediates,
+            ignore,
+            c
         );
     }
 
@@ -42,7 +45,8 @@ impl Perform for Log {
     fn osc_dispatch(&mut self, params: &[&[u8]], bell_terminated: bool) {
         debugln!(
             "[osc_dispatch] params={:?} bell_terminated={}",
-            params, bell_terminated
+            params,
+            bell_terminated
         );
     }
 
@@ -120,7 +124,9 @@ impl Perform for Log {
     fn esc_dispatch(&mut self, intermediates: &[u8], ignore: bool, byte: u8) {
         debugln!(
             "[esc_dispatch] intermediates={:?}, ignore={:?}, byte={:02x}",
-            intermediates, ignore, byte
+            intermediates,
+            ignore,
+            byte
         );
     }
 }

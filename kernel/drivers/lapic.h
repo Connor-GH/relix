@@ -41,7 +41,7 @@ extern volatile uint32_t *lapic;
 #define TCCR (0x0390 / 4) // Timer Current Count
 #define TDCR (0x03E0 / 4) // Timer Divide Configuration
 time_t rtc_now(void);
-int lapicid(void);
+uint8_t lapicid(void);
 void lapiceoi(void);
 void lapicinit(void);
 __suppress_sanitizer("alignment") void lapicstartap(uint8_t a, uint32_t b);

@@ -8,8 +8,8 @@ crate-type = ["staticlib"]
 
 [dependencies]
 anstyle-parse = { version = "0.2.6", features = ["utf8", "core"]}
-bindings = { path = "../bindings", version = "0.1.0" }
-spin = "0.9.8"
+kernel_bindings = { path = "../kernel_bindings", version = "0.1.0" }
+spin = { version = "0.10.0", features = ["fair_mutex", "ticket_mutex"] }
 
 [profile.release]
 lto = true

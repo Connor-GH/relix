@@ -12,6 +12,7 @@ Checks: "
         -bugprone-assignment-in-if-condition,
         -bugprone-easily-swappable-parameters,
         -bugprone-casting-through-void,
+        -bugprone-reserved-identifier,
         -misc-include-cleaner,
         -misc-unused-parameters,
 "

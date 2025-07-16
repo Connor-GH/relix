@@ -1,3 +1,5 @@
+#include <bits/__MAXFILE.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <kernel/drivers/memlayout.h>
 #include <kernel/include/fs.h>
@@ -309,7 +311,7 @@ void
 exectest(void)
 {
 	fprintf(stdout, "exec test\n");
-	if (exec("/bin/echo", echoargv) < 0) {
+	if (execv("/bin/echo", echoargv) < 0) {
 		fprintf(stdout, "exec echo failed\n");
 		exit(0);
 	}
@@ -521,7 +523,7 @@ sharedfd(void)
 	memset(sharedfd_buf, pid == 0 ? 'c' : 'p', sizeof(sharedfd_buf));
 	for (i = 0; i < 1000; i++) {
 		if (write(fd, sharedfd_buf, sizeof(sharedfd_buf)) != sizeof(sharedfd_buf)) {
-			fprintf(stdout, "fstests: write sharedfd failed\n");
+			fprintf(stdout, "fstests: write sharedfd failed: %s\n", strerror(errno));
 			break;
 		}
 	}
@@ -1703,7 +1705,7 @@ bigargtest(void)
 		}
 		args[MAXARG - 1] = NULL;
 		fprintf(stdout, "bigarg test\n");
-		exec("echo", args);
+		execv("echo", args);
 		fprintf(stdout, "bigarg test ok\n");
 		fd = open("bigarg-ok", O_CREATE, 0777);
 		close(fd);

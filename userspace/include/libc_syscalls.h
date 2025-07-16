@@ -1,8 +1,7 @@
 #pragma once
 #include "lib/compiler_attributes.h"
+#include <errno.h>
 #include <sys/syscall.h>
-
-extern int errno;
 
 static __always_inline long
 __syscall_ret(unsigned long r)

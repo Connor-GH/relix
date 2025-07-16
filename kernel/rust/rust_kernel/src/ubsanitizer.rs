@@ -3,171 +3,30 @@
  * NetBSD. The language is obviously different, but
  * I will nevertheless provide the copyright notice.
  */
-/*	$NetBSD: ubsan.c,v 1.12 2023/12/07 07:10:44 andvar Exp $	*/
-
-/*-
- * Copyright (c) 2018 The NetBSD Foundation, Inc.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
- * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
- * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
- * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES); LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
 
 use crate::printing::*;
-use bindings::__IncompleteArrayField;
 use core::ffi::CStr;
-use core::ffi::{c_char, c_void};
+use core::ffi::c_char;
 
-#[repr(C)]
-pub struct CSourceLocation {
-    filename: *mut c_char,
-    line: u32,
-    column: u32,
-}
-
-#[repr(C)]
-pub struct CTypeDescriptor {
-    type_kind: u16,
-    type_info: u16,
-    type_name: __IncompleteArrayField<c_char>,
-}
-
-#[repr(C)]
-pub struct COverflowData {
-    location: CSourceLocation,
-    type_: *mut CTypeDescriptor,
-}
-
-#[repr(C)]
-pub struct CUnreachableData {
-    location: CSourceLocation,
-}
-
-#[repr(C)]
-pub struct CCFICheckFailData {
-    check_kind: u8,
-    location: CSourceLocation,
-    type_: *mut CTypeDescriptor,
-}
-
-#[repr(C)]
-pub struct CDynamicTypeCacheMissData {
-    location: CSourceLocation,
-    type_: *mut CTypeDescriptor,
-    type_info: *mut c_void,
-    typecheck_kind: u8,
-}
-
-#[repr(C)]
-pub struct CFunctionTypeMismatchData {
-    location: CSourceLocation,
-    type_: *mut CTypeDescriptor,
-}
-
-#[repr(C)]
-pub struct CInvalidBuiltinData {
-    location: CSourceLocation,
-    kind: u8,
-}
-
-#[repr(C)]
-pub struct CInvalidValueData {
-    location: CSourceLocation,
-    type_: *mut CTypeDescriptor,
-}
-
-#[repr(C)]
-pub struct CNonNullArgData {
-    location: CSourceLocation,
-    attribute_location: CSourceLocation,
-    arg_index: i32,
-}
-
-#[repr(C)]
-pub struct CNonNullReturnData {
-    attribute_location: CSourceLocation,
-}
-
-#[repr(C)]
-pub struct COutOfBoundsData {
-    location: CSourceLocation,
-    array_type: *mut CTypeDescriptor,
-    index_type: *mut CTypeDescriptor,
-}
-
-#[repr(C)]
-pub struct CPointerOverflowData {
-    location: CSourceLocation,
-}
-
-#[repr(C)]
-pub struct CShiftOutOfBoundsData {
-    location: CSourceLocation,
-    lhs_type: *mut CTypeDescriptor,
-    rhs_type: *mut CTypeDescriptor,
-}
-
-#[repr(C)]
-pub struct CTypeMismatchData {
-    location: CSourceLocation,
-    type_: *mut CTypeDescriptor,
-    log_alignment: u64,
-    typecheck_kind: u8,
-}
-
-#[repr(C)]
-pub struct CTypeMismatchDataV1 {
-    location: CSourceLocation,
-    type_: *mut CTypeDescriptor,
-    log_alignment: u8,
-    typecheck_kind: u8,
-}
-
-#[repr(C)]
-pub struct CVLABoundData {
-    location: CSourceLocation,
-    type_: *mut CTypeDescriptor,
-}
-
-#[repr(C)]
-pub struct CFloatCastOverflowData {
-    location: CSourceLocation, /* This field exists in this struct since 2015 August 11th */
-    from_type: *mut CTypeDescriptor,
-    to_type: *mut CTypeDescriptor,
-}
-
-#[repr(C)]
-pub struct CImplicitConversionData {
-    location: CSourceLocation,
-    from_type: *mut CTypeDescriptor,
-    to_type: *mut CTypeDescriptor,
-    kind: u8,
-}
-
-#[repr(C)]
-pub struct CAlignmentAssumptionData {
-    location: CSourceLocation,
-    assumption_location: CSourceLocation,
-    type_: *mut CTypeDescriptor,
-}
+use kernel_bindings::bindings::CAlignmentAssumptionData;
+use kernel_bindings::bindings::CCFICheckFailData;
+use kernel_bindings::bindings::CDynamicTypeCacheMissData;
+use kernel_bindings::bindings::CFloatCastOverflowData;
+use kernel_bindings::bindings::CFunctionTypeMismatchData;
+use kernel_bindings::bindings::CImplicitConversionData;
+use kernel_bindings::bindings::CInvalidBuiltinData;
+use kernel_bindings::bindings::CInvalidValueData;
+use kernel_bindings::bindings::CNonNullArgData;
+use kernel_bindings::bindings::CNonNullReturnData;
+use kernel_bindings::bindings::COutOfBoundsData;
+use kernel_bindings::bindings::COverflowData;
+use kernel_bindings::bindings::CPointerOverflowData;
+use kernel_bindings::bindings::CShiftOutOfBoundsData;
+use kernel_bindings::bindings::CSourceLocation;
+use kernel_bindings::bindings::CTypeMismatchData;
+use kernel_bindings::bindings::CTypeMismatchDataV1;
+use kernel_bindings::bindings::CUnreachableData;
+use kernel_bindings::bindings::CVLABoundData;
 
 fn print_location(location: &CSourceLocation) {
     if location.filename.is_null() {
@@ -190,7 +49,11 @@ pub extern "C" fn __ubsan_handle_add_overflow(data: *mut COverflowData, lhs: u64
     print_location(&unsafe { &*data }.location);
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn __ubsan_handle_add_overflow_abort(_data: *mut COverflowData, _lhs: u64, _rhs: u64) {
+pub extern "C" fn __ubsan_handle_add_overflow_abort(
+    _data: *mut COverflowData,
+    _lhs: u64,
+    _rhs: u64,
+) {
     todo!();
 }
 #[unsafe(no_mangle)]
@@ -227,7 +90,11 @@ pub extern "C" fn __ubsan_handle_cfi_bad_type(
     todo!();
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn __ubsan_handle_cfi_check_fail(_data: *mut CCFICheckFailData, _value: u64, _valid_vtable: u64) {
+pub extern "C" fn __ubsan_handle_cfi_check_fail(
+    _data: *mut CCFICheckFailData,
+    _value: u64,
+    _valid_vtable: u64,
+) {
     todo!();
 }
 #[unsafe(no_mangle)]
@@ -244,7 +111,11 @@ pub extern "C" fn __ubsan_handle_divrem_overflow(data: *mut COverflowData, lhs: 
     print_location(&unsafe { &*data }.location);
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn __ubsan_handle_divrem_overflow_abort(_data: *mut COverflowData, _lhs: u64, _rhs: u64) {
+pub extern "C" fn __ubsan_handle_divrem_overflow_abort(
+    _data: *mut COverflowData,
+    _lhs: u64,
+    _rhs: u64,
+) {
     todo!();
 }
 #[unsafe(no_mangle)]
@@ -264,15 +135,24 @@ pub extern "C" fn __ubsan_handle_dynamic_type_cache_miss_abort(
     todo!();
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn __ubsan_handle_float_cast_overflow(_data: *mut CFloatCastOverflowData, _from: u64) {
+pub extern "C" fn __ubsan_handle_float_cast_overflow(
+    _data: *mut CFloatCastOverflowData,
+    _from: u64,
+) {
     todo!();
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn __ubsan_handle_float_cast_overflow_abort(_data: *mut CFloatCastOverflowData, _from: u64) {
+pub extern "C" fn __ubsan_handle_float_cast_overflow_abort(
+    _data: *mut CFloatCastOverflowData,
+    _from: u64,
+) {
     todo!();
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn __ubsan_handle_function_type_mismatch(_data: *mut CFunctionTypeMismatchData, _function: u64) {
+pub extern "C" fn __ubsan_handle_function_type_mismatch(
+    _data: *mut CFunctionTypeMismatchData,
+    _function: u64,
+) {
     todo!();
 }
 #[unsafe(no_mangle)]
@@ -314,7 +194,10 @@ pub extern "C" fn __ubsan_handle_load_invalid_value(data: *mut CInvalidValueData
     print_location(&unsafe { &*data }.location);
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn __ubsan_handle_load_invalid_value_abort(_data: *mut CInvalidValueData, _val: u64) {
+pub extern "C" fn __ubsan_handle_load_invalid_value_abort(
+    _data: *mut CInvalidValueData,
+    _val: u64,
+) {
     todo!();
 }
 #[unsafe(no_mangle)]
@@ -390,10 +273,22 @@ pub extern "C" fn __ubsan_handle_out_of_bounds(data: *mut COutOfBoundsData, inde
     let data = unsafe { &*data };
     let index_type = unsafe { &*data.index_type };
     let array_type = unsafe { &*data.array_type };
-    println!("index_type {} {} {}", index_type.type_kind, index_type.type_info,
-                unsafe { core::ffi::CStr::from_ptr(index_type.type_name.as_ptr()) }.to_str().unwrap() );
-    println!("array_type {} {} {}", array_type.type_kind, array_type.type_info,
-                unsafe { core::ffi::CStr::from_ptr(array_type.type_name.as_ptr()) }.to_str().unwrap() );
+    println!(
+        "index_type {} {} {}",
+        index_type.type_kind,
+        index_type.type_info,
+        unsafe { core::ffi::CStr::from_ptr(index_type.type_name.as_ptr()) }
+            .to_str()
+            .unwrap()
+    );
+    println!(
+        "array_type {} {} {}",
+        array_type.type_kind,
+        array_type.type_info,
+        unsafe { core::ffi::CStr::from_ptr(array_type.type_name.as_ptr()) }
+            .to_str()
+            .unwrap()
+    );
     println!("tried index {}", index);
     print_location(&data.location);
 }
@@ -402,7 +297,11 @@ pub extern "C" fn __ubsan_handle_out_of_bounds_abort(_data: *mut COutOfBoundsDat
     todo!();
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn __ubsan_handle_pointer_overflow(data: *mut CPointerOverflowData, base: u64, result: u64) {
+pub extern "C" fn __ubsan_handle_pointer_overflow(
+    data: *mut CPointerOverflowData,
+    base: u64,
+    result: u64,
+) {
     if base == 0 && result == 0 {
         println!("KUBSAN: applied zero offset to nullptr");
     } else if base == 0 && result != 0 {
@@ -429,14 +328,30 @@ pub extern "C" fn __ubsan_handle_pointer_overflow_abort(
     todo!();
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn __ubsan_handle_shift_out_of_bounds(data: *mut CShiftOutOfBoundsData, lhs: u64, rhs: u64) {
-    let deref = unsafe { &*data};
+pub extern "C" fn __ubsan_handle_shift_out_of_bounds(
+    data: *mut CShiftOutOfBoundsData,
+    lhs: u64,
+    rhs: u64,
+) {
+    let deref = unsafe { &*data };
     let lhs_type = unsafe { &*deref.lhs_type };
     let rhs_type = unsafe { &*deref.rhs_type };
-    println!("lhs_type {} {} {}", lhs_type.type_kind, lhs_type.type_info,
-                unsafe { core::ffi::CStr::from_ptr(lhs_type.type_name.as_ptr()) }.to_str().unwrap() );
-    println!("rhs_type {} {} {}", rhs_type.type_kind, rhs_type.type_info,
-                unsafe { core::ffi::CStr::from_ptr(rhs_type.type_name.as_ptr()) }.to_str().unwrap() );
+    println!(
+        "lhs_type {} {} {}",
+        lhs_type.type_kind,
+        lhs_type.type_info,
+        unsafe { core::ffi::CStr::from_ptr(lhs_type.type_name.as_ptr()) }
+            .to_str()
+            .unwrap()
+    );
+    println!(
+        "rhs_type {} {} {}",
+        rhs_type.type_kind,
+        rhs_type.type_info,
+        unsafe { core::ffi::CStr::from_ptr(rhs_type.type_name.as_ptr()) }
+            .to_str()
+            .unwrap()
+    );
     println!("KUBSAN: shift out of bounds: {} shifted by {}", lhs, rhs);
 
     print_location(&deref.location);
@@ -455,7 +370,11 @@ pub extern "C" fn __ubsan_handle_sub_overflow(data: *mut COverflowData, lhs: u64
     print_location(&unsafe { &*data }.location);
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn __ubsan_handle_sub_overflow_abort(_data: *mut COverflowData, _lhs: u64, _rhs: u64) {
+pub extern "C" fn __ubsan_handle_sub_overflow_abort(
+    _data: *mut COverflowData,
+    _lhs: u64,
+    _rhs: u64,
+) {
     todo!();
 }
 #[unsafe(no_mangle)]
@@ -499,7 +418,10 @@ pub extern "C" fn __ubsan_handle_type_mismatch_v1(data: *mut CTypeMismatchDataV1
     print_location(&unsafe { &*data }.location);
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn __ubsan_handle_type_mismatch_v1_abort(_data: *mut CTypeMismatchDataV1, _ptr: u64) {
+pub extern "C" fn __ubsan_handle_type_mismatch_v1_abort(
+    _data: *mut CTypeMismatchDataV1,
+    _ptr: u64,
+) {
     todo!();
 }
 #[unsafe(no_mangle)]
@@ -507,11 +429,18 @@ pub extern "C" fn __ubsan_handle_vla_bound_not_positive(_data: *mut CVLABoundDat
     todo!();
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn __ubsan_handle_vla_bound_not_positive_abort(_data: *mut CVLABoundData, _bound: u64) {
+pub extern "C" fn __ubsan_handle_vla_bound_not_positive_abort(
+    _data: *mut CVLABoundData,
+    _bound: u64,
+) {
     todo!();
 }
 #[unsafe(no_mangle)]
-pub extern "C" fn __ubsan_handle_implicit_conversion(_data: *mut CImplicitConversionData, _from: u64, _to: u64) {
+pub extern "C" fn __ubsan_handle_implicit_conversion(
+    _data: *mut CImplicitConversionData,
+    _from: u64,
+    _to: u64,
+) {
     todo!();
 }
 #[unsafe(no_mangle)]

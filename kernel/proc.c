@@ -13,11 +13,9 @@
 #include "mman.h"
 #include "param.h"
 #include "spinlock.h"
-#include "stat.h"
 #include "swtch.h"
 #include "syscall.h"
 #include "trap.h"
-#include "types.h"
 #include "vm.h"
 #include "x86.h"
 #include <errno.h>
@@ -26,6 +24,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #define W_EXITCODE(ret, signal) ((ret) << 8 | (signal))
 
@@ -738,7 +738,7 @@ procdump(void)
 		}
 		vga_cprintf("%d %s %s", p->pid, state, p->name);
 		if (p->state == SLEEPING) {
-			getcallerpcs((uintptr_t *)p->context->rbp, pc);
+			getcallerpcs(pc);
 			for (int i = 0; i < 10 && pc[i] != 0; i++) {
 				vga_cprintf(" %lx", pc[i]);
 			}

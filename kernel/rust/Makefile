@@ -11,4 +11,4 @@ $(FULL_BIN)/lib%.a: $(KERNEL_RUST_DIR)/%
 	RUSTFLAGS="$(RUSTFLAGS) $(KERNEL_RUST_FLAGS)" $(CARGO) build --manifest-path=$^/Cargo.toml $(KERNEL_CARGO_FLAGS) --artifact-dir=$(FULL_BIN) $(CARGO_RELEASE)
 
 kernel_cargo_clean:
-	@for mod in $(KERNEL_RUST_MODULES); do $(CARGO) clean --manifest-path=$(KERNEL_RUST_DIR)/$$mod/Cargo.toml; done
+	@for mod in $(KERNEL_RUST_MODULES); do $(CARGO) clean -p $$mod --manifest-path=$(KERNEL_RUST_DIR)/$$mod/Cargo.toml; done

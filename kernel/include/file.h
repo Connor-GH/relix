@@ -4,8 +4,8 @@
 #include "fs.h"
 #include "mman.h"
 #include "param.h"
-#include <stat.h>
 #include <stdint.h>
+#include <sys/stat.h>
 #if __KERNEL__
 struct file {
 	enum {
@@ -64,8 +64,6 @@ extern struct devsw devsw[];
 // sysfile.c might like.
 struct file *filealloc(void);
 int fdalloc(struct file *f);
-struct inode *link_dereference(struct inode *ip, char *buff)
-	__must_hold(&ip->lock);
 struct file *fd_to_struct_file(int fd);
 char *inode_to_path(char *buf, size_t n, struct inode *ip);
 
@@ -75,10 +73,11 @@ struct inode *filecreate(char *path, mode_t mode, short major, short minor);
 int fileopen(char *path, int flags, mode_t mode);
 struct file *filedup(struct file *);
 void fileinit(void);
-ssize_t fileread(struct file *, char *, uint64_t n);
-int filestat(struct file *, struct stat *);
-ssize_t filewrite(struct file *, char *, uint64_t n);
+ssize_t fileread(struct file *file, char *buf, size_t n);
+int filestat(struct file *file, struct stat *);
+ssize_t filewrite(struct file *file, char *buf, size_t n);
 off_t fileseek(struct file *f, off_t offset, int whence);
+ssize_t filereadlink(const char *restrict pathname, char *buf, size_t bufsiz);
 
 #endif
 #endif // !_FILE_H

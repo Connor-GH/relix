@@ -1,16 +1,13 @@
 #pragma once
-#include <sys/types.h>
+#include <bits/stdint.h>
+#include <bits/struct_timespec.h>
+#include <bits/types.h>
 
-typedef uint64_t useconds_t;
+typedef __uint64_t useconds_t;
 
-struct timeval {
-	time_t tv_sec;
-	suseconds_t tv_usec;
-};
-struct timespec {
-	time_t tv_sec;
-	long tv_nsec;
-};
+typedef __pid_t pid_t;
+typedef __time_t time_t;
+
 struct tm {
 	int tm_sec;
 	int tm_min;

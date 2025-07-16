@@ -18,19 +18,20 @@ struct spinlock {
 	atomic_flag locked;
 
 	// For debugging:
-	char *name; // Name of lock.
+	const char *name; // Name of lock.
 	struct cpu *cpu; // The cpu holding the lock.
 	uintptr_t pcs[10]; // The call stack (an array of program counters)
 	                   // that locked the lock.
 };
 #if __KERNEL__
 void acquire(struct spinlock *s) __acquires(s);
-void getcallerpcs(void *, uintptr_t *);
+void getcallerpcs(uintptr_t pcs[]);
 void getcallerpcs_with_bp(uintptr_t pcs[], uintptr_t *rbp, size_t size);
 int holding(struct spinlock *);
-void initlock(struct spinlock *, char *);
+void initlock(struct spinlock *, const char *);
 void release(struct spinlock *s) __releases(s);
 void pushcli(void);
 void popcli(void);
+
 #endif
 #endif /* _SPINLOCK_H */

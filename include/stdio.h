@@ -1,16 +1,20 @@
 #pragma once
 
-#include "kernel/include/fs.h"
 // mkfs defines this when building.
 #ifndef USE_HOST_TOOLS
 
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stddef.h>
-
 #if defined(__USER__)
-#include <sys/types.h>
-#include <unistd.h>
+#include <bits/__DIRSIZ.h>
+#include <bits/size_t.h>
+#include <bits/types.h>
+#include <bits/va_list.h>
+
+typedef __va_list va_list;
+typedef __off_t off_t;
+typedef __size_t size_t;
+typedef __ssize_t ssize_t;
+typedef __ssize_t ssize_t;
+
 struct _IO_FILE {
 	char *write_buffer;
 	size_t write_buffer_size;
@@ -21,9 +25,9 @@ struct _IO_FILE {
 	int mode;
 	int flags;
 	int buffer_mode;
-	bool eof;
-	bool error;
-	bool stdio_flush;
+	_Bool eof;
+	_Bool error;
+	_Bool stdio_flush;
 };
 
 #define _IOLBF 0x1

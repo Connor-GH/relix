@@ -10,8 +10,6 @@
 #include "kernel_ld_syms.h"
 #include "lib/compiler_attributes.h"
 #include "macros.h"
-#include "param.h"
-#include "proc.h"
 #include "spinlock.h"
 #include <stddef.h>
 #include <stdint.h>
@@ -25,8 +23,8 @@ struct run {
 };
 
 static struct {
-	struct spinlock lock[NCPU];
-	struct run *freelist[NCPU];
+	struct spinlock lock;
+	struct run *freelist;
 	bool use_lock;
 } kmem;
 
@@ -38,9 +36,7 @@ static struct {
 void
 kinit1(void *vstart, void *vend)
 {
-	for (int i = 0; i < min(NCPU, ncpu); i++) {
-		initlock(&kmem.lock[i], "kmem");
-	}
+	initlock(&kmem.lock, "kmem");
 	kmem.use_lock = false;
 	freerange(vstart, vend);
 }
@@ -55,14 +51,12 @@ kinit2(void *vstart, void *vend)
 void
 freerange(void *vstart, void *vend)
 {
-	pushcli();
 	char *p = (char *)PGROUNDUP((uintptr_t)vstart);
 	// If this fails, this will cause a page fault
 	// instead of a panic due to the memory for the VGA not being mapped.
 	for (; p + PGSIZE <= (char *)vend; p += PGSIZE) {
 		kpage_free(p);
 	}
-	popcli();
 }
 
 // Free the page of physical memory pointed at by v,
@@ -74,9 +68,7 @@ freerange(void *vstart, void *vend)
 void
 kpage_free(char *v) __releases(kpage)
 {
-	pushcli();
 	struct run *r;
-	const int id = my_cpu_id();
 	// We do not allocate for devices.
 	if (V2IO(v) >= DEVBASE) {
 		return;
@@ -88,17 +80,16 @@ kpage_free(char *v) __releases(kpage)
 	}
 
 	if (kmem.use_lock) {
-		acquire(&kmem.lock[id]);
+		acquire(&kmem.lock);
 	}
 
 	r = (struct run *)v;
-	r->next = kmem.freelist[id];
-	kmem.freelist[id] = r;
+	r->next = kmem.freelist;
+	kmem.freelist = r;
 
 	if (kmem.use_lock) {
-		release(&kmem.lock[id]);
+		release(&kmem.lock);
 	}
-	popcli();
 	__release(kpage);
 }
 
@@ -108,43 +99,20 @@ kpage_free(char *v) __releases(kpage)
 char *
 kpage_alloc(void) __acquires(kpage)
 {
-	pushcli();
-	const int id = my_cpu_id();
 	struct run *r;
 
 	if (kmem.use_lock) {
-		acquire(&kmem.lock[id]);
+		acquire(&kmem.lock);
 	}
-	r = kmem.freelist[id];
-	if (r) {
-		kmem.freelist[id] = r->next;
+	r = kmem.freelist;
+
+	if (r != NULL) {
+		kmem.freelist = r->next;
 	}
 	if (kmem.use_lock) {
-		release(&kmem.lock[id]);
+		release(&kmem.lock);
 	}
 
-	if (!r) {
-		for (int i = 0; i < min(NCPU, ncpu); i++) {
-			if (kmem.use_lock) {
-				acquire(&kmem.lock[i]);
-			}
-
-			r = kmem.freelist[i];
-			if (r) {
-				kmem.freelist[i] = r->next;
-			}
-
-			if (kmem.use_lock) {
-				release(&kmem.lock[i]);
-			}
-
-			if (r) {
-				break;
-			}
-		}
-	}
-
-	popcli();
 	__acquire(kpage);
 	return (char *)r;
 }
@@ -157,7 +125,7 @@ typedef long Align;
 struct header {
 	struct header *ptr; // Next free list.
 	size_t size;
-} __attribute__((aligned(8)));
+};
 
 typedef struct header Header;
 

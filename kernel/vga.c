@@ -49,13 +49,13 @@ const uint32_t COLOR_RED;
 static ssize_t
 vgaread(short minor, struct inode *ip, char *buf, size_t n)
 {
-	return 0;
+	return (ssize_t)n;
 }
 
 static ssize_t
 vgawrite(short minor, struct inode *ip, char *buf, size_t n)
 {
-	return 0;
+	return (ssize_t)n;
 }
 
 static int

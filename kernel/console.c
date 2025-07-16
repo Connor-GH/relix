@@ -176,7 +176,7 @@ __nonnull(1) void uart_printf(const char *fmt, ...)
 	va_list argp;
 	va_start(argp, fmt);
 	kernel_vprintf_template(uartputc_wrapper, NULL, NULL, fmt, argp, &cons.lock,
-	                        false, -1);
+	                        ncpu > 1, -1);
 	va_end(argp);
 }
 
@@ -223,18 +223,22 @@ __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...)
 	va_end(argp);
 }
 
-__noreturn __cold void
-panic(const char *s)
+__cold void
+panic_print_before(void)
 {
-	uintptr_t pcs[10];
-
 	cli();
 	cons.locking = 1;
 	vga_reset_char_index();
 	// use lapiccpunum so that we can call panic from mycpu()
-	vga_cprintf("\033[1;31mlapicid %d: panic: %s\n", lapicid(), s);
-	getcallerpcs(&s, pcs);
-	vga_cprintf("Stack frames:\n");
+	vga_cprintf("\033[1;31mlapicid %d: panic: ", lapicid());
+}
+
+__noreturn __cold void
+panic_print_after(void)
+{
+	uintptr_t pcs[10];
+	getcallerpcs(pcs);
+	vga_cprintf("\nStack frames:\n");
 	for (int i = 0; i < 10; i++) {
 		// The relative positition within function.
 		size_t relative_pos;

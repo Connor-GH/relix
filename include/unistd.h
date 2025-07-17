@@ -1,6 +1,6 @@
 #pragma once
 
-#include <bits/NULL.h>
+#include <bits/__NULL.h>
 #include <bits/seek_constants.h>
 #include <bits/size_t.h>
 #include <bits/stdint.h>
@@ -13,14 +13,19 @@ typedef __uid_t uid_t;
 typedef __gid_t gid_t;
 typedef __off_t off_t;
 typedef __intptr_t intptr_t;
+#define NULL __NULL
 
 int fork(void) __attribute__((returns_twice));
 int vfork(void) __attribute__((returns_twice));
 void _exit(int) __attribute__((noreturn));
 int pipe(int pipefd[2]);
+
 int execve(const char *, char *const *, char *const *);
 int execvp(const char *file, char *const *argv);
 int execv(const char *prog, char *const *argv);
+int execl(const char *path, const char *arg, ...);
+int execle(const char *path, const char *arg, ...);
+
 ssize_t write(int, const void *, size_t);
 ssize_t read(int, void *, size_t);
 int close(int fd);
@@ -61,7 +66,6 @@ int dup2(int oldfd, int newfd);
 // POSIX specifies a value other than -1.
 #define _POSIX_VDISABLE 0
 
-#define MB_LEN_MAX 1
 #define MB_CUR_MAX 1
 
 off_t lseek(int fd, off_t offset, int whence);

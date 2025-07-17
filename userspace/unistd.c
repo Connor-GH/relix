@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/times.h>
@@ -113,6 +114,45 @@ execvp(const char *file, char *const argv[])
 	}
 	execve(str, argv, environ);
 	return -1;
+}
+
+static size_t
+execl_core(va_list listp, char *vector[ARG_MAX])
+{
+	char *val;
+	size_t i = 0;
+	do {
+		val = va_arg(listp, char *);
+		vector[i++] = val;
+	} while (val != NULL && i < ARG_MAX);
+	return i;
+}
+
+int
+execl(const char *path, const char *arg, ...)
+{
+	char *argv[ARG_MAX] = {};
+	va_list listp;
+
+	va_start(listp, arg);
+	(void)execl_core(listp, argv);
+	va_end(listp);
+
+	return execv(path, argv);
+}
+
+int
+execle(const char *path, const char *arg, ...)
+{
+	char *argv[ARG_MAX] = {};
+	va_list listp;
+
+	va_start(listp, arg);
+	size_t i = execl_core(listp, argv);
+	execl_core(listp, argv + i);
+	va_end(listp);
+
+	return execve(path, argv, argv + i);
 }
 
 int

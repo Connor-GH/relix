@@ -1,5 +1,26 @@
 #pragma once
 #include <bits/stdint.h>
+
+#define SIZE_MAX __SIZE_MAX__
+#define SIZE_MIN __SIZE_MIN__
+#define SIZE_WIDTH __SIZE_WIDTH__
+
+#define PTRDIFF_WIDTH __PTRDIFF_WIDTH__
+#define PTRDIFF_MIN __PTRDIFF_MIN__
+#define PTRDIFF_MAX __PTRDIFF_MAX__
+
+#define SIG_ATOMIC_WIDTH __SIG_ATOMIC_WIDTH__
+#define SIG_ATOMIC_MIN __SIG_ATOMIC_MIN__
+#define SIG_ATOMIC_MAX __SIG_ATOMIC_MAX__
+
+#define WINT_WIDTH __WINT_WIDTH__
+#define WINT_MIN __WINT_MIN__
+#define WINT_MAX __WINT_MAX__
+
+#define WCHAR_WIDTH __WCHAR_WIDTH__
+#define WCHAR_MIN __WCHAR_MIN__
+#define WCHAR_MAX __WCHAR_MAX__
+
 #ifndef __ASSEMBLER__
 typedef __int8_t int8_t;
 typedef __int_least8_t int_least8_t;

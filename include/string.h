@@ -1,8 +1,9 @@
 #pragma once
-#include <bits/NULL.h>
+#include <bits/__NULL.h>
 #include <bits/size_t.h>
 
 typedef __size_t size_t;
+#define NULL __NULL
 char *strcpy(char *, const char *);
 char *strchr(const char *, int c);
 char *strrchr(const char *str, int c);

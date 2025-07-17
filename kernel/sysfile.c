@@ -450,8 +450,8 @@ sys_execve(void)
 	memset(argv, 0, sizeof(argv));
 	memset(envp, 0, sizeof(envp));
 	for (size_t i = 0;; i++) {
-		if (i >= NELEM(argv)) {
-			return -EINVAL;
+		if (i >= MAXARG) {
+			return -E2BIG;
 		}
 		if (fetchuintptr_t(uargv + sizeof(uintptr_t) * i, &uarg) < 0) {
 			return -EINVAL;
@@ -465,8 +465,8 @@ sys_execve(void)
 		}
 	}
 	for (size_t i = 0;; i++) {
-		if (i >= NELEM(envp)) {
-			return -EINVAL;
+		if (i >= MAXENV) {
+			return -E2BIG;
 		}
 		if (fetchuintptr_t(uenvp + sizeof(uintptr_t) * i, &uenv) < 0) {
 			return -EINVAL;
@@ -587,9 +587,10 @@ sys_symlink(void)
 	// it when dereferencing in resolve_name().
 	// TODO: this causes an extra byte for the size of a symlink. We should be
 	// handling this better.
-	if (inode_write(ip, target, 0, strlen(target) + 1) != strlen(target) + 1) {
-		panic("symlink inode_write");
-	}
+	PROPOGATE_ERR_WITH(inode_write(ip, target, 0, strlen(target) + 1), {
+		inode_unlockput(ip);
+		end_op();
+	})
 
 	inode_unlockput(ip);
 	end_op();

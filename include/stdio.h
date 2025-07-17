@@ -5,6 +5,7 @@
 
 #if defined(__USER__)
 #include <bits/__DIRSIZ.h>
+#include <bits/__NULL.h>
 #include <bits/size_t.h>
 #include <bits/types.h>
 #include <bits/va_list.h>
@@ -13,7 +14,7 @@ typedef __va_list va_list;
 typedef __off_t off_t;
 typedef __size_t size_t;
 typedef __ssize_t ssize_t;
-typedef __ssize_t ssize_t;
+typedef __off_t fpos_t;
 
 struct _IO_FILE {
 	char *write_buffer;
@@ -30,6 +31,7 @@ struct _IO_FILE {
 	_Bool stdio_flush;
 };
 
+#define NULL __NULL
 #define _IOLBF 0x1
 #define _IOFBF 0x2
 #define _IONBF 0x3
@@ -42,7 +44,6 @@ extern FILE *stderr;
 
 #define EOF (-1)
 #define FILENAME_MAX __DIRSIZ
-#define NAME_MAX FILENAME_MAX
 
 int vfprintf(FILE *restrict, const char *restrict fmt, va_list argp);
 __attribute__((format(printf, 2, 3))) int

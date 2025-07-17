@@ -3,7 +3,6 @@
 #include "printf.h"
 #include <errno.h>
 #include <fcntl.h>
-#include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -29,14 +28,13 @@ static size_t open_files_index = 0;
 static size_t global_idx = 0;
 static size_t global_idx_fgetc = 0;
 
-#define WRITE_BUFFER_SIZE 256
 // This runs on all processes besides init.
 void
 __init_stdio(void)
 {
-	FILE *file_stdin = fdopen(0, "r");
-	FILE *file_stdout = fdopen(1, "w"); // maybe should be a+?
-	FILE *file_stderr = fdopen(2, "w"); // maybe should be a+?
+	FILE *file_stdin = fdopen(STDIN_FILENO, "r");
+	FILE *file_stdout = fdopen(STDOUT_FILENO, "w"); // maybe should be a+?
+	FILE *file_stderr = fdopen(STDERR_FILENO, "w"); // maybe should be a+?
 	/* stdin, stdout are line buffered by default. */
 	setvbuf(file_stdin, NULL, _IOLBF, 0);
 	setvbuf(file_stdout, NULL, _IOLBF, 0);
@@ -201,11 +199,11 @@ fdopen(int fd, const char *restrict mode)
 	fp->fd = fd;
 	fp->eof = false;
 	fp->error = false;
-	fp->write_buffer = malloc(WRITE_BUFFER_SIZE);
+	fp->write_buffer = malloc(BUFSIZ);
 	if (fp->write_buffer == NULL) {
 		return NULL;
 	}
-	fp->write_buffer_size = WRITE_BUFFER_SIZE;
+	fp->write_buffer_size = BUFSIZ;
 	fp->write_buffer_index = 0;
 	fp->stdio_flush = true;
 	fp->previous_char = EOF;

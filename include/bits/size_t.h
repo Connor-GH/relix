@@ -1,2 +1,2 @@
 #pragma once
-typedef __typeof__(sizeof(0)) __size_t;
+typedef __SIZE_TYPE__ __size_t;

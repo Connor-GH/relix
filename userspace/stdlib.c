@@ -1,11 +1,14 @@
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 // no way to check for error...sigh....
@@ -181,8 +184,25 @@ srand(unsigned int seed)
 int
 system(const char *command)
 {
-	fprintf(stderr, "FIXME: system(\"%s\")\n", command);
-	return 1;
+	if (command == NULL) {
+		return 1;
+	}
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+	pid_t pid = fork();
+	if (pid < 0) {
+		return -1;
+	}
+	// Child.
+	if (pid == 0) {
+		return execl("/bin/sh", "sh", "-c", command, (char *)0);
+	}
+	int status;
+	wait(&status);
+	signal(SIGINT, SIG_DFL);
+	signal(SIGQUIT, SIG_DFL);
+
+	return WEXITSTATUS(status);
 }
 
 int
@@ -225,4 +245,52 @@ atexit(void (*function)(void))
 	// "Upon successful completion, atexit() shall return 0;"
 	// "otherwise, it shall return a non-zero value."
 	return -1;
+}
+
+static int
+temp_name_helper(char *template)
+{
+	size_t string_len = strlen(template);
+	if (strncmp(template, "XXXXXX", 6) != 0) {
+		errno = EINVAL;
+		return -1;
+	}
+	const char characters[] =
+		"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	for (int attempt = 0; attempt < 100; attempt++) {
+		for (size_t i = 0; i < strlen(template) - strlen("XXXXXX"); i++) {
+			template[i] = characters[rand() % (sizeof(characters) - 1)];
+		}
+		int old_errno = errno;
+		errno = 0;
+		int fd = open(template, O_RDONLY);
+		if (errno == ENOENT) {
+			errno = old_errno;
+			return 0;
+		}
+		close(fd);
+	}
+	return -1;
+}
+
+int
+mkstemp(char *template)
+{
+	if (temp_name_helper(template) < 0) {
+		return -1;
+	}
+	return open(template, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+}
+
+char *
+mkdtemp(char *template)
+{
+	if (temp_name_helper(template) < 0) {
+		return NULL;
+	}
+
+	if (mkdir(template, S_IRWXU) < 0) {
+		return NULL;
+	}
+	return template;
 }

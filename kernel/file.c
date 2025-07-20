@@ -419,12 +419,13 @@ fileclose(struct file *f)
 		// Run device-specific opening code, if any.
 		devsw[f->ip->major].close(f->ip->minor);
 	}
-	struct file ff = *f;
 
 	f->ref = 0;
 	f->type = FD_NONE;
 	f->flags = 0;
 	release(&file_table.lock);
+
+	struct file ff = *f;
 
 	if (ff.type == FD_PIPE || ff.type == FD_FIFO) {
 		pipeclose(ff.pipe, ff.writable);

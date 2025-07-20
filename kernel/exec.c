@@ -256,10 +256,9 @@ ok:
 
 	// Only close files if we were passed FD_CLOEXEC.
 	for (int i = 0; i < NOFILE; i++) {
-		if (curproc->ofile[i] != NULL && curproc->ofile[i]->flags == FD_CLOEXEC) {
+		if (curproc->ofile[i] != NULL && curproc->ofile[i]->ref > 0 &&
+		    curproc->ofile[i]->flags == FD_CLOEXEC) {
 			(void)fileclose(curproc->ofile[i]);
-			// This is needed as fileclose() does not do this.
-			curproc->ofile[i] = NULL;
 		}
 	}
 

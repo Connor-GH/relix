@@ -53,7 +53,8 @@
 #define SYS_fchmod 50
 #define SYS_access 51
 #define SYS_fcntl 52
-#define SYSCALL_AMT 52
+#define SYS_uname 53
+#define SYSCALL_AMT 53
 #ifndef __ASSEMBLER__
 #include <stddef.h>
 #include <sys/types.h>
@@ -111,6 +112,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_fchmod] = "fchmod",
 	[SYS_access] = "access",
 	[SYS_fcntl] = "fcntl",
+	[SYS_uname] = "uname",
 };
 #endif
 #if __KERNEL__ && !defined(__ASSEMBLER__)

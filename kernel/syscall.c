@@ -184,6 +184,7 @@ extern size_t sys_lstat(void);
 extern size_t sys_fchmod(void);
 extern size_t sys_access(void);
 extern size_t sys_fcntl(void);
+extern size_t sys_uname(void);
 
 static size_t (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,
@@ -238,6 +239,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_fchmod] = sys_fchmod,
 	[SYS_access] = sys_access,
 	[SYS_fcntl] = sys_fcntl,
+	[SYS_uname] = sys_uname,
 };
 
 noreturn static void syscall_do(void);

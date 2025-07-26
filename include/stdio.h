@@ -82,7 +82,8 @@ int sscanf(const char *restrict str, const char *restrict fmt, ...);
 int feof(FILE *stream);
 int fclose(FILE *stream);
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *restrict stream);
-size_t fwrite(void *ptr, size_t size, size_t nmemb, FILE *restrict stream);
+size_t fwrite(const void *ptr, size_t size, size_t nmemb,
+              FILE *restrict stream);
 int fseek(FILE *stream, long offset, int whence);
 int ferror(FILE *stream);
 void clearerr(FILE *stream);

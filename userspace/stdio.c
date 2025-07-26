@@ -193,6 +193,7 @@ fdopen(int fd, const char *restrict mode)
 	}
 	fp->flags = string_to_flags(mode);
 	if (fp->flags == -1) {
+		free(fp);
 		return NULL;
 	}
 	fp->mode = S_IWGRP | S_IRGRP | S_IWOTH | S_IROTH | S_IWUSR | S_IRUSR;
@@ -201,6 +202,7 @@ fdopen(int fd, const char *restrict mode)
 	fp->error = false;
 	fp->write_buffer = malloc(BUFSIZ);
 	if (fp->write_buffer == NULL) {
+		free(fp);
 		return NULL;
 	}
 	fp->write_buffer_size = BUFSIZ;
@@ -216,8 +218,10 @@ fdopen(int fd, const char *restrict mode)
 			if (open_files[i] == NULL) {
 				fp->static_table_index = i;
 				open_files[i] = fp;
+				return fp;
 			}
 		}
+		free(fp);
 		return NULL;
 	}
 	return fp;
@@ -601,7 +605,7 @@ remove(const char *pathname)
 }
 
 size_t
-fwrite(void *ptr, size_t size, size_t nmemb, FILE *restrict stream)
+fwrite(const void *ptr, size_t size, size_t nmemb, FILE *restrict stream)
 {
 	size_t count = size * nmemb;
 	int fd = fileno(stream);

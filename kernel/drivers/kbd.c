@@ -326,7 +326,7 @@ const uint8_t ctlmap[256] = { NO,
 static int
 kbdgetc_raw(void)
 {
-	uint32_t st, data;
+	uint8_t st, data;
 
 	st = inb(KBSTATP);
 	if ((st & KBS_DIB) == 0) {
@@ -341,7 +341,7 @@ kbd_scancode_into_char(uint32_t data)
 {
 	static uint32_t shift;
 	const uint8_t *charcode[4] = { normalmap, shiftmap, ctlmap, ctlmap };
-	uint32_t st, c;
+	int c;
 
 	if (data == 0xE0) {
 		shift |= E0ESC;
@@ -381,7 +381,7 @@ display_queue(struct queue_unsigned_char *q)
 	int ret = dequeue_unsigned_char(q, &data, kfree);
 	while (ret != -1) {
 		uart_printf("%d (%c)", data, data);
-		data = dequeue_unsigned_char(q, &data, kfree);
+		ret = dequeue_unsigned_char(q, &data, kfree);
 	}
 	uart_printf("\n");
 }
@@ -419,7 +419,7 @@ get_element:;
 	int ret = dequeue_unsigned_char(kbdlock.kbd_queue, &data, kfree);
 	release(&kbdlock.lock);
 	if (ret != QUEUE_SUCCESS) {
-		if ((ip->flags & O_NONBLOCK) == O_NONBLOCK) {
+		if ((ip->fattrs & O_NONBLOCK) == O_NONBLOCK) {
 			return -EWOULDBLOCK;
 		} else {
 			// Let other processes do stuff while we sit here and spin.

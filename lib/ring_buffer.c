@@ -71,5 +71,8 @@ ring_buffer_is_empty(struct ring_buf *rb)
 bool
 ring_buffer_is_full(struct ring_buf *rb)
 {
+	if (rb == NULL) {
+		return false;
+	}
 	return (rb && rb->nwrite + 1) % rb->size == rb->nread;
 }

@@ -181,20 +181,20 @@ main(int32_t argc, char *argv[])
 		exit(1);
 	}
 
-	// 1 fs block = 1 disk sector
-	nmeta = 2 + nlog + ninodeblocks + nbitmap;
+	nmeta = LOGINO + nlog + ninodeblocks + nbitmap;
 	nblocks = FSSIZE - nmeta;
 
+	memcpy(sb.signature, "RELIXFS0", sizeof(sb.signature));
 	sb.size = xlong(FSSIZE);
 	sb.nblocks = xlong(nblocks);
 	sb.ninodes = xlong(NINODES);
 	sb.nlog = xlong(nlog);
-	sb.logstart = xlong(2);
-	sb.inodestart = xlong(2 + nlog);
-	sb.bmapstart = xlong(2 + nlog + ninodeblocks);
+	sb.logstart = xlong(LOGINO);
+	sb.inodestart = xlong(LOGINO + nlog);
+	sb.bmapstart = xlong(LOGINO + nlog + ninodeblocks);
 
 	printf(
-		"nmeta %lu (boot, super, log blocks %lu inode blocks %lu, bitmap blocks %lu) blocks %ld total %u\n",
+		"nmeta %lu (boot, super, log blocks %lu inode blocks %lu, bitmap blocks %lu) blocks %ld total %lu\n",
 		nmeta, nlog, ninodeblocks, nbitmap, nblocks, FSSIZE);
 
 	freeblock = nmeta; // the first free block that we can allocate

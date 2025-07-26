@@ -67,7 +67,7 @@ localtime(const time_t *timep)
 	month = 0;
 	index = 0;
 	if (flag == 1) {
-		while (true) {
+		while (index < 12) {
 			if (index == 1) {
 				if (extra_days - 29 < 0) {
 					break;
@@ -85,7 +85,7 @@ localtime(const time_t *timep)
 			index += 1;
 		}
 	} else {
-		while (true) {
+		while (index < 12) {
 			if (extra_days - days_of_month[index] < 0) {
 				break;
 			}

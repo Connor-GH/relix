@@ -106,7 +106,7 @@ get_element:;
 	int ret = dequeue_mouse_packet(mouselock.mouse_queue, &data, kfree);
 	release(&mouselock.lock);
 	if (ret != QUEUE_SUCCESS) {
-		if ((ip->flags & O_NONBLOCK) == O_NONBLOCK) {
+		if ((ip->fattrs & O_NONBLOCK) == O_NONBLOCK) {
 			return -EWOULDBLOCK;
 		} else {
 			// Let other processes do stuff while we sit here and spin.

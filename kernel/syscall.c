@@ -373,11 +373,11 @@ syswrap(struct trapframe *tf)
 void
 syscall(void)
 {
-	int num;
+	uint64_t num;
 	struct proc *curproc = myproc();
 
 	num = curproc->tf->rax;
-	if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+	if (num > 0 && num < NELEM(syscalls) && syscalls[num] != NULL) {
 		if (curproc->ptrace_mask_ptr[num] == 1) {
 			size_t xticks, yticks;
 			xticks = ticks;
@@ -394,7 +394,7 @@ syscall(void)
 			curproc->tf->rax = syscalls[num]();
 		}
 	} else {
-		cprintf("%d %s: unknown sys call %d\n", curproc->pid, curproc->name, num);
+		cprintf("%d %s: unknown sys call %lu\n", curproc->pid, curproc->name, num);
 		curproc->tf->rax = -1;
 	}
 }

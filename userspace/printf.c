@@ -19,69 +19,90 @@ enum {
 static int print_string(void (*put_function)(FILE *fp, char c, char *buf),
                         char *s, int flags, FILE *fp, char *restrict buf,
                         int str_pad, size_t print_n_chars);
+
+#define PRINTF_INT_BUF_SIZE 4096
+
+// IMPORTANT: MAYBE_APPEND modifies 'i' in the current scope.
+#define MAYBE_APPEND(buf, data)  \
+	if (i < PRINTF_INT_BUF_SIZE) { \
+		(buf)[i++] = data;           \
+	}
+
+// We store the string in a buffer backwards and then print that buffer
+// backwards, thus printing it forwards.
+//
+// Example:
+// printf("%-#04d", -32);
+// buf = "0200x0-"
+// prints as "-0x0020"
 static int
 printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
          FILE *fp, int64_t xx, int base, bool sgn, int flags, int padding)
 {
 	static const char digits[] = "0123456789abcdef";
-	char buf[64];
-	int i = 0;
-	bool neg = 0;
+	char buf[PRINTF_INT_BUF_SIZE];
+	ssize_t i = 0;
+	bool neg = false;
 	uint64_t x;
 
 	if (sgn && xx < 0) {
-		neg = 1;
+		neg = true;
 		x = -xx;
 	} else {
 		x = xx;
 	}
+
 	int numlen = 1;
 	uint64_t x_copy = x;
+
 	while ((x_copy /= base) != 0) {
 		numlen++;
 	}
 
 	if (IS_SET(flags, FLAG_LJUST) && !IS_SET(flags, FLAG_PRECISION)) {
 		if (base == 16 && IS_SET(flags, FLAG_ALTFORM)) {
+			// Remove 2 padding in place for "0x".
 			padding -= 2;
 		}
 		while (i < padding - numlen) {
-			buf[i++] = ' ';
+			MAYBE_APPEND(buf, ' ');
 		}
 	}
+
 	do {
-		buf[i++] = digits[x % base];
+		MAYBE_APPEND(buf, digits[x % base]);
 	} while ((x /= base) != 0);
+
 	// pad for zeroes (and blanks)
 	if (IS_SET(flags, FLAG_PADZERO)) {
 		while (i < padding) {
-			buf[i++] = '0';
+			MAYBE_APPEND(buf, '0');
 		}
 	}
 	if (base == 16 && IS_SET(flags, FLAG_ALTFORM)) {
-		buf[i++] = 'x';
-		buf[i++] = '0';
+		MAYBE_APPEND(buf, 'x');
+		MAYBE_APPEND(buf, '0');
 	}
 	// append negative/positive sign
 	if (neg) {
-		buf[i++] = '-';
+		MAYBE_APPEND(buf, '-');
 	} else if (IS_SET(flags, FLAG_SIGN)) {
-		buf[i++] = '+';
+		MAYBE_APPEND(buf, '+');
 	}
 	if (IS_SET(flags, FLAG_BLANK)) {
 		while (i < padding) {
-			buf[i++] = ' ';
+			MAYBE_APPEND(buf, ' ');
 		}
 	} else if (IS_SET(flags, FLAG_PRECISION)) {
 		while (i < padding) {
-			buf[i++] = '0';
+			MAYBE_APPEND(buf, '0');
 		}
 	}
 
 	if (!IS_SET(flags, FLAG_LJUST) && !IS_SET(flags, FLAG_PADZERO) &&
 	    padding != 0) {
 		while (i < padding) {
-			buf[i++] = ' ';
+			MAYBE_APPEND(buf, ' ');
 		}
 	}
 
@@ -144,7 +165,8 @@ print_double(void (*put_function)(FILE *fp, char c, char *buf), double num,
 	double fraction = (num - (uint64_t)num);
 	fraction *= pow_10(str_pad);
 	uint64_t fraction_as_integer = (uint64_t)(fraction + 0.5);
-	written += printf("%0*lu", str_pad, fraction_as_integer);
+	written += printint(put_function, buf, fp, fraction_as_integer, base, false,
+	                    FLAG_PADZERO, str_pad);
 	return written;
 }
 

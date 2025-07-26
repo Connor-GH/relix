@@ -164,11 +164,15 @@ block_free(dev_t dev, uint64_t b)
 // entries. Since ip->ref indicates whether an entry is free,
 // and ip->dev and ip->inum indicate which i-node an entry
 // holds, one must hold inode_cache.lock while using any of those fields.
-//
-// An ip->lock sleep-lock protects all ip-> fields other than ref,
-// dev, and inum.  One must hold ip->lock in order to
-// read or write that inode's ip->valid, ip->size, ip->type, &c.
 
+/*************\
+|* IMPORTANT *|
+\*************/
+/*
+ * An ip->lock sleep-lock protects all ip-> fields other than ref,
+ * dev, and inum.  One must hold ip->lock in order to
+ * read or write that inode's ip->valid, ip->size, ip->type, &c.
+ */
 static struct {
 	struct spinlock lock;
 	struct inode inode[NINODE];
@@ -184,10 +188,17 @@ inode_init(dev_t dev)
 	}
 
 	read_superblock(dev, &global_sb);
-	cprintf("superblock: size %lu nblocks %lu ninodes %lu nlog %lu logstart %lu\
- inodestart %lu bmap start %lu\n",
-	        global_sb.size, global_sb.nblocks, global_sb.ninodes, global_sb.nlog,
-	        global_sb.logstart, global_sb.inodestart, global_sb.bmapstart);
+
+	if (memcmp(global_sb.signature, "RELIXFS0", 8) == 0) {
+		cprintf("RelixFS found\n");
+		cprintf("superblock: size %lu nblocks %lu ninodes %lu nlog %lu logstart %lu\
+ 		inodestart %lu bmap start %lu\n",
+		        global_sb.size, global_sb.nblocks, global_sb.ninodes,
+		        global_sb.nlog, global_sb.logstart, global_sb.inodestart,
+		        global_sb.bmapstart);
+	} else {
+		panic("Cannot find any recognized filesytem.");
+	}
 }
 
 static struct inode *inode_get(dev_t dev, uint32_t inum);

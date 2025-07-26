@@ -25,13 +25,24 @@
 #define NDINDIRECT_ENTRY __NDIRECT
 #define BSIZE __BSIZE
 #define DIRSIZ __DIRSIZ
-// Disk layout:
-// [ boot block | super block | log | inode blocks |
-//                                          free bit map | data blocks]
+// Disk layout in blocks:
+// 0 = boot block
+// 1 = super block
+// 2 = log
+// 3 = inode blocks
+// 4 = free bit map
+// 5..N = data blocks
 //
+#define ROOTINO 1U
+#define LOGINO 2U
+
 // mkfs computes the super block and builds an initial file system. The
 // super block describes the disk layout:
 struct superblock {
+	// For Relix FS, signature is "RELIXFS0".
+	// "0", because it's unstable.
+	// NOTICE: This is not NUL-terminated.
+	char signature[8];
 	uintptr_t size; // Size of file system image (blocks)
 	uintptr_t nblocks; // Number of data blocks
 	uintptr_t ninodes; // Number of inodes.
@@ -39,7 +50,8 @@ struct superblock {
 	uintptr_t logstart; // Block number of first log block
 	uintptr_t inodestart; // Block number of first inode block
 	uintptr_t bmapstart; // Block number of first free map block
-};
+} __attribute__((packed));
+
 // in-memory copy of an inode
 struct inode {
 	dev_t dev; // Device number
@@ -47,9 +59,13 @@ struct inode {
 	struct file *rf;
 	struct file *wf;
 	uint32_t inum; // Inode number
-	int flags; // Flags when file is opened (e.g. O_RDONLY)
+	int fattrs; // File attributes when the file is opened (e.g. O_RDONLY)
 	int ref; // Reference count
-	struct sleeplock lock; // protects everything below here
+
+	/*
+	 * Protects all fields other than ref, dev, and inum.
+	 */
+	struct sleeplock lock;
 	int valid; // inode has been read from disk?
 
 	uint64_t ctime; // change
@@ -60,8 +76,8 @@ struct inode {
 	uint16_t gid;
 	uint16_t uid;
 	uint64_t addrs[NDIRECT + 1 + 1]; // Data block addresses
-	short major; // Major device number (T_DEV only)
-	short minor; // Minor device number (T_DEV only)
+	short major; // Major device number
+	short minor; // Minor device number
 	short nlink; // Number of links to inode in file system
 	/* 2 bytes of padding */
 };
@@ -75,8 +91,8 @@ struct dinode {
 	uint16_t gid;
 	uint16_t uid;
 	uint64_t addrs[NDIRECT + 1 + 1]; // Data block addresses
-	short major; // Major device number (T_DEV only)
-	short minor; // Minor device number (T_DEV only)
+	short major; // Major device number
+	short minor; // Minor device number
 	short nlink; // Number of links to inode in file system
 	/* 2 bytes of padding */
 };
@@ -93,12 +109,10 @@ struct dinode {
 // Block of free map containing bit for block b
 #define BBLOCK(b, sb) ((b) / BPB + (sb).bmapstart)
 
-// Directory is a file containing a sequence of dirent structures.
-#define ROOTINO 1U // root i-number
-
 #if !defined(USE_HOST_TOOLS) || __KERNEL__
 #include <sys/stat.h>
 void read_superblock(dev_t dev, struct superblock *sb);
+// Directory is a file containing a sequence of dirent structures.
 int dirlink(struct inode *, const char *, uint32_t);
 struct inode *dirlookup(struct inode *, const char *, uint64_t *);
 struct inode *inode_alloc(dev_t, mode_t);

@@ -772,7 +772,7 @@ sys_fcntl(void)
 	}
 	case F_GETFL: {
 		inode_lock(file->ip);
-		int flags = file->ip->flags;
+		int flags = file->ip->fattrs;
 		inode_unlock(file->ip);
 		return flags;
 	}
@@ -780,7 +780,7 @@ sys_fcntl(void)
 		int arg;
 		PROPOGATE_ERR(argint(2, &arg));
 		inode_lock(file->ip);
-		file->ip->flags = arg;
+		file->ip->fattrs = arg;
 		inode_unlock(file->ip);
 		return 0;
 	}

@@ -21,7 +21,7 @@ printint(void (*put_function)(char, char *), char *put_func_buf, int64_t xx,
          int base, bool sgn, int flags, int padding)
 {
 	static const char digits[] = "0123456789abcdef";
-	char buf[64];
+	char buf[4096];
 	int i = 0;
 	int neg = 0;
 	uint64_t x;

@@ -182,7 +182,7 @@ filecreate(char *path, mode_t mode, short major, short minor)
 	ip->mode = mode;
 	ip->gid = DEFAULT_GID;
 	ip->uid = DEFAULT_UID;
-	ip->flags = 0;
+	ip->fattrs = 0;
 	// atime, mtime, etc. get handled in inode_update()
 	inode_update(ip);
 	// Create . and .. entries.
@@ -279,7 +279,7 @@ fileopen(char *path, int flags, mode_t mode)
 			return -ENOENT;
 		}
 		inode_lock(ip);
-		ip->flags = flags;
+		ip->fattrs = flags;
 
 		if (S_ISDIR(ip->mode) && ((flags & O_ACCMODE) != O_RDONLY)) {
 			inode_unlockput(ip);
@@ -297,6 +297,8 @@ fileopen(char *path, int flags, mode_t mode)
 		}
 	}
 	if (S_ISFIFO(ip->mode) && (flags & O_NONBLOCK) != O_NONBLOCK) {
+		// TODO handle the case where ip->rf == NULL && ip->wf != NULL
+		// and vice versa.
 		if (ip->rf == NULL && ip->wf == NULL) {
 			if (pipealloc(&ip->rf, &ip->wf) < 0) {
 				inode_unlockput(ip);

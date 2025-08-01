@@ -1,4 +1,3 @@
-#include <stdarg.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/times.h>
@@ -6,8 +5,10 @@
 
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <signal.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -156,15 +157,22 @@ execle(const char *path, const char *arg, ...)
 }
 
 int
+unlinkat(int fd, const char *name, int flag)
+{
+	return __syscall_ret(__syscall3(SYS_unlinkat, fd, (long)name, flag));
+}
+
+int
 unlink(const char *pathname)
 {
-	return __syscall_ret(__syscall1(SYS_unlink, (long)pathname));
+	return unlinkat(AT_FDCWD, pathname, 0);
 }
 
 int
 link(const char *oldpath, const char *newpath)
 {
-	return __syscall_ret(__syscall2(SYS_link, (long)oldpath, (long)newpath));
+	return __syscall_ret(__syscall5(SYS_linkat, (long)AT_FDCWD, (long)oldpath,
+	                                AT_FDCWD, (long)newpath, 0));
 }
 
 int
@@ -234,16 +242,28 @@ getgid(void)
 }
 
 int
+symlinkat(const char *from, int tofd, const char *to)
+{
+	return __syscall_ret(__syscall3(SYS_symlinkat, (long)from, tofd, (long)to));
+}
+
+int
 symlink(const char *target, const char *linkpath)
 {
-	return __syscall_ret(__syscall2(SYS_symlink, (long)target, (long)linkpath));
+	return symlinkat(target, AT_FDCWD, linkpath);
 }
 
 ssize_t
-readlink(const char *restrict pathname, char *restrict linkpath, size_t buf)
+readlinkat(int dirfd, const char *restrict pathname, char *restrict linkpath,
+           size_t bufsiz)
 {
 	return __syscall_ret(
-		__syscall3(SYS_readlink, (long)pathname, (long)linkpath, buf));
+		__syscall4(SYS_readlinkat, dirfd, (long)pathname, (long)linkpath, bufsiz));
+}
+ssize_t
+readlink(const char *restrict pathname, char *restrict linkpath, size_t bufsiz)
+{
+	return readlinkat(AT_FDCWD, pathname, linkpath, bufsiz);
 }
 
 off_t
@@ -302,9 +322,16 @@ times(struct tms *buf)
 }
 
 int
+faccessat(int fd, const char *pathname, int mode, int flags)
+{
+	return __syscall_ret(
+		__syscall4(SYS_faccessat, fd, (long)pathname, mode, flags));
+}
+
+int
 access(const char *pathname, int mode)
 {
-	return __syscall_ret(__syscall2(SYS_access, (long)pathname, mode));
+	return faccessat(AT_FDCWD, pathname, mode, 0);
 }
 
 uid_t

@@ -16,7 +16,8 @@ open(const char *pathname, int flags, ...)
 	} else {
 		mode = 0;
 	}
-	return __syscall_ret(__syscall3(SYS_open, (long)pathname, flags, mode));
+	return __syscall_ret(
+		__syscall4(SYS_openat, (long)AT_FDCWD, (long)pathname, flags, mode));
 }
 
 int

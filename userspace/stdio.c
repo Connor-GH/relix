@@ -61,7 +61,8 @@ __fini_stdio(void)
 int
 rename(const char *oldpath, const char *newpath)
 {
-	return __syscall_ret(__syscall2(SYS_rename, (long)oldpath, (long)newpath));
+	return __syscall_ret(__syscall4(SYS_renameat, (long)AT_FDCWD, (long)oldpath,
+	                                (long)AT_FDCWD, (long)newpath));
 }
 
 static int

@@ -29,12 +29,17 @@ int execle(const char *path, const char *arg, ...);
 ssize_t write(int, const void *, size_t);
 ssize_t read(int, void *, size_t);
 int close(int fd);
-int unlink(const char *);
+int unlink(const char *pathname);
+int unlinkat(int dirfd, const char *pathname, int flags);
 int rmdir(const char *path);
-int link(const char *, const char *);
+int link(const char *old, const char *new);
+int linkat(int olddirfd, const char *old, int newdirfd, const char *new);
 int symlink(const char *target, const char *linkpath);
+int symlinkat(const char *from, int tofd, const char *to);
 ssize_t readlink(const char *restrict pathname, char *restrict linkpath,
-                 size_t buf);
+                 size_t bufsiz);
+ssize_t readlinkat(int dirfd, const char *restrict pathname,
+                   char *restrict linkpath, size_t bufsiz);
 int chdir(const char *);
 int dup(int);
 unsigned int alarm(unsigned int);
@@ -71,6 +76,7 @@ int dup2(int oldfd, int newfd);
 
 off_t lseek(int fd, off_t offset, int whence);
 int access(const char *pathname, int mode);
+int faccessat(int fd, const char *pathname, int mode, int flags);
 int isatty(int fd);
 int ttyname_r(int fd, char *buf, size_t buflen);
 char *ttyname(int fd);

@@ -141,26 +141,26 @@ extern size_t sys_fork(void);
 extern size_t sys_fstat(void);
 extern size_t sys_getpid(void);
 extern size_t sys_kill(void);
-extern size_t sys_link(void);
-extern size_t sys_mkdir(void);
-extern size_t sys_mknod(void);
-extern size_t sys_open(void);
+extern size_t sys_linkat(void);
+extern size_t sys_mkdirat(void);
+extern size_t sys_mknodat(void);
+extern size_t sys_openat(void);
 extern size_t sys_pipe(void);
 extern size_t sys_read(void);
 extern size_t sys_sbrk(void);
 extern size_t sys_alarm(void);
-extern size_t sys_unlink(void);
+extern size_t sys_unlinkat(void);
 extern size_t sys_wait(void);
 extern size_t sys_write(void);
 extern size_t sys_uptime(void);
 extern size_t sys_time(void);
-extern size_t sys_chmod(void);
+extern size_t sys_fchmodat(void);
 extern size_t sys_reboot(void);
 extern size_t sys_setgid(void);
 extern size_t sys_setuid(void);
 extern size_t sys_ptrace(void);
-extern size_t sys_symlink(void);
-extern size_t sys_readlink(void);
+extern size_t sys_symlinkat(void);
+extern size_t sys_readlinkat(void);
 extern size_t sys_lseek(void);
 extern size_t sys_fsync(void);
 extern size_t sys_writev(void);
@@ -175,14 +175,14 @@ extern size_t sys_wait3(void);
 extern size_t sys_sigsuspend(void);
 extern size_t sys_umask(void);
 extern size_t sys_sigaction(void);
-extern size_t sys_rename(void);
+extern size_t sys_renameat(void);
 extern size_t sys_getuid(void);
 extern size_t sys_getgid(void);
 extern size_t sys_getppid(void);
 extern size_t sys_times(void);
-extern size_t sys_lstat(void);
+extern size_t sys_fstatat(void);
 extern size_t sys_fchmod(void);
-extern size_t sys_access(void);
+extern size_t sys_faccessat(void);
 extern size_t sys_fcntl(void);
 extern size_t sys_uname(void);
 
@@ -201,21 +201,21 @@ static size_t (*syscalls[])(void) = {
 	[SYS_sbrk] = sys_sbrk,
 	[SYS_alarm] = sys_alarm,
 	[SYS_uptime] = sys_uptime,
-	[SYS_open] = sys_open,
+	[SYS_openat] = sys_openat,
 	[SYS_write] = sys_write,
-	[SYS_mknod] = sys_mknod,
-	[SYS_unlink] = sys_unlink,
-	[SYS_link] = sys_link,
-	[SYS_mkdir] = sys_mkdir,
+	[SYS_mknodat] = sys_mknodat,
+	[SYS_unlinkat] = sys_unlinkat,
+	[SYS_linkat] = sys_linkat,
+	[SYS_mkdirat] = sys_mkdirat,
 	[SYS_close] = sys_close,
 	[SYS_time] = sys_time,
-	[SYS_chmod] = sys_chmod,
+	[SYS_fchmodat] = sys_fchmodat,
 	[SYS_reboot] = sys_reboot,
 	[SYS_setgid] = sys_setgid,
 	[SYS_setuid] = sys_setuid,
 	[SYS_ptrace] = sys_ptrace,
-	[SYS_symlink] = sys_symlink,
-	[SYS_readlink] = sys_readlink,
+	[SYS_symlinkat] = sys_symlinkat,
+	[SYS_readlinkat] = sys_readlinkat,
 	[SYS_lseek] = sys_lseek,
 	[SYS_fsync] = sys_fsync,
 	[SYS_writev] = sys_writev,
@@ -230,14 +230,14 @@ static size_t (*syscalls[])(void) = {
 	[SYS_sigsuspend] = sys_sigsuspend,
 	[SYS_umask] = sys_umask,
 	[SYS_sigaction] = sys_sigaction,
-	[SYS_rename] = sys_rename,
+	[SYS_renameat] = sys_renameat,
 	[SYS_getuid] = sys_getuid,
 	[SYS_getgid] = sys_getgid,
 	[SYS_getppid] = sys_getppid,
 	[SYS_times] = sys_times,
-	[SYS_lstat] = sys_lstat,
+	[SYS_fstatat] = sys_fstatat,
 	[SYS_fchmod] = sys_fchmod,
-	[SYS_access] = sys_access,
+	[SYS_faccessat] = sys_faccessat,
 	[SYS_fcntl] = sys_fcntl,
 	[SYS_uname] = sys_uname,
 };

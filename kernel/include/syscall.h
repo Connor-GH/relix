@@ -15,21 +15,21 @@
 #define SYS_sbrk 12
 #define SYS_alarm 13
 #define SYS_uptime 14
-#define SYS_open 15
+#define SYS_openat 15
 #define SYS_write 16
-#define SYS_mknod 17
-#define SYS_unlink 18
-#define SYS_link 19
-#define SYS_mkdir 20
+#define SYS_mknodat 17
+#define SYS_unlinkat 18
+#define SYS_linkat 19
+#define SYS_mkdirat 20
 #define SYS_close 21
 #define SYS_time 22
-#define SYS_chmod 23
+#define SYS_fchmodat 23
 #define SYS_reboot 24
 #define SYS_setgid 25
 #define SYS_setuid 26
 #define SYS_ptrace 27
-#define SYS_symlink 28
-#define SYS_readlink 29
+#define SYS_symlinkat 28
+#define SYS_readlinkat 29
 #define SYS_lseek 30
 #define SYS_fsync 31
 #define SYS_writev 32
@@ -44,14 +44,14 @@
 #define SYS_sigsuspend 41
 #define SYS_umask 42
 #define SYS_sigaction 43
-#define SYS_rename 44
+#define SYS_renameat 44
 #define SYS_getuid 45
 #define SYS_getgid 46
 #define SYS_getppid 47
 #define SYS_times 48
-#define SYS_lstat 49
+#define SYS_fstatat 49
 #define SYS_fchmod 50
-#define SYS_access 51
+#define SYS_faccessat 51
 #define SYS_fcntl 52
 #define SYS_uname 53
 #define SYSCALL_AMT 53
@@ -74,21 +74,21 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_sbrk] = "sbrk",
 	[SYS_alarm] = "alarm",
 	[SYS_uptime] = "uptime",
-	[SYS_open] = "open",
+	[SYS_openat] = "openat",
 	[SYS_write] = "write",
-	[SYS_mknod] = "mknod",
-	[SYS_unlink] = "unlink",
-	[SYS_link] = "link",
-	[SYS_mkdir] = "mkdir",
+	[SYS_mknodat] = "mknodat",
+	[SYS_unlinkat] = "unlinkat",
+	[SYS_linkat] = "linkat",
+	[SYS_mkdirat] = "mkdirat",
 	[SYS_close] = "close",
 	[SYS_time] = "time",
-	[SYS_chmod] = "chmod",
+	[SYS_fchmodat] = "fchmodat",
 	[SYS_reboot] = "reboot",
 	[SYS_setgid] = "setgid",
 	[SYS_setuid] = "setuid",
 	[SYS_ptrace] = "ptrace",
-	[SYS_symlink] = "symlink",
-	[SYS_readlink] = "readlink",
+	[SYS_symlinkat] = "symlinkat",
+	[SYS_readlinkat] = "readlinkat",
 	[SYS_lseek] = "lseek",
 	[SYS_fsync] = "fsync",
 	[SYS_writev] = "writev",
@@ -103,14 +103,14 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_sigsuspend] = "sigsuspend",
 	[SYS_umask] = "umask",
 	[SYS_sigaction] = "sigaction",
-	[SYS_rename] = "rename",
+	[SYS_renameat] = "renameat",
 	[SYS_getuid] = "getuid",
 	[SYS_getgid] = "getgid",
 	[SYS_getppid] = "getppid",
 	[SYS_times] = "times",
-	[SYS_lstat] = "lstat",
+	[SYS_fstatat] = "fstatat",
 	[SYS_fchmod] = "fchmod",
-	[SYS_access] = "access",
+	[SYS_faccessat] = "faccessat",
 	[SYS_fcntl] = "fcntl",
 	[SYS_uname] = "uname",
 };

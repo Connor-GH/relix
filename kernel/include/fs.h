@@ -125,7 +125,9 @@ void inode_unlockput(struct inode *ip) __releases(&ip->lock);
 void inode_update(struct inode *);
 int namecmp(const char *, const char *);
 struct inode *namei(const char *);
+struct inode *namei_with_fd(int dirfd, const char *path);
 struct inode *nameiparent(const char *, char *);
+struct inode *nameiparent_with_fd(int dirfd, const char *path, char *name);
 ssize_t inode_read(struct inode *ip, char *, off_t off, uint64_t n)
 	__must_hold(&ip->lock);
 void inode_stat(struct inode *ip, struct stat *) __must_hold(&ip->lock);

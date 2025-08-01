@@ -98,14 +98,20 @@ struct stat {
 };
 
 #ifndef USE_HOST_TOOLS
+int mknodat(int dirfd, const char *pathname, mode_t mode, dev_t device);
 int mknod(const char *, mode_t mode, dev_t device);
-int fstat(int fd, struct stat *restrict statbuf);
 int mkdir(const char *dir, mode_t mode);
-int chmod(const char *, mode_t mode);
+int mkdirat(int dirfd, const char *dir, mode_t mode);
+int chmod(const char *pathname, mode_t mode);
+int fchmodat(int fd, const char *pathname, mode_t mode, int flag);
 int fchmod(int fd, mode_t mode);
+int fstat(int fd, struct stat *restrict statbuf);
+int fstatat(int dirfd, const char *restrict pathname,
+            struct stat *restrict statbuf, int flags);
 int stat(const char *restrict pathname, struct stat *restrict statbuf);
 int lstat(const char *restrict pathmame, struct stat *restrict statbuf);
 mode_t umask(mode_t mask);
+int mkfifoat(int dirfd, const char *pathname, mode_t mode);
 int mkfifo(const char *pathname, mode_t mode);
 
 #endif

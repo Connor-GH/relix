@@ -278,7 +278,7 @@ static const char *machine = "unknown";
 int
 gethostname(char *name, size_t len)
 {
-	int fd = fileopen("/etc/hostname", O_RDONLY, 0);
+	int fd = fileopenat(AT_FDCWD, "/etc/hostname", O_RDONLY, 0);
 	PROPOGATE_ERR(fd);
 	struct file *file = fd_to_struct_file(fd);
 	if (file == NULL) {

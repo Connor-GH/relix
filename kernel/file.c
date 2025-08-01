@@ -93,9 +93,10 @@ fdalloc(struct file *f)
 
 // Read a symbolic link and puts the data in buf.
 ssize_t
-filereadlink(const char *restrict pathname, char *buf, size_t bufsiz)
+filereadlinkat(int dirfd, const char *restrict pathname, char *buf,
+               size_t bufsiz)
 {
-	struct inode *ip = namei(pathname);
+	struct inode *ip = namei_with_fd(dirfd, pathname);
 	if (ip == NULL) {
 		return -ENOENT;
 	}
@@ -135,7 +136,7 @@ filereadlink(const char *restrict pathname, char *buf, size_t bufsiz)
 
 // Holds lock on ip when released.
 struct inode *
-filecreate(char *path, mode_t mode, short major, short minor)
+filecreate(int dirfd, char *path, mode_t mode, short major, short minor)
 {
 	struct inode *ip, *dp;
 	char name[DIRSIZ];
@@ -146,7 +147,7 @@ filecreate(char *path, mode_t mode, short major, short minor)
 	}
 
 	// get inode of path, and put the name in name.
-	if ((dp = nameiparent(path, name)) == NULL) {
+	if ((dp = nameiparent_with_fd(dirfd, path, name)) == NULL) {
 		return NULL;
 	}
 	inode_lock(dp);
@@ -229,8 +230,8 @@ resolve_name(const char *path)
 	inode_unlock(ip);
 
 	if (is_link) {
-		char buf[PATH_MAX];
-		ssize_t ret = filereadlink(path, buf, sizeof(buf));
+		char buf[PATH_MAX] = {};
+		ssize_t ret = filereadlinkat(AT_FDCWD, path, buf, sizeof(buf));
 		if (ret < 0) {
 			return NULL;
 		}
@@ -241,8 +242,33 @@ resolve_name(const char *path)
 	}
 }
 
+struct inode *
+resolve_nameat(int dirfd, const char *path)
+{
+	struct inode *ip = namei_with_fd(dirfd, path);
+	if (ip == NULL) {
+		return NULL;
+	}
+
+	inode_lock(ip);
+	bool is_link = S_ISLNK(ip->mode);
+	inode_unlock(ip);
+
+	if (is_link) {
+		char buf[PATH_MAX] = {};
+		ssize_t ret = filereadlinkat(dirfd, path, buf, sizeof(buf));
+		if (ret < 0) {
+			return NULL;
+		}
+		ip = namei_with_fd(dirfd, buf);
+		return ip;
+	} else {
+		return ip;
+	}
+}
+
 int
-fileopen(char *path, int flags, mode_t mode)
+fileopenat(int dirfd, char *path, int flags, mode_t mode)
 {
 	int fd;
 	struct inode *ip;
@@ -255,7 +281,8 @@ fileopen(char *path, int flags, mode_t mode)
 
 	if ((flags & O_CREATE) == O_CREATE) {
 		// try to create a file and it exists.
-		if ((ip = (((flags & O_NOFOLLOW) ? namei : resolve_name)(path))) != NULL) {
+		if ((ip = (((flags & O_NOFOLLOW) ? namei_with_fd :
+		                                   resolve_nameat)(dirfd, path))) != NULL) {
 			// if it's a char device, possibly do something special.
 			inode_lock(ip);
 			if (S_ISCHR(ip->mode)) {
@@ -268,7 +295,7 @@ fileopen(char *path, int flags, mode_t mode)
 		}
 		// filecreate() holds a lock on this inode pointer,
 		// but only if it succeeds.
-		ip = filecreate(path, mode, 0, 0);
+		ip = filecreate(dirfd, path, mode, 0, 0);
 		if (ip == NULL) {
 			end_op();
 			return -EIO;

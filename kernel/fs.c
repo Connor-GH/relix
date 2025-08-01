@@ -24,6 +24,7 @@
 #include "spinlock.h"
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdckdint.h>
 #include <stdint.h>
 #include <string.h>
@@ -759,7 +760,7 @@ skipelem(const char *path, char *name)
 // Must be called inside a transaction since it calls inode_put().
 // iow, path -> inode.
 static struct inode *
-namex(const char *path, int nameiparent, char *name)
+namex(int dirfd, const char *path, int nameiparent, char *name)
 {
 	struct inode *ip, *next;
 
@@ -769,7 +770,11 @@ namex(const char *path, int nameiparent, char *name)
 	if (*path == '/') {
 		ip = inode_get(ROOTDEV, ROOTINO);
 	} else {
-		ip = inode_dup(myproc()->cwd); // increase refcount
+		if (dirfd == AT_FDCWD) {
+			ip = inode_dup(myproc()->cwd); // increase refcount
+		} else {
+			ip = inode_dup(fd_to_struct_file(dirfd)->ip);
+		}
 	}
 
 	while ((path = skipelem(path, name)) != NULL) {
@@ -801,11 +806,24 @@ struct inode *
 namei(const char *path)
 {
 	char name[DIRSIZ] = {};
-	return namex(path, 0, name);
+	return namex(AT_FDCWD, path, 0, name);
+}
+
+struct inode *
+namei_with_fd(int dirfd, const char *path)
+{
+	char name[DIRSIZ] = {};
+	return namex(dirfd, path, 0, name);
 }
 
 struct inode *
 nameiparent(const char *path, char *name)
 {
-	return namex(path, 1, name);
+	return namex(AT_FDCWD, path, 1, name);
+}
+
+struct inode *
+nameiparent_with_fd(int dirfd, const char *path, char *name)
+{
+	return namex(dirfd, path, 1, name);
 }

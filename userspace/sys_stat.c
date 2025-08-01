@@ -1,47 +1,52 @@
 #include "libc_syscalls.h"
-#include <errno.h>
-#include <limits.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
 int
+mknodat(int dirfd, const char *pathname, mode_t mode, dev_t device)
+{
+	return __syscall_ret(
+		__syscall4(SYS_mknodat, dirfd, (long)pathname, mode, device));
+}
+
+int
 mknod(const char *pathname, mode_t mode, dev_t device)
 {
-	return __syscall_ret(__syscall3(SYS_mknod, (long)pathname, mode, device));
+	return mknodat(AT_FDCWD, pathname, mode, device);
+}
+
+int
+mkdirat(int dirfd, const char *pathname, mode_t mode)
+{
+	return __syscall_ret(__syscall3(SYS_mkdirat, dirfd, (long)pathname, mode));
 }
 
 int
 mkdir(const char *pathname, mode_t mode)
 {
-	return __syscall_ret(__syscall2(SYS_mkdir, (long)pathname, mode));
+	return mkdirat(AT_FDCWD, pathname, mode);
+}
+
+int
+fstatat(int dirfd, const char *restrict pathname, struct stat *restrict statbuf,
+        int flags)
+{
+	return __syscall_ret(
+		__syscall4(SYS_fstatat, dirfd, (long)pathname, (long)statbuf, flags));
 }
 
 int
 stat(const char *restrict pathname, struct stat *restrict statbuf)
 {
-	errno = 0;
-	char buf[PATH_MAX] = {};
-	// The only EINVAL readlink does is negative size, or file not
-	// being a symbolic link. Guarantee the former case can't happen,
-	// so we can depend on the latter for auto dereferencing.
-	_Static_assert(sizeof(buf) >= 0, "");
-	ssize_t ret = readlink(pathname, buf, sizeof(buf));
-	// Failed with EINVAL, meaning the file is not a symbolic link.
-	// We will continue on using the regular pathname then.
-	if (errno == EINVAL) {
-		return __syscall_ret(__syscall2(SYS_lstat, (long)pathname, (long)statbuf));
-	} else if (ret < 0) {
-		return __syscall_ret(ret);
-	} else {
-		return __syscall_ret(__syscall2(SYS_lstat, (long)buf, (long)statbuf));
-	}
+	return fstatat(AT_FDCWD, pathname, statbuf, 0);
 }
 
 int
 lstat(const char *restrict pathname, struct stat *restrict statbuf)
 {
-	return __syscall_ret(__syscall2(SYS_lstat, (long)pathname, (long)statbuf));
+	return fstatat(AT_FDCWD, pathname, statbuf, AT_SYMLINK_NOFOLLOW);
 }
 
 int
@@ -51,9 +56,16 @@ fstat(int fd, struct stat *restrict statbuf)
 }
 
 int
+fchmodat(int fd, const char *pathname, mode_t mode, int flag)
+{
+	return __syscall_ret(
+		__syscall4(SYS_fchmodat, fd, (long)pathname, mode, flag));
+}
+
+int
 chmod(const char *pathname, mode_t mode)
 {
-	return __syscall_ret(__syscall2(SYS_chmod, (long)pathname, mode));
+	return fchmodat(AT_FDCWD, pathname, mode, 0);
 }
 
 int
@@ -72,4 +84,10 @@ int
 mkfifo(const char *pathname, mode_t mode)
 {
 	return mknod(pathname, mode | S_IFIFO, 0);
+}
+
+int
+mkfifoat(int dirfd, const char *pathname, mode_t mode)
+{
+	return mknodat(dirfd, pathname, mode | S_IFIFO, 0);
 }

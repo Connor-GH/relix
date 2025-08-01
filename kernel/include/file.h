@@ -67,18 +67,21 @@ int fdalloc(struct file *f);
 struct file *fd_to_struct_file(int fd);
 char *inode_to_path(char *buf, size_t n, struct inode *ip);
 struct inode *resolve_name(const char *path);
+struct inode *resolve_nameat(int dirfd, const char *path);
 
 // Generalized functions for file operations.
 int fileclose(struct file *);
-struct inode *filecreate(char *path, mode_t mode, short major, short minor);
-int fileopen(char *path, int flags, mode_t mode);
+struct inode *filecreate(int dirfd, char *path, mode_t mode, short major,
+                         short minor);
+int fileopenat(int dirfd, char *path, int flags, mode_t mode);
 struct file *filedup(struct file *);
 void fileinit(void);
 ssize_t fileread(struct file *file, char *buf, size_t n);
 int filestat(struct file *file, struct stat *);
 ssize_t filewrite(struct file *file, char *buf, size_t n);
 off_t fileseek(struct file *f, off_t offset, int whence);
-ssize_t filereadlink(const char *restrict pathname, char *buf, size_t bufsiz);
+ssize_t filereadlinkat(int dirfd, const char *restrict pathname, char *buf,
+                       size_t bufsiz);
 
 #endif
 #endif // !_FILE_H

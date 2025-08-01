@@ -5,7 +5,6 @@
 //
 
 #include "console.h"
-#include "defs.h"
 #include "exec.h"
 #include "fb.h"
 #include "file.h"
@@ -49,6 +48,12 @@ argfd(int n, int *pfd, struct file **pf)
 	struct file *f;
 
 	PROPOGATE_ERR(argint(n, &fd));
+	if (fd == AT_FDCWD) {
+		if (pfd) {
+			*pfd = fd;
+		}
+		return 0;
+	}
 	if (fd < 0) {
 		return -EBADF;
 	}
@@ -59,7 +64,7 @@ argfd(int n, int *pfd, struct file **pf)
 		return -EBADF;
 	}
 
-	if (pfd) {
+	if (pfd != NULL) {
 		*pfd = fd;
 	}
 	if (pf) {
@@ -74,7 +79,17 @@ sys_dup(void)
 	struct file *f;
 	int fd;
 
-	PROPOGATE_ERR(argfd(0, NULL, &f));
+	PROPOGATE_ERR(argint(0, &fd));
+	if (fd < 0) {
+		return -EBADF;
+	}
+	if (fd >= NOFILE) {
+		return -ENFILE;
+	}
+	if ((f = myproc()->ofile[fd]) == NULL) {
+		return -EBADF;
+	}
+
 	PROPOGATE_ERR(fd = fdalloc(f));
 	filedup(f);
 	return fd;
@@ -160,16 +175,21 @@ sys_fstat(void)
 }
 
 size_t
-sys_lstat(void)
+sys_fstatat(void)
 {
 	struct stat *st;
 	char *path;
+	int dirfd;
+	int flags;
 	struct inode *ip = NULL;
-	PROPOGATE_ERR(argstr(0, &path));
-	PROPOGATE_ERR(argptr(1, (char **)&st, sizeof(*st)));
+	PROPOGATE_ERR(argfd(0, &dirfd, NULL));
+	PROPOGATE_ERR(argstr(1, &path));
+	PROPOGATE_ERR(argptr(2, (char **)&st, sizeof(*st)));
+	PROPOGATE_ERR(argint(3, &flags));
 
 	// Find the inode from the name.
-	if ((ip = namei(path)) == NULL) {
+	if ((ip = ((flags & AT_SYMLINK_NOFOLLOW) ? namei_with_fd : resolve_nameat)(
+				 dirfd, path)) == NULL) {
 		return -ENOENT;
 	}
 	if (st == NULL) {
@@ -185,17 +205,25 @@ sys_lstat(void)
 
 // Create the path new as a link to the same inode as old.
 size_t
-sys_link(void)
+sys_linkat(void)
 {
 	char name[DIRSIZ], *new, *old;
 	int retflag = EINVAL;
 	struct inode *dp, *ip;
 
-	PROPOGATE_ERR(argstr(0, &old));
-	PROPOGATE_ERR(argstr(1, &new));
+	int fd1;
+	int fd2;
+	int flags;
+
+	PROPOGATE_ERR(argfd(0, &fd1, NULL));
+	PROPOGATE_ERR(argstr(1, &old));
+	PROPOGATE_ERR(argfd(2, &fd2, NULL));
+	PROPOGATE_ERR(argstr(3, &new));
+	PROPOGATE_ERR(argint(4, &flags));
 
 	begin_op();
-	if ((ip = namei(old)) == NULL) {
+	if ((ip = ((flags & AT_SYMLINK_FOLLOW) ? resolve_nameat :
+	                                         namei_with_fd)(fd1, old)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
@@ -211,7 +239,7 @@ sys_link(void)
 	inode_update(ip);
 	inode_unlock(ip);
 
-	if ((dp = nameiparent(new, name)) == NULL) {
+	if ((dp = nameiparent_with_fd(fd2, new, name)) == NULL) {
 		retflag = ENOENT;
 		goto bad;
 	}
@@ -255,18 +283,22 @@ isdirempty(struct inode *dp)
 }
 
 size_t
-sys_unlink(void)
+sys_unlinkat(void)
 {
 	struct inode *ip, *dp;
 	struct dirent de;
 	char name[DIRSIZ], *path;
 	uint64_t off;
+	int fd;
+	int flags;
 	int error = EINVAL;
 
-	PROPOGATE_ERR(argstr(0, &path));
+	PROPOGATE_ERR(argfd(0, &fd, NULL));
+	PROPOGATE_ERR(argstr(1, &path));
+	PROPOGATE_ERR(argint(2, &flags));
 
 	begin_op();
-	if ((dp = nameiparent(path, name)) == NULL) {
+	if ((dp = nameiparent_with_fd(fd, path, name)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
@@ -289,7 +321,7 @@ sys_unlink(void)
 	if (ip->nlink < 1) {
 		panic("unlink: nlink < 1");
 	}
-	if (S_ISDIR(ip->mode) && !isdirempty(ip)) {
+	if (((S_ISDIR(ip->mode)) || (flags & AT_REMOVEDIR)) && !isdirempty(ip)) {
 		inode_unlockput(ip);
 		error = ENOTEMPTY;
 		goto bad;
@@ -320,17 +352,19 @@ bad:
 }
 
 size_t
-sys_open(void)
+sys_openat(void)
 {
 	char *path;
 	int flags;
 	mode_t mode;
+	int dirfd;
 
-	PROPOGATE_ERR(argstr(0, &path));
-	PROPOGATE_ERR(argint(1, &flags));
+	PROPOGATE_ERR(argfd(0, &dirfd, NULL));
+	PROPOGATE_ERR(argstr(1, &path));
+	PROPOGATE_ERR(argint(2, &flags));
 	// Always pulled in because the libc wrapper
 	// sets it to zero if the flags that require it are not set.
-	PROPOGATE_ERR(argmode_t(2, &mode));
+	PROPOGATE_ERR(argmode_t(3, &mode));
 	if (!(((flags & O_CREAT) == O_CREAT)) &&
 	    !(((flags & O_TMPFILE) == O_TMPFILE))) {
 		mode = 0777; // mode is ignored.
@@ -341,24 +375,26 @@ sys_open(void)
 		return -EAGAIN;
 	}
 
-	return fileopen(path, flags, mode & ~(myproc()->umask));
+	return fileopenat(dirfd, path, flags, mode & ~(myproc()->umask));
 }
 
 size_t
-sys_mkdir(void)
+sys_mkdirat(void)
 {
 	char *path;
 	struct inode *ip;
 	mode_t mode;
+	int fd;
 
-	PROPOGATE_ERR(argstr(0, &path));
-	PROPOGATE_ERR(argmode_t(1, &mode));
+	PROPOGATE_ERR(argfd(0, &fd, NULL));
+	PROPOGATE_ERR(argstr(1, &path));
+	PROPOGATE_ERR(argmode_t(2, &mode));
 
 	if (myproc() == NULL) {
 		return -EAGAIN;
 	}
 	begin_op();
-	if ((ip = filecreate(path, (S_IFDIR | mode) & ~myproc()->umask, 0, 0)) ==
+	if ((ip = filecreate(fd, path, (S_IFDIR | mode) & ~myproc()->umask, 0, 0)) ==
 	    NULL) {
 		end_op();
 		return -ENOENT;
@@ -369,21 +405,24 @@ sys_mkdir(void)
 }
 
 size_t
-sys_mknod(void)
+sys_mknodat(void)
 {
 	struct inode *ip;
 	char *path;
 	int major, minor;
 	mode_t mode;
 	dev_t dev;
+	int fd;
 
-	PROPOGATE_ERR(argstr(0, &path));
-	PROPOGATE_ERR(argmode_t(1, &mode));
-	PROPOGATE_ERR(argdev_t(2, &dev));
+	PROPOGATE_ERR(argfd(0, &fd, NULL));
+	PROPOGATE_ERR(argstr(1, &path));
+	PROPOGATE_ERR(argmode_t(2, &mode));
+	PROPOGATE_ERR(argdev_t(3, &dev));
 
 	begin_op();
-	if ((ip = filecreate(path, mode, major(dev), minor(dev))) == 0) {
+	if ((ip = filecreate(fd, path, mode, major(dev), minor(dev))) == 0) {
 		end_op();
+		uart_printf("mknod is bad\n");
 		return -ENOENT;
 	}
 	inode_unlockput(ip);
@@ -512,16 +551,21 @@ sys_pipe(void)
 }
 
 size_t
-sys_chmod(void)
+sys_fchmodat(void)
 {
 	char *path;
 	mode_t mode;
+	int fd;
+	int flags;
 	struct inode *ip;
-	PROPOGATE_ERR(argstr(0, &path));
-	PROPOGATE_ERR(argmode_t(1, &mode));
+	PROPOGATE_ERR(argfd(0, &fd, NULL));
+	PROPOGATE_ERR(argstr(1, &path));
+	PROPOGATE_ERR(argmode_t(2, &mode));
+	PROPOGATE_ERR(argint(3, &flags));
 
 	begin_op();
-	if ((ip = namei(path)) == NULL) {
+	if ((ip = ((flags & AT_SYMLINK_NOFOLLOW) ? namei_with_fd : resolve_nameat)(
+				 fd, path)) == NULL) {
 		end_op();
 		return -EINVAL;
 	}
@@ -550,21 +594,23 @@ sys_fchmod(void)
 
 // target, linkpath
 size_t
-sys_symlink(void)
+sys_symlinkat(void)
 {
 	char *target, *linkpath;
 	char dir[DIRSIZ];
 	uint64_t poff;
 	struct inode *eexist, *ip;
+	int newdirfd;
 	PROPOGATE_ERR(argstr(0, &target));
-	PROPOGATE_ERR(argstr(1, &linkpath));
+	PROPOGATE_ERR(argfd(1, &newdirfd, NULL));
+	PROPOGATE_ERR(argstr(2, &linkpath));
 
 	begin_op();
-	if ((eexist = namei(linkpath)) != NULL) {
+	if ((eexist = namei_with_fd(newdirfd, linkpath)) != NULL) {
 		end_op();
 		return -EEXIST;
 	}
-	if ((eexist = nameiparent(linkpath, dir)) == NULL) {
+	if ((eexist = nameiparent_with_fd(newdirfd, linkpath, dir)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
@@ -579,7 +625,7 @@ sys_symlink(void)
 	}
 	inode_unlock(eexist);
 
-	if ((ip = filecreate(linkpath, S_IFLNK | S_IAUSR, 0, 0)) == NULL) {
+	if ((ip = filecreate(newdirfd, linkpath, S_IFLNK | S_IAUSR, 0, 0)) == NULL) {
 		end_op();
 		return -ENOSPC;
 	}
@@ -599,20 +645,22 @@ sys_symlink(void)
 }
 
 size_t
-sys_readlink(void)
+sys_readlinkat(void)
 {
 	char *target;
 	char *ubuf;
 	size_t bufsize = 0;
-	PROPOGATE_ERR(argstr(0, &target));
-	PROPOGATE_ERR(argstr(1, &ubuf));
-	PROPOGATE_ERR(argsize_t(2, &bufsize));
+	int fd;
+	PROPOGATE_ERR(argfd(0, &fd, NULL));
+	PROPOGATE_ERR(argstr(1, &target));
+	PROPOGATE_ERR(argstr(2, &ubuf));
+	PROPOGATE_ERR(argsize_t(3, &bufsize));
 
 	const char *restrict pathname = target;
 	char *restrict buf = ubuf;
 
 	begin_op();
-	ssize_t ret = filereadlink(pathname, buf, bufsize);
+	ssize_t ret = filereadlinkat(fd, pathname, buf, bufsize);
 	end_op();
 	return ret;
 }
@@ -988,7 +1036,7 @@ sys_umask(void)
 }
 
 size_t
-sys_rename(void)
+sys_renameat(void)
 {
 	char *oldpath_;
 	char *newpath_;
@@ -996,10 +1044,14 @@ sys_rename(void)
 	char newdir[DIRSIZ];
 	struct inode *ip1, *ip2;
 	struct dirent de;
+	int fd1;
+	int fd2;
 	char newelem[DIRSIZ];
 
-	PROPOGATE_ERR(argstr(0, &oldpath_));
-	PROPOGATE_ERR(argstr(1, &newpath_));
+	PROPOGATE_ERR(argfd(0, &fd1, NULL));
+	PROPOGATE_ERR(argstr(1, &oldpath_));
+	PROPOGATE_ERR(argfd(2, &fd2, NULL));
+	PROPOGATE_ERR(argstr(3, &newpath_));
 	// argstr wants a mutable char *, but our arguments are const.
 	// we cast them back here.
 	const char *oldpath = oldpath_;
@@ -1014,8 +1066,8 @@ sys_rename(void)
 		end_op();
 		return -ENOENT;
 	}
-	struct inode *dp = nameiparent(oldpath, dir);
-	struct inode *new_dp = nameiparent(newpath, newdir);
+	struct inode *dp = nameiparent_with_fd(fd1, oldpath, dir);
+	struct inode *new_dp = nameiparent_with_fd(fd2, newpath, newdir);
 	if (dp == NULL || new_dp == NULL) {
 		end_op();
 		return -ENOENT;
@@ -1070,12 +1122,14 @@ sys_rename(void)
 }
 
 size_t
-sys_access(void)
+sys_faccessat(void)
 {
 	char *path;
 	// Not to be confused with the
 	// mode_t mode.
 	int mode;
+	int fd;
+	int flags;
 	struct inode *ip;
 	// Initialized down below.
 	bool perms_wanted_ok;
@@ -1084,11 +1138,15 @@ sys_access(void)
 	bool exec_ok = false;
 	bool correct_uid;
 	bool correct_gid;
-	PROPOGATE_ERR(argstr(0, &path));
-	PROPOGATE_ERR(argint(1, &mode));
+	PROPOGATE_ERR(argfd(0, &fd, NULL));
+	PROPOGATE_ERR(argstr(1, &path));
+	PROPOGATE_ERR(argint(2, &mode));
+	// AT_EACCESS is the only POSIX one and
+	// effective UID/GIDs are not implemented yet.
+	PROPOGATE_ERR(argint(3, &flags));
 	begin_op();
 	// File does not exist,
-	if ((ip = namei(path)) == NULL) {
+	if ((ip = namei_with_fd(fd, path)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}

@@ -216,7 +216,7 @@ filecreate(char *path, mode_t mode, short major, short minor)
 // Pass in a path name, and get out an inode pointing to
 // a file after all dereferencing of symlinks, or NULL if
 // the name doesn't exist or if filereadlink() has an error.
-static struct inode *
+struct inode *
 resolve_name(const char *path)
 {
 	struct inode *ip = namei(path);

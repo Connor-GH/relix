@@ -198,7 +198,7 @@ main(void)
 			buf[strlen(buf) - 1] = 0; // chop \n
 			if (strlen(buf) >= 3) {
 				if (chdir(buf + 3) < 0) {
-					fprintf(stderr, "cannot cd %s\n", buf + 3);
+					fprintf(stderr, "cannot cd %s: %s\n", buf + 3, strerror(errno));
 				} else {
 					strcpy(pwd, buf);
 				}
@@ -212,7 +212,7 @@ main(void)
 				}
 				// `cd' with no arguments.`
 				if (chdir(home) < 0) {
-					fprintf(stderr, "cannot cd %s\n", buf + 3);
+					fprintf(stderr, "cannot cd %s: %s\n", buf + 3, strerror(errno));
 				} else {
 					strcpy(pwd, buf);
 				}

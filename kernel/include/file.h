@@ -66,6 +66,7 @@ struct file *filealloc(void);
 int fdalloc(struct file *f);
 struct file *fd_to_struct_file(int fd);
 char *inode_to_path(char *buf, size_t n, struct inode *ip);
+struct inode *resolve_name(const char *path);
 
 // Generalized functions for file operations.
 int fileclose(struct file *);

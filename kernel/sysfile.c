@@ -401,7 +401,7 @@ sys_chdir(void)
 	PROPOGATE_ERR(argstr(0, &path));
 
 	begin_op();
-	if ((ip = namei(path)) == 0) {
+	if ((ip = resolve_name(path)) == 0) {
 		end_op();
 		return -EINVAL;
 	}

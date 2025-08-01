@@ -170,12 +170,7 @@ link(const char *oldpath, const char *newpath)
 int
 chdir(const char *path)
 {
-	char buf[PATH_MAX];
-	ssize_t ret = readlink(path, buf, sizeof(buf));
-	if (ret < 0) {
-		__syscall_ret(ret);
-	}
-	return __syscall_ret(__syscall1(SYS_chdir, (long)buf));
+	return __syscall_ret(__syscall1(SYS_chdir, (long)path));
 }
 
 int
@@ -384,4 +379,32 @@ sleep(unsigned int seconds)
 {
 	signal(SIGALRM, sleep_noop);
 	return alarm(seconds);
+}
+
+int
+rmdir(const char *path)
+{
+	if (strncmp(path, "/", 1) == 0) {
+		errno = EBUSY;
+		return -1;
+	}
+	char buf[PATH_MAX];
+	if (getcwd(buf, sizeof(buf)) == NULL) {
+		return -1;
+	}
+	if (strncmp(path, buf, strlen(path)) == 0) {
+		errno = EBUSY;
+		return -1;
+	}
+	struct stat st;
+	if (stat(path, &st) < 0) {
+		return -1;
+	}
+	if (S_ISLNK(st.st_mode)) {
+		errno = ENOTDIR;
+		return -1;
+	}
+	// TODO handle last dot and dot-dot.
+	// TODO handle non-empty directory.
+	return unlink(path);
 }

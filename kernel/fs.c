@@ -800,7 +800,7 @@ namex(const char *path, int nameiparent, char *name)
 struct inode *
 namei(const char *path)
 {
-	char name[DIRSIZ];
+	char name[DIRSIZ] = {};
 	return namex(path, 0, name);
 }
 

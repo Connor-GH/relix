@@ -30,6 +30,7 @@ ssize_t write(int, const void *, size_t);
 ssize_t read(int, void *, size_t);
 int close(int fd);
 int unlink(const char *);
+int rmdir(const char *path);
 int link(const char *, const char *);
 int symlink(const char *target, const char *linkpath);
 ssize_t readlink(const char *restrict pathname, char *restrict linkpath,

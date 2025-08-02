@@ -220,26 +220,7 @@ filecreate(int dirfd, char *path, mode_t mode, short major, short minor)
 struct inode *
 resolve_name(const char *path)
 {
-	struct inode *ip = namei(path);
-	if (ip == NULL) {
-		return NULL;
-	}
-
-	inode_lock(ip);
-	bool is_link = S_ISLNK(ip->mode);
-	inode_unlock(ip);
-
-	if (is_link) {
-		char buf[PATH_MAX] = {};
-		ssize_t ret = filereadlinkat(AT_FDCWD, path, buf, sizeof(buf));
-		if (ret < 0) {
-			return NULL;
-		}
-		ip = namei(buf);
-		return ip;
-	} else {
-		return ip;
-	}
+	return resolve_nameat(AT_FDCWD, path);
 }
 
 struct inode *
@@ -260,6 +241,7 @@ resolve_nameat(int dirfd, const char *path)
 		if (ret < 0) {
 			return NULL;
 		}
+		inode_put(ip);
 		ip = namei_with_fd(dirfd, buf);
 		return ip;
 	} else {

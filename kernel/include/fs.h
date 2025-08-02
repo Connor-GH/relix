@@ -58,7 +58,7 @@ struct inode {
 	// Write and read files for FIFO. They share a `struct pipe *`.
 	struct file *rf;
 	struct file *wf;
-	uint32_t inum; // Inode number
+	ino_t inum; // Inode number
 	int fattrs; // File attributes when the file is opened (e.g. O_RDONLY)
 	int ref; // Reference count
 

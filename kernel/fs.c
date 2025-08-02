@@ -202,7 +202,7 @@ inode_init(dev_t dev)
 	}
 }
 
-static struct inode *inode_get(dev_t dev, uint32_t inum);
+static struct inode *inode_get(dev_t dev, ino_t inum);
 
 // Allocate an inode on device dev.
 // Mark it as allocated by giving it type type.
@@ -210,7 +210,7 @@ static struct inode *inode_get(dev_t dev, uint32_t inum);
 struct inode *
 inode_alloc(dev_t dev, mode_t mode)
 {
-	for (uint32_t inum = 1; inum < global_sb.ninodes; inum++) {
+	for (ino_t inum = 1; inum < global_sb.ninodes; inum++) {
 		struct block_buffer *bp = block_read(dev, IBLOCK(inum, global_sb));
 		struct dinode *dip = (struct dinode *)bp->data + inum % IPB;
 
@@ -259,7 +259,7 @@ inode_update(struct inode *ip)
 // and return the in-memory copy. Does not lock
 // the inode and does not read it from disk.
 static struct inode *
-inode_get(dev_t dev, uint32_t inum)
+inode_get(dev_t dev, ino_t inum)
 {
 	struct inode *ip;
 	struct inode *empty = NULL;
@@ -650,7 +650,7 @@ dirlookup(struct inode *dp, const char *name, uint64_t *poff)
 	__must_hold(&dp->lock)
 {
 	kernel_assert(holdingsleep(&dp->lock));
-	uint32_t inum;
+	ino_t inum;
 	struct dirent de;
 
 	if (!S_ISDIR(dp->mode)) {
@@ -679,7 +679,7 @@ dirlookup(struct inode *dp, const char *name, uint64_t *poff)
 
 // Write a new directory entry (name, inum) into the directory dp.
 int
-dirlink(struct inode *dp, const char *name, uint32_t inum)
+dirlink(struct inode *dp, const char *name, ino_t inum)
 {
 	uint64_t off = 0;
 	struct dirent de;

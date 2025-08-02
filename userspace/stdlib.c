@@ -108,12 +108,6 @@ atoll(const char *s)
 	return strtoll(s, NULL, 0);
 }
 
-int
-atoi_base(const char *s, int base)
-{
-	return (int)strtoll(s, NULL, base);
-}
-
 unsigned long long
 strtoull(const char *s, char **nptr, int base)
 {

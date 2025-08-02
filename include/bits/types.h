@@ -32,7 +32,7 @@ typedef __uint64_t __dev_t;
 
 typedef __ssize_t __off_t;
 typedef __ssize_t __blksize_t;
-typedef int __mode_t;
+typedef unsigned int __mode_t;
 
 typedef short __bits16_t;
 typedef int __bits32_t;

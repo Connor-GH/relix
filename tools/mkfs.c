@@ -11,6 +11,7 @@
 
 // Avoid name clashes.
 #define stat relix_stat
+#define __dev_t __relix_dev_t
 #define dev_t relix_dev_t
 #define __time_t __relix_time_t
 #define time_t relix_time_t

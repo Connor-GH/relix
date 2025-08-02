@@ -1029,7 +1029,7 @@ sys_umask(void)
 	// The default is S_IWGRP | S_IWOTH (022).
 	// This function is said to never fail, so
 	// we must return something useful.
-	if (argint(0, &mask) < 0) {
+	if (argmode_t(0, &mask) < 0) {
 		return S_IWGRP | S_IWOTH;
 	}
 	return myproc() ? myproc()->umask : (S_IWGRP | S_IWOTH);

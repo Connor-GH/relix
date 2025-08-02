@@ -26,11 +26,10 @@ int rand(void);
 void srand(unsigned int seed);
 
 __attribute__((noreturn)) void exit(int status);
-__attribute__((malloc)) void *malloc(size_t);
-__attribute__((malloc)) void *calloc(size_t nmemb, size_t sz);
+__attribute__((malloc, alloc_size(1))) void *malloc(size_t);
+__attribute__((malloc, alloc_size(1, 2))) void *calloc(size_t nmemb, size_t sz);
+__attribute__((malloc, alloc_size(2))) void *realloc(void *ptr, size_t size);
 void free(void *);
-int atoi_base(const char *, int base);
-__attribute__((malloc)) void *realloc(void *ptr, size_t size);
 
 char *__findenv(const char *name, int len, int *offset);
 int putenv(char *str);

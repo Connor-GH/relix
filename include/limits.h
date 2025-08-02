@@ -1,46 +1,36 @@
 #pragma once
 
-#define CHAR_BIT 8
-#define BOOL_WIDTH 8
 #define MB_LEN_MAX 16 // Maximum number of bytes in a multibyte character.
 
-#define CHAR_WIDTH __CHAR_WIDTH__
+#define CHAR_BIT 8
 #define CHAR_MIN __CHAR_MIN__
 #define CHAR_MAX __CHAR_MAX__
 
-#define SCHAR_WIDTH __SCHAR_WIDTH__
-#define SCHAR_MIN __SCHAR_MIN__
-#define SCHAR_MAX __SCHAR_MAX__
+#define SCHAR_MIN -128
+#define SCHAR_MAX 127
 
-#define UCHAR_WIDTH __UCHAR_WIDTH__
-#define UCHAR_MAX __UCHAR_MAX__
+#define UCHAR_MAX 255
 
-#define SHRT_WIDTH __SHRT_WIDTH__
 #define SHRT_MIN __SHRT_MIN__
 #define SHRT_MAX __SHRT_MAX__
 
-#define USHRT_WIDTH __USHRT_WIDTH__
 #define USHRT_MAX __USHRT_MAX__
 
-#define INT_WIDTH __INT_WIDTH__
-#define INT_MIN __INT_MIN__
+#define WORD_BIT __INT_WIDTH__
+#define INT_MIN -2147483647
 #define INT_MAX __INT_MAX__
 
-#define UINT_WIDTH __UINT_WIDTH__
 #define UINT_MAX __UINT_MAX__
 
-#define LONG_WIDTH __LONG_WIDTH__
+#define LONG_BIT __LONG_WIDTH__
 #define LONG_MIN __LONG_MIN__
 #define LONG_MAX __LONG_MAX__
 
-#define ULONG_WIDTH __ULONG_WIDTH__
 #define ULONG_MAX (~0UL)
 
-#define LLONG_WIDTH __LONG_LONG_WIDTH__
 #define LLONG_MIN __LONG_LONG_MIN__
 #define LLONG_MAX __LONG_LONG_MAX__
 
-#define ULLONG_WIDTH __LONG_LONG_WIDTH__
 #define ULLONG_MAX (~0ULL)
 
 // Minimum value according to POSIX is 256.

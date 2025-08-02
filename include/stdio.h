@@ -6,6 +6,7 @@
 #if defined(__USER__)
 #include <bits/__DIRSIZ.h>
 #include <bits/__NULL.h>
+#include <bits/seek_constants.h>
 #include <bits/size_t.h>
 #include <bits/types.h>
 #include <bits/va_list.h>

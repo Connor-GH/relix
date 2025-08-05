@@ -555,7 +555,7 @@ inode_stat(struct inode *ip, struct stat *st) __must_hold(&ip->lock)
 // Read data from inode.
 // Caller must hold ip->lock.
 ssize_t
-inode_read(struct inode *ip, char *dst, off_t off, uint64_t n)
+inode_read(struct inode *ip, char *dst, off_t off, size_t n)
 	__must_hold(&ip->lock)
 {
 	kernel_assert(holdingsleep(&ip->lock));
@@ -593,7 +593,7 @@ inode_read(struct inode *ip, char *dst, off_t off, uint64_t n)
 // Write data to inode.
 // Caller must hold ip->lock.
 ssize_t
-inode_write(struct inode *ip, char *src, off_t off, uint64_t n)
+inode_write(struct inode *ip, char *src, off_t off, size_t n)
 	__must_hold(&ip->lock)
 {
 	kernel_assert(holdingsleep(&ip->lock));
@@ -693,9 +693,7 @@ dirlink(struct inode *dp, const char *name, ino_t inum)
 
 	// Look for an empty dirent.
 	for (; off < dp->size; off += sizeof(de)) {
-		if (inode_read(dp, (char *)&de, (off_t)off, sizeof(de)) < 0) {
-			panic("dirlink read");
-		}
+		PROPOGATE_ERR(inode_read(dp, (char *)&de, (off_t)off, sizeof(de)));
 		if (de.d_ino == 0) {
 			break;
 		}
@@ -703,9 +701,7 @@ dirlink(struct inode *dp, const char *name, ino_t inum)
 
 	strncpy(de.d_name, name, DIRSIZ);
 	de.d_ino = inum;
-	if (inode_write(dp, (char *)&de, (off_t)off, sizeof(de)) < 0) {
-		panic("dirlink");
-	}
+	PROPOGATE_ERR(inode_write(dp, (char *)&de, (off_t)off, sizeof(de)));
 
 	return 0;
 }

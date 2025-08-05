@@ -3,8 +3,11 @@
 #![feature(ascii_char)]
 #![feature(vec_into_raw_parts)]
 #![feature(debug_closure_helpers)]
+#![feature(c_size_t)]
+#![feature(fn_ptr_trait)]
 pub mod allocator;
 pub mod ansi_escape;
+pub mod file;
 pub mod lock;
 pub mod pci;
 pub mod printing;

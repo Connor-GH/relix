@@ -12,4 +12,4 @@ lto = true
 [dependencies]
 
 [build-dependencies]
-bindgen = { version = "0.71.1", default-features = false }
+bindgen = { version = "0.71.1", default-features = true }

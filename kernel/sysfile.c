@@ -13,6 +13,7 @@
 #include "kalloc.h"
 #include "kernel_assert.h"
 #include "log.h"
+#include "macros.h"
 #include "memlayout.h"
 #include "mman.h"
 #include "mmu.h"
@@ -240,16 +241,21 @@ sys_linkat(void)
 	inode_unlock(ip);
 
 	if ((dp = nameiparent_with_fd(fd2, new, name)) == NULL) {
-		retflag = ENOENT;
+		retflag = -ENOENT;
 		goto bad;
 	}
 	inode_lock(dp);
-	if (dp->dev != ip->dev || dirlink(dp, name, ip->inum) < 0) {
+	// TODO: When we get different filesystem support, we need to
+	// check for differing filesystems here and return EXDEV.
+	int ret;
+	if ((ret = dirlink(dp, name, ip->inum)) < 0) {
 		inode_unlockput(dp);
-		retflag = EXDEV; // probably incorrect
+		retflag = ret; // probably incorrect
 		goto bad;
 	}
-	inode_unlockput(dp);
+	if (dp != NULL) {
+		inode_unlockput(dp);
+	}
 	inode_put(ip);
 
 	end_op();
@@ -262,7 +268,7 @@ bad:
 	inode_update(ip);
 	inode_unlockput(ip);
 	end_op();
-	return -retflag;
+	return retflag;
 }
 
 // Is the directory dp empty except for "." and ".." ?
@@ -311,7 +317,7 @@ sys_unlinkat(void)
 	}
 
 	if ((ip = dirlookup(dp, name, &off)) == NULL) {
-		error = ENOENT;
+		error = -ENOENT;
 		goto bad;
 	}
 	kernel_assert(ip != dp);
@@ -323,7 +329,7 @@ sys_unlinkat(void)
 	}
 	if (((S_ISDIR(ip->mode)) || (flags & AT_REMOVEDIR)) && !isdirempty(ip)) {
 		inode_unlockput(ip);
-		error = ENOTEMPTY;
+		error = -ENOTEMPTY;
 		goto bad;
 	}
 
@@ -348,7 +354,7 @@ sys_unlinkat(void)
 bad:
 	inode_unlockput(dp);
 	end_op();
-	return -error;
+	return error;
 }
 
 size_t
@@ -420,9 +426,8 @@ sys_mknodat(void)
 	PROPOGATE_ERR(argdev_t(3, &dev));
 
 	begin_op();
-	if ((ip = filecreate(fd, path, mode, major(dev), minor(dev))) == 0) {
+	if ((ip = filecreate(fd, path, mode, major(dev), minor(dev))) == NULL) {
 		end_op();
-		uart_printf("mknod is bad\n");
 		return -ENOENT;
 	}
 	inode_unlockput(ip);
@@ -585,6 +590,9 @@ sys_fchmod(void)
 	begin_op();
 	PROPOGATE_ERR_WITH(argfd(0, NULL, &file), { end_op(); });
 	PROPOGATE_ERR_WITH(argmode_t(1, &mode), { end_op(); });
+	if (file == NULL) {
+		return -ENOENT;
+	}
 	inode_lock(file->ip);
 	file->ip->mode = (file->ip->mode & S_IFMT) | mode;
 	inode_unlock(file->ip);
@@ -620,10 +628,11 @@ sys_symlinkat(void)
 
 	if ((ip = dirlookup(eexist, dir, &poff)) != NULL) {
 		inode_unlockput(eexist);
+		inode_put(ip);
 		end_op();
 		return -EEXIST;
 	}
-	inode_unlock(eexist);
+	inode_unlockput(eexist);
 
 	if ((ip = filecreate(newdirfd, linkpath, S_IFLNK | S_IAUSR, 0, 0)) == NULL) {
 		end_op();
@@ -676,6 +685,9 @@ sys_lseek(void)
 	PROPOGATE_ERR(argfd(0, &fd, &file));
 	PROPOGATE_ERR(argoff_t(1, &offset));
 	PROPOGATE_ERR(argint(2, &whence));
+	if (file == NULL) {
+		return -ENOENT;
+	}
 
 	if (S_ISFIFO(file->ip->mode) || S_ISSOCK(file->ip->mode)) {
 		return -ESPIPE;
@@ -694,6 +706,9 @@ sys_ioctl(void)
 	PROPOGATE_ERR(argfd(0, &fd, &file));
 	PROPOGATE_ERR(argunsigned_long(1, &request));
 
+	if (file == NULL) {
+		return -ENOENT;
+	}
 	// The file needs to be a char device.
 	if (!S_ISCHR(file->ip->mode)) {
 		return -ENOTTY;
@@ -786,6 +801,9 @@ sys_fcntl(void)
 	PROPOGATE_ERR(argfd(0, NULL, &file));
 	PROPOGATE_ERR(argint(1, &op));
 
+	if (file == NULL) {
+		return -ENOENT;
+	}
 	switch (op) {
 	case F_DUPFD: {
 		int arg;
@@ -1062,13 +1080,26 @@ sys_renameat(void)
 		end_op();
 		return -ENOENT;
 	}
+	inode_put(ip1);
 	if ((ip2 = nameiparent(newpath, newelem)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
+	inode_put(ip2);
+
 	struct inode *dp = nameiparent_with_fd(fd1, oldpath, dir);
 	struct inode *new_dp = nameiparent_with_fd(fd2, newpath, newdir);
-	if (dp == NULL || new_dp == NULL) {
+	if (dp == NULL) {
+		if (new_dp != NULL) {
+			inode_put(new_dp);
+		}
+		end_op();
+		return -ENOENT;
+	}
+	if (new_dp == NULL) {
+		if (dp != NULL) {
+			inode_put(dp);
+		}
 		end_op();
 		return -ENOENT;
 	}
@@ -1080,9 +1111,11 @@ sys_renameat(void)
 		// error-out condition leans on the cautious side.
 		if (inode_read(dp, (char *)&de, off, sizeof(de)) != sizeof(de)) {
 			end_op();
+			inode_unlockput(dp);
+			inode_put(new_dp);
 			return -ENOENT;
 		}
-		if (strncmp(de.d_name, dir, strlen(dir)) == 0) {
+		if (strncmp(de.d_name, dir, min(strlen(dir), sizeof(de.d_name))) == 0) {
 			uint16_t inode = de.d_ino;
 
 			// Remove the old entry.
@@ -1116,7 +1149,8 @@ sys_renameat(void)
 		}
 	}
 
-	inode_unlock(dp);
+	inode_unlockput(dp);
+	inode_put(new_dp);
 	end_op();
 	return -ENOENT;
 }
@@ -1153,6 +1187,7 @@ sys_faccessat(void)
 	// All we wanted to do is check whether the
 	// file exists, and it does.
 	if (mode == F_OK) {
+		inode_put(ip);
 		end_op();
 		return 0;
 	}
@@ -1168,7 +1203,7 @@ sys_faccessat(void)
 	}
 	correct_gid = is_in_group(ip->gid, &myproc()->cred);
 
-	inode_unlock(ip);
+	inode_unlockput(ip);
 	end_op();
 
 	// Check for read.

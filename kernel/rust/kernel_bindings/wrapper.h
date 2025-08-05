@@ -1,7 +1,11 @@
 #include "console.h"
+#include "file.h"
+#include "fs.h"
 #include "kalloc.h"
+#include "pipe.h"
 #include "sleeplock.h"
 #include "spinlock.h"
 #include "uart.h"
 #include "ubsan.h"
 #include "x86.h"
+#include <errno.h>

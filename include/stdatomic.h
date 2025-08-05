@@ -185,6 +185,10 @@ atomic_signal_fence(memory_order __order)
 	((void)(obj), sizeof((obj)->__val) <= sizeof(void *))
 #endif
 
+#ifdef __CHECKER__
+#define _Atomic(x) _Atomic x
+#endif
+
 /*
  * 7.17.6 Atomic integer types.
  */

@@ -1,6 +1,9 @@
 use core::ffi::CStr;
+use core::marker::{FnPtr, PhantomData};
 use core::ops::{Deref, DerefMut, Drop};
-use kernel_bindings::bindings::{ATOMIC_FLAG_INIT, acquire, release};
+use kernel_bindings::bindings::{
+    ATOMIC_FLAG_INIT, acquire, inode, inode_lock, inode_unlock, release,
+};
 use kernel_bindings::bindings::{sleeplock, spinlock};
 
 #[derive(Clone, Copy)]
@@ -87,3 +90,46 @@ impl<T> Drop for LockedSpinLock<T> {
     }
 }
 pub struct SleepLock;
+
+pub struct ScopeGuard<F>
+where
+    F: FnOnce(),
+{
+    fini: Option<F>,
+    active: bool,
+}
+
+impl<F> ScopeGuard<F>
+where
+    F: FnOnce(),
+{
+    pub fn new<I>(init: I, fini: F) -> Self
+    where
+        I: FnOnce(),
+    {
+        init();
+
+        ScopeGuard {
+            fini: Some(fini),
+            active: true,
+        }
+    }
+
+    pub fn dismiss(mut self) {
+        self.active = false;
+        self.fini = None;
+    }
+}
+
+impl<F> Drop for ScopeGuard<F>
+where
+    F: FnOnce(),
+{
+    fn drop(&mut self) {
+        if self.active {
+            if let Some(fini) = self.fini.take() {
+                fini();
+            }
+        }
+    }
+}

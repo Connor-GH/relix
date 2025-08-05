@@ -5,6 +5,7 @@
 #include "file.h"
 #include "console.h"
 #include "fs.h"
+#include "kernel_assert.h"
 #include "lib/ring_buffer.h"
 #include "limits.h"
 #include "log.h"
@@ -32,6 +33,9 @@ static file_table_t file_table;
 struct file *
 fd_to_struct_file(int fd)
 {
+	if (fd < 0 || fd >= NFILE) {
+		return NULL;
+	}
 	return myproc()->ofile[fd];
 }
 
@@ -101,7 +105,7 @@ filereadlinkat(int dirfd, const char *restrict pathname, char *buf,
 		return -ENOENT;
 	}
 
-	int ref_count = NLINK_DEREF;
+	nlink_t ref_count = NLINK_DEREF;
 	inode_lock(ip);
 
 	if (!S_ISLNK(ip->mode)) {
@@ -112,6 +116,8 @@ filereadlinkat(int dirfd, const char *restrict pathname, char *buf,
 	ssize_t nbytes = 0;
 
 	while (S_ISLNK(ip->mode)) {
+		// We can only resolve so many symlinks.
+		// Error with ELOOP if we see too many.
 		ref_count--;
 		if (ref_count == 0) {
 			inode_unlockput(ip);
@@ -120,7 +126,10 @@ filereadlinkat(int dirfd, const char *restrict pathname, char *buf,
 
 		nbytes = inode_read(ip, buf, 0, bufsiz);
 
-		PROPOGATE_ERR_WITH(nbytes, { inode_unlockput(ip); });
+		if (nbytes < 0) {
+			inode_unlockput(ip);
+			return nbytes;
+		}
 
 		inode_unlock(ip);
 
@@ -134,7 +143,11 @@ filereadlinkat(int dirfd, const char *restrict pathname, char *buf,
 	return nbytes;
 }
 
-// Holds lock on ip when released.
+// Holds lock on ip when released, unless it is NULL.
+// This function essentially does three things if the file is not present:
+// - allocate the inode [inode_alloc]
+// - give it some default stats (more if a directory)
+// - attach the file to a directory [dirlink]
 struct inode *
 filecreate(int dirfd, char *path, mode_t mode, short major, short minor)
 {
@@ -205,6 +218,7 @@ filecreate(int dirfd, char *path, mode_t mode, short major, short minor)
 		}
 	}
 
+	// Actually create the file entry.
 	if (dirlink(dp, name, ip->inum) < 0) {
 		panic("create: dirlink");
 	}
@@ -283,7 +297,8 @@ fileopenat(int dirfd, char *path, int flags, mode_t mode)
 			return -EIO;
 		}
 	} else {
-		if ((ip = (((flags & O_NOFOLLOW) ? namei : resolve_name)(path))) == NULL) {
+		if ((ip = (((flags & O_NOFOLLOW) ? namei_with_fd :
+		                                   resolve_nameat)(dirfd, path))) == NULL) {
 			end_op();
 			return -ENOENT;
 		}
@@ -305,6 +320,8 @@ fileopenat(int dirfd, char *path, int flags, mode_t mode)
 			devsw[ip->major].open(ip->minor, flags);
 		}
 	}
+	// In either case (create or open), we need
+	// to open the read and write ends of a FIFO or pipe.
 	if (S_ISFIFO(ip->mode) && (flags & O_NONBLOCK) != O_NONBLOCK) {
 		// TODO handle the case where ip->rf == NULL && ip->wf != NULL
 		// and vice versa.
@@ -394,15 +411,18 @@ get_fd:
 		}
 		inode_unlockput(ip);
 		end_op();
-		return -EBADF;
+		return -EMFILE;
 	}
+	// Don't put because we keep the reference in f->ip.
 	inode_unlock(ip);
 	end_op();
 
+	// If this is a pipe, pipeopen() updates this value later.
 	f->type = FD_INODE;
 	f->ip = ip;
 	f->off = (flags & O_APPEND) ? f->ip->size : 0;
-	f->readable = !((flags & O_ACCMODE) == O_WRONLY);
+	f->readable = ((flags & O_ACCMODE) == O_RDONLY) ||
+	              ((flags & O_ACCMODE) == O_RDWR);
 	f->writable = ((flags & O_ACCMODE) == O_WRONLY) ||
 	              ((flags & O_ACCMODE) == O_RDWR);
 	return fd;
@@ -427,16 +447,15 @@ fileclose(struct file *f)
 			release(&file_table.lock);
 			return -ENODEV;
 		}
-		// Run device-specific opening code, if any.
+		// Run device-specific closing code, if any.
 		devsw[f->ip->major].close(f->ip->minor);
 	}
+	struct file ff = *f;
 
 	f->ref = 0;
 	f->type = FD_NONE;
 	f->flags = 0;
 	release(&file_table.lock);
-
-	struct file ff = *f;
 
 	if (ff.type == FD_PIPE || ff.type == FD_FIFO) {
 		pipeclose(ff.pipe, ff.writable);
@@ -456,7 +475,7 @@ fileclose(struct file *f)
 int
 filestat(struct file *f, struct stat *st)
 {
-	if (f->type == FD_INODE || f->type == FD_FIFO) {
+	if (f->type == FD_INODE || f->type == FD_FIFO || f->type == FD_PIPE) {
 		inode_lock(f->ip);
 		inode_stat(f->ip, st);
 		inode_unlock(f->ip);
@@ -576,15 +595,21 @@ name_of_inode(struct inode *ip, struct inode *parent, char buf[static DIRSIZ],
 }
 
 // Write n bytes to buf, including the null terminator.
-// Returns the number of bytes written.
+// Returns the modified buf, or NULL.
 char *
 inode_to_path(char *buf, size_t n, struct inode *ip)
 {
 	struct inode *parent;
-	char node_name[DIRSIZ];
+	char node_name[DIRSIZ] = {};
 	bool isroot, isdir;
+	{
+		struct inode *tmp_ip = namei("/");
+		kernel_assert(tmp_ip != NULL);
+		// Inode number does not need to be protected by a lock.
+		isroot = ip->inum == tmp_ip->inum;
+		inode_put(tmp_ip);
+	}
 	inode_lock(ip);
-	isroot = ip->inum == namei("/")->inum;
 	isdir = S_ISDIR(ip->mode);
 	inode_unlock(ip);
 
@@ -596,16 +621,25 @@ inode_to_path(char *buf, size_t n, struct inode *ip)
 		inode_lock(ip);
 		parent = dirlookup(ip, "..", NULL);
 		inode_unlock(ip);
+		if (parent == NULL) {
+			return NULL;
+		}
 		inode_lock(parent);
 		if (name_of_inode(ip, parent, node_name, n) < 0) {
-			inode_unlock(parent);
+			inode_unlockput(parent);
 			return NULL;
 		}
 		inode_unlock(parent);
+		// 's' has the name lifetime as buf.
 		char *s = inode_to_path(buf, n, parent);
+		if (s == NULL) {
+			return NULL;
+		}
+		inode_put(parent);
 		if (strcmp(s, "/") != 0) {
 			strncat(s, "/", 2);
 		}
+		// Returning s, with the same lifetime as buf.
 		return strncat(s, node_name, DIRSIZ - strlen(node_name));
 	} else {
 		return NULL;

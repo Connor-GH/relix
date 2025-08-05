@@ -168,6 +168,7 @@ ok:
 	}
 	inode_unlockput(ip);
 	end_op();
+	// For the 'bad' label later down.
 	ip = NULL;
 	// Allocate two pages at the next page boundary.
 	// Make the first inaccessible.  Use the second as the user stack.

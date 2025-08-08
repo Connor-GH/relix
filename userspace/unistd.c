@@ -33,12 +33,6 @@ _exit(int status)
 	unreachable();
 }
 
-pid_t
-wait(int *wstatus)
-{
-	return __syscall_ret(__syscall1(SYS_wait, (long)wstatus));
-}
-
 int
 pipe(int pipefd[2])
 {

@@ -2,8 +2,7 @@
 #include <signal.h>
 #include <sys/types.h>
 pid_t wait(int *status);
-struct rusage;
-pid_t wait3(int *status, int options, struct rusage *rusage);
+pid_t waitpid(pid_t pid, int *status, int options);
 
 // Our pid_t for wait is laid out like this:
 // 0b00000000000000000000000000000000

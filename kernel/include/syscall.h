@@ -3,7 +3,7 @@
 // cannot be enums because they communicate with assembly.
 #define SYS_fork 1
 #define SYS__exit 2
-#define SYS_wait 3
+#define SYS_waitpid 3
 #define SYS_pipe 4
 #define SYS_read 5
 #define SYS_kill 6
@@ -40,7 +40,7 @@
 #define SYS_getcwd 37
 #define SYS_sigprocmask 38
 #define SYS_UNMAPPED1 39
-#define SYS_wait3 40
+#define SYS_UNMAPPED2 40
 #define SYS_sigsuspend 41
 #define SYS_umask 42
 #define SYS_sigaction 43
@@ -62,7 +62,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[0] = "",
 	[SYS_fork] = "fork",
 	[SYS__exit] = "_exit",
-	[SYS_wait] = "wait",
+	[SYS_waitpid] = "waitpid",
 	[SYS_pipe] = "pipe",
 	[SYS_read] = "read",
 	[SYS_kill] = "kill",
@@ -99,7 +99,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_getcwd] = "getcwd",
 	[SYS_sigprocmask] = "sigprocmask",
 	[SYS_UNMAPPED1] = "unmapped1",
-	[SYS_wait3] = "wait3",
+	[SYS_UNMAPPED2] = "unmapped2",
 	[SYS_sigsuspend] = "sigsuspend",
 	[SYS_umask] = "umask",
 	[SYS_sigaction] = "sigaction",

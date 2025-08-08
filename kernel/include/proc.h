@@ -120,7 +120,7 @@ void sched(void);
 void setproc(struct proc *);
 void sleep(void *, struct spinlock *);
 void userinit(void);
-int wait(int *);
+int waitpid(pid_t pid, int *status, int options);
 void wakeup(void *);
 void sleep_on_ms(time_t ms);
 void yield(void);

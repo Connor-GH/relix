@@ -33,12 +33,16 @@ sys__exit(void)
 }
 
 size_t
-sys_wait(void)
+sys_waitpid(void)
 {
+	pid_t pid;
 	int *status;
-	PROPOGATE_ERR(argptr(0, (char **)&status, sizeof(*status)));
+	int options;
+	PROPOGATE_ERR(argpid_t(0, &pid));
+	PROPOGATE_ERR(argptr(1, (char **)&status, sizeof(*status)));
+	PROPOGATE_ERR(argint(2, &options));
 
-	return wait(status);
+	return waitpid(pid, status, options);
 }
 
 size_t
@@ -232,12 +236,6 @@ sys_signal(void)
 
 size_t
 sys_sigprocmask(void)
-{
-	return -ENOSYS;
-}
-
-size_t
-sys_wait3(void)
 {
 	return -ENOSYS;
 }

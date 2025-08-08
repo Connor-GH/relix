@@ -150,7 +150,7 @@ extern size_t sys_read(void);
 extern size_t sys_sbrk(void);
 extern size_t sys_alarm(void);
 extern size_t sys_unlinkat(void);
-extern size_t sys_wait(void);
+extern size_t sys_waitpid(void);
 extern size_t sys_write(void);
 extern size_t sys_uptime(void);
 extern size_t sys_time(void);
@@ -199,7 +199,7 @@ unknown_syscall(void)
 static size_t (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,
 	[SYS__exit] = sys__exit,
-	[SYS_wait] = sys_wait,
+	[SYS_waitpid] = sys_waitpid,
 	[SYS_pipe] = sys_pipe,
 	[SYS_read] = sys_read,
 	[SYS_kill] = sys_kill,
@@ -236,7 +236,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_getcwd] = sys_getcwd,
 	[SYS_sigprocmask] = sys_sigprocmask,
 	[SYS_UNMAPPED1] = unknown_syscall,
-	[SYS_wait3] = sys_wait3,
+	[SYS_UNMAPPED2] = unknown_syscall,
 	[SYS_sigsuspend] = sys_sigsuspend,
 	[SYS_umask] = sys_umask,
 	[SYS_sigaction] = sys_sigaction,

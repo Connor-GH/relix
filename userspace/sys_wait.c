@@ -3,8 +3,13 @@
 #include <sys/wait.h>
 
 pid_t
-wait3(int *status, int options, struct rusage *rusage)
+wait(int *status)
 {
-	return __syscall_ret(
-		__syscall3(SYS_wait3, (long)status, options, (long)rusage));
+	return waitpid((pid_t)-1, status, 0);
+}
+
+pid_t
+waitpid(pid_t pid, int *status, int options)
+{
+	return __syscall_ret(__syscall3(SYS_waitpid, pid, (long)status, options));
 }

@@ -368,10 +368,10 @@ exit(int status)
 // standards say that bits 15..8 are for status,
 // 7..0 are for signal.
 int
-wait(int *wstatus)
+waitpid(pid_t pid, int *wstatus, int options)
 {
 	struct proc *p;
-	int havekids, pid;
+	int havekids, ret_pid;
 	struct proc *curproc = myproc();
 	acquire(&ptable.lock);
 	for (;;) {
@@ -382,12 +382,12 @@ wait(int *wstatus)
 				continue;
 			}
 			havekids = 1;
-			if (p->state == ZOMBIE) {
+			if ((pid == -1 || p->pid == pid) && p->state == ZOMBIE) {
 				// Found one.
 				if (wstatus != NULL) {
 					*wstatus = W_EXITCODE(p->status, p->last_signal);
 				}
-				pid = p->pid;
+				ret_pid = p->pid;
 				kpage_free(p->kstack);
 				p->kstack = NULL;
 				memset(p->mmap_info, 0, sizeof(p->mmap_info));
@@ -403,7 +403,7 @@ wait(int *wstatus)
 				}
 				p->state = UNUSED;
 				release(&ptable.lock);
-				return pid;
+				return ret_pid;
 			}
 		}
 

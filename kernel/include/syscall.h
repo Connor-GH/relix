@@ -10,7 +10,7 @@
 #define SYS_execve 7
 #define SYS_fstat 8
 #define SYS_chdir 9
-#define SYS_dup 10
+#define SYS_dup3 10
 #define SYS_getpid 11
 #define SYS_sbrk 12
 #define SYS_alarm 13
@@ -69,7 +69,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_execve] = "execve",
 	[SYS_fstat] = "fstat",
 	[SYS_chdir] = "chdir",
-	[SYS_dup] = "dup",
+	[SYS_dup3] = "dup3",
 	[SYS_getpid] = "getpid",
 	[SYS_sbrk] = "sbrk",
 	[SYS_alarm] = "alarm",

@@ -32,6 +32,7 @@
 #define F_SETOWN 0x400
 
 #define FD_CLOEXEC 0x01
+#define FD_CLOFORK 0x02
 
 #define F_OK 0
 #define X_OK (1 << 0)

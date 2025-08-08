@@ -64,6 +64,7 @@ extern struct devsw devsw[];
 // sysfile.c might like.
 struct file *filealloc(void);
 int fdalloc(struct file *f);
+int fdalloc2(struct file *f, int fd);
 struct file *fd_to_struct_file(int fd);
 char *inode_to_path(char *buf, size_t n, struct inode *ip);
 struct inode *resolve_name(const char *path);
@@ -74,7 +75,7 @@ int fileclose(struct file *);
 struct inode *filecreate(int dirfd, char *path, mode_t mode, short major,
                          short minor);
 int fileopenat(int dirfd, char *path, int flags, mode_t mode);
-struct file *filedup(struct file *);
+struct file *filedup(struct file *f, int flags);
 void fileinit(void);
 ssize_t fileread(struct file *file, char *buf, size_t n);
 int filestat(struct file *file, struct stat *);

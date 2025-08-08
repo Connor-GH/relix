@@ -41,7 +41,10 @@ ssize_t readlink(const char *restrict pathname, char *restrict linkpath,
 ssize_t readlinkat(int dirfd, const char *restrict pathname,
                    char *restrict linkpath, size_t bufsiz);
 int chdir(const char *);
-int dup(int);
+int dup(int oldfd);
+int dup2(int oldfd, int newfd);
+int dup3(int oldfd, int newfd, int flags);
+
 unsigned int alarm(unsigned int);
 
 pid_t getpid(void);
@@ -64,7 +67,6 @@ extern char *optarg;
 extern int optind, opterr, optopt;
 int getopt(int argc, char *const argv[], const char *optstring);
 char *getcwd(char *buf, size_t size);
-int dup2(int oldfd, int newfd);
 
 #define STDIN_FILENO 0
 #define STDOUT_FILENO 1

@@ -184,7 +184,7 @@ chdir(const char *path)
 int
 dup(int oldfd)
 {
-	return __syscall_ret(__syscall1(SYS_dup, oldfd));
+	return fcntl(oldfd, F_DUPFD, 0);
 }
 
 pid_t
@@ -386,9 +386,15 @@ ttyname_r(int fd, char *buf, size_t buflen)
 }
 
 int
+dup3(int oldfd, int newfd, int flags)
+{
+	return __syscall_ret(__syscall3(SYS_dup3, oldfd, newfd, flags));
+}
+
+int
 dup2(int oldfd, int newfd)
 {
-	return dup(oldfd);
+	return dup3(oldfd, newfd, 0);
 }
 
 int

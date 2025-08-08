@@ -19,6 +19,7 @@
 #include "vm.h"
 #include "x86.h"
 #include <errno.h>
+#include <fcntl.h>
 #include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -287,9 +288,14 @@ fork(void)
 	// Clear %rax so that fork returns 0 in the child.
 	np->tf->rax = 0;
 
-	for (int i = 0; i < NOFILE; i++) {
-		if (curproc->ofile[i]) {
-			np->ofile[i] = filedup(curproc->ofile[i]);
+	// Only close files if we were passed FD_CLOFORK.
+	for (int i = 0; i < OPEN_MAX; i++) {
+		if (curproc->ofile[i] != NULL && curproc->ofile[i]->ref > 0) {
+			if (curproc->ofile[i]->flags == FD_CLOFORK) {
+				(void)fileclose(curproc->ofile[i]);
+			} else {
+				np->ofile[i] = filedup(curproc->ofile[i], 0);
+			}
 		}
 	}
 	np->cwd = inode_dup(curproc->cwd);
@@ -324,7 +330,7 @@ exit(int status)
 	}
 
 	// Close all open files.
-	for (int fd = 0; fd < NOFILE; fd++) {
+	for (int fd = 0; fd < OPEN_MAX; fd++) {
 		if (curproc->ofile[fd] != NULL && curproc->ofile[fd]->ref > 0) {
 			(void)fileclose(curproc->ofile[fd]);
 		}

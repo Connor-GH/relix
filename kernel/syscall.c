@@ -134,7 +134,7 @@ argstr(int n, char **pp)
 
 extern size_t sys_chdir(void);
 extern size_t sys_close(void);
-extern size_t sys_dup(void);
+extern size_t sys_dup3(void);
 extern size_t sys_execve(void);
 extern size_t sys__exit(void);
 extern size_t sys_fork(void);
@@ -206,7 +206,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_execve] = sys_execve,
 	[SYS_fstat] = sys_fstat,
 	[SYS_chdir] = sys_chdir,
-	[SYS_dup] = sys_dup,
+	[SYS_dup3] = sys_dup3,
 	[SYS_getpid] = sys_getpid,
 	[SYS_sbrk] = sys_sbrk,
 	[SYS_alarm] = sys_alarm,

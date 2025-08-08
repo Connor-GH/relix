@@ -33,7 +33,7 @@ static file_table_t file_table;
 struct file *
 fd_to_struct_file(int fd)
 {
-	if (fd < 0 || fd >= NFILE) {
+	if (fd < 0 || fd >= OPEN_MAX) {
 		return NULL;
 	}
 	return myproc()->ofile[fd];
@@ -66,7 +66,7 @@ filealloc(void)
 
 // Increment ref count for file f.
 struct file *
-filedup(struct file *f)
+filedup(struct file *f, int flags)
 {
 	acquire(&file_table.lock);
 
@@ -74,6 +74,7 @@ filedup(struct file *f)
 		panic("filedup");
 	}
 	f->ref++;
+	f->flags = flags;
 	release(&file_table.lock);
 
 	return f;
@@ -86,13 +87,28 @@ fdalloc(struct file *f)
 {
 	struct proc *curproc = myproc();
 
-	for (int fd = 0; fd < NOFILE; fd++) {
+	for (int fd = 0; fd < OPEN_MAX; fd++) {
 		if (curproc->ofile[fd] == NULL) {
 			curproc->ofile[fd] = f;
 			return fd;
 		}
 	}
 	return -EMFILE;
+}
+
+// Allocate a file descriptor for the given file.
+// Use the file descriptor specified in fd.
+int
+fdalloc2(struct file *f, int fd)
+{
+	struct proc *curproc = myproc();
+
+	if (curproc->ofile[fd] != NULL) {
+		PROPOGATE_ERR(fileclose(curproc->ofile[fd]));
+	}
+
+	curproc->ofile[fd] = f;
+	return fd;
 }
 
 // Read a symbolic link and puts the data in buf.

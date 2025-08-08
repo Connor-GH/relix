@@ -17,7 +17,6 @@
 #include "memlayout.h"
 #include "mman.h"
 #include "mmu.h"
-#include "param.h"
 #include "pci.h"
 #include "pipe.h"
 #include "proc.h"
@@ -29,6 +28,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdatomic.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -58,7 +58,7 @@ argfd(int n, int *pfd, struct file **pf)
 	if (fd < 0) {
 		return -EBADF;
 	}
-	if (fd >= NOFILE) {
+	if (fd >= OPEN_MAX) {
 		return -ENFILE;
 	}
 	if ((f = myproc()->ofile[fd]) == NULL) {
@@ -75,25 +75,28 @@ argfd(int n, int *pfd, struct file **pf)
 }
 
 size_t
-sys_dup(void)
+sys_dup3(void)
 {
 	struct file *f;
-	int fd;
+	int fd1;
+	int fd2;
+	int flags;
 
-	PROPOGATE_ERR(argint(0, &fd));
-	if (fd < 0) {
+	PROPOGATE_ERR(argfd(0, &fd1, &f));
+	PROPOGATE_ERR(argint(1, &fd2));
+	PROPOGATE_ERR(argint(2, &flags));
+
+	if (fd2 < 0 && fd2 >= OPEN_MAX) {
 		return -EBADF;
 	}
-	if (fd >= NOFILE) {
-		return -ENFILE;
-	}
-	if ((f = myproc()->ofile[fd]) == NULL) {
-		return -EBADF;
+
+	if (fd1 == fd2) {
+		return fd2;
 	}
 
-	PROPOGATE_ERR(fd = fdalloc(f));
-	filedup(f);
-	return fd;
+	PROPOGATE_ERR(fd2 = fdalloc2(f, fd2));
+	filedup(f, flags);
+	return fd2;
 }
 
 size_t
@@ -811,12 +814,8 @@ sys_fcntl(void)
 		struct file *duped_file;
 		PROPOGATE_ERR(argint(2, &arg));
 		PROPOGATE_ERR(fd = fdalloc(file));
-		if ((duped_file = filedup(file)) == NULL) {
+		if ((duped_file = filedup(file, 0)) == NULL) {
 			return -EBADF;
-		}
-		if (!(fd >= arg)) {
-			fileclose(duped_file);
-			return -EINVAL;
 		}
 		return fd;
 	}
@@ -826,14 +825,9 @@ sys_fcntl(void)
 		struct file *duped_file;
 		PROPOGATE_ERR(argint(2, &arg));
 		PROPOGATE_ERR(fd = fdalloc(file));
-		if ((duped_file = filedup(file)) == NULL) {
+		if ((duped_file = filedup(file, FD_CLOEXEC)) == NULL) {
 			return -EBADF;
 		}
-		if (!(fd >= arg)) {
-			fileclose(duped_file);
-			return -EINVAL;
-		}
-		duped_file->flags = FD_CLOEXEC;
 		return fd;
 	}
 	case F_GETFL: {

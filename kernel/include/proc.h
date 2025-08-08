@@ -9,6 +9,7 @@
 #include "param.h"
 #include "spinlock.h"
 #include "syscall.h"
+#include <limits.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -82,7 +83,7 @@ struct proc {
 	struct context *context; // swtch() here to run process
 	void *chan; // If non-zero, sleeping on chan
 	int killed; // If non-zero, have been killed
-	struct file *ofile[NOFILE]; // Open files
+	struct file *ofile[OPEN_MAX]; // Open files
 	struct inode *cwd; // Current directory
 	struct cred cred; // user's credentials for the process.
 	char name[16]; // Process name (debugging)

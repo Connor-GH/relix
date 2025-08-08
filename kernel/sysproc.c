@@ -19,7 +19,7 @@
 size_t
 sys_fork(void)
 {
-	return fork(false);
+	return fork();
 }
 
 size_t
@@ -234,13 +234,6 @@ size_t
 sys_sigprocmask(void)
 {
 	return -ENOSYS;
-}
-
-// TODO implement properly
-size_t
-sys_vfork(void)
-{
-	return fork(true);
 }
 
 size_t

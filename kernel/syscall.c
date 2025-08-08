@@ -170,7 +170,6 @@ extern size_t sys_munmap(void);
 extern size_t sys_signal(void);
 extern size_t sys_getcwd(void);
 extern size_t sys_sigprocmask(void);
-extern size_t sys_vfork(void);
 extern size_t sys_wait3(void);
 extern size_t sys_sigsuspend(void);
 extern size_t sys_umask(void);
@@ -185,6 +184,17 @@ extern size_t sys_fchmod(void);
 extern size_t sys_faccessat(void);
 extern size_t sys_fcntl(void);
 extern size_t sys_uname(void);
+
+static size_t
+unknown_syscall(void)
+{
+	struct proc *curproc = myproc();
+	uint64_t num = curproc->tf->rax;
+
+	uart_printf("%d %s: unknown sys call %lu\n", curproc->pid, curproc->name,
+	            num);
+	return -1;
+}
 
 static size_t (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,
@@ -225,7 +235,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_signal] = sys_signal,
 	[SYS_getcwd] = sys_getcwd,
 	[SYS_sigprocmask] = sys_sigprocmask,
-	[SYS_vfork] = sys_vfork,
+	[SYS_UNMAPPED1] = unknown_syscall,
 	[SYS_wait3] = sys_wait3,
 	[SYS_sigsuspend] = sys_sigsuspend,
 	[SYS_umask] = sys_umask,
@@ -292,7 +302,7 @@ syscall_do(void)
 		"mov %%rsp, %%gs:%c[user_stack]\n"
 		"mov %%gs:%c[kernel_stack], %%rsp\n"
 
-		"pushq $0\n" // ss
+		"pushq $0x1b\n" // ss
 
 		"pushq %%gs:%c[user_stack]\n" // user rsp.
 		// We used %gs for all we need it for (CPU-local data).
@@ -301,8 +311,7 @@ syscall_do(void)
 		"sti\n"
 
 		"pushq %%r11\n" // rflags
-		"movq %%cs, %%r11\n"
-		"pushq %%r11\n" // cs
+		"pushq $0x23\n" // cs
 		"pushq %%rcx\n" // user rip is preserved in rcx.
 		"pushq $0\n" // err
 		"pushq $0\n" // trapno
@@ -394,7 +403,6 @@ syscall(void)
 			curproc->tf->rax = syscalls[num]();
 		}
 	} else {
-		cprintf("%d %s: unknown sys call %lu\n", curproc->pid, curproc->name, num);
-		curproc->tf->rax = -1;
+		curproc->tf->rax = unknown_syscall();
 	}
 }

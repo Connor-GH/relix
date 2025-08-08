@@ -248,7 +248,7 @@ growproc(intptr_t n)
 // Caller must set state of returned proc to RUNNABLE.
 // POSIX.1-2008: fork returns a "signed integer type".
 pid_t
-fork(bool virtual)
+fork(void)
 {
 	pid_t pid;
 	struct proc *np;
@@ -267,20 +267,18 @@ fork(bool virtual)
 		return -EIO;
 	}
 	np->sz = curproc->sz;
-	// Only do this for regular fork().
-	if (!virtual) {
-		np->heap = curproc->heap;
-		np->heapsz = curproc->heapsz;
 
-		np->mmap_count = curproc->mmap_count;
-		memcpy(np->mmap_info, curproc->mmap_info, sizeof(np->mmap_info));
-		// Copying the info isn't enough. We also need to map it.
-		for (int j = 0; np->mmap_info[j].length != 0; j++) {
-			struct mmap_info info = np->mmap_info[j];
-			if (mappages(np->pgdir, (void *)info.virt_addr, info.length, info.addr,
-			             info.perm) < 0) {
-				panic("Could not map page");
-			}
+	np->heap = curproc->heap;
+	np->heapsz = curproc->heapsz;
+
+	np->mmap_count = curproc->mmap_count;
+	memcpy(np->mmap_info, curproc->mmap_info, sizeof(np->mmap_info));
+	// Copying the info isn't enough. We also need to map it.
+	for (int j = 0; np->mmap_info[j].length != 0; j++) {
+		struct mmap_info info = np->mmap_info[j];
+		if (mappages(np->pgdir, (void *)info.virt_addr, info.length, info.addr,
+		             info.perm) < 0) {
+			panic("Could not map page");
 		}
 	}
 	np->parent = curproc;

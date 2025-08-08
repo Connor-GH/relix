@@ -107,7 +107,7 @@ struct proc {
 
 int my_cpu_id(void);
 void exit(int) __attribute__((noreturn));
-pid_t fork(bool virtual);
+pid_t fork(void);
 int growproc(intptr_t);
 int kill(pid_t, int);
 struct cpu *mycpu(void);

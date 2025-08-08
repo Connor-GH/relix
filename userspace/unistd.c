@@ -312,7 +312,8 @@ getcwd(char *buf, size_t n)
 
 __deprecated("Removed in POSIX.1-2008; use fork()") pid_t vfork(void)
 {
-	return __syscall_ret(__syscall0(SYS_vfork));
+	errno = ENOSYS;
+	return -1;
 }
 
 clock_t

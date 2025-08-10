@@ -15,9 +15,9 @@
 #include <sys/types.h>
 
 struct cred {
-	uid_t uid;
-	gid_t gid;
-	gid_t groups[MAXGROUPS];
+	uid_t uid; // User ID
+	pid_t gid; // Group ID of current process
+	gid_t gids[NGROUPS_MAX]; // all Group IDs the user is in
 };
 
 struct cpu {
@@ -77,6 +77,7 @@ struct proc {
 	char *kstack; // Bottom of kernel stack for this process
 	enum procstate state; // Process state
 	pid_t pid; // Process ID
+	pid_t pgid; // Process Group ID
 	int status;
 	struct proc *parent; // Parent process
 	struct trapframe *tf; // Trap frame for current syscall

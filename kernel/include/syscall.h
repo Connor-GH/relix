@@ -4,7 +4,7 @@
 #define SYS_fork 1
 #define SYS__exit 2
 #define SYS_waitpid 3
-#define SYS_pipe 4
+#define SYS_pipe2 4
 #define SYS_read 5
 #define SYS_kill 6
 #define SYS_execve 7
@@ -63,7 +63,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_fork] = "fork",
 	[SYS__exit] = "_exit",
 	[SYS_waitpid] = "waitpid",
-	[SYS_pipe] = "pipe",
+	[SYS_pipe2] = "pipe2",
 	[SYS_read] = "read",
 	[SYS_kill] = "kill",
 	[SYS_execve] = "execve",

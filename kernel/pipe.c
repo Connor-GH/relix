@@ -116,6 +116,7 @@ piperead(struct pipe *p, char *addr, size_t n)
 	ssize_t i;
 
 	acquire(&p->lock);
+
 	while (p->ring_buffer->nread == p->ring_buffer->nwrite && p->writeopen) {
 		if (myproc()->killed) {
 			release(&p->lock);

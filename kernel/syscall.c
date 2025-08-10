@@ -145,7 +145,7 @@ extern size_t sys_linkat(void);
 extern size_t sys_mkdirat(void);
 extern size_t sys_mknodat(void);
 extern size_t sys_openat(void);
-extern size_t sys_pipe(void);
+extern size_t sys_pipe2(void);
 extern size_t sys_read(void);
 extern size_t sys_sbrk(void);
 extern size_t sys_alarm(void);
@@ -200,7 +200,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_fork] = sys_fork,
 	[SYS__exit] = sys__exit,
 	[SYS_waitpid] = sys_waitpid,
-	[SYS_pipe] = sys_pipe,
+	[SYS_pipe2] = sys_pipe2,
 	[SYS_read] = sys_read,
 	[SYS_kill] = sys_kill,
 	[SYS_execve] = sys_execve,

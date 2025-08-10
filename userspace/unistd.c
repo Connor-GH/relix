@@ -36,7 +36,13 @@ _exit(int status)
 int
 pipe(int pipefd[2])
 {
-	return __syscall_ret(__syscall1(SYS_pipe, (long)pipefd));
+	return pipe2(pipefd, 0);
+}
+
+int
+pipe2(int pipefd[2], int oflags)
+{
+	return __syscall_ret(__syscall2(SYS_pipe2, (long)pipefd, oflags));
 }
 
 ssize_t

@@ -80,11 +80,15 @@ sys_dup3(void)
 	struct file *f;
 	int fd1;
 	int fd2;
-	int flags;
+	int oflags;
 
 	PROPOGATE_ERR(argfd(0, &fd1, &f));
 	PROPOGATE_ERR(argint(1, &fd2));
-	PROPOGATE_ERR(argint(2, &flags));
+	PROPOGATE_ERR(argint(2, &oflags));
+
+	if (oflags & ~(O_CLOEXEC | O_CLOFORK)) {
+		return -EINVAL;
+	}
 
 	if (fd2 < 0 && fd2 >= OPEN_MAX) {
 		return -EBADF;
@@ -95,7 +99,7 @@ sys_dup3(void)
 	}
 
 	PROPOGATE_ERR(fd2 = fdalloc2(f, fd2));
-	filedup(f, flags);
+	filedup(f, oflags);
 	return fd2;
 }
 
@@ -530,16 +534,23 @@ sys_execve(void)
 }
 
 size_t
-sys_pipe(void)
+sys_pipe2(void)
 {
 	int *fd;
 	struct file *rf, *wf;
 	int fd0, fd1;
+	int oflags;
 
+	int newoptions = 0;
 	// Arrays don't decay like you'd expect them to
 	// when going into argptr. You must use a raw
 	// pointer type, even for arrays.
 	PROPOGATE_ERR(argptr(0, (void *)&fd, 2 * sizeof(fd[0])));
+	PROPOGATE_ERR(argint(1, &oflags));
+
+	if (oflags & ~(O_CLOEXEC | O_CLOFORK | O_NONBLOCK)) {
+		return -EINVAL;
+	}
 
 	PROPOGATE_ERR(pipealloc(&rf, &wf));
 	fd0 = -1;
@@ -553,6 +564,8 @@ sys_pipe(void)
 		(void)fileclose(wf);
 		return -EBADF;
 	}
+	rf->flags = oflags;
+	wf->flags = oflags;
 	fd[0] = fd0;
 	fd[1] = fd1;
 	return 0;
@@ -825,7 +838,7 @@ sys_fcntl(void)
 		struct file *duped_file;
 		PROPOGATE_ERR(argint(2, &arg));
 		PROPOGATE_ERR(fd = fdalloc(file));
-		if ((duped_file = filedup(file, FD_CLOEXEC)) == NULL) {
+		if ((duped_file = filedup(file, O_CLOEXEC)) == NULL) {
 			return -EBADF;
 		}
 		return fd;
@@ -850,7 +863,17 @@ sys_fcntl(void)
 	case F_SETFD: {
 		int arg;
 		PROPOGATE_ERR(argint(2, &arg));
-		file->flags = arg;
+		if (arg & ~(FD_CLOEXEC | FD_CLOFORK)) {
+			return -EINVAL;
+		}
+		int new_arg = 0;
+		if (arg & FD_CLOFORK) {
+			new_arg |= O_CLOFORK;
+		}
+		if (arg & FD_CLOEXEC) {
+			new_arg |= O_CLOEXEC;
+		}
+		file->flags = new_arg;
 		return 0;
 	}
 	case F_GETLK:

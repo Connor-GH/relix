@@ -13,7 +13,6 @@
 #define LOGSIZE (MAXOPBLOCKS * 3LU) // max data blocks in on-disk log
 #define NBUF (MAXOPBLOCKS * 3LU) // size of disk block cache
 #define FSSIZE (10 * 2048LU) // size of file system in blocks
-#define MAXGROUPS 32 // maximum groups there can be
 #define MAX_USERNAME 256
 #define MAX_PASSWD 128
 #define MAXENV 32

@@ -132,6 +132,10 @@ allocproc(void)
 found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
+	p->pgid = p->pid;
+	p->cred.uid = 0;
+	p->cred.gid = 0;
+	memset(p->cred.gids, 0, sizeof(p->cred.gids));
 
 	release(&ptable.lock);
 
@@ -164,10 +168,6 @@ found:
 	// needed.
 	p->heap = 0x2c000000;
 	p->heapsz = 0;
-
-	p->cred.uid = 0;
-	p->cred.gid = 0;
-	memset(p->cred.groups, 0, sizeof(p->cred.groups));
 
 	p->umask = S_IWGRP | S_IWOTH;
 
@@ -288,10 +288,10 @@ fork(void)
 	// Clear %rax so that fork returns 0 in the child.
 	np->tf->rax = 0;
 
-	// Only close files if we were passed FD_CLOFORK.
+	// Only close files if we were passed O_CLOFORK.
 	for (int i = 0; i < OPEN_MAX; i++) {
 		if (curproc->ofile[i] != NULL && curproc->ofile[i]->ref > 0) {
-			if (curproc->ofile[i]->flags == FD_CLOFORK) {
+			if (curproc->ofile[i]->flags == O_CLOFORK) {
 				(void)fileclose(curproc->ofile[i]);
 			} else {
 				np->ofile[i] = filedup(curproc->ofile[i], 0);
@@ -299,7 +299,10 @@ fork(void)
 		}
 	}
 	np->cwd = inode_dup(curproc->cwd);
-	np->cred = curproc->cred;
+	np->cred.uid = curproc->cred.uid;
+	np->cred.gid = curproc->cred.gid;
+	np->pgid = curproc->pgid;
+	memcpy(np->cred.gids, curproc->cred.gids, sizeof(np->cred.gids));
 	np->umask = curproc->umask;
 
 	__safestrcpy(np->name, curproc->name, sizeof(curproc->name));
@@ -762,8 +765,8 @@ sleep_on_ms(time_t ms)
 bool
 is_in_group(gid_t group, struct cred *cred)
 {
-	for (int i = 0; i < MAXGROUPS; i++) {
-		if (group == cred->groups[i]) {
+	for (int i = 0; i < NGROUPS_MAX; i++) {
+		if (group == cred->gids[i]) {
 			return true;
 		}
 	}

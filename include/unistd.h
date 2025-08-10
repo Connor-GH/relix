@@ -19,6 +19,7 @@ int fork(void) __attribute__((returns_twice));
 int vfork(void) __attribute__((returns_twice));
 void _exit(int) __attribute__((noreturn));
 int pipe(int pipefd[2]);
+int pipe2(int pipefd[2], int oflags);
 
 int execve(const char *, char *const *, char *const *);
 int execvp(const char *file, char *const *argv);

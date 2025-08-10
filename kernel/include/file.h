@@ -14,7 +14,7 @@ struct file {
 		FD_INODE,
 		FD_FIFO,
 	} type;
-	int flags; // Flags like FD_CLOEXEC.
+	int flags; // Flags like O_CLOEXEC.
 	int ref; // reference count
 	char readable;
 	char writable;

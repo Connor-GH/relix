@@ -1,18 +1,28 @@
 #pragma once
 /* Exported to userspace */
-#define O_RDONLY 0000
-#define O_WRONLY 0001
-#define O_RDWR 0002
-#define O_ACCMODE 0003
-#define O_CREATE 0100
+#define O_RDONLY 0x0
+#define O_WRONLY 0x1
+#define O_RDWR 0x2
+#define O_ACCMODE 0x3
+#define O_CREATE 0x4
 #define O_CREAT O_CREATE
-#define O_EXCL 0200
-#define O_TRUNC 01000
-#define O_APPEND 02000
-#define O_NONBLOCK 04000
-#define O_NOFOLLOW 010000
-#define O_DIRECTORY 0200000
-#define O_TMPFILE (020000000 | O_DIRECTORY)
+#define O_EXCL 0x8
+#define O_TRUNC 0x10
+#define O_APPEND 0x20
+#define O_NONBLOCK 0x40
+#define O_NOFOLLOW 0x80
+#define O_DIRECTORY 0x100
+#define O_TMPFILE (0x200 | O_DIRECTORY)
+#define O_CLOEXEC 0x400
+#define O_CLOFORK 0x800
+#define O_NOCTTY 0x1000
+#define O_DSYNC 0x2000
+#define O_RSYNC 0x4000
+#define O_SYNC 0x8000
+#define O_EXEC 0x10000
+#define O_SEARCH 0x20000
+
+#define O_TTY_INIT 0
 
 // These three pretty much wrap dup().
 #define F_DUPFD 0x000

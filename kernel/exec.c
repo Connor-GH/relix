@@ -255,10 +255,10 @@ ok:
 		curproc->cred = curproc->parent->cred;
 	}
 
-	// Only close files if we were passed FD_CLOEXEC.
+	// Only close files if we were passed O_CLOEXEC.
 	for (int i = 0; i < OPEN_MAX; i++) {
 		if (curproc->ofile[i] != NULL && curproc->ofile[i]->ref > 0 &&
-		    curproc->ofile[i]->flags == FD_CLOEXEC) {
+		    curproc->ofile[i]->flags == O_CLOEXEC) {
 			(void)fileclose(curproc->ofile[i]);
 		}
 	}

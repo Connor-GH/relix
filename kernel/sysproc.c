@@ -176,7 +176,7 @@ sys_reboot(void)
 size_t
 sys_setgid(void)
 {
-	// cannot setuid if not root
+	// cannot setgid if not root
 	if (myproc()->cred.gid != 0) {
 		return -EPERM;
 	}

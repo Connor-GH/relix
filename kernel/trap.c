@@ -112,18 +112,6 @@ decipher_error_code_nonpagefault(uint64_t error_code)
 void
 trap(struct trapframe *tf)
 {
-	if (tf->trapno == T_SYSCALL) {
-		if (myproc()->killed) {
-			exit(0);
-		}
-		myproc()->tf = tf;
-		syscall();
-		if (myproc()->killed) {
-			exit(0);
-		}
-		return;
-	}
-
 	switch (tf->trapno) {
 	case T_IRQ0 + IRQ_TIMER:
 		if (my_cpu_id() == 0) {

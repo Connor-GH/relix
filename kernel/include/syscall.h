@@ -143,7 +143,6 @@ int fetchuintptr_t(uintptr_t addr, uintptr_t *ip);
 int argptr(int, char **, int);
 ssize_t argstr(int, char **);
 ssize_t fetchstr(uintptr_t, char **);
-void syscall(void);
 
 // Init function for syscall/sysret.
 void syscall_init(void);

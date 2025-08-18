@@ -36,6 +36,7 @@ SYSCALL_ARG_FETCH(unsigned_int);
 SYSCALL_ARG_FETCH(uintptr_t);
 SYSCALL_ARG_FETCH(unsigned_long);
 
+static void syscall(struct proc *curproc);
 // Fetch the nul-terminated string at addr from the current process.
 // Doesn't actually copy the string - just sets *pp to point at it.
 // Returns length of string, not including nul.
@@ -188,11 +189,6 @@ extern size_t sys_uname(void);
 static size_t
 unknown_syscall(void)
 {
-	struct proc *curproc = myproc();
-	uint64_t num = curproc->tf->rax;
-
-	uart_printf("%d %s: unknown sys call %lu\n", curproc->pid, curproc->name,
-	            num);
 	return -1;
 }
 
@@ -375,15 +371,15 @@ syscall_do(void)
 void
 syswrap(struct trapframe *tf)
 {
-	myproc()->tf = tf;
-	syscall();
+	struct proc *curproc = myproc();
+	curproc->tf = tf;
+	syscall(curproc);
 }
 
-void
-syscall(void)
+static void
+syscall(struct proc *curproc)
 {
 	uint64_t num;
-	struct proc *curproc = myproc();
 
 	num = curproc->tf->rax;
 	if (num > 0 && num < NELEM(syscalls) && syscalls[num] != NULL) {

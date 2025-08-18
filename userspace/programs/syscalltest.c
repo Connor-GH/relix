@@ -1,24 +1,17 @@
-#include "ext.h"
+#include "__intrinsics.h"
+#include "libc_syscalls.h"
+#include <stdint.h>
 #include <stdio.h>
-#include <sys/syscall.h>
-#include <time.h>
-#include <unistd.h>
 
-#define NUM_ITERS 100000
+#define NUM_ITERS 10000
 int
 main(void)
 {
 	for (size_t i = 0; i < NUM_ITERS; i++) {
-		time_t time = uptime();
-		// Hitting this condition should only happen when the
-		// system has been up for 2.7 hours, which is not
-		// reasonable for a test program. This is only
-		// here to stop the compiler from optimizing
-		// the loop away.
-		if (time == NUM_ITERS) {
-			printf("This is here only for the "
-			       "loop to not be optimized out\n");
-		}
+		uint64_t before_ticks = rdtsc();
+		int ret = (int)__syscall0(255);
+		uint64_t after_ticks = rdtsc();
+		printf("%ld\n", after_ticks - before_ticks);
 	}
 	return 0;
 }

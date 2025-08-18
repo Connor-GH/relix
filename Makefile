@@ -172,7 +172,8 @@ ifndef MEM
 MEM := 224M
 endif
 QEMUOPTS = -drive file=$(BIN)/fs.img,index=1,media=disk,format=raw,if=ide,aio=native,cache.direct=on \
-					 -enable-kvm -smp cpus=$(CPUS),cores=1,threads=1,sockets=$(CPUS) -m $(MEM) -vga std $(QEMUEXTRA)
+					 -enable-kvm -smp cpus=$(CPUS),cores=1,threads=1,sockets=$(CPUS) -m $(MEM) \
+					 -vga std -device intel-hda $(QEMUEXTRA)
 
 ifdef CONSOLE_LOG
 	QEMUOPTS += -serial mon:stdio

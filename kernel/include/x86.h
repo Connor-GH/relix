@@ -259,10 +259,9 @@ static __always_inline void
 cpuid(uint32_t id, uint32_t count, uint32_t *a, uint32_t *b, uint32_t *c,
       uint32_t *d)
 {
-	__asm__ __volatile__("movl %0, %%eax\t\n"
-	                     "cpuid\t\n"
+	__asm__ __volatile__("cpuid\t\n"
 	                     : "=a"(*a), "=b"(*b), "=c"(*c), "=d"(*d)
-	                     : "0"(id), "2"(count));
+	                     : "a"(id), "c"(count));
 }
 
 static __always_inline uint64_t

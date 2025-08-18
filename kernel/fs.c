@@ -192,11 +192,11 @@ inode_init(dev_t dev)
 
 	if (memcmp(global_sb.signature, "RELIXFS0", 8) == 0) {
 		cprintf("RelixFS found\n");
-		cprintf("superblock: size %lu nblocks %lu ninodes %lu nlog %lu logstart %lu\
- 		inodestart %lu bmap start %lu\n",
-		        global_sb.size, global_sb.nblocks, global_sb.ninodes,
-		        global_sb.nlog, global_sb.logstart, global_sb.inodestart,
-		        global_sb.bmapstart);
+		cprintf(
+			"superblock: size %lu nblocks %lu ninodes %lu nlog %lu logstart %lu "
+			"inodestart %lu bmap start %lu\n",
+			global_sb.size, global_sb.nblocks, global_sb.ninodes, global_sb.nlog,
+			global_sb.logstart, global_sb.inodestart, global_sb.bmapstart);
 	} else {
 		panic("Cannot find any recognized filesytem.");
 	}

@@ -1,5 +1,5 @@
 // https://wiki.osdev.org/PCI
-use crate::printing::*;
+use crate::{hda, printing::*};
 use alloc::vec::Vec;
 use core::ffi::c_void;
 use kernel_bindings::bindings::{inl, outl};
@@ -20,6 +20,7 @@ const CAPABILITY_SATA: u8 = 0x12;
 
 static PCI_CONFS: Mutex<Vec<PciConf>> = Mutex::new(Vec::new());
 
+pub type BARType = [u32; 6];
 pub struct PCICommonHeader {
     vendor_id: u16,
     device_id: u16,
@@ -33,7 +34,7 @@ pub struct PCICommonHeader {
     latency_timer: u8,
     header_type: u8,
     bist: u8,
-    base_address_registers: [u32; 6],
+    base_address_registers: BARType,
     cardbus_cis_pointer: u32,
     subsystem_vendor_id: u16,
     subsystem_id: u16,
@@ -281,11 +282,7 @@ unsafe extern "C" {
 }
 
 fn dispatch_sata(hdr: &mut PCICommonHeader, offset: u32) {
-    if hdr.vendor_id == 0x8086
-        && hdr.device_id == 0x2922
-        && hdr.subsystem_vendor_id == 0x1af4
-        && hdr.subsystem_id == 0x1100
-    {
+    if hdr.vendor_id == 0x8086 && hdr.device_id == 0x2922 {
         debugln!("sata at {:x}", hdr.base_address_registers[5] >> 0);
         unsafe { ahci_init(hdr.base_address_registers[5]) };
     }
@@ -312,6 +309,9 @@ fn traverse_headers((bus, slot, func): (u8, u8, u8), offset: u8, hdr: &mut PCICo
             } else {
                 let msi = MsiNoMask::from_cap_ptr((bus, slot, func), offset);
                 debugln!("{:#x?}", msi);
+                if ids_match_hda(hdr.vendor_id, hdr.device_id) {
+                    hda::driver_init(hdr);
+                }
                 msi.next_ptr
             }
         }
@@ -386,7 +386,7 @@ impl PCICommonHeader {
             return None;
         }
         let vendor_id = vendor_id.unwrap();
-        let device_id = pci_get_device_id(bus, device);
+        let device_id = pci_get_device_id(tuple);
         let command = pci_config_read_word(tuple, 0x4);
         let status = pci_config_read_word(tuple, 0x6);
         let revision_id = get_revision_id(tuple);
@@ -459,6 +459,9 @@ impl PCICommonHeader {
             function,
         }
     }
+    pub fn bar(&self) -> &BARType {
+        &self.base_address_registers
+    }
 }
 
 // Read a "word" from the PCI config. A "word" is 16 bits.
@@ -512,8 +515,8 @@ fn pci_get_vendor_id(tuple: (u8, u8, u8)) -> Option<u16> {
 fn get_header_type(tuple: (u8, u8, u8)) -> u8 {
     pci_config_read_byte(tuple, 0xe)
 }
-fn pci_get_device_id(bus: u8, slot: u8) -> u16 {
-    pci_config_read_word((bus, slot, 0), 2)
+fn pci_get_device_id(tuple: (u8, u8, u8)) -> u16 {
+    pci_config_read_word((tuple.0, tuple.1, 0), 2)
 }
 fn get_revision_id(tuple: (u8, u8, u8)) -> u8 {
     pci_config_read_byte(tuple, 8)
@@ -629,6 +632,15 @@ fn get_base_class(tuple: (u8, u8, u8)) -> u8 {
 fn check_bus(bus: u8) {
     for device in 0..32 {
         check_device(bus, device);
+    }
+}
+
+// If the device is High Definition Audio.
+fn ids_match_hda(vendor_id: u16, device_id: u16) -> bool {
+    match (vendor_id, device_id) {
+        (0x8086, 0x2668) | (0x8086, 0x27D8) => true,
+        (0x1002, 0x4383) => true,
+        _ => false,
     }
 }
 

@@ -10,5 +10,5 @@ pci-ids = {version = "0.2.5", optional = true}
 userspace_bindings = { path = "../userspace_bindings", version = "0.1.0" }
 
 [features]
-default = []
+default = ["pci-ids"]
 pci-ids = ["dep:pci-ids"]

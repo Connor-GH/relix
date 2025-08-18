@@ -2,6 +2,7 @@
 #include "file.h"
 #include "fs.h"
 #include "kalloc.h"
+#include "memlayout.h"
 #include "pipe.h"
 #include "sleeplock.h"
 #include "spinlock.h"

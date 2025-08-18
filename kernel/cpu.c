@@ -211,7 +211,7 @@ set_remaining_features(CpuFeatures *cpu_features)
 		{ CPUID_FEAT_ECX_X2APIC, "x2apic" },
 		{ CPUID_FEAT_ECX_MOVBE, "movbe" },
 		{ CPUID_FEAT_ECX_POPCNT, "popcnt" },
-		{ CPUID_FEAT_ECX_TSC, "tsc" },
+		{ CPUID_FEAT_ECX_TSC_DEADLINE, "tsc_deadline" },
 		{ CPUID_FEAT_ECX_AES, "aes" },
 		{ CPUID_FEAT_ECX_XSAVE, "xsave" },
 		{ CPUID_FEAT_ECX_OSXSAVE, "osxsave" },
@@ -287,7 +287,7 @@ set_remaining_features(CpuFeatures *cpu_features)
 		{ CPUID_FEAT_EDX_EXT_MMXEXT, "mmxext" },
 		{ CPUID_FEAT_EDX_EXT_FFXSR, "ffxsr" },
 		{ CPUID_FEAT_EDX_EXT_PAGE1GB, "page_1gb" },
-		{ CPUID_FEAT_EDX_EXT_RDTSCP, "rdscp" },
+		{ CPUID_FEAT_EDX_EXT_RDTSCP, "rdtscp" },
 		{ CPUID_FEAT_EDX_EXT_LM, "long_mode" },
 		{ CPUID_FEAT_EDX_EXT_3DNOW_EXT, "3dnow_ext" },
 		{ CPUID_FEAT_EDX_EXT_3DNOW, "3dnow" },
@@ -373,6 +373,11 @@ set_remaining_features(CpuFeatures *cpu_features)
 				cpu_features->misc |= MISC_FEATURE_LONG_MODE;
 			}
 		}
+	}
+	cpuid(0x80000007, 0, &a, &b, &c, &d);
+	if (d & (1 << 8)) {
+		cpu_features->misc |= MISC_FEATURE_INVARIANT_TSC;
+		pr_debug("invariant_tsc ");
 	}
 	pr_debug("\n");
 }

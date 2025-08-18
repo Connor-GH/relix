@@ -230,7 +230,6 @@ read_port(HBAPort *port, uint64_t start, uint16_t count, uint16_t *buf)
 {
 	ata_clear_pending_interrupts(port);
 	// Spin lock timeout counter
-	int spin = 0;
 	int slot = find_cmdslot(port);
 	if (slot == -1) {
 		return false;
@@ -250,8 +249,6 @@ bool
 write_port(HBAPort *port, uint64_t start, uint16_t count, uint16_t *buf)
 {
 	ata_clear_pending_interrupts(port);
-	// Spin lock timeout counter
-	int spin = 0;
 	int slot = find_cmdslot(port);
 	if (slot == -1) {
 		return false;
@@ -271,8 +268,6 @@ bool
 disk_identify(HBAPort *port, IdentifyDevicePIO *buf)
 {
 	ata_clear_pending_interrupts(port);
-	// Spin lock timeout counter
-	int spin = 0;
 	uint16_t count = 1;
 	uint64_t start = 0;
 	int slot = find_cmdslot(port);

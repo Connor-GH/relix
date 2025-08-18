@@ -1,5 +1,4 @@
 #pragma once
-#include "../include/vga.h"
 #include <limits.h>
 #include <stdint.h>
 // Memory layout
@@ -35,16 +34,10 @@
 
 #ifndef __ASSEMBLER__
 
-static inline uintptr_t
-v2p(void *a)
-{
-	return ((uintptr_t)(a)) - ((uintptr_t)KERNBASE);
-}
-static inline void *
-p2v(uintptr_t a)
-{
-	return (void *)((a) + ((uintptr_t)KERNBASE));
-}
+uintptr_t v2p(void *a);
+void *p2v(uintptr_t a);
+uintptr_t v2io(void *a);
+void *io2v(uintptr_t a);
 
 #endif
 

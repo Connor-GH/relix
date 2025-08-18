@@ -8,6 +8,7 @@
 pub mod allocator;
 pub mod ansi_escape;
 pub mod file;
+pub mod hda;
 pub mod lock;
 pub mod pci;
 pub mod printing;

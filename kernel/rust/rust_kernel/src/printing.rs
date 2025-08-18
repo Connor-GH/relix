@@ -37,9 +37,8 @@ macro_rules! println {
 }
 
 pub fn debug(args: core::fmt::Arguments) {
-    if cfg!(kernel_debug) {
-        print(args);
-    }
+    #[cfg(kernel_debug)]
+    print(args);
 }
 
 #[macro_export]

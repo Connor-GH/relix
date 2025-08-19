@@ -89,12 +89,9 @@ malloc(size_t nbytes)
 {
 	Header *p, *prevp;
 	size_t nunits;
-#if defined(MEMORY_GUARDS)
 	if (nbytes == 0) {
-		fprintf(stderr, "malloc(0) is undefined behavior.\n");
-		abort();
+		return NULL;
 	}
-#endif
 	nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
 	// There is no free list yet, so we need to make one.
 	if ((prevp = freep) == NULL) {

@@ -9,6 +9,8 @@ bsearch(const void *key, const void *base, size_t nmemb, size_t size,
 	int rc;
 	size_t corr;
 
+	// We end up leaving early if nmemb is 0,
+	// which fits with what C2y says.
 	while (nmemb) {
 		/* algorithm needs -1 correction if remaining elements are an even number.
 		 */

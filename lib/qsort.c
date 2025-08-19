@@ -113,6 +113,7 @@ local_qsort(void *a, size_t n, size_t es, int (*cmp)(const void *, const void *)
 	int swap_cnt;
 
 	/* if there are less than 2 elements, then sorting is not needed */
+	/* Also covers the C2y case of zero-length operations on NULL pointers */
 	if (__predict_false(n < 2))
 		return;
 loop:

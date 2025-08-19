@@ -33,7 +33,7 @@ main(int argc, char **argv)
 	bool zflag, nflag;
 	zflag = nflag = false;
 	int c;
-	char *my_string;
+	char *my_string = "";
 	while ((c = getopt(argc, argv, "z:n:")) != -1) {
 		switch (c) {
 		case 'z':

@@ -36,7 +36,7 @@ wc(int fd, const char *name)
 }
 
 int
-main(int argc, const char *argv[])
+main(int argc, char *argv[])
 {
 	int fd, i;
 

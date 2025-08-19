@@ -20,9 +20,9 @@ startup(void)
 	__init_stdio();
 }
 
-char *const *environ;
+char **environ;
 void
-_start(int argc, char *const *argv, char *const *envp)
+_start(int argc, char **argv, char **envp)
 {
 	environ = envp;
 	assert(environ != NULL);

@@ -68,12 +68,12 @@ rename(const char *oldpath, const char *newpath)
 static int
 flush(FILE *stream)
 {
-	if (stream == NULL) {
+	if (__unlikely(stream == NULL)) {
 		errno = EBADF;
 		return -1;
 	}
 
-	// fwrite(stream->write_buffer, 1, stream->write_buffer_index, stream);
+	// write(stream->fd, stream->write_buffer, stream->write_buffer_index);
 	writev(stream->fd,
 	       &(const struct iovec){ stream->write_buffer,
 	                              stream->write_buffer_index },
@@ -85,9 +85,9 @@ flush(FILE *stream)
 int
 fflush(FILE *stream)
 {
-	if (stream == NULL) {
+	if (__unlikely(stream == NULL)) {
 		for (size_t i = 0; i < open_files_index; i++) {
-			fflush(open_files[i]);
+			(void)flush(open_files[i]);
 		}
 	}
 	return flush(stream);
@@ -96,17 +96,13 @@ fflush(FILE *stream)
 int
 fileno(FILE *stream)
 {
-	if (stream != NULL) {
-		return stream->fd;
-	}
-	errno = EBADF;
-	return -1;
+	return stream->fd;
 }
 
 static int
 string_to_flags(const char *restrict mode)
 {
-	if (mode == NULL) {
+	if (__unlikely(mode == NULL)) {
 		goto bad_mode;
 	}
 	int flags_val = -1;
@@ -163,7 +159,7 @@ FILE *
 freopen(const char *restrict pathname, const char *restrict mode,
         FILE *restrict stream)
 {
-	if (stream && !stream->error && stream->fd != -1) {
+	if (__likely(!stream->error && stream->fd != -1)) {
 		fclose(stream);
 	}
 	stream = fopen(pathname, mode);
@@ -173,11 +169,7 @@ freopen(const char *restrict pathname, const char *restrict mode,
 int
 feof(FILE *stream)
 {
-	if (stream) {
-		return stream->eof;
-	} else {
-		return -1;
-	}
+	return stream->eof;
 }
 
 // Mandated by POSIX
@@ -189,7 +181,7 @@ fdopen(int fd, const char *restrict mode)
 		return NULL;
 	}
 	FILE *fp = malloc(sizeof(FILE));
-	if (fp == NULL) {
+	if (__unlikely(fp == NULL)) {
 		return NULL;
 	}
 	fp->flags = string_to_flags(mode);
@@ -202,7 +194,7 @@ fdopen(int fd, const char *restrict mode)
 	fp->eof = false;
 	fp->error = false;
 	fp->write_buffer = malloc(BUFSIZ);
-	if (fp->write_buffer == NULL) {
+	if (__unlikely(fp->write_buffer == NULL)) {
 		free(fp);
 		return NULL;
 	}
@@ -231,10 +223,6 @@ fdopen(int fd, const char *restrict mode)
 int
 fclose(FILE *stream)
 {
-	if (stream == NULL) {
-		errno = EBADF;
-		return EOF;
-	}
 	fflush(stream);
 	if (stream->write_buffer != NULL) {
 		free(stream->write_buffer);
@@ -294,11 +282,6 @@ fgets(char *buf, int max, FILE *restrict stream)
 	int i;
 	char c;
 
-	if (stream == NULL) {
-		errno = EINVAL;
-		return NULL;
-	}
-
 	for (i = 0; i + 1 < max;) {
 		c = getc(stream);
 		if (c == EOF) {
@@ -318,32 +301,35 @@ fgets(char *buf, int max, FILE *restrict stream)
 // This is where the buffered IO happens.
 // It functions for both characters and pixels
 // (in the format described in libgui)
+__NONNULL(1)
 static void
 fd_putc(FILE *fp, char c, char *__attribute__((unused)) buf)
+
 {
-	if (fp == NULL) {
-		return;
-	}
 	fp->write_buffer[fp->write_buffer_index++] = c;
-	if (fp && ((fp->buffer_mode == _IOFBF &&
-	            fp->write_buffer_index >= fp->write_buffer_size - 1) ||
-	           (fp->buffer_mode == _IONBF) ||
-	           (fp->buffer_mode == _IOLBF && c == '\n'))) {
+	if (((fp->buffer_mode == _IOFBF &&
+	      fp->write_buffer_index >= fp->write_buffer_size - 1) ||
+	     (fp->buffer_mode == _IONBF) ||
+	     (fp->buffer_mode == _IOLBF && c == '\n'))) {
 		flush(fp);
 	}
 }
+
+__NONNULL(3)
 static void
 string_putc(FILE *__attribute__((unused)) fp, char c, char *buf)
 {
 	buf[global_idx] = c;
 	global_idx++;
 }
+
 int
 fputc(int c, FILE *stream)
 {
 	fd_putc(stream, c, NULL);
 	return c;
 }
+
 int
 putchar(int c)
 {
@@ -361,7 +347,7 @@ vfprintf(FILE *restrict stream, const char *restrict fmt, va_list argp)
 {
 	int ret = __libc_vprintf_template(fd_putc, ansi_noop, stream, NULL, fmt, argp,
 	                                  SIZE_MAX);
-	if (stream && stream->stdio_flush) {
+	if (stream->stdio_flush) {
 		flush(stream);
 	}
 	return ret;
@@ -450,7 +436,7 @@ sscanf(const char *restrict str, const char *restrict fmt, ...)
 			case 'i':
 			case 'd': {
 				format_size++;
-				char *cont = "this has to be initialized to something";
+				char *cont;
 				int d = strtol(str + i, &cont, 10);
 				*va_arg(listp, int *) = d;
 				i += cont - (str + i) - format_size;
@@ -489,7 +475,7 @@ fprintf(FILE *restrict stream, const char *restrict fmt, ...)
 	return ret;
 }
 
-__attribute__((format(printf, 2, 3))) int
+int
 dprintf(int fd, const char *restrict fmt, ...)
 {
 	FILE *fp = fdopen(fd, "w");
@@ -511,7 +497,7 @@ vprintf(const char *restrict fmt, va_list argp)
 	return vfprintf(stdout, fmt, argp);
 }
 
-__attribute__((format(printf, 1, 2))) int
+int
 printf(const char *restrict fmt, ...)
 {
 	int ret;
@@ -537,20 +523,16 @@ puts(const char *restrict s)
 int
 setvbuf(FILE *restrict stream, char *restrict buf, int modes, size_t n)
 {
-	if (buf != NULL) {
+	if (__likely(buf != NULL)) {
 		fflush(stream);
-		if (stream != NULL) {
-			stream->write_buffer = buf;
-			stream->write_buffer_size = n;
-		}
+		stream->write_buffer = buf;
+		stream->write_buffer_size = n;
 	}
-	if (!(modes == _IOFBF || modes == _IOLBF || modes == _IONBF)) {
+	if (__unlikely(!(modes == _IOFBF || modes == _IOLBF || modes == _IONBF))) {
 		errno = EINVAL;
 		return -1;
 	}
-	if (stream != NULL) {
-		stream->buffer_mode = modes;
-	}
+	stream->buffer_mode = modes;
 	return 0;
 }
 
@@ -575,10 +557,8 @@ perror(const char *s)
 void
 clearerr(FILE *stream)
 {
-	if (stream) {
-		stream->eof = false;
-		stream->error = false;
-	}
+	stream->eof = false;
+	stream->error = false;
 }
 
 char *
@@ -634,20 +614,12 @@ fread(void *ptr, size_t size, size_t nmemb, FILE *restrict stream)
 long
 ftell(FILE *stream)
 {
-	if (stream) {
-		return lseek(stream->fd, 0L, SEEK_CUR);
-	} else {
-		errno = -EBADF;
-		return -1;
-	}
+	return lseek(stream->fd, 0L, SEEK_CUR);
 }
 
 void
 rewind(FILE *stream)
 {
-	if (stream == NULL) {
-		return;
-	}
 	(void)fseek(stream, 0L, SEEK_SET);
 	clearerr(stream);
 }
@@ -655,11 +627,6 @@ rewind(FILE *stream)
 int
 fseek(FILE *stream, long offset, int whence)
 {
-	if (stream) {
-		clearerr(stream);
-		return lseek(stream->fd, offset, whence);
-	} else {
-		errno = EBADF;
-		return -1;
-	}
+	clearerr(stream);
+	return lseek(stream->fd, offset, whence);
 }

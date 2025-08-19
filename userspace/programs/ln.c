@@ -3,7 +3,7 @@
 #include <unistd.h>
 
 int
-main(int argc, char *const argv[])
+main(int argc, char *argv[])
 {
 	char c;
 	bool sflag = false;

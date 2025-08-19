@@ -57,7 +57,7 @@ to_human_bytes(uint32_t number, char human_name[static 7])
 	} else {
 		letter = 'B';
 	}
-	sprintf(human_name, "%5u", number);
+	snprintf(human_name, 7, "%5u", number);
 	human_name[5] = letter;
 	human_name[6] = '\0';
 	return human_name;
@@ -66,7 +66,7 @@ to_human_bytes(uint32_t number, char human_name[static 7])
 static char *
 fmtname(char *path, int fmt_flag)
 {
-	static char buf[PATH_MAX + 1];
+	static char buf[PATH_MAX + 1] = {};
 	char *p;
 	char *indicator = "";
 	bool skip_fmt = false;
@@ -94,8 +94,8 @@ fmtname(char *path, int fmt_flag)
 	case FMT_LINK:
 		indicator = "@";
 		skip_fmt = true;
-		char sprintf_buf[PATH_MAX] = {};
 		char readlink_buf[PATH_MAX] = {};
+		char sprintf_buf[PATH_MAX + sizeof(readlink_buf) + 4 + 2] = {};
 		if (!Lflag) {
 			if (readlink(buf, readlink_buf, PATH_MAX) < 0) {
 				fprintf(stderr, "readlink `%s'", buf);
@@ -105,7 +105,10 @@ fmtname(char *path, int fmt_flag)
 			if (Fflag) {
 				strncat(buf, indicator, 2);
 			}
-			sprintf(sprintf_buf, "%s -> %s", buf, readlink_buf);
+			strncpy(sprintf_buf, buf, sizeof(sprintf_buf));
+			strncat(sprintf_buf, " -> ", 5);
+			strncat(sprintf_buf, readlink_buf, sizeof(readlink_buf) + 1);
+			snprintf(sprintf_buf, sizeof(sprintf_buf), "%s -> %s", buf, readlink_buf);
 			memcpy(buf, sprintf_buf, PATH_MAX);
 		}
 

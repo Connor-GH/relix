@@ -25,7 +25,7 @@ strcmp(const char *p, const char *q)
 {
 	size_t np = strlen(p);
 	size_t nq = strlen(q);
-	return strncmp(p, q, (np > nq ? nq : np) + 1);
+	return strncmp(p, q, min(np, nq) + 1);
 }
 
 // We do not currently support locales outside of C.
@@ -58,11 +58,11 @@ strstr(const char *s1, const char *s2)
 int
 strncmp(const char *p, const char *q, size_t n)
 {
+	if (__unlikely(n == 0)) {
+		return 0;
+	}
 	while (n > 0 && *p && *p == *q) {
 		n--, p++, q++;
-	}
-	if (n == 0) {
-		return 0;
 	}
 	return (uint8_t)*p - (uint8_t)*q;
 }
@@ -70,11 +70,11 @@ strncmp(const char *p, const char *q, size_t n)
 int
 strncasecmp(const char *p, const char *q, size_t n)
 {
+	if (__unlikely(n == 0)) {
+		return 0;
+	}
 	while (n > 0 && *p && tolower(*p) == tolower(*q)) {
 		n--, p++, q++;
-	}
-	if (n == 0) {
-		return 0;
 	}
 	return (uint8_t)*p - (uint8_t)*q;
 }
@@ -89,7 +89,7 @@ strlen(const char *s)
 {
 	size_t n;
 
-	for (n = 0; s && s[n]; n++)
+	for (n = 0; s[n]; n++)
 		;
 	return n;
 }
@@ -97,8 +97,11 @@ size_t
 strnlen(const char *s, size_t size)
 {
 	size_t n;
+	if (__unlikely(size == 0)) {
+		return 0;
+	}
 
-	for (n = 0; n < size && s && s[n]; n++)
+	for (n = 0; n < size && s[n]; n++)
 		;
 	return n;
 }
@@ -142,6 +145,9 @@ strrchr(const char *s, int c)
 	return memchr(s, c, strlen(s) + 1);
 }
 
+// This sufficiently handles the case where
+// strncpy(NULL, NULL, 0) is called, as it
+// returns dst. This is needed due to C2y.
 char *
 strncpy(char *dst, const char *src, size_t n)
 {
@@ -161,18 +167,15 @@ strncpy(char *dst, const char *src, size_t n)
 char *
 stpncpy(char *dst, const char *src, size_t n)
 {
+	if (__unlikely(n == 0)) {
+		return dst;
+	}
 	while (n-- > 0 && (*dst++ = *src++) != 0)
 		;
 	while (n-- > 1) {
 		*dst++ = '\0';
 	}
 	return dst;
-}
-
-void
-bcopy(const void *src, void *dst, size_t n)
-{
-	memmove(dst, src, n);
 }
 
 static char *restrict __strtok_token = NULL;
@@ -226,6 +229,9 @@ int
 memcmp(const void *v1, const void *v2, size_t n)
 {
 	const uint8_t *dst, *s2;
+	if (__unlikely(n == 0)) {
+		return 0;
+	}
 
 	dst = v1;
 	s2 = v2;
@@ -238,11 +244,6 @@ memcmp(const void *v1, const void *v2, size_t n)
 
 	return 0;
 }
-__deprecated("Removed in POSIX.1-2008") int bcmp(const void *v1, const void *v2,
-                                                 size_t n)
-{
-	return memcmp(v1, v2, n);
-}
 
 // Based on code from https://libc11.org/string/memmove.html (public domain)
 void *
@@ -250,11 +251,11 @@ memmove(void *dst, const void *src, size_t n)
 {
 	char *dest = (char *)dst;
 	const char *source = (const char *)src;
-	if (dest == source || n == 0) {
+	if (__unlikely(dest == source || n == 0)) {
 		return dst;
 	}
 
-	if (dest == NULL) {
+	if (__unlikely(dest == NULL)) {
 		return NULL;
 	}
 	// If source is lower than dest in memory,
@@ -274,6 +275,8 @@ memmove(void *dst, const void *src, size_t n)
 	return dst;
 }
 
+// Since C2y defines NULL+0 == NULL and our memcpy follows
+// the C2y 0-length no-op, this is well-defined.
 void *
 mempcpy(void *dst, const void *src, size_t n)
 {
@@ -283,6 +286,7 @@ mempcpy(void *dst, const void *src, size_t n)
 void *
 memcpy(void *dst, const void *src, size_t n)
 {
+	return movsb(dst, src, n);
 	for (size_t i = 0; i < n; i++) {
 		((char *)dst)[i] = ((char *)src)[i];
 	}
@@ -310,6 +314,9 @@ strcat(char *restrict dst, const char *restrict src)
 char *
 strncat(char *dst, const char *src, size_t n)
 {
+	if (__unlikely(n == 0)) {
+		return dst;
+	}
 	size_t start = strlen(dst);
 	size_t j = 0;
 	for (size_t i = start; i < start + n; i++, j++) {
@@ -333,6 +340,7 @@ __safestrcpy(char *s, const char *t, size_t n)
 	*s = 0;
 	return os;
 }
+
 char *
 __strlcpy_nostrlen(char *dst, const char *src, size_t dst_len, size_t src_len)
 {
@@ -411,8 +419,8 @@ strpbrk(const char *s1, const char *s2)
 char *
 strndup(const char *s, size_t n)
 {
-	if (s == NULL) {
-		return NULL;
+	if (__unlikely(s == NULL || n == 0)) {
+		return (char *)s;
 	}
 	char *new_s = malloc(n);
 	if (new_s == NULL) {

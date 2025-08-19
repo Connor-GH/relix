@@ -24,7 +24,7 @@ cat(int fd)
 }
 
 int
-main(int argc, const char *argv[])
+main(int argc, char *argv[])
 {
 	if (argc <= 1) {
 		cat(STDIN_FILENO);

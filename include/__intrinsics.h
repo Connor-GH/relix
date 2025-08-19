@@ -126,7 +126,7 @@ write_cr0(uint64_t value)
 }
 
 static __always_inline void
-stosb(void *addr, int data, int cnt)
+stosb(void *addr, uint8_t data, size_t cnt)
 {
 	__asm__ __volatile__("cld; rep stosb"
 	                     : "=D"(addr), "=c"(cnt)
@@ -135,7 +135,7 @@ stosb(void *addr, int data, int cnt)
 }
 
 static __always_inline void
-stosl(void *addr, int data, int cnt)
+stosl(void *addr, int data, size_t cnt)
 {
 	__asm__ __volatile__("cld; rep stosl"
 	                     : "=D"(addr), "=c"(cnt)
@@ -143,7 +143,7 @@ stosl(void *addr, int data, int cnt)
 	                     : "memory", "cc");
 }
 static __always_inline void *
-movsq(uint64_t *dst, uint64_t *src, size_t size)
+movsq(uint64_t *dst, const uint64_t *src, size_t size)
 {
 	__asm__ __volatile__("rep movsq"
 	                     : "+D"(dst), "+S"(src), "+c"(size)
@@ -152,7 +152,7 @@ movsq(uint64_t *dst, uint64_t *src, size_t size)
 	return dst;
 }
 static __always_inline void *
-movsb(uint8_t *dst, uint8_t *src, size_t size)
+movsb(uint8_t *dst, const uint8_t *src, size_t size)
 {
 	__asm__ __volatile__("rep movsb"
 	                     : "+D"(dst), "+S"(src), "+c"(size)

@@ -75,7 +75,7 @@ kpage_free(char *v) __releases(kpage)
 	}
 
 	if ((uintptr_t)v % PGSIZE || v < __kernel_end ||
-	    (V2P(v) >= available_memory && likely(available_memory > 0))) {
+	    (V2P(v) >= available_memory && __likely(available_memory > 0))) {
 		panic("kpage_free");
 	}
 

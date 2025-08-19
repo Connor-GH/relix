@@ -109,7 +109,7 @@ ideinit(void)
 static void
 idestart(struct block_buffer *b)
 {
-	if (unlikely(b == NULL)) {
+	if (__unlikely(b == NULL)) {
 		panic("idestart");
 	}
 	if (b->blockno >= FSSIZE) {

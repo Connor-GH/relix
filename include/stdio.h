@@ -11,6 +11,16 @@
 #include <bits/types.h>
 #include <bits/va_list.h>
 
+#ifndef __NONNULL
+#define __NONNULL(...) __attribute__((__nonnull__(__VA_ARGS__)))
+#endif
+#ifndef __PRINTF_LIKE
+#define __PRINTF_LIKE(...) __attribute__((__format__(__printf__, __VA_ARGS__)))
+#endif
+#ifndef __SCANF_LIKE
+#define __SCANF_LIKE(...) __attribute__((__format__(__scanf__, __VA_ARGS__)))
+#endif
+
 typedef __va_list va_list;
 typedef __off_t off_t;
 typedef __size_t size_t;
@@ -46,53 +56,58 @@ extern FILE *stderr;
 #define EOF (-1)
 #define FILENAME_MAX __DIRSIZ
 
-int vfprintf(FILE *restrict, const char *restrict fmt, va_list argp);
-__attribute__((format(printf, 2, 3))) int
-fprintf(FILE *restrict, const char *restrict fmt, ...);
+int vfprintf(FILE *restrict, const char *restrict fmt, va_list argp)
+	__NONNULL(1);
+int fprintf(FILE *restrict, const char *restrict fmt, ...) __PRINTF_LIKE(2, 3)
+	__NONNULL(1);
 int vprintf(const char *restrict fmt, va_list argp);
-__attribute__((format(printf, 1, 2))) int printf(const char *restrict fmt, ...);
-__attribute__((format(printf, 2, 3))) int
-dprintf(int fd, const char *restrict fmt, ...);
-__attribute__((format(printf, 3, 4))) int
-snprintf(char *restrict str, size_t n, const char *restrict fmt, ...);
+int printf(const char *restrict fmt, ...) __PRINTF_LIKE(1, 2);
+int dprintf(int fd, const char *restrict fmt, ...) __PRINTF_LIKE(2, 3);
+int snprintf(char *restrict str, size_t n, const char *restrict fmt, ...)
+	__PRINTF_LIKE(3, 4);
 int vsnprintf(char *restrict str, size_t n, const char *restrict fmt,
               va_list argp);
 int vsprintf(char *restrict str, const char *restrict fmt, va_list argp);
-__attribute__((format(printf, 2, 3))) int
-sprintf(char *restrict str, const char *restrict fmt, ...);
-char *fgets(char *restrict buf, int max, FILE *restrict steam);
-int fputs(const char *restrict s, FILE *restrict stream);
+int sprintf(char *restrict str, const char *restrict fmt, ...)
+	__PRINTF_LIKE(2, 3);
+char *fgets(char *restrict buf, int max, FILE *restrict steam) __NONNULL(3);
+int fputs(const char *restrict s, FILE *restrict stream) __NONNULL(2);
 int puts(const char *s);
-void setlinebuf(FILE *restrict stream);
-int setvbuf(FILE *restrict stream, char *restrict buf, int modes, size_t n);
-void setbuf(FILE *restrict stream, char *restrict buf);
-int getc(FILE *stream);
+void setlinebuf(FILE *restrict stream) __NONNULL(1);
+int setvbuf(FILE *restrict stream, char *restrict buf, int modes, size_t n)
+	__NONNULL(1);
+void setbuf(FILE *restrict stream, char *restrict buf) __NONNULL(1);
+int getc(FILE *stream) __NONNULL(1);
 int getchar(void);
-int ungetc(int c, FILE *stream);
-int fileno(FILE *stream);
+int ungetc(int c, FILE *stream) __NONNULL(2);
+int fileno(FILE *stream) __NONNULL(1);
 void perror(const char *s);
-int fputc(int c, FILE *stream);
+int fputc(int c, FILE *stream) __NONNULL(2);
 int putchar(int c);
+// stream can be NULL.
 int fflush(FILE *stream);
 FILE *fdopen(int fd, const char *restrict mode);
 FILE *fopen(const char *restrict pathname, const char *restrict mode);
 FILE *freopen(const char *restrict pathname, const char *restrict mode,
-              FILE *restrict stream);
-int fscanf(FILE *restrict stream, const char *restrict fmt, ...);
-int sscanf(const char *restrict str, const char *restrict fmt, ...);
-int feof(FILE *stream);
-int fclose(FILE *stream);
-size_t fread(void *ptr, size_t size, size_t nmemb, FILE *restrict stream);
-size_t fwrite(const void *ptr, size_t size, size_t nmemb,
-              FILE *restrict stream);
-int fseek(FILE *stream, long offset, int whence);
-int ferror(FILE *stream);
-void clearerr(FILE *stream);
-void rewind(FILE *stream);
+              FILE *restrict stream) __NONNULL(3);
+int fscanf(FILE *restrict stream, const char *restrict fmt, ...)
+	__SCANF_LIKE(2, 3) __NONNULL(1);
+int sscanf(const char *restrict str, const char *restrict fmt, ...)
+	__SCANF_LIKE(2, 3);
+int feof(FILE *stream) __NONNULL(1);
+int fclose(FILE *stream) __NONNULL(1);
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *restrict stream)
+	__NONNULL(4);
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *restrict stream)
+	__NONNULL(4);
+int fseek(FILE *stream, long offset, int whence) __NONNULL(1);
+int ferror(FILE *stream) __NONNULL(1);
+void clearerr(FILE *stream) __NONNULL(1);
+void rewind(FILE *stream) __NONNULL(1);
 
 int remove(const char *pathname);
 int rename(const char *oldpath, const char *newpath);
-long ftell(FILE *stream);
+long ftell(FILE *stream) __NONNULL(1);
 #define putc(c, stream) fputc(c, stream)
 #endif
 #endif /* USE_HOST_TOOLS */

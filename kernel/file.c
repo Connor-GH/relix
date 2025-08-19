@@ -70,7 +70,7 @@ filedup(struct file *f, int flags)
 {
 	acquire(&file_table.lock);
 
-	if (unlikely(f->ref < 1)) {
+	if (__unlikely(f->ref < 1)) {
 		panic("filedup");
 	}
 	f->ref++;
@@ -448,7 +448,7 @@ int
 fileclose(struct file *f)
 {
 	acquire(&file_table.lock);
-	if (unlikely(f->ref < 1)) {
+	if (__unlikely(f->ref < 1)) {
 		panic("fileclose: file already closed");
 	}
 	// Is the file open somewhere else?

@@ -44,9 +44,9 @@
 #define __suppress_sanitizer(x) __attribute__((no_sanitize(x)))
 
 #if __has_builtin(__builtin_constant_p) && __has_builtin(__builtin_expect)
-#define likely(x) (__builtin_expect(!!(x), 1))
-#define unlikely(x) (__builtin_expect(!!(x), 0))
+#define __likely(x) (__builtin_expect(!!(x), 1))
+#define __unlikely(x) (__builtin_expect(!!(x), 0))
 #else
-#define likely(x) (x)
-#define unlikely(x) (x)
+#define __likely(x) (x)
+#define __unlikely(x) (x)
 #endif

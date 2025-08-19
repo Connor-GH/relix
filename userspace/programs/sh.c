@@ -19,7 +19,7 @@
 #define PIPE 3
 #define LIST 4
 #define BACK 5
-extern char *const *environ;
+extern char **environ;
 
 void
 sigint_handler(int signum)

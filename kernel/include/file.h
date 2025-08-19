@@ -72,8 +72,7 @@ struct inode *resolve_nameat(int dirfd, const char *path);
 
 // Generalized functions for file operations.
 int fileclose(struct file *);
-struct inode *filecreate(int dirfd, char *path, mode_t mode, short major,
-                         short minor);
+struct inode *filecreate(int dirfd, char *path, mode_t mode, dev_t dev);
 int fileopenat(int dirfd, char *path, int flags, mode_t mode);
 struct file *filedup(struct file *f, int flags);
 void fileinit(void);

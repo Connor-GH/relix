@@ -1,3 +1,4 @@
+#include "pwd.h"
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -8,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -191,11 +193,21 @@ ls_format(char *buf, struct stat st)
 		}
 		char ret[11];
 		fprintf(stdout, "%s ", mode_to_perm(st.st_mode, ret));
-		if (hflag) {
-			fprintf(stdout, "%4d %4d %s ", st.st_uid, st.st_gid,
-			        to_human_bytes(st.st_size, human_bytes_buf));
+		struct passwd *passwd = getpwuid(st.st_uid);
+		if (passwd == NULL) {
+			perror("getpwuid");
+			exit(EXIT_FAILURE);
+		}
+		// TODO: add getgrgid (/etc/group) and use it here.
+		fprintf(stdout, "%s %s ", passwd->pw_name, passwd->pw_name);
+		if (!S_ISBLK(st.st_mode) && !S_ISCHR(st.st_mode)) {
+			if (hflag) {
+				fprintf(stdout, "%s ", to_human_bytes(st.st_size, human_bytes_buf));
+			} else {
+				fprintf(stdout, "%6lu ", st.st_size);
+			}
 		} else {
-			fprintf(stdout, "%4d %4d %6lu ", st.st_uid, st.st_gid, st.st_size);
+			fprintf(stdout, " %2d,%2d ", major(st.st_dev), minor(st.st_dev));
 		}
 		struct tm *lt = localtime(&st.st_mtime);
 		fprintf(stdout, "%02d-%02d %02d:%02d ", lt->tm_mon, lt->tm_mday,

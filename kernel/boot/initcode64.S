@@ -27,7 +27,7 @@ init:
 
 .align 8
 # This is where system-wide default environment variables are set.
-env0: .string "PATH=/bin:/usr/bin:/\0"
+env0: .string "PATH=/bin:/usr/bin\0"
 env1: .string "HOME=/\0"
 env2: .string "SHELL=/bin/sh\0"
 # We don't support all of xterm, but let's pretend we do.

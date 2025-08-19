@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 
 struct devsw devsw[NDEV];
 
@@ -165,7 +166,7 @@ filereadlinkat(int dirfd, const char *restrict pathname, char *buf,
 // - give it some default stats (more if a directory)
 // - attach the file to a directory [dirlink]
 struct inode *
-filecreate(int dirfd, char *path, mode_t mode, short major, short minor)
+filecreate(int dirfd, char *path, mode_t mode, dev_t dev)
 {
 	struct inode *ip, *dp;
 	char name[DIRSIZ];
@@ -206,8 +207,8 @@ filecreate(int dirfd, char *path, mode_t mode, short major, short minor)
 	}
 
 	inode_lock(ip);
-	ip->major = major;
-	ip->minor = minor;
+	ip->major = major(dev);
+	ip->minor = minor(dev);
 	ip->nlink = 1;
 	ip->mode = mode;
 	ip->gid = DEFAULT_GID;
@@ -307,7 +308,7 @@ fileopenat(int dirfd, char *path, int flags, mode_t mode)
 		}
 		// filecreate() holds a lock on this inode pointer,
 		// but only if it succeeds.
-		ip = filecreate(dirfd, path, mode, 0, 0);
+		ip = filecreate(dirfd, path, mode, 0);
 		if (ip == NULL) {
 			end_op();
 			return -EIO;

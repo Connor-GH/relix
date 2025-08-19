@@ -22,6 +22,7 @@
 #include "proc.h"
 #include "sleeplock.h"
 #include "spinlock.h"
+#include "sys/sysmacros.h"
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -540,7 +541,7 @@ void
 inode_stat(struct inode *ip, struct stat *st) __must_hold(&ip->lock)
 {
 	kernel_assert(holdingsleep(&ip->lock));
-	st->st_dev = ip->dev;
+	st->st_dev = makedev(ip->major, ip->minor);
 	st->st_ino = ip->inum;
 	st->st_nlink = ip->nlink;
 	st->st_size = (off_t)ip->size;

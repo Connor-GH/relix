@@ -4,12 +4,11 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <signal.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/param.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
@@ -20,6 +19,8 @@
 #define LIST 4
 #define BACK 5
 extern char **environ;
+
+#define MAXARG 32
 
 void
 sigint_handler(int signum)
@@ -68,12 +69,11 @@ int fork1(void); // Fork but panics on failure.
 void __attribute__((noreturn)) panic(char *);
 struct cmd *parsecmd(char *);
 
-static char pwd[__DIRSIZ] = "/";
+static char pwd[PATH_MAX] = "/";
 // Execute cmd.  Never returns.
 void
 runcmd(struct cmd *cmd)
 {
-	char *str;
 	int p[2];
 	struct backcmd *bcmd;
 	struct execcmd *ecmd;
@@ -89,7 +89,6 @@ runcmd(struct cmd *cmd)
 		panic("runcmd");
 
 	case EXEC:
-		str = malloc(__DIRSIZ);
 		ecmd = (struct execcmd *)cmd;
 		if (ecmd->argv[0] == NULL) {
 			exit(1);
@@ -161,10 +160,7 @@ getcmd(char *buf, int nbuf)
 {
 	fprintf(stdout, "$ ");
 	memset(buf, 0, nbuf);
-	if (fgets(buf, nbuf, stdin) != buf) {
-		perror("fgets");
-		exit(1);
-	}
+	(void)fgets(buf, nbuf, stdin);
 	if (buf[0] == 0) { // EOF
 		return -1;
 	}
@@ -458,10 +454,10 @@ parseredirs(struct cmd *cmd, char **ps, char *es)
 			cmd = redircmd(cmd, q, eq, O_RDONLY, 0);
 			break;
 		case '>':
-			cmd = redircmd(cmd, q, eq, O_WRONLY | O_CREATE, 1);
+			cmd = redircmd(cmd, q, eq, O_WRONLY | O_CREAT, 1);
 			break;
 		case '+': // >>
-			cmd = redircmd(cmd, q, eq, O_WRONLY | O_CREATE, 1);
+			cmd = redircmd(cmd, q, eq, O_WRONLY | O_CREAT, 1);
 			break;
 		}
 	}

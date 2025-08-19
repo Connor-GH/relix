@@ -407,7 +407,7 @@ sys_mkdirat(void)
 		return -EAGAIN;
 	}
 	begin_op();
-	if ((ip = filecreate(fd, path, (S_IFDIR | mode) & ~myproc()->umask, 0, 0)) ==
+	if ((ip = filecreate(fd, path, (S_IFDIR | mode) & ~myproc()->umask, 0)) ==
 	    NULL) {
 		end_op();
 		return -ENOENT;
@@ -433,7 +433,7 @@ sys_mknodat(void)
 	PROPOGATE_ERR(argdev_t(3, &dev));
 
 	begin_op();
-	if ((ip = filecreate(fd, path, mode, major(dev), minor(dev))) == NULL) {
+	if ((ip = filecreate(fd, path, mode, dev)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
@@ -650,7 +650,7 @@ sys_symlinkat(void)
 	}
 	inode_unlockput(eexist);
 
-	if ((ip = filecreate(newdirfd, linkpath, S_IFLNK | S_IAUSR, 0, 0)) == NULL) {
+	if ((ip = filecreate(newdirfd, linkpath, S_IFLNK | S_IAUSR, 0)) == NULL) {
 		end_op();
 		return -ENOSPC;
 	}

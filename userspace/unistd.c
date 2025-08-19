@@ -88,10 +88,22 @@ execv(const char *prog, char *const *argv)
 int
 execvp(const char *file, char *const argv[])
 {
-	char str[__DIRSIZ];
+	char str[PATH_MAX];
 
 	char *path_env = getenv("PATH");
 	if (path_env == NULL) {
+		return -1;
+	}
+
+	if (file[0] == '.') {
+		// Check current directory.
+		if (getcwd(str, PATH_MAX) == NULL) {
+			return -1;
+		}
+
+		strncat(str, "/", 2);
+		strncat(str, file, strlen(file) + 1);
+		execve(str, argv, environ);
 		return -1;
 	}
 
@@ -105,15 +117,7 @@ execvp(const char *file, char *const argv[])
 			s = strtok(NULL, ":");
 		}
 	}
-	// Now check current directory.
-	if (getcwd(str, __DIRSIZ) == NULL) {
-		return -1;
-	}
 
-	if (strncat(stpcpy(str, "/"), file, strlen(file) + 1) == NULL) {
-		return -1;
-	}
-	execve(str, argv, environ);
 	return -1;
 }
 

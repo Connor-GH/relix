@@ -1,3 +1,4 @@
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -5,7 +6,7 @@
 int
 main(int argc, char **argv)
 {
-	char *buffer = malloc(__DIRSIZ);
+	char *buffer = malloc(SYMLINK_MAX);
 	if (buffer == NULL) {
 		perror("malloc");
 		exit(EXIT_FAILURE);
@@ -15,13 +16,13 @@ main(int argc, char **argv)
 		free(buffer);
 		return 1;
 	}
-	if (readlink(argv[1], buffer, __DIRSIZ) < 0) {
+	if (readlink(argv[1], buffer, SYMLINK_MAX) < 0) {
 		perror("readlink");
 		free(buffer);
 		return 2;
 	}
 
-	buffer[__DIRSIZ - 1] = '\0';
+	buffer[SYMLINK_MAX - 1] = '\0';
 	printf("%s\n", buffer);
 	free(buffer);
 	return 0;

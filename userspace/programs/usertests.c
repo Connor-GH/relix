@@ -1261,7 +1261,7 @@ dirsiz(void)
 {
 	int fd;
 
-	// __DIRSIZ is 14.
+	// 14 is the POSIX minimum, so we check for that.
 	fprintf(stdout, "dirsiz test\n");
 
 	if (mkdir("12345678901234", 0700) != 0) {

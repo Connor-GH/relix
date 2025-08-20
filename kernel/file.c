@@ -122,7 +122,7 @@ filereadlinkat(int dirfd, const char *restrict pathname, char *buf,
 		return -ENOENT;
 	}
 
-	nlink_t ref_count = NLINK_DEREF;
+	nlink_t ref_count = SYMLOOP_MAX;
 	inode_lock(ip);
 
 	if (!S_ISLNK(ip->mode)) {

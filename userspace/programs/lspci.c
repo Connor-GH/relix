@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
-#include <sys/param.h>
+
+#define MAX_PCI_DEVICES 32
 
 int
 main(void)

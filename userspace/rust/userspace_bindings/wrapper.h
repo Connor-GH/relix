@@ -8,7 +8,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <float.h>
-#include <getopt.h>
 #include <glob.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -34,7 +33,6 @@
 
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <sys/param.h>
 #include <sys/ptrace.h>
 #include <sys/reboot.h>
 #include <sys/resource.h>

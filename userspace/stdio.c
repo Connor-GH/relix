@@ -1,8 +1,8 @@
-#include "kernel/include/param.h"
 #include "libc_syscalls.h"
 #include "printf.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/uio.h>
@@ -22,7 +21,7 @@ FILE *stderr;
 
 int errno;
 
-static FILE *open_files[NFILE];
+static FILE *open_files[OPEN_MAX];
 static size_t open_files_index = 0;
 
 static size_t global_idx = 0;
@@ -203,11 +202,11 @@ fdopen(int fd, const char *restrict mode)
 	fp->stdio_flush = true;
 	fp->previous_char = EOF;
 	fp->buffer_mode = _IOFBF;
-	if (open_files_index < NFILE) {
+	if (open_files_index < OPEN_MAX) {
 		fp->static_table_index = open_files_index;
 		open_files[open_files_index++] = fp;
 	} else {
-		for (size_t i = 0; i < NFILE; i++) {
+		for (size_t i = 0; i < OPEN_MAX; i++) {
 			if (open_files[i] == NULL) {
 				fp->static_table_index = i;
 				open_files[i] = fp;
@@ -269,7 +268,7 @@ getchar(void)
 static void
 static_fgetc(FILE *stream, char c, char *buf)
 {
-	if (global_idx_fgetc < __DIRSIZ - 1) {
+	if (global_idx_fgetc < BUFSIZ - 1) {
 		buf[global_idx_fgetc++] = getc(stream);
 	} else {
 		buf[global_idx_fgetc++] = '\0';
@@ -396,7 +395,7 @@ sprintf(char *restrict str, const char *restrict fmt, ...)
 int
 vfscanf(FILE *restrict stream, const char *restrict fmt, va_list argp)
 {
-	static char static_buffer[__DIRSIZ];
+	static char static_buffer[BUFSIZ];
 	global_idx_fgetc = 0;
 	return __libc_vprintf_template(static_fgetc, ansi_noop, stream, static_buffer,
 	                               fmt, argp, -1);

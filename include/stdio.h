@@ -4,7 +4,6 @@
 #ifndef USE_HOST_TOOLS
 
 #if defined(__USER__)
-#include <bits/__DIRSIZ.h>
 #include <bits/__NULL.h>
 #include <bits/seek_constants.h>
 #include <bits/size_t.h>
@@ -53,8 +52,11 @@ extern FILE *stdin;
 extern FILE *stdout;
 extern FILE *stderr;
 
+#define stdin stdin
+#define stdout stdout
+#define stderr stderr
+
 #define EOF (-1)
-#define FILENAME_MAX __DIRSIZ
 
 int vfprintf(FILE *restrict, const char *restrict fmt, va_list argp)
 	__NONNULL(1);

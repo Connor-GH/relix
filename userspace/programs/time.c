@@ -1,4 +1,5 @@
 #include <ext.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/wait.h>
@@ -12,7 +13,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	time_t before = uptime();
-	char *path = malloc(FILENAME_MAX);
+	char *path = malloc(NAME_MAX);
 	if (path == NULL) {
 		perror("malloc");
 		exit(1);

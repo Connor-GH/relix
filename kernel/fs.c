@@ -268,7 +268,7 @@ inode_get(dev_t dev, ino_t inum)
 	acquire(&inode_table.lock);
 
 	// Is the inode already cached?
-	for (ip = &inode_table.inode[0]; ip < &inode_table.inode[NINODE - 1]; ip++) {
+	for (ip = &inode_table.inode[0]; ip < &inode_table.inode[NINODE]; ip++) {
 		if (ip->ref > 0 && ip->dev == dev && ip->inum == inum) {
 			ip->ref++;
 			release(&inode_table.lock);

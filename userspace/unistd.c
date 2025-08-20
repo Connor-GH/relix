@@ -351,7 +351,7 @@ getegid(void)
 	return getgid();
 }
 
-static char ttyname_buf[FILENAME_MAX];
+static char ttyname_buf[TTY_NAME_MAX];
 
 char *
 ttyname(int fd)

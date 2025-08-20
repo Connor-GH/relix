@@ -1,11 +1,10 @@
-#include "termios.h"
-#include <ext.h>
+#include <limits.h>
 #include <pwd.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/param.h>
+#include <termios.h>
 #include <unistd.h>
 
 extern char **environ;
@@ -13,8 +12,8 @@ extern char **environ;
 int
 main(int argc, char **argv)
 {
-	char username[MAX_USERNAME];
-	char passwd[MAX_PASSWD];
+	char username[LOGIN_NAME_MAX];
+	char passwd[MAX_INPUT];
 	struct passwd *entry;
 	int uid = -1;
 
@@ -41,10 +40,10 @@ main(int argc, char **argv)
 		goto autologin;
 	}
 try_again:
-	memset(username, 0, MAX_USERNAME);
-	memset(passwd, 0, MAX_PASSWD);
+	memset(username, 0, LOGIN_NAME_MAX);
+	memset(passwd, 0, MAX_INPUT);
 	printf("username: ");
-	if (fgets(username, MAX_USERNAME, stdin) != username) {
+	if (fgets(username, LOGIN_NAME_MAX, stdin) != username) {
 		perror("fgets");
 		exit(1);
 	}
@@ -57,7 +56,7 @@ try_again:
 	term.c_lflag &= ~ECHO;
 	tcsetattr(STDIN_FILENO, TCSADRAIN, &term);
 
-	if (fgets(passwd, MAX_PASSWD, stdin) != passwd) {
+	if (fgets(passwd, MAX_INPUT, stdin) != passwd) {
 		perror("fgets");
 		exit(1);
 	}

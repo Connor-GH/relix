@@ -379,6 +379,16 @@ set_remaining_features(CpuFeatures *cpu_features)
 		cpu_features->misc |= MISC_FEATURE_INVARIANT_TSC;
 		pr_debug("invariant_tsc ");
 	}
+#if CONFIG_TSC_ENUMERATE_FREQ
+	cpuid(0x15, 0, &a, &b, &c, &d);
+	if (b == 0 || c == 0) {
+		goto skip_tsc_and_nccc;
+	}
+
+	uint64_t freq = c * b / a;
+
+skip_tsc_and_nccc:
+#endif
 	pr_debug("\n");
 }
 

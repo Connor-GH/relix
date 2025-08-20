@@ -82,7 +82,6 @@ try_again:
 	char *actual_password = "x";
 
 	if (strcmp(passwd, actual_password) == 0) {
-		fprintf(stdout, "Password is correct!\n");
 autologin:;
 		if (uid == 0) {
 			setuid(uid);

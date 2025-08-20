@@ -117,6 +117,9 @@ acpi_config_smp(struct acpi_madt *madt)
 	}
 
 	lapic_addr = madt->lapic_addr_phys;
+	// Intel documentation says that this should be the
+	// base address of the lapic.
+	kernel_assert(lapic_addr == 0xFEE00000);
 
 	p = madt->table;
 	e = p + madt->header.length - sizeof(struct acpi_madt);
@@ -152,7 +155,7 @@ acpi_config_smp(struct acpi_madt *madt)
 			pr_debug_file("ioapic#%d @%x id=%d base=%d\n", nioapic, ioapic->addr,
 			              ioapic->id, ioapic->interrupt_base);
 			if (nioapic) {
-				pr_debug_file("warning: multiple ioapics are not supported");
+				pr_debug_file("warning: multiple ioapics are not supported\n");
 			} else {
 				ioapicid = ioapic->id;
 			}
@@ -177,7 +180,6 @@ setup_fadt(struct acpi_fadt *fadt)
 	if (!fadt) {
 		return;
 	}
-	pr_debug_file("Century: %d\n", fadt->century);
 }
 
 static int

@@ -48,8 +48,22 @@ lapicinit(void)
 	} else {
 		// APIC may stop during C-states or due to intel SpeedStep
 	}
-	lapicw(TDCR, X1);
+	// Divide by 1.
+	lapicw(TDCR, TDCR_X1);
+	// Set the timer to be periodic and tell it to use the timer interrupt.
 	lapicw(TIMER, PERIODIC | (T_IRQ0 + IRQ_TIMER));
+
+	// We want 1000 timer ticks a second (1 per millisecond).
+	// QEMU doesn't have CPUID 0x15 or 0x16, so we can't use those.
+	// TODO: we could calculate bus frequency based on running the
+	// lapic and using another known clock as a reference.
+	//
+	// This really confuses me. This is 1MHz, and it results
+	// in us getting 1000 interrupts per second. That implies
+	// a bus speed of 1GHz, which *has* to be incorrect.
+	//
+	// We should also stop using LAPIC as a timing source or
+	// a way of showing passage of time, and instead use TSC or HPET.
 	lapicw(TICR, 1000000);
 
 	// Disable logical interrupt lines.

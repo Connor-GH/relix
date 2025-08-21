@@ -30,12 +30,15 @@ static void startothers(void);
 static void mpmain(void) __attribute__((noreturn));
 extern uintptr_t *kpgdir;
 
+int early_init;
+
 uint64_t available_memory;
 uint64_t top_memory;
 
 int
 main(struct multiboot_info *mbinfo)
 {
+	early_init = 1;
 	/*-----------------------*\
 	| uart-only printing zone |
 	\*-----------------------*/
@@ -54,13 +57,14 @@ main(struct multiboot_info *mbinfo)
 
 	ioapicinit(); // another interrupt controller
 	uartinit2();
-	vga_cprintf("relix (built with %s and linker %s)\n", RELIX_COMPILER,
-	            RELIX_LINKER);
 	if (acpiinit() != 0) {
 		mpinit(); // detect other processors
 	}
 	lapicinit(); // interrupt controller
+	// After seginit, it's OK to call mycpu().
 	seginit(); // segment descriptors
+	vga_cprintf("relix (built with %s and linker %s)\n", RELIX_COMPILER,
+	            RELIX_LINKER);
 	picinit(); // disable pic
 	kbdinit();
 	// /dev/console, not to be confused with VGA memory
@@ -74,6 +78,7 @@ main(struct multiboot_info *mbinfo)
 	// timerinit();
 	pci_init();
 	startothers(); // start other processors
+	early_init = 0;
 	kinit2(P2V(8 * MiB), P2V(available_memory)); // must come after startothers()
 	userinit(); // first user process
 	mpmain(); // finish this processor's setup
@@ -84,6 +89,7 @@ void
 mpenter(void)
 {
 	switchkvm();
+	// After seginit, it's OK to call mycpu().
 	seginit();
 	lapicinit();
 	mpmain();

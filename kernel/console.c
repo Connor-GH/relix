@@ -170,13 +170,26 @@ ansi_noop(const char *s)
 {
 	return 0;
 }
+extern int early_init;
+
 __attribute__((format(printf, 1, 2)))
 __nonnull(1) void uart_printf(const char *fmt, ...)
 {
 	va_list argp;
 	va_start(argp, fmt);
 	kernel_vprintf_template(uartputc_wrapper, NULL, NULL, fmt, argp, &cons.lock,
-	                        ncpu > 1, -1);
+	                        ncpu > 1 && !early_init, -1);
+	va_end(argp);
+}
+
+// Early version of UART used as we bring up cores.
+__attribute__((format(printf, 1, 2)))
+__nonnull(1) void early_uart_printf(const char *fmt, ...)
+{
+	va_list argp;
+	va_start(argp, fmt);
+	kernel_vprintf_template(uartputc_wrapper, NULL, NULL, fmt, argp, &cons.lock,
+	                        false, -1);
 	va_end(argp);
 }
 

@@ -144,8 +144,9 @@ int argptr(int, char **, int);
 ssize_t argstr(int, char **);
 ssize_t fetchstr(uintptr_t, char **);
 
+struct cpu;
 // Init function for syscall/sysret.
-void syscall_init(void);
+void syscall_init(struct cpu *c);
 
 /*
  * Designed for functions that return int, where

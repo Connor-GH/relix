@@ -15,6 +15,8 @@ __attribute__((format(printf, 1, 2)))
 __nonnull(1) void vga_cprintf(const char *fmt, ...);
 __attribute__((format(printf, 1, 2)))
 __nonnull(1) void uart_printf(const char *fmt, ...);
+__attribute__((format(printf, 1, 2)))
+__nonnull(1) void early_uart_printf(const char *fmt, ...);
 __attribute__((format(printf, 2, 3)))
 __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...);
 

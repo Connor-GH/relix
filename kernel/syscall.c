@@ -251,7 +251,7 @@ static size_t (*syscalls[])(void) = {
 noreturn static void syscall_do(void);
 
 __attribute__((noinline)) void
-syscall_init(void)
+syscall_init(struct cpu *c)
 {
 	// Tell the EFER to enable syscall/sysret.
 	wrmsr(MSR_EFER, rdmsr(MSR_EFER) | EFER_SCE);
@@ -284,7 +284,10 @@ syscall_init(void)
 
 	wrmsr(MSR_STAR, star);
 	wrmsr(MSR_FMASK, FL_DIRECTION | FL_IF | FL_TRAP);
-	wrmsr(MSR_KERNEL_GS_BASE, (uint64_t)mycpu());
+
+	write_gs(SEG_KDATA);
+	wrmsr(MSR_KERNEL_GS_BASE, (uint64_t)c);
+	wrmsr(MSR_GS_BASE, (uint64_t)c);
 }
 
 void syswrap(struct trapframe *tf);

@@ -180,9 +180,7 @@ ps2mouseinit(void)
 
 	initlock(&mouselock.lock, "mouse");
 
-	acquire(&mouselock.lock);
 	mouselock.mouse_queue = create_queue_mouse_packet(kmalloc);
-	release(&mouselock.lock);
 
 	if (mouselock.mouse_queue == NULL) {
 		panic("Could not create mouse_queue");

@@ -112,6 +112,12 @@ write_cr0(uint64_t value)
 }
 
 static __always_inline void
+write_gs(uint16_t v)
+{
+	__asm__ __volatile__("movw %0, %%gs" : : "r"(v));
+}
+
+static __always_inline void
 stosb(void *addr, int data, int cnt)
 {
 	__asm__ __volatile__("cld; rep stosb"

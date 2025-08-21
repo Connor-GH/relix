@@ -112,8 +112,12 @@ void exit(int) __attribute__((noreturn));
 pid_t fork(void);
 int growproc(intptr_t);
 int kill(pid_t, int);
+
+// Slow version of mycpu() used in early boot.
+struct cpu *early_init_mycpu(void);
 struct cpu *mycpu(void);
 struct proc *myproc(void);
+
 void pinit(void);
 void procdump(void);
 void scheduler(void) __attribute__((noreturn));

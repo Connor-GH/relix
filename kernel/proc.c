@@ -66,10 +66,20 @@ my_cpu_id(void)
 }
 
 // Must be called with interrupts disabled to avoid the caller being
-// rescheduled between inode_readng lapicid and running through the loop.
-static int pass = 0;
+// rescheduled between reading lapicid and running through the loop.
+
 struct cpu *
 mycpu(void)
+{
+	struct cpu *c;
+	// c->self is located at offset 0.
+	// This is initialized in seginit.
+	__asm__ __volatile__("mov %%gs:0, %0" : "=r"(c));
+	return c;
+}
+
+struct cpu *
+early_init_mycpu(void)
 {
 	if (readrflags() & FL_IF) {
 		panic("mycpu called with interrupts enabled");
@@ -83,14 +93,6 @@ mycpu(void)
 			kernel_assert(cpus[i].apicid == i);
 			return &cpus[i];
 		}
-	}
-	// apicid is not familiar; we are probably in the early
-	// stages of booting. just use the first CPU for now.
-	// this is assured with "pass" because a real program would
-	// use far more mycpu() than 20,000. it's just enough to boot.
-	pass++;
-	if (pass < 200000) {
-		return &cpus[0];
 	}
 	panic("unknown apicid");
 }
@@ -148,6 +150,14 @@ found:
 
 	// Leave room for trap frame.
 	sp -= sizeof *p->tf;
+
+	// TODO: this is where we would
+	// assert for stack alignment.
+	// We need to be aligned to 16 bytes for
+	// sysv ABI. We use the trapframe for
+	// processes, but we should really be
+	// using a more minimal "sysframe" as seen
+	// in xv6-riscv@a7ca32e.
 	p->tf = (struct trapframe *)sp;
 
 	// Set up new context to start executing at forkret,

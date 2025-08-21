@@ -29,6 +29,7 @@
 #include "errno.h"
 #include "fs.h"
 #include "kalloc.h"
+#include "kernel_ld_syms.h"
 #include "memlayout.h"
 #include "mmu.h"
 #include "msr.h"
@@ -40,6 +41,23 @@
 #include <string.h>
 
 uintptr_t *kpgdir; // for use in scheduler()
+
+#define PHYSTOP 1
+#define DEVSPACETOP 1
+// every process's page table.
+static struct kmap {
+	void *virt;
+	uint64_t phys_start;
+	uint64_t phys_end;
+	int perm;
+} kmap[] = {
+	{ (void *)KERNBASE, 0, EXTMEM, PTE_W }, // I/O space
+	{ (void *)KERNLINK, V2P(KERNLINK), V2P(__kernel_data), 0 }, // kern
+	                                                            // text+rodata
+	{ (void *)__kernel_data, V2P(__kernel_data), PHYSTOP, PTE_W }, // kern
+	                                                               // data+memory
+	{ (void *)P2V(DEVSPACE), DEVSPACE, DEVSPACETOP, PTE_W }, // more devices
+};
 
 // Return the address of the PTE in page table pgdir
 // that corresponds to virtual address va.  If alloc!=0,
@@ -487,15 +505,12 @@ void
 seginit(void)
 {
 	void *local;
-	struct cpu *c;
 	uint32_t *idt = (uint32_t *)kalloc();
-	int n;
 	memset(idt, 0, PGSIZE);
 
-	for (n = 0; n < 256; n++) {
+	for (int n = 0; n < 256; n++) {
 		mkgate(idt, n, vectors[n], 0, 0);
 	}
-	mkgate(idt, 64, vectors[64], 3, 1);
 
 	lidt((void *)idt, PGSIZE);
 
@@ -513,7 +528,7 @@ seginit(void)
 	// Point FS to our local storage page.
 	wrmsr(MSR_FS_BASE, ((uint64_t)local));
 
-	c = &cpus[my_cpu_id()];
+	struct cpu *c = early_init_mycpu();
 	c->local = local;
 
 	c->self = c;
@@ -539,7 +554,7 @@ seginit(void)
 	lgdt((void *)c->gdt, sizeof(c->gdt));
 
 	ltr(SEG_TSS << 3);
-	syscall_init();
+	syscall_init(c);
 }
 
 // The core relix code only knows about two levels of page tables,

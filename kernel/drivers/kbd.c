@@ -473,9 +473,7 @@ kbdinit(void)
 {
 	initlock(&kbdlock.lock, "kbd");
 
-	acquire(&kbdlock.lock);
 	kbdlock.kbd_queue = create_queue_unsigned_char(kmalloc);
-	release(&kbdlock.lock);
 
 	if (kbdlock.kbd_queue == NULL) {
 		panic("Could not create kbd_queue");

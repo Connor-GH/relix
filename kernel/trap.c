@@ -20,6 +20,7 @@
 #include "uart.h"
 #include "x86.h"
 
+#define W_EXITCODE(ret, signal) ((ret) << 8 | (signal))
 enum {
 	PAGE_FAULT_PRESENT = 1 << 0,
 	PAGE_FAULT_WRITE = 1 << 1,

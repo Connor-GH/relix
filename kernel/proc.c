@@ -21,7 +21,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -332,7 +331,7 @@ fork(void)
 
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
-// until its parent calls wait() to find out it exited.
+// until its parent calls waitpid() to find out it exited.
 __noreturn void
 exit(int status)
 {
@@ -646,68 +645,139 @@ copy_signal_to_stack(struct proc *proc, int signal)
 	proc->tf->rsp = sp;
 }
 
+static int
+prockill(struct proc *p, int signal)
+{
+	if (signal == 0) {
+		return 0;
+	}
+	p->last_signal = signal;
+	if (p->sig_handlers[signal] == SIG_DFL) {
+		switch (signal) {
+		case SIGABRT:
+		case SIGALRM:
+		case SIGHUP:
+		case SIGQUIT:
+		case SIGSYS:
+		case SIGTERM:
+		case SIGTRAP:
+		case SIGUSR1:
+		case SIGUSR2:
+		case SIGVTALRM:
+		case SIGXCPU:
+		case SIGXFSZ:
+		case SIGSEGV:
+		case SIGBUS:
+		case SIGILL:
+		case SIGKILL:
+		case SIGPIPE:
+		case SIGINT:
+			p->killed = 1;
+			break;
+		case SIGTSTP:
+		case SIGTTIN:
+		case SIGTTOU:
+		case SIGSTOP:
+			p->state = STOPPED;
+			break;
+		case SIGCONT:
+			// Continue
+			p->state = RUNNABLE;
+			break;
+		default:
+		// Ignore signals
+		case SIGURG:
+		case SIGWINCH:
+			break;
+		}
+	} else if (p->sig_handlers[signal] != SIG_IGN) {
+		copy_signal_to_stack(p, signal);
+	}
+	// Wake process from sleep if necessary.
+	if (p->state == SLEEPING) {
+		p->state = RUNNABLE;
+	}
+	return 0;
+}
+
+static void
+kill_all_children(struct proc *proc, int signal)
+{
+	pid_t pgid_looking_for = proc->pgid;
+	acquire(&ptable.lock);
+	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+		if (p->pgid == pgid_looking_for && p->parent == proc) {
+			prockill(p, signal);
+		}
+	}
+	release(&ptable.lock);
+}
+
+// Get struct proc from Process ID, or return NULL.
+struct proc *
+get_process_from_pid(pid_t pid)
+{
+	acquire(&ptable.lock);
+	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+		if (p->pid == pid) {
+			release(&ptable.lock);
+			return p;
+		}
+	}
+
+	release(&ptable.lock);
+	return NULL;
+}
+
+static void
+kill_all_procs(int signal)
+{
+	acquire(&ptable.lock);
+	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+		prockill(p, signal);
+	}
+	release(&ptable.lock);
+}
+
+static int
+kill_single_proc(struct proc *p, int signal)
+{
+	acquire(&ptable.lock);
+	int ret = prockill(p, signal);
+	release(&ptable.lock);
+	return ret;
+}
+
 // Send the process with the given pid the given signal.
 // Process won't exit until it returns
 // to user space (see trap in trap.c).
 int
 kill(pid_t pid, int signal)
 {
-	acquire(&ptable.lock);
-	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-		if (p->pid == pid) {
-			p->last_signal = signal;
-
-			if (p->sig_handlers[signal] == SIG_DFL) {
-				switch (signal) {
-				case SIGABRT:
-				case SIGALRM:
-				case SIGHUP:
-				case SIGQUIT:
-				case SIGSYS:
-				case SIGTERM:
-				case SIGTRAP:
-				case SIGUSR1:
-				case SIGUSR2:
-				case SIGVTALRM:
-				case SIGXCPU:
-				case SIGXFSZ:
-				case SIGSEGV:
-				case SIGBUS:
-				case SIGILL:
-				case SIGKILL:
-				case SIGPIPE:
-				case SIGINT:
-					p->killed = 1;
-					break;
-				case SIGTSTP:
-				case SIGTTIN:
-				case SIGTTOU:
-				case SIGSTOP:
-					p->state = STOPPED;
-					break;
-				case SIGCONT:
-					// Continue
-					p->state = RUNNABLE;
-					break;
-				default:
-				// Ignore signals
-				case SIGURG:
-				case SIGWINCH:
-					break;
-				}
-			} else {
-				copy_signal_to_stack(p, signal);
-			}
-			// Wake process from sleep if necessary.
-			if (p->state == SLEEPING) {
-				p->state = RUNNABLE;
-			}
-			release(&ptable.lock);
-			return 0;
+	bool all_procs = pid == -1;
+	bool looking_for_pgids = pid != -1 && pid < 0;
+	struct proc *p;
+	if (!looking_for_pgids && !all_procs) {
+		p = get_process_from_pid(pid);
+		if (p == NULL) {
+			return -ESRCH;
 		}
+		return kill_single_proc(p, signal);
+	} else if (looking_for_pgids) {
+		p = get_process_from_pid(-pid);
+		if (p == NULL) {
+			return -ESRCH;
+		}
+		kill_all_children(p, signal);
+		kill_single_proc(p, signal);
+		return 0;
+
+	} else if (all_procs) {
+		kill_all_procs(signal);
+		return 0;
+	} else {
+		return -EINVAL;
 	}
-	release(&ptable.lock);
-	return -1;
 }
 
 sighandler_t

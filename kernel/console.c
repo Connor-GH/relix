@@ -33,6 +33,7 @@ static uint32_t static_backg = VGA_COLOR_BLACK;
 static int alt_form = 0;
 static int long_form = 0;
 static int zero_form = 0;
+static int active_term = 0;
 
 typedef void (*putfunc_t)(int, uint32_t, uint32_t);
 __nonnull(1) static void vcprintf(putfunc_t putfunc, const char *fmt,
@@ -42,7 +43,6 @@ static void consputc3(int c, uint32_t foreg, uint32_t backg);
  * This resource protects any static variable in this file, but mainly:
  * - console_buffer
  * - buffer_position
- * - crt
  */
 static struct {
 	struct spinlock lock;
@@ -50,7 +50,7 @@ static struct {
 } cons;
 
 static struct termios tty_settings[NTTY] = { 0 };
-
+static pid_t term_pgids[NTTY] = {};
 // This should always be in bounds, provided that
 // only the minor from ip->minor is passed in, and
 // that ip->major == TTY.
@@ -58,6 +58,30 @@ struct termios *
 get_term_settings(int minor)
 {
 	return &tty_settings[minor];
+}
+
+pid_t
+get_term_pgid(int minor)
+{
+	return term_pgids[minor];
+}
+
+void
+set_term_pgid(int minor, pid_t pgid)
+{
+	term_pgids[minor] = pgid;
+}
+
+int
+get_active_term(void)
+{
+	return active_term;
+}
+
+void
+set_active_term(int minor)
+{
+	active_term = minor;
 }
 
 void
@@ -182,14 +206,15 @@ __nonnull(1) void uart_printf(const char *fmt, ...)
 	va_end(argp);
 }
 
-// Early version of UART used as we bring up cores.
+// For the case where we need to debug inside of something that may hold
+// cons.lock.
 __attribute__((format(printf, 1, 2)))
-__nonnull(1) void early_uart_printf(const char *fmt, ...)
+__nonnull(1) void uart_printf_unlocked(const char *fmt, ...)
 {
 	va_list argp;
 	va_start(argp, fmt);
-	kernel_vprintf_template(uartputc_wrapper, NULL, NULL, fmt, argp, &cons.lock,
-	                        false, -1);
+	kernel_vprintf_template(uartputc_wrapper, NULL, NULL, fmt, argp, NULL, false,
+	                        -1);
 	va_end(argp);
 }
 
@@ -225,6 +250,7 @@ string_putc_wrapper(char c, char *buf)
 	buf[global_string_index++] = c;
 }
 
+// We explicitly do ansi_noop because we want to skip over escape sequences.
 __attribute__((format(printf, 2, 3)))
 __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...)
 {
@@ -316,10 +342,18 @@ struct {
 
 #define C(x) ((x) - '@') // Control-x
 
+static void
+put_ctrl_char(int c)
+{
+	vga_write_char('^', static_foreg, static_backg);
+	vga_write_char(c, static_foreg, static_backg);
+}
+
 void
 consoleintr(int (*getc)(void))
 {
 	int c, doprocdump = 0;
+	bool do_ctrl_c = false;
 	if (panicked) {
 		cli();
 		for (;;)
@@ -353,6 +387,10 @@ consoleintr(int (*getc)(void))
 				consputc3(BACKSPACE, static_foreg, static_backg);
 			}
 			break;
+		// ETX
+		case C('C'):
+			do_ctrl_c = true;
+			break;
 		default:
 			if (c != 0 && input.e - input.r < INPUT_BUF) {
 				c = (c == '\r') ? '\n' : c;
@@ -370,15 +408,6 @@ consoleintr(int (*getc)(void))
 					}
 					input.w = input.e;
 					wakeup(&input.r);
-				} else if (c == C('C')) {
-					struct proc *p = myproc();
-					if (p == NULL) {
-						p = last_proc_ran();
-					}
-					if (p == NULL) {
-						break;
-					}
-					kill(p->pid, SIGINT);
 				}
 			}
 			break;
@@ -387,6 +416,11 @@ consoleintr(int (*getc)(void))
 	release(&cons.lock);
 	if (doprocdump) {
 		procdump(); // now call procdump() wo. cons.lock held
+	}
+	// TODO: handle all VT escape sequences and scancodes.
+	if (do_ctrl_c) {
+		put_ctrl_char('C');
+		kill(-get_term_pgid(get_active_term()), SIGINT);
 	}
 }
 __nonnull(2, 3) static ssize_t

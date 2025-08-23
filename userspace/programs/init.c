@@ -63,6 +63,11 @@ execute_program(const char *program, char *const args[], char **env)
 	}
 }
 
+static void
+noop(int signum)
+{
+}
+
 int
 main(void)
 {
@@ -90,6 +95,10 @@ main(void)
 	make_file_device("/dev/mouse0", makedev(7, 0), O_RDONLY | O_NONBLOCK);
 	make_file_device("/dev/sda", makedev(5, 0), O_RDWR);
 
+	// Don't exit, we want a decently stable init.
+	if (signal(SIGINT, noop) == SIG_ERR) {
+		perror("signal");
+	}
 	for (;;) {
 		fprintf(stdout, "init: starting getty service\n");
 		int pid = fork();

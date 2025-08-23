@@ -108,7 +108,7 @@ parse_multiboot(struct multiboot_info *mbinfo)
 
 	for (struct multiboot_tag *tag = (struct multiboot_tag *)((uint64_t)mbinfo + MULTIBOOT_TAG_ALIGN);
 			 tag->type != MULTIBOOT_TAG_TYPE_END;
-			 tag = (struct multiboot_tag *)((multiboot_uint8_t *)tag + ((tag->size + 7) & ~7))) {
+			 tag = (struct multiboot_tag *)((uint8_t *)tag + ((tag->size + 7) & ~7))) {
 		switch (tag->type) {
 		case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
 			uart_printf("Bootloader is %s\n", ((struct multiboot_tag_string *)tag)->string);

@@ -131,4 +131,5 @@ void sleep_on_ms(time_t ms);
 void yield(void);
 struct proc *last_proc_ran(void);
 bool is_in_group(gid_t group, struct cred *cred);
+struct proc *get_process_from_pid(pid_t pid);
 #endif

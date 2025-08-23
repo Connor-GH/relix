@@ -159,6 +159,8 @@ extern size_t sys_fchmodat(void);
 extern size_t sys_reboot(void);
 extern size_t sys_setgid(void);
 extern size_t sys_setuid(void);
+extern size_t sys_getpgid(void);
+extern size_t sys_setpgid(void);
 extern size_t sys_ptrace(void);
 extern size_t sys_symlinkat(void);
 extern size_t sys_readlinkat(void);
@@ -171,7 +173,6 @@ extern size_t sys_munmap(void);
 extern size_t sys_signal(void);
 extern size_t sys_getcwd(void);
 extern size_t sys_sigprocmask(void);
-extern size_t sys_wait3(void);
 extern size_t sys_sigsuspend(void);
 extern size_t sys_umask(void);
 extern size_t sys_sigaction(void);
@@ -231,8 +232,8 @@ static size_t (*syscalls[])(void) = {
 	[SYS_signal] = sys_signal,
 	[SYS_getcwd] = sys_getcwd,
 	[SYS_sigprocmask] = sys_sigprocmask,
-	[SYS_UNMAPPED1] = unknown_syscall,
-	[SYS_UNMAPPED2] = unknown_syscall,
+	[SYS_getpgid] = sys_getpgid,
+	[SYS_setpgid] = sys_setpgid,
 	[SYS_sigsuspend] = sys_sigsuspend,
 	[SYS_umask] = sys_umask,
 	[SYS_sigaction] = sys_sigaction,
@@ -376,7 +377,13 @@ syswrap(struct trapframe *tf)
 {
 	struct proc *curproc = myproc();
 	curproc->tf = tf;
+	if (curproc->killed) {
+		exit(0);
+	}
 	syscall(curproc);
+	if (curproc->killed) {
+		exit(0);
+	}
 }
 
 static void

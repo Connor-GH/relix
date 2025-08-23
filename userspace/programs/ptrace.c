@@ -5,10 +5,6 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-// remove "SYS_"
-// sizeof minus one because of the null terminator
-#define REMOVE_SYS_IN_NAME(x) ((char *)(#x) + (sizeof("SYS_") - 1))
-
 // read -> 5 for example
 int
 from_name_to_digit(char *string)
@@ -24,7 +20,7 @@ from_name_to_digit(char *string)
 int
 main(int argc, char **argv)
 {
-	char ptrace_flags[SYSCALL_AMT] = { 0 };
+	char ptrace_flags[SYSCALL_AMT + 1] = { 0 };
 
 	int argv_count_start = 0;
 	if (argc < 4) {

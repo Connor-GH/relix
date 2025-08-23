@@ -50,14 +50,16 @@ unsigned int alarm(unsigned int);
 
 pid_t getpid(void);
 pid_t getppid(void);
-
-uid_t getuid(void);
-int setuid(uid_t);
-uid_t geteuid(void);
-
+pid_t getpgid(pid_t pid);
+pid_t getpgrp(void);
 gid_t getgid(void);
 gid_t getegid(void);
-int setgid(gid_t);
+uid_t getuid(void);
+uid_t geteuid(void);
+
+int setuid(uid_t uid);
+int setgid(gid_t gid);
+int setpgid(pid_t pid, pid_t pgid);
 
 void *sbrk(intptr_t increment);
 unsigned int sleep(unsigned int);

@@ -222,6 +222,12 @@ time(time_t *tloc)
 }
 
 int
+setpgid(pid_t pid, pid_t pgid)
+{
+	return __syscall_ret(__syscall2(SYS_setpgid, pid, pgid));
+}
+
+int
 setgid(gid_t gid)
 {
 	return __syscall_ret(__syscall1(SYS_setgid, gid));
@@ -243,6 +249,18 @@ gid_t
 getgid(void)
 {
 	return __syscall_ret(__syscall0(SYS_getgid));
+}
+
+pid_t
+getpgid(pid_t pid)
+{
+	return __syscall_ret(__syscall1(SYS_getpgid, pid));
+}
+
+pid_t
+getpgrp(void)
+{
+	return getpgid(0);
 }
 
 int

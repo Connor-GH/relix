@@ -2,6 +2,7 @@
 #if __KERNEL__
 #include "lib/compiler_attributes.h"
 #include "spinlock.h"
+#include <bits/types.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -16,7 +17,7 @@ __nonnull(1) void vga_cprintf(const char *fmt, ...);
 __attribute__((format(printf, 1, 2)))
 __nonnull(1) void uart_printf(const char *fmt, ...);
 __attribute__((format(printf, 1, 2)))
-__nonnull(1) void early_uart_printf(const char *fmt, ...);
+__nonnull(1) void uart_printf_unlocked(const char *fmt, ...);
 __attribute__((format(printf, 2, 3)))
 __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...);
 
@@ -44,4 +45,8 @@ int kernel_vprintf_template(void (*put_function)(char c, char *buf),
                             size_t print_n_chars);
 struct termios *get_term_settings(int minor);
 void set_term_settings(int minor, struct termios *termios);
+__pid_t get_term_pgid(int minor);
+void set_term_pgid(int minor, __pid_t pgid);
+int get_active_term(void);
+void set_active_term(int minor);
 #endif

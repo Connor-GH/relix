@@ -156,6 +156,8 @@ int tcgetattr(int, struct termios *);
 pid_t tcgetsid(int);
 int tcsendbreak(int, int);
 int tcsetattr(int, int, const struct termios *);
+pid_t tcgetpgrp(int fd);
+int tcsetpgrp(int fd, pid_t pgrp);
 
 int tcgetwinsize(int fd, struct winsize *);
 int tcsetwinsize(int fd, const struct winsize *);

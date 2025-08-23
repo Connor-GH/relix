@@ -39,8 +39,8 @@
 #define SYS_signal 36
 #define SYS_getcwd 37
 #define SYS_sigprocmask 38
-#define SYS_UNMAPPED1 39
-#define SYS_UNMAPPED2 40
+#define SYS_getpgid 39
+#define SYS_setpgid 40
 #define SYS_sigsuspend 41
 #define SYS_umask 42
 #define SYS_sigaction 43
@@ -98,8 +98,8 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_signal] = "signal",
 	[SYS_getcwd] = "getcwd",
 	[SYS_sigprocmask] = "sigprocmask",
-	[SYS_UNMAPPED1] = "unmapped1",
-	[SYS_UNMAPPED2] = "unmapped2",
+	[SYS_getpgid] = "getpgid",
+	[SYS_setpgid] = "setpgid",
 	[SYS_sigsuspend] = "sigsuspend",
 	[SYS_umask] = "umask",
 	[SYS_sigaction] = "sigaction",

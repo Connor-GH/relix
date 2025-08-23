@@ -202,6 +202,40 @@ sys_setuid(void)
 }
 
 size_t
+sys_setpgid(void)
+{
+	pid_t pid;
+	pid_t pgid;
+	struct proc *proc;
+	PROPOGATE_ERR(argpid_t(0, &pid));
+	PROPOGATE_ERR(argpid_t(1, &pgid));
+
+	if (pid < 0 || pid >= NPROC) {
+		return -EINVAL;
+	}
+	if (pgid < 0 || pgid >= NPROC) {
+		return -EINVAL;
+	}
+	if (pid == 0) {
+		proc = myproc();
+		goto got_proc;
+	}
+	proc = get_process_from_pid(pid);
+	if (proc == NULL) {
+		return -ESRCH;
+	}
+
+got_proc:
+
+	if (pgid == 0) {
+		pgid = proc->pid;
+	}
+
+	proc->pgid = pgid;
+	return 0;
+}
+
+size_t
 sys_getuid(void)
 {
 	return myproc()->cred.uid;
@@ -211,6 +245,30 @@ size_t
 sys_getgid(void)
 {
 	return myproc()->cred.gid;
+}
+
+size_t
+sys_getpgid(void)
+{
+	struct proc *proc;
+	pid_t pid;
+
+	PROPOGATE_ERR(argpid_t(0, &pid));
+
+	if (pid < 0 || pid >= NPROC) {
+		return -EINVAL;
+	}
+	if (pid == 0) {
+		proc = myproc();
+		goto got_proc;
+	}
+	proc = get_process_from_pid(pid);
+	if (proc == NULL) {
+		return -ESRCH;
+	}
+
+got_proc:
+	return proc->pgid;
 }
 
 size_t

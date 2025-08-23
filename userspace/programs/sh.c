@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <termios.h>
 #include <unistd.h>
 
 // Parsed command representation
@@ -185,6 +186,14 @@ main(void)
 		perror("signal");
 		exit(EXIT_FAILURE);
 	}
+	if (tcsetpgrp(STDIN_FILENO, getpid()) < 0) {
+		perror("tcsetpgrp");
+		exit(EXIT_FAILURE);
+	}
+	if (setpgid(0, 0) < 0) {
+		perror("setpgid");
+		exit(EXIT_FAILURE);
+	}
 
 	// TODO make more general builtin parser.
 	// Read and run input commands.
@@ -220,7 +229,7 @@ main(void)
 		if (pid == 0) {
 			runcmd(parsecmd(buf));
 		}
-		pid = wait(&status);
+		pid = waitpid(pid, &status, 0);
 		if (WIFSIGNALED(status)) {
 			fprintf(stderr, "pid %d: %s (%d)\n", pid, strsignal(WTERMSIG(status)),
 			        WEXITSTATUS(status));

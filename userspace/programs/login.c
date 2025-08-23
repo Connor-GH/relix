@@ -1,5 +1,6 @@
 #include <limits.h>
 #include <pwd.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +9,11 @@
 #include <unistd.h>
 
 extern char **environ;
+
+static void
+noop(int signum)
+{
+}
 
 int
 main(int argc, char **argv)
@@ -28,6 +34,10 @@ main(int argc, char **argv)
 		default:
 			break;
 		}
+	}
+	if (signal(SIGINT, noop) == SIG_ERR) {
+		perror("signal");
+		exit(EXIT_FAILURE);
 	}
 	argc -= optind;
 	argv -= optind;

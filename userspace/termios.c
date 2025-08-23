@@ -32,19 +32,19 @@ tcsetattr(int fd, int opt, const struct termios *t)
 int
 tcsetpgrp(int fd, pid_t pgrp)
 {
-	return ioctl(fd, TIOCSPGRP, &pgrp);
+	return ioctl(fd, TIOCSPGRP, pgrp);
 }
 
 pid_t
 tcgetpgrp(int fd)
 {
-	int s;
+	int pgid;
 
-	if (ioctl(fd, TIOCGPGRP, &s) < 0) {
+	if (ioctl(fd, TIOCGPGRP, &pgid) < 0) {
 		return (pid_t)-1;
 	}
 
-	return (pid_t)s;
+	return (pid_t)pgid;
 }
 
 pid_t

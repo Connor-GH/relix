@@ -764,6 +764,19 @@ sys_ioctl(void)
 		return 0;
 		break;
 	}
+	case TIOCGPGRP: {
+		if (file->ip->major != TTY) {
+			return -EINVAL;
+		}
+		pid_t *pgrp;
+		PROPOGATE_ERR(argptr(2, (char **)&pgrp, sizeof(pid_t *)));
+		if (pgrp == NULL) {
+			return -EFAULT;
+		}
+		*pgrp = get_term_pgid(file->ip->minor);
+		return 0;
+		break;
+	}
 	case TIOCGETAW:
 	case TIOCGETAF:
 	case TIOCGETA: {
@@ -780,6 +793,19 @@ sys_ioctl(void)
 		struct termios *ret = get_term_settings(file->ip->minor);
 		// Copy here because userspace cannot use kernel pointers.
 		memcpy(termios, ret, sizeof(struct termios));
+		return 0;
+		break;
+	}
+	case TIOCSPGRP: {
+		if (file->ip->major != TTY) {
+			return -EINVAL;
+		}
+		pid_t pgid;
+		PROPOGATE_ERR(argpid_t(2, &pgid));
+		if (pgid < 0 || pgid >= NPROC) {
+			return -EINVAL;
+		}
+		set_term_pgid(file->ip->minor, pgid);
 		return 0;
 		break;
 	}

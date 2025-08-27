@@ -1,12 +1,8 @@
 use core::ffi::CStr;
-use core::marker::{FnPtr, PhantomData};
 use core::ops::{Deref, DerefMut, Drop};
-use kernel_bindings::bindings::{
-    ATOMIC_FLAG_INIT, acquire, inode, inode_lock, inode_unlock, release,
-};
+use kernel_bindings::bindings::{ATOMIC_FLAG_INIT, acquire, release};
 use kernel_bindings::bindings::{sleeplock, spinlock};
 
-#[derive(Clone, Copy)]
 pub struct SpinLock<T> {
     data: T,
     inner: spinlock,

@@ -25,13 +25,12 @@
 
 #include "acpi.h"
 #include "console.h"
+#include "ioapic.h"
 #include "kernel_assert.h"
 #include "lapic.h"
 #include "memlayout.h"
 #include "param.h"
 #include "proc.h"
-#include "stdint.h"
-#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -225,7 +224,6 @@ static int
 try_setup_headers_rsdt(struct acpi_rsdt *rsdt)
 {
 	struct acpi_madt *madt = NULL;
-	struct acpi_fadt *fadt;
 	int count = (rsdt->header.length - sizeof(struct acpi_desc_header)) /
 	            sizeof(*rsdt->entry);
 	for (int n = 0; n < count; n++) {
@@ -248,8 +246,11 @@ try_setup_headers_rsdt(struct acpi_rsdt *rsdt)
 		if (memcmp(hdr->signature, SIG_MADT, 4) == 0) {
 			madt = (void *)hdr;
 		} else if (memcmp(hdr->signature, SIG_FADT, 4) == 0) {
-			fadt = (void *)hdr;
+			struct acpi_fadt *fadt = (void *)hdr;
 			setup_fadt(fadt);
+		} else if (memcmp(hdr->signature, SIG_HPET, 4) == 0) {
+			struct acpi_hpet *hpet = (void *)hdr;
+			hpet_init(hpet);
 		}
 	}
 	kernel_assert(madt != NULL);

@@ -8,7 +8,8 @@ KERNEL_ASM += $(wildcard $(KERNELDIR)/64/*.S)
 KERNEL_DRIVERS = $(KERNELDIR)/drivers/kbd.c \
 								 $(KERNELDIR)/drivers/lapic.c \
 								 $(KERNELDIR)/drivers/acpi.c  \
-								 $(KERNELDIR)/drivers/ps2mouse.c
+								 $(KERNELDIR)/drivers/ps2mouse.c \
+								 $(KERNELDIR)/drivers/hpet.c
 KERNEL_OBJS = $(KERNEL_SRC:$(KERNELDIR)/%.c=$(BIN)/%.o) $(KERNEL_ASM:$(KERNELDIR)/%.S=$(BIN)/%.o) \
 	$(KERNEL_DRIVERS:$(KERNELDIR)/drivers/%.c=$(BIN)/%.o)
 KERNEL_EXTRAS = -D__KERNEL__=1

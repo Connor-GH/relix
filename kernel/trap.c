@@ -1,4 +1,6 @@
+#include "hpet.h"
 #include "kalloc.h"
+#include "kernel_assert.h"
 #include "memlayout.h"
 #include <signal.h>
 #include <stdint.h>
@@ -125,6 +127,11 @@ trap(struct trapframe *tf)
 		break;
 	case T_IRQ0 + IRQ_IDE:
 		ideintr();
+		lapiceoi();
+		break;
+	case T_IRQ0 + IRQ_HPET:
+		uart_printf("HPET Irq arrived.\n");
+		kernel_assert(hpet_regs_get()->general_int_status == 0);
 		lapiceoi();
 		break;
 	case T_IRQ0 + IRQ_IDE + 1:

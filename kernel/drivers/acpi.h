@@ -1,4 +1,5 @@
 #pragma once
+#include "hpet.h"
 #include <stdint.h>
 #define x86_64_BIT_FULLY_READY 0 /* change when ready */
 #define ACPI_VERSION_2_0 0
@@ -143,5 +144,30 @@ struct acpi_fadt {
 	uint8_t hypervisor_vendor_id[8];
 } __attribute__((__packed__));
 _Static_assert(sizeof(struct acpi_fadt) == 276, "ACPI FADT Struct malformed");
+
+struct hpet_address_structure {
+	uint8_t address_space_id;
+	uint8_t register_bit_width;
+	uint8_t register_bit_offset;
+	uint8_t reserved;
+	uint64_t address;
+} __attribute__((__packed__));
+
+#define SIG_HPET "HPET"
+struct acpi_hpet {
+	struct acpi_desc_header header;
+	uint8_t hardware_rev_id;
+	// [ bit 7 | bit 6 | bit 5 | bit 4 | bit 3 | bit 2 | bit 1 | bit 0 ]
+	//    |        |      |        |_______|_______|_______|_______|
+	//    |        |   counter size        comparator count
+	//    |     reserved
+	// legacy replacement
+	uint8_t bits0;
+	uint16_t pci_vendor_id;
+	struct hpet_address_structure address;
+	uint8_t hpet_number;
+	uint16_t minimum_tick;
+	uint8_t page_protection;
+} __attribute__((__packed__));
 
 int acpiinit(void);

@@ -78,7 +78,7 @@ closedir(DIR *dir)
 		dir->fd = -1;
 	}
 	if (dir->list == NULL) {
-		errno = -EBADF;
+		errno = EBADF;
 		return -1;
 	}
 	// Walk to the end of the list.

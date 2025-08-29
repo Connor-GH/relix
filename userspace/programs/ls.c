@@ -198,6 +198,7 @@ ls_format(char *buf, struct stat st)
 			perror("getpwuid");
 			exit(EXIT_FAILURE);
 		}
+		fprintf(stdout, "%u ", st.st_nlink);
 		// TODO: add getgrgid (/etc/group) and use it here.
 		fprintf(stdout, "%s %s ", passwd->pw_name, passwd->pw_name);
 		if (!S_ISBLK(st.st_mode) && !S_ISCHR(st.st_mode)) {

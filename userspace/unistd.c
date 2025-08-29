@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "libc_syscalls.h"
@@ -213,12 +212,6 @@ unsigned int
 alarm(unsigned int seconds)
 {
 	return __syscall_ret(__syscall1(SYS_alarm, seconds));
-}
-
-time_t
-time(time_t *tloc)
-{
-	return __syscall_ret(__syscall1(SYS_time, (long)tloc));
 }
 
 int

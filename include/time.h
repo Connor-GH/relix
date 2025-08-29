@@ -1,12 +1,21 @@
 #pragma once
+#include <bits/__NULL.h>
+#include <bits/size_t.h>
 #include <bits/stdint.h>
 #include <bits/struct_timespec.h>
 #include <bits/types.h>
 
-typedef __uint64_t useconds_t;
+#define NULL __NULL
+
+typedef __useconds_t useconds_t;
 
 typedef __pid_t pid_t;
 typedef __time_t time_t;
+typedef __clockid_t clockid_t;
+typedef __clock_t clock_t;
+typedef __size_t size_t;
+
+#define CLOCK_MONOTONIC 1
 
 struct tm {
 	int tm_sec;
@@ -24,6 +33,7 @@ struct tm {
 time_t time(time_t *tloc);
 struct tm *localtime(const time_t *timep);
 void tzset(void);
+int clock_gettime(clockid_t clock_id, struct timespec *tp);
 
 extern int daylight;
 extern long timezone;

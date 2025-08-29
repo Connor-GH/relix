@@ -1,3 +1,4 @@
+#include "libc_syscalls.h"
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <time.h>
@@ -129,4 +130,24 @@ localtime(const time_t *timep)
 	s_time.tm_zone = "Etc/Gmt";
 
 	return &s_time;
+}
+
+int
+clock_gettime(clockid_t clock_id, struct timespec *tp)
+{
+	return __syscall_ret(__syscall2(SYS_clock_gettime, (long)clock_id, (long)tp));
+}
+
+time_t
+time(time_t *tloc)
+{
+	struct timespec ts;
+	int ret = clock_gettime(CLOCK_MONOTONIC, &ts);
+	if (ret < 0) {
+		return (time_t)-1;
+	}
+	if (tloc != NULL) {
+		*tloc = ts.tv_sec;
+	}
+	return 0;
 }

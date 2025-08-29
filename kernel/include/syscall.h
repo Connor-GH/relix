@@ -22,7 +22,7 @@
 #define SYS_linkat 19
 #define SYS_mkdirat 20
 #define SYS_close 21
-#define SYS_time 22
+#define SYS_clock_gettime 22
 #define SYS_fchmodat 23
 #define SYS_reboot 24
 #define SYS_setgid 25
@@ -81,7 +81,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_linkat] = "linkat",
 	[SYS_mkdirat] = "mkdirat",
 	[SYS_close] = "close",
-	[SYS_time] = "time",
+	[SYS_clock_gettime] = "clock_gettime",
 	[SYS_fchmodat] = "fchmodat",
 	[SYS_reboot] = "reboot",
 	[SYS_setgid] = "setgid",
@@ -134,6 +134,7 @@ int argdev_t(int n, dev_t *sp);
 int argpid_t(int n, pid_t *sp);
 int arguid_t(int n, uid_t *sp);
 int arggid_t(int n, gid_t *sp);
+int argclockid_t(int n, clockid_t *cid);
 
 int fetchint(uintptr_t, int *);
 int fetchunsigned_int(uintptr_t, unsigned int *);

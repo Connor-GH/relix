@@ -11,6 +11,8 @@ typedef __ssize_t ssize_t;
 
 typedef __time_t time_t;
 typedef __suseconds_t suseconds_t;
+typedef __clock_t clock_t;
+typedef __clockid_t clockid_t;
 typedef __nlink_t nlink_t;
 typedef __blkcnt_t blkcnt_t;
 

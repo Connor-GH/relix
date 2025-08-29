@@ -15,7 +15,11 @@ typedef __int64_t __ssize_t;
 
 typedef __uint64_t __time_t;
 typedef __uint64_t __clock_t;
+#ifndef USE_HOST_TOOLS
+typedef __uint64_t __useconds_t;
+#endif
 typedef __int32_t __suseconds_t;
+typedef int __clockid_t;
 typedef int __nlink_t;
 typedef __ssize_t __blkcnt_t;
 

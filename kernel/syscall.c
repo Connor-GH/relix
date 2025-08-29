@@ -100,6 +100,7 @@ SYSCALL_ARG_N(dev_t);
 SYSCALL_ARG_N(pid_t);
 SYSCALL_ARG_N(uid_t);
 SYSCALL_ARG_N(gid_t);
+SYSCALL_ARG_N(clockid_t);
 
 // Fetch the nth word-sized system call argument as a pointer
 // to a block of memory of size bytes.  Check that the pointer
@@ -154,7 +155,7 @@ extern size_t sys_unlinkat(void);
 extern size_t sys_waitpid(void);
 extern size_t sys_write(void);
 extern size_t sys_uptime(void);
-extern size_t sys_time(void);
+extern size_t sys_clock_gettime(void);
 extern size_t sys_fchmodat(void);
 extern size_t sys_reboot(void);
 extern size_t sys_setgid(void);
@@ -215,7 +216,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_linkat] = sys_linkat,
 	[SYS_mkdirat] = sys_mkdirat,
 	[SYS_close] = sys_close,
-	[SYS_time] = sys_time,
+	[SYS_clock_gettime] = sys_clock_gettime,
 	[SYS_fchmodat] = sys_fchmodat,
 	[SYS_reboot] = sys_reboot,
 	[SYS_setgid] = sys_setgid,

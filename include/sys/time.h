@@ -1,6 +1,6 @@
 #pragma once
 #include <bits/types.h>
-typedef unsigned long long clock_t;
+typedef __clock_t clock_t;
 typedef __suseconds_t suseconds_t;
 typedef __time_t time_t;
 

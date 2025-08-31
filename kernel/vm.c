@@ -622,7 +622,8 @@ kvmalloc(void)
 		kpgdir0[n] = (n << PDXSHIFT) | PDE_PS | PDE_P | PDE_W;
 		kpgdir1[n] = ((n + 512) << PDXSHIFT) | PDE_PS | PDE_P | PDE_W;
 	}
-	struct multiboot_tag_framebuffer_common fb_common = get_fb_common();
+	struct multiboot_tag_framebuffer_common fb_common =
+		get_multiboot_framebuffer()->common;
 	uintptr_t fb_addr = fb_common.framebuffer_addr;
 	for (n = 0; n < 16; n++) {
 		iopgdir[n] = (fb_addr + (n << PDXSHIFT)) | PDE_PS | PTE_P | PTE_W |

@@ -21,6 +21,7 @@
 #include "picirq.h"
 #include "proc.h"
 #include "uart.h"
+#include "vga.h"
 #include "vm.h"
 #include "x86.h"
 #include <stdint.h>
@@ -50,6 +51,9 @@ main(struct multiboot_info *mbinfo)
 	kernel_assert(available_memory != 0);
 	// Past kvmalloc, addresses need to be virtual.
 	kvmalloc(); // kernel page table
+
+	struct multiboot_tag_framebuffer *fb = get_multiboot_framebuffer();
+	vga_init(fb, fb->rgb, fb->common);
 
 	/*----------------------------------------------*\
 	| We can start printing to the framebuffer here. |

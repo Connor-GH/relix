@@ -4,6 +4,14 @@
 #include "vga.h"
 #include <stdint.h>
 
+static struct multiboot_tag_framebuffer mb_fb;
+
+struct multiboot_tag_framebuffer *
+get_multiboot_framebuffer(void)
+{
+	return &mb_fb;
+}
+
 const char *
 multiboot_mmap_type(int type)
 {
@@ -145,14 +153,14 @@ parse_multiboot(struct multiboot_info *mbinfo)
 			// direct RGB color.
 			if (fbtag.framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB) {
 				struct fb_rgb color = fb->rgb;
-				uart_printf("rgb offsets %d/%d/%d and sizes %d/%d/%d\n",
+					mb_fb = *fb;
+					uart_printf("rgb offsets %d/%d/%d and sizes %d/%d/%d\n",
 								color.framebuffer_red_field_position,
 								color.framebuffer_green_field_position,
 								color.framebuffer_blue_field_position,
 								color.framebuffer_red_mask_size,
 								color.framebuffer_green_mask_size,
 								color.framebuffer_blue_mask_size);
-				vga_init(fb, fb->rgb, fb->common);
 			}
 			break;
 		}

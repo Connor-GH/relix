@@ -76,12 +76,6 @@ vgammap(short minor, size_t length, uintptr_t addr, int perm)
 	return (struct mmap_info){ (size_t)WIDTH * HEIGHT * (BPP_DEPTH / 8),
 		                         fb_common.framebuffer_addr, 0, NULL, perm };
 }
-// INVARIANT: must be ran after vga_init().
-struct multiboot_tag_framebuffer_common
-get_fb_common(void)
-{
-	return fb_common;
-}
 
 /*
  * This init function needs these 3 parameters

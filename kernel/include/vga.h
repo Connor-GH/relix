@@ -52,7 +52,6 @@ void clear_cells(uint32_t x, uint32_t y, uint32_t x_len, uint32_t y_len,
 void ansi_set_cursor_location_x(uint16_t x);
 void ansi_set_cursor_location_y(uint16_t y);
 void ansi_set_cursor_location(uint16_t x, uint16_t y);
-struct multiboot_tag_framebuffer_common get_fb_common(void);
 #endif
 #endif
 #endif // !_VGA_H

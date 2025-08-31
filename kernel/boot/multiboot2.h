@@ -94,6 +94,7 @@ extern uint64_t top_memory;
 
 int __multiboot_console_width_pixels(void);
 int __multiboot_console_height_pixels(void);
+struct multiboot_tag_framebuffer *get_multiboot_framebuffer(void);
 
 typedef unsigned char multiboot_uint8_t;
 typedef unsigned short multiboot_uint16_t;

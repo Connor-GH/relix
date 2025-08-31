@@ -116,7 +116,7 @@ sys_read(void)
 	PROPOGATE_ERR(argfd(0, NULL, &f));
 	PROPOGATE_ERR(arguintptr_t(2, &n));
 	PROPOGATE_ERR(argptr(1, &p, n));
-	return fileread(f, p, n);
+	return vfs_read(f, p, n);
 }
 
 size_t
@@ -132,7 +132,7 @@ sys_write(void)
 	PROPOGATE_ERR(argfd(0, NULL, &f));
 	PROPOGATE_ERR(arguintptr_t(2, &n));
 	PROPOGATE_ERR(argptr(1, &p, n));
-	return filewrite(f, p, n);
+	return vfs_write(f, p, n);
 }
 
 size_t
@@ -148,7 +148,7 @@ sys_writev(void)
 	PROPOGATE_ERR(argptr(1, (void *)&iovecs, sizeof(*iovecs) * iovcnt));
 
 	for (int i = 0; i < iovcnt; i++) {
-		ssize_t ret = filewrite(file, iovecs->iov_base, iovecs->iov_len);
+		ssize_t ret = vfs_write(file, iovecs->iov_base, iovecs->iov_len);
 		if (ret < 0) {
 			return ret;
 		}
@@ -165,7 +165,7 @@ sys_close(void)
 	PROPOGATE_ERR(argfd(0, &fd, &f));
 
 	myproc()->ofile[fd] = NULL;
-	return fileclose(f);
+	return vfs_close(f);
 }
 
 size_t
@@ -179,7 +179,7 @@ sys_fstat(void)
 	if (st == NULL) {
 		return -EFAULT;
 	}
-	return filestat(f, st);
+	return vfs_stat(f, st);
 }
 
 size_t
@@ -388,7 +388,7 @@ sys_openat(void)
 		return -EAGAIN;
 	}
 
-	return fileopenat(dirfd, path, flags, mode & ~(myproc()->umask));
+	return vfs_openat(dirfd, path, flags, mode & ~(myproc()->umask));
 }
 
 size_t
@@ -407,8 +407,8 @@ sys_mkdirat(void)
 		return -EAGAIN;
 	}
 	begin_op();
-	if ((ip = filecreate(fd, path, (S_IFDIR | mode) & ~myproc()->umask, 0)) ==
-	    NULL) {
+	if ((ip = vfs_locked_inode_create(
+				 fd, path, (S_IFDIR | mode) & ~myproc()->umask, 0)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
@@ -433,7 +433,7 @@ sys_mknodat(void)
 	PROPOGATE_ERR(argdev_t(3, &dev));
 
 	begin_op();
-	if ((ip = filecreate(fd, path, mode, dev)) == NULL) {
+	if ((ip = vfs_locked_inode_create(fd, path, mode, dev)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
@@ -560,8 +560,8 @@ sys_pipe2(void)
 		}
 		// Ignore the return value here so that
 		// we can get a more accurate errno.
-		(void)fileclose(rf);
-		(void)fileclose(wf);
+		(void)vfs_close(rf);
+		(void)vfs_close(wf);
 		return -EBADF;
 	}
 	rf->flags = oflags;
@@ -650,7 +650,8 @@ sys_symlinkat(void)
 	}
 	inode_unlockput(eexist);
 
-	if ((ip = filecreate(newdirfd, linkpath, S_IFLNK | S_IAUSR, 0)) == NULL) {
+	if ((ip = vfs_locked_inode_create(newdirfd, linkpath, S_IFLNK | S_IAUSR,
+	                                  0)) == NULL) {
 		end_op();
 		return -ENOSPC;
 	}

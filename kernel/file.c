@@ -105,7 +105,7 @@ fdalloc2(struct file *f, int fd)
 	struct proc *curproc = myproc();
 
 	if (curproc->ofile[fd] != NULL) {
-		PROPOGATE_ERR(fileclose(curproc->ofile[fd]));
+		PROPOGATE_ERR(vfs_close(curproc->ofile[fd]));
 	}
 
 	curproc->ofile[fd] = f;
@@ -166,7 +166,7 @@ filereadlinkat(int dirfd, const char *restrict pathname, char *buf,
 // - give it some default stats (more if a directory)
 // - attach the file to a directory [dirlink]
 struct inode *
-filecreate(int dirfd, char *path, mode_t mode, dev_t dev)
+vfs_locked_inode_create(int dirfd, char *path, mode_t mode, dev_t dev)
 {
 	struct inode *ip, *dp;
 	char name[DIRSIZ];
@@ -281,7 +281,7 @@ resolve_nameat(int dirfd, const char *path)
 }
 
 int
-fileopenat(int dirfd, char *path, int flags, mode_t mode)
+vfs_openat(int dirfd, char *path, int flags, mode_t mode)
 {
 	int fd;
 	struct inode *ip;
@@ -308,7 +308,7 @@ fileopenat(int dirfd, char *path, int flags, mode_t mode)
 		}
 		// filecreate() holds a lock on this inode pointer,
 		// but only if it succeeds.
-		ip = filecreate(dirfd, path, mode, 0);
+		ip = vfs_locked_inode_create(dirfd, path, mode, 0);
 		if (ip == NULL) {
 			end_op();
 			return -EIO;
@@ -353,12 +353,11 @@ fileopenat(int dirfd, char *path, int flags, mode_t mode)
 			ip->rf->ip = ip;
 			ip->wf->ip = ip;
 
-			// As explained in pipealloc, writing to one pipe
-			// affects the other one because they are pointing
-			// to the same one. For example, writing to rf's
-			// pipe changes wf's pipe.
 			ip->rf->pipe->writeopen = 0;
 			ip->rf->pipe->readopen = 0;
+
+			ip->wf->pipe->writeopen = 0;
+			ip->wf->pipe->readopen = 0;
 		}
 		if ((flags & O_ACCMODE) == O_WRONLY) {
 			// O_WRONLY is special for FIFOs.
@@ -424,7 +423,7 @@ get_fd:
 		// Fileclose returns int but
 		// we ignore it because we error out regardless.
 		if (f) {
-			(void)fileclose(f);
+			(void)vfs_close(f);
 		}
 		inode_unlockput(ip);
 		end_op();
@@ -446,7 +445,7 @@ get_fd:
 }
 // Close file f.  (Decrement ref count, close when reaches 0.)
 int
-fileclose(struct file *f)
+vfs_close(struct file *f)
 {
 	acquire(&file_table.lock);
 	if (__unlikely(f->ref < 1)) {
@@ -490,7 +489,7 @@ fileclose(struct file *f)
 
 // Get metadata about file f.
 int
-filestat(struct file *f, struct stat *st)
+vfs_stat(struct file *f, struct stat *st)
 {
 	if (f->type == FD_INODE || f->type == FD_FIFO || f->type == FD_PIPE) {
 		inode_lock(f->ip);
@@ -503,7 +502,7 @@ filestat(struct file *f, struct stat *st)
 
 // Read from file f.
 ssize_t
-fileread(struct file *f, char *addr, size_t n)
+vfs_read(struct file *f, char *addr, size_t n)
 {
 	if (f->readable == 0) {
 		return -EINVAL;
@@ -545,7 +544,7 @@ fileseek(struct file *f, off_t n, int whence)
 
 // Write to file f.
 ssize_t
-filewrite(struct file *f, char *addr, size_t n)
+vfs_write(struct file *f, char *addr, size_t n)
 {
 	if (f->writable == 0) {
 		return -EROFS;

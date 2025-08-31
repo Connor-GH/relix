@@ -301,7 +301,7 @@ fork(void)
 	for (int i = 0; i < OPEN_MAX; i++) {
 		if (curproc->ofile[i] != NULL && curproc->ofile[i]->ref > 0) {
 			if (curproc->ofile[i]->flags == O_CLOFORK) {
-				(void)fileclose(curproc->ofile[i]);
+				(void)vfs_close(curproc->ofile[i]);
 			} else {
 				np->ofile[i] = filedup(curproc->ofile[i], 0);
 			}
@@ -344,7 +344,7 @@ exit(int status)
 	// Close all open files.
 	for (int fd = 0; fd < OPEN_MAX; fd++) {
 		if (curproc->ofile[fd] != NULL && curproc->ofile[fd]->ref > 0) {
-			(void)fileclose(curproc->ofile[fd]);
+			(void)vfs_close(curproc->ofile[fd]);
 		}
 	}
 

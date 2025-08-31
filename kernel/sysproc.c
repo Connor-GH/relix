@@ -331,21 +331,21 @@ static const char *machine = "x86_64";
 static const char *machine = "unknown";
 #endif
 
-int
+static int
 gethostname(char *name, size_t len)
 {
-	int fd = fileopenat(AT_FDCWD, "/etc/hostname", O_RDONLY, 0);
+	int fd = vfs_openat(AT_FDCWD, "/etc/hostname", O_RDONLY, 0);
 	PROPOGATE_ERR(fd);
 	struct file *file = fd_to_struct_file(fd);
 	if (file == NULL) {
 		return -ENOENT;
 	}
-	ssize_t ret = fileread(file, name, len);
+	ssize_t ret = vfs_read(file, name, len);
 	PROPOGATE_ERR(ret);
 	// Get rid of newline.
 	name[strlen(name) - 1] = '\0';
 
-	return fileclose(file);
+	return vfs_close(file);
 }
 
 size_t

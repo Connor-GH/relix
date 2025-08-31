@@ -71,14 +71,15 @@ struct inode *resolve_name(const char *path);
 struct inode *resolve_nameat(int dirfd, const char *path);
 
 // Generalized functions for file operations.
-int fileclose(struct file *);
-struct inode *filecreate(int dirfd, char *path, mode_t mode, dev_t dev);
-int fileopenat(int dirfd, char *path, int flags, mode_t mode);
+int vfs_close(struct file *);
+struct inode *vfs_locked_inode_create(int dirfd, char *path, mode_t mode,
+                                      dev_t dev);
+int vfs_openat(int dirfd, char *path, int flags, mode_t mode);
 struct file *filedup(struct file *f, int flags);
 void fileinit(void);
-ssize_t fileread(struct file *file, char *buf, size_t n);
-int filestat(struct file *file, struct stat *);
-ssize_t filewrite(struct file *file, char *buf, size_t n);
+ssize_t vfs_read(struct file *file, char *buf, size_t n);
+int vfs_stat(struct file *file, struct stat *);
+ssize_t vfs_write(struct file *file, char *buf, size_t n);
 off_t fileseek(struct file *f, off_t offset, int whence);
 ssize_t filereadlinkat(int dirfd, const char *restrict pathname, char *buf,
                        size_t bufsiz);

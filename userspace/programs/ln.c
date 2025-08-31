@@ -10,7 +10,6 @@ main(int argc, char *argv[])
 	while ((c = getopt(argc, argv, "s")) != -1) {
 		switch (c) {
 		case 's':
-			fprintf(stderr, "WARNING: ln -s is experimental!\n");
 			sflag = true;
 			break;
 		default:

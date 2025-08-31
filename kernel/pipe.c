@@ -31,17 +31,17 @@ pipealloc(struct file **f0, struct file **f1)
 	p->readopen = 1;
 	p->writeopen = 1;
 	initlock(&p->lock, "pipe");
+
 	(*f0)->type = FD_PIPE;
 	(*f0)->readable = 1;
 	(*f0)->writable = 0;
-
-	// Notice here how f0 and f1 both assign the same pipe.
-	// The pipe is aliased here.
 	(*f0)->pipe = p;
+
 	(*f1)->type = FD_PIPE;
 	(*f1)->readable = 0;
 	(*f1)->writable = 1;
 	(*f1)->pipe = p;
+
 	return 0;
 
 bad:
@@ -52,10 +52,10 @@ bad:
 	// We ignore the return values here
 	// because we are erroring anyway.
 	if (*f0) {
-		(void)fileclose(*f0);
+		(void)vfs_close(*f0);
 	}
 	if (*f1) {
-		(void)fileclose(*f1);
+		(void)vfs_close(*f1);
 	}
 	return -ENOMEM;
 }

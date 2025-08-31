@@ -208,6 +208,7 @@ raise(int sig)
 __attribute__((noreturn)) void
 abort(void)
 {
+	signal(SIGABRT, SIG_DFL);
 	raise(SIGABRT);
 	_exit(1);
 }

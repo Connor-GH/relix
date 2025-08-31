@@ -4,7 +4,7 @@ void __assert_fail(const char *assertion, const char *file, int lineno,
                    const char *func);
 
 #ifdef NDEBUG
-#define assert(expression)
+#define assert(ignore) ((void)0)
 #else
 #define assert(expression)           \
 	(__builtin_expect(expression, 1) ? \

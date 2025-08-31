@@ -91,18 +91,16 @@ execvp(const char *file, char *const argv[])
 
 	char *path_env = getenv("PATH");
 	if (path_env == NULL) {
-		return -1;
+		// This is implementation-defined.
+		// In order to not break a system, we fall back to /bin.
+		path_env = "/bin";
 	}
 
-	if (file[0] == '.') {
-		// Check current directory.
-		if (getcwd(str, PATH_MAX) == NULL) {
-			return -1;
-		}
-
-		strncat(str, "/", 2);
-		strncat(str, file, strlen(file) + 1);
-		execve(str, argv, environ);
+	// "If the file argument contains a <slash> character,
+	// the file argument shall be used as the pathname
+	// for this file." - POSIX.1-2024
+	if (strchr(file, '/') != NULL) {
+		execve(file, argv, environ);
 		return -1;
 	}
 

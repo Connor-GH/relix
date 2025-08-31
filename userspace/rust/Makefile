@@ -6,7 +6,7 @@ UR2 = $(foreach module, $(USER_RUST_MODULES), $(realpath $(USER_RUST_DIR))/$(mod
 
 URUST = $(UR2:$(USER_RUST_DIR)/%=$(FULL_BIN)/lib%.a)
 
-USER_RUST_FLAGS = -Ctarget-feature=+sse,+sse2,-avx,-avx2
+USER_RUST_FLAGS = -Ctarget-feature=+sse,-sse2,-avx,-avx2
 ifneq ($(RELEASE),)
   ifeq ($(LLVM),1)
 		CLANG_LLVM_MAJOR = $(clang --version | sed -nE "s/clang version \([0-9]+\).\([0-9]+\).\([0-9]+\)/\1/p")

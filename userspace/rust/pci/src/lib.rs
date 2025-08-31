@@ -39,7 +39,8 @@ fn internal_libpci_device_info(
     subclass: u8,
     prog_if: u8,
 ) -> Option<*mut *mut c_char> {
-#[cfg(feature = "pci-ids")] {
+    #[cfg(feature = "pci-ids")]
+    {
         internal_libpci_device_info_pci_ids(
             vendor_id,
             device_id,
@@ -50,7 +51,8 @@ fn internal_libpci_device_info(
             prog_if,
         )
     }
-#[cfg(not(feature = "pci-ids"))] {
+    #[cfg(not(feature = "pci-ids"))]
+    {
         internal_libpci_device_info_empty(
             vendor_id,
             device_id,

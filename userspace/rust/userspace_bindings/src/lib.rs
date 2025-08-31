@@ -12,10 +12,7 @@ use spin::Mutex;
 
 #[panic_handler]
 fn rs_panic(info: &core::panic::PanicInfo) -> ! {
-    //println!("{info}");
-    unsafe {
-        printf(c"Rust panic [no other information]\n".as_ptr());
-    }
+    println!("{info}");
     unsafe {
         exit(1);
     }
@@ -42,12 +39,10 @@ pub fn print(args: core::fmt::Arguments) {
 }
 pub mod printing {
     #[macro_export]
-    #[deprecated]
     macro_rules! print {
         ($($arg:tt)*) => ($crate::print(format_args!($($arg)*)))
     }
     #[macro_export]
-    #[deprecated]
     macro_rules! println {
         ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)))
     }

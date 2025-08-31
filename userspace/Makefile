@@ -8,7 +8,7 @@ USER_EXTRAS = -D__USER__
 
 ULIB_STATIC = $(BIN)/libc.a
 
-UCFLAGS = -fno-lto -m80387 -msse -msse2 \
+UCFLAGS = -fno-lto -m80387 -msse -mno-sse2 \
 					-mno-avx -mno-avx2 $(USER_EXTRAS) -I$(UDIR)/include -I. $(IVARS)
 ifneq ($(RELEASE),)
 	UCFLAGS += -flto -O3

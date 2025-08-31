@@ -8,6 +8,5 @@ __assert_fail(const char *assertion, const char *file, int lineno,
 {
 	fprintf(stderr, "%s:%d: %s: Assertion `%s' failed.\n", file, lineno, func,
 	        assertion);
-	fprintf(stderr, "Aborting.\n");
-	exit(-1);
+	abort();
 }

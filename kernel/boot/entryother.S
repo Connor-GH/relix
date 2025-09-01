@@ -1,6 +1,7 @@
-#include "asm.h"
-#include "../drivers/memlayout.h"
-#include "../drivers/mmu.h"
+#include "boot/asm.h"
+
+#include "memlayout.h"
+#include "mmu.h"
 
 # Each non-boot CPU ("AP") is started up in response to a STARTUP
 # IPI from the boot CPU.  Section B.4.2 of the Multi-Processor

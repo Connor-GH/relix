@@ -23,7 +23,7 @@
  *
  */
 
-#include "multiboot2.h"
+#include "boot/multiboot2.h"
 #include "vga.h"
 #include "msr.h"
 .code32

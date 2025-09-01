@@ -1,19 +1,14 @@
-#include "hpet.h"
-#include "kalloc.h"
-#include "kernel_assert.h"
-#include "memlayout.h"
-#include <signal.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <time.h>
-
-#include "drivers/lapic.h"
-#include "drivers/mmu.h"
-#include "drivers/ps2mouse.h"
+#include "dev/hpet.h"
+#include "dev/kbd.h"
+#include "dev/lapic.h"
+#include "dev/ps2mouse.h"
 
 #include "console.h"
 #include "ide.h"
-#include "kbd.h"
+#include "kalloc.h"
+#include "kernel_assert.h"
+#include "memlayout.h"
+#include "mmu.h"
 #include "proc.h"
 #include "spinlock.h"
 #include "syscall.h"
@@ -21,6 +16,11 @@
 #include "traps.h"
 #include "uart.h"
 #include "x86.h"
+
+#include <signal.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <time.h>
 
 #define W_EXITCODE(ret, signal) ((ret) << 8 | (signal))
 enum {

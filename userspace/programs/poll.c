@@ -1,4 +1,4 @@
-#include "kernel/drivers/ps2mouse.h"
+#include "kernel/include/dev/ps2mouse.h"
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdint.h>

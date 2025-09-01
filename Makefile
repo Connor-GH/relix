@@ -192,9 +192,6 @@ qemu-gdb: iso
 	$(QEMU) -cdrom $(BIN)/$(ISO).iso $(QEMUOPTS) -S $(QEMUGDB)
 	@echo "*** Now run 'gdb'." 1>&2
 
-qemu-memfs: relixmemfs.img
-	$(QEMU) -drive file=$(BIN)/relixmemfs.img,index=0,media=disk,format=raw -smp $(CPUS) -m $(MEM)
-
 .gdbinit: debug/.gdbinit.tmpl
 	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@
 

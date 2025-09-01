@@ -9,12 +9,13 @@
 // routines.	The (higher-level) system call implementations
 // are in sysfile.c.
 
-#include "fs.h"
+#include "dev/lapic.h"
+
 #include "bio.h"
 #include "buf.h"
 #include "console.h"
-#include "drivers/lapic.h"
 #include "file.h"
+#include "fs.h"
 #include "kernel_assert.h"
 #include "log.h"
 #include "macros.h"
@@ -22,7 +23,7 @@
 #include "proc.h"
 #include "sleeplock.h"
 #include "spinlock.h"
-#include "sys/sysmacros.h"
+
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -30,6 +31,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 #include <time.h>
 
 static void inode_truncate(struct inode *);

@@ -1,19 +1,21 @@
-#include "ps2mouse.h"
+#include "dev/ps2mouse.h"
+
+#include "lib/queue.h"
+
 #include "console.h"
 #include "errno.h"
 #include "ioapic.h"
 #include "kalloc.h"
-#include "lib/queue.h"
+#include "mman.h"
 #include "proc.h"
 #include "spinlock.h"
 #include "traps.h"
 #include "x86.h"
-#include <bits/fcntl_constants.h>
 
-#include "mman.h"
-#include "string.h"
+#include <bits/fcntl_constants.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/types.h>
 
 #define MOUSE_STATUS 0x64
@@ -186,11 +188,11 @@ ps2mouseinit(void)
 		panic("Could not create mouse_queue");
 	}
 
-	devsw[MOUSE].write = mousewrite;
-	devsw[MOUSE].read = mouseread;
-	devsw[MOUSE].mmap = mousemmap_noop;
-	devsw[MOUSE].open = mouseopen;
-	devsw[MOUSE].close = mouseclose;
+	devsw[DEV_MOUSE].write = mousewrite;
+	devsw[DEV_MOUSE].read = mouseread;
+	devsw[DEV_MOUSE].mmap = mousemmap_noop;
+	devsw[DEV_MOUSE].open = mouseopen;
+	devsw[DEV_MOUSE].close = mouseclose;
 	ioapicenable(IRQ_PS2_MOUSE, 0);
 }
 

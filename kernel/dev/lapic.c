@@ -1,14 +1,17 @@
 // The local APIC manages internal (non-I/O) interrupts.
 // See Chapter 8 & Appendix C of Intel processor manual volume 3.
 
-#include "lapic.h"
-#include "kernel_assert.h"
+#include "dev/lapic.h"
+
 #include "lib/compiler_attributes.h"
+
+#include "kernel_assert.h"
 #include "memlayout.h"
 #include "spinlock.h"
 #include "stdbool.h"
 #include "traps.h"
 #include "x86.h"
+
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>

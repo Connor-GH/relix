@@ -5,13 +5,12 @@ KERNEL_ASM = $(wildcard $(KERNELDIR)/*.S)
 KERNEL_SRC += $(wildcard $(KERNELDIR)/64/*.c)
 KERNEL_ASM += $(wildcard $(KERNELDIR)/64/*.S)
 
-KERNEL_DRIVERS = $(KERNELDIR)/drivers/kbd.c \
-								 $(KERNELDIR)/drivers/lapic.c \
-								 $(KERNELDIR)/drivers/acpi.c  \
-								 $(KERNELDIR)/drivers/ps2mouse.c \
-								 $(KERNELDIR)/drivers/hpet.c
+KERNEL_DRIVER_DIR = $(KERNELDIR)/dev
+
+KERNEL_DRIVERS_SRC = $(wildcard $(KERNEL_DRIVER_DIR)/*.c)
+
 KERNEL_OBJS = $(KERNEL_SRC:$(KERNELDIR)/%.c=$(BIN)/%.o) $(KERNEL_ASM:$(KERNELDIR)/%.S=$(BIN)/%.o) \
-	$(KERNEL_DRIVERS:$(KERNELDIR)/drivers/%.c=$(BIN)/%.o)
+	$(KERNEL_DRIVERS_SRC:$(KERNEL_DRIVER_DIR)/%.c=$(BIN)/%.o)
 KERNEL_EXTRAS = -D__KERNEL__=1
 
 ifneq ($(KUBSAN),)
@@ -45,17 +44,8 @@ $(BIN)/kernel: $(KERNELDIR)/kernel64.ld $(KERNEL_OBJS) $(BIN)/entry.o $(BIN)/ent
 $(BIN)/%.o: $(KERNELDIR)/%.c
 	$(CC) $(CFLAGS) $(KCFLAGS) $(KUBSAN_FLAGS) $(KERNEL_INC) -c $^ -o $@
 
-$(BIN)/%.o: $(KERNELDIR)/drivers/%.c
+$(BIN)/%.o: $(KERNEL_DRIVER_DIR)/%.c
 	$(CC) $(CFLAGS) $(KCFLAGS) $(KUBSAN_FLAGS) $(KERNEL_INC) -c $^ -o $@
 
 $(BIN)/%.o: $(KERNELDIR)/%.S
 	$(CC) $(CFLAGS) $(KCFLAGS) $(KERNEL_INC) -c $^ -o $@
-# kernelmemfs is a copy of kernel that maintains the
-# disk image in memory instead of writing to a disk.
-# This is not so useful for testing persistent storage or
-# exploring disk buffering implementations, but it is
-# great for testing the kernel on real hardware without
-# needing a scratch disk.
-MEMFSOBJS = $(filter-out ide.o,$(KERNEL_OBJS)) $(BIN)/memide.o
-kernelmemfs: $(MEMFSOBJS) entry entryother_ initcode $(KERNELDIR)/kernel.ld fs.img
-	$(LD) $(LDFLAGS) -T $(KERNELDIR)/kernel.ld -o $(BIN)/kernelmemfs $(BIN)/entry.o $(MEMFSOBJS) -b binary $(BIN)/initcode $(BIN)/entryother $(BIN)/fs.img

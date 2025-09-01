@@ -1,11 +1,11 @@
+#include "kernel/include/fs.h"
+#include "kernel/include/memlayout.h"
+#include "kernel/include/param.h"
+#include "kernel/include/syscall.h"
+#include "kernel/include/traps.h"
 #include <bits/__MAXFILE.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <kernel/drivers/memlayout.h>
-#include <kernel/include/fs.h>
-#include <kernel/include/param.h>
-#include <kernel/include/syscall.h>
-#include <kernel/include/traps.h>
 #include <signal.h>
 #include <stddef.h>
 #include <stdint.h>

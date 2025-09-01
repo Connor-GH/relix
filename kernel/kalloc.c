@@ -2,15 +2,18 @@
 // memory for user processes, kernel stacks, page table pages,
 // and pipe buffers. Allocates 4096-byte pages.
 
-#include "kalloc.h"
 #include "boot/multiboot2.h"
-#include "console.h"
-#include "drivers/memlayout.h"
-#include "drivers/mmu.h"
-#include "kernel_ld_syms.h"
+
 #include "lib/compiler_attributes.h"
+
+#include "console.h"
+#include "kalloc.h"
+#include "kernel_ld_syms.h"
 #include "macros.h"
+#include "memlayout.h"
+#include "mmu.h"
 #include "spinlock.h"
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>

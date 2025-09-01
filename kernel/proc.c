@@ -1,23 +1,26 @@
-#include "proc.h"
+#include "dev/lapic.h"
+
+#include "lib/compiler_attributes.h"
+
 #include "console.h"
 #include "defs.h"
-#include "drivers/lapic.h"
-#include "drivers/mmu.h"
 #include "file.h"
 #include "fs.h"
 #include "kalloc.h"
 #include "kernel_assert.h"
 #include "kernel_signal.h"
-#include "lib/compiler_attributes.h"
 #include "log.h"
 #include "mman.h"
+#include "mmu.h"
 #include "param.h"
+#include "proc.h"
 #include "spinlock.h"
 #include "swtch.h"
 #include "syscall.h"
 #include "trap.h"
 #include "vm.h"
 #include "x86.h"
+
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>

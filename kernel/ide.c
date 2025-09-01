@@ -80,7 +80,7 @@ idemmap(short minor, size_t length, uintptr_t addr, int perm)
 }
 
 __cold void
-ideinit(void)
+ide_disk_init(void)
 {
 	initlock(&idelock, "ide");
 	ioapicenable(IRQ_IDE, ncpu - 1);
@@ -95,14 +95,18 @@ ideinit(void)
 		}
 	}
 
-	devsw[SD].open = ideopen;
-	devsw[SD].close = ideclose;
-	devsw[SD].read = ideread;
-	devsw[SD].write = idewrite;
-	devsw[SD].mmap = idemmap;
-
 	// Switch back to disk 0.
 	outb(0x1f6, 0xe0 | (0 << 4));
+}
+
+void
+ide_init(void)
+{
+	devsw[DEV_SD].open = ideopen;
+	devsw[DEV_SD].close = ideclose;
+	devsw[DEV_SD].read = ideread;
+	devsw[DEV_SD].write = idewrite;
+	devsw[DEV_SD].mmap = idemmap;
 }
 
 // Start the request for b.  Caller must hold idelock.

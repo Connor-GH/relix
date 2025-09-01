@@ -8,7 +8,7 @@
 #define HEIGHT 480U
 #define BPP_DEPTH 32U
 #ifndef __ASSEMBLER__
-#include "../boot/multiboot2.h"
+#include "boot/multiboot2.h"
 #include <stdbool.h>
 
 #define R(x) (x << 16U)
@@ -39,8 +39,7 @@ struct vga_rectangle {
 	uint32_t xlen;
 	uint32_t ylen;
 };
-void vga_init(struct multiboot_tag_framebuffer *tag, struct fb_rgb rgb,
-              struct multiboot_tag_framebuffer_common common);
+void vga_init(struct multiboot_tag_framebuffer *tag);
 void vga_write_char(int c, uint32_t foreground, uint32_t background);
 void vga_reset_char_index(void);
 // Raw pixel writing.

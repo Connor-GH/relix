@@ -1,16 +1,19 @@
-#include "kbd.h"
+#include "dev/kbd.h"
+
+#include "lib/queue.h"
+
 #include "console.h"
 #include "errno.h"
 #include "fs.h"
 #include "ioapic.h"
 #include "kalloc.h"
-#include "lib/queue.h"
 #include "mman.h"
 #include "proc.h"
 #include "spinlock.h"
 #include "string.h"
 #include "traps.h"
 #include "x86.h"
+
 #include <bits/fcntl_constants.h>
 #include <stdint.h>
 
@@ -469,7 +472,7 @@ kbdclose(short minor)
 }
 
 void
-kbdinit(void)
+dev_kbd_init(void)
 {
 	initlock(&kbdlock.lock, "kbd");
 
@@ -479,11 +482,11 @@ kbdinit(void)
 		panic("Could not create kbd_queue");
 	}
 
-	devsw[KBD].write = kbdwrite;
-	devsw[KBD].read = kbdread;
-	devsw[KBD].mmap = kbdmmap_noop;
-	devsw[KBD].open = kbdopen;
-	devsw[KBD].close = kbdclose;
+	devsw[DEV_KBD].write = kbdwrite;
+	devsw[DEV_KBD].read = kbdread;
+	devsw[DEV_KBD].mmap = kbdmmap_noop;
+	devsw[DEV_KBD].open = kbdopen;
+	devsw[DEV_KBD].close = kbdclose;
 
 	ioapicenable(IRQ_KBD, 0);
 }

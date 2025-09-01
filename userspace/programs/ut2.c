@@ -1,5 +1,5 @@
-#include "kernel/drivers/memlayout.h"
-#include "kernel/drivers/mmu.h"
+#include "kernel/include/memlayout.h"
+#include "kernel/include/mmu.h"
 #include "kernel/include/param.h"
 #include <bits/__BSIZE.h>
 #include <bits/__MAXFILE.h>

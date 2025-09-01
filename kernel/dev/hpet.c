@@ -2,8 +2,9 @@
  * SPDX-License-Identifier: MIT
  * Copyright (c) 2025 Connor-GH. All Rights Reserved.
  */
-#include "hpet.h"
-#include "acpi.h"
+#include "dev/hpet.h"
+#include "dev/acpi.h"
+
 #include "console.h"
 #include "cpu_units.h"
 #include "ioapic.h"
@@ -12,6 +13,7 @@
 #include "time_units.h"
 #include "traps.h"
 #include "x86.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 

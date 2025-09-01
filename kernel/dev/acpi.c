@@ -23,14 +23,16 @@
  *
  */
 
-#include "acpi.h"
+#include "dev/acpi.h"
+#include "dev/lapic.h"
+
 #include "console.h"
 #include "ioapic.h"
 #include "kernel_assert.h"
-#include "lapic.h"
 #include "memlayout.h"
 #include "param.h"
 #include "proc.h"
+
 #include <stdint.h>
 #include <string.h>
 

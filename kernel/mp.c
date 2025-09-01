@@ -2,15 +2,18 @@
 // Search memory for MP description structures.
 // http://developer.intel.com/design/pentium/datashts/24201606.pdf
 
-#include "mp.h"
-#include "console.h"
-#include "drivers/lapic.h"
-#include "drivers/memlayout.h"
-#include "kernel_assert.h"
+#include "dev/lapic.h"
+
 #include "lib/compiler_attributes.h"
+
+#include "console.h"
+#include "kernel_assert.h"
+#include "memlayout.h"
+#include "mp.h"
 #include "param.h"
 #include "proc.h"
 #include "x86.h"
+
 #include <stdint.h>
 #include <string.h>
 

@@ -9,7 +9,7 @@
 
 extern int echo_out;
 
-void consoleinit(void);
+void dev_console_init(void);
 __attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *,
                                                                 ...);
 __attribute__((format(printf, 1, 2)))

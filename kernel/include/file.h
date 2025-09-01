@@ -39,19 +39,19 @@ struct devsw {
 
 enum {
 	// The system console for kernel logging. /dev/console
-	CONSOLE = 1,
+	DEV_CONSOLE = 1,
 	// /dev/null
-	NULLDRV = 2,
+	DEV_NULL = 2,
 	// The screen framebuffer(s). /dev/fb[0-9]*
-	FB = 3,
+	DEV_FB = 3,
 	// The keyboard scancodes. /dev/kbd[0-9]*
-	KBD = 4,
+	DEV_KBD = 4,
 	// The disk device and partitions. /dev/sd[a-z]+(p[0-9]+)?
-	SD = 5,
+	DEV_SD = 5,
 	// /dev/tty[0-9]+ (0-63) and /dev/ttyS[0-9]+ (64-127)
-	TTY = 6,
+	DEV_TTY = 6,
 	// The mouse's packets. /dev/mouse[0-9]*
-	MOUSE = 7,
+	DEV_MOUSE = 7,
 	__DEVSW_last,
 };
 

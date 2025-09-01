@@ -1,12 +1,8 @@
 #include "vga.h"
 #include "boot/multiboot2.h"
-#include "file.h"
 #include "font.h"
-#include "fs.h"
-#include "kernel_assert.h"
 #include "macros.h"
 #include "memlayout.h"
-#include "mman.h"
 #include "uart.h"
 #include <stdbool.h>
 #include <stddef.h>
@@ -14,7 +10,6 @@
 #include <string.h>
 
 #define TAB_WIDTH 4
-static struct multiboot_tag_framebuffer *fb_data = NULL;
 static struct fb_rgb fb_rgb = { 0 };
 static struct multiboot_tag_framebuffer_common fb_common = { 0 };
 // TODO make this take a dynamic font size?
@@ -30,78 +25,29 @@ struct CursorPosition {
 	uint32_t x;
 	uint32_t y;
 };
+
 static struct DamageTracking damage_tracking_data = { 0 };
 static struct CursorPosition cursor_position = { 0, 0 };
-const uint32_t COLOR_RED;
-#define INTERNAL_COLOR_RED                       \
-	(((1 << fb_rgb.framebuffer_red_mask_size) - 1) \
-	 << fb_rgb.framebuffer_red_field_position)
-#define INTERNAL_COLOR_GREEN                       \
-	(((1 << fb_rgb.framebuffer_green_mask_size) - 1) \
-	 << fb_rgb.framebuffer_green_field_position)
-#define INTERNAL_COLOR_BLUE                       \
-	(((1 << fb_rgb.framebuffer_blue_mask_size) - 1) \
-	 << fb_rgb.framebuffer_blue_field_position)
-#define INTERNAL_COLOR_WHITE \
-	(INTERNAL_COLOR_BLUE | INTERNAL_COLOR_GREEN | INTERNAL_COLOR_RED)
-#define INTERNAL_COLOR_BLACK 0
-
-static ssize_t
-vgaread(short minor, struct inode *ip, char *buf, size_t n)
-{
-	return (ssize_t)n;
-}
-
-static ssize_t
-vgawrite(short minor, struct inode *ip, char *buf, size_t n)
-{
-	return (ssize_t)n;
-}
-
-static int
-vgaopen_noop(short minor, int flags)
-{
-	return 0;
-}
-
-static int
-vgaclose_noop(short minor)
-{
-	return 0;
-}
-
-static struct mmap_info
-vgammap(short minor, size_t length, uintptr_t addr, int perm)
-{
-	return (struct mmap_info){ (size_t)WIDTH * HEIGHT * (BPP_DEPTH / 8),
-		                         fb_common.framebuffer_addr, 0, NULL, perm };
-}
 
 /*
  * This init function needs these 3 parameters
  * because at some point during kernel bring-up,
  * the pointers get invalidated. We store them using
  * copies here.
+ *
+ * INVARIANT: tag is not NULL.
  */
 void
-vga_init(struct multiboot_tag_framebuffer *tag, struct fb_rgb rgb,
-         struct multiboot_tag_framebuffer_common common)
+vga_init(struct multiboot_tag_framebuffer *tag)
 {
-	fb_data = tag;
-	fb_rgb = rgb;
-	fb_common = common;
-	devsw[FB].read = vgaread;
-	devsw[FB].write = vgawrite;
-	devsw[FB].mmap = vgammap;
-	devsw[FB].open = vgaopen_noop;
-	devsw[FB].close = vgaclose_noop;
+	fb_rgb = tag->rgb;
+	fb_common = tag->common;
 }
 
 // The color is in hex: 0xRRGGBB
 void
 vga_write(uint32_t x, uint32_t y, uint32_t color)
 {
-	kernel_assert(fb_data != NULL);
 	if (x > fb_common.framebuffer_width || y > fb_common.framebuffer_height) {
 		return;
 	}

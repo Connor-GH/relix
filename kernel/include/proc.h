@@ -1,11 +1,11 @@
 #pragma once
 #if __KERNEL__
 // Per-CPU state
-#include "../drivers/mmu.h"
-#include "../include/file.h"
+#include "file.h"
 #include "fs.h"
 #include "kernel_signal.h"
 #include "mman.h"
+#include "mmu.h"
 #include "param.h"
 #include "spinlock.h"
 #include "syscall.h"

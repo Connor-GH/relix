@@ -4,10 +4,10 @@
 
 #include "console.h"
 #include "boot/multiboot2.h"
-#include "drivers/lapic.h"
+#include "dev/hpet.h"
+#include "dev/kbd.h"
+#include "dev/lapic.h"
 #include "file.h"
-#include "hpet.h"
-#include "kbd.h"
 #include "lib/compiler_attributes.h"
 #include "lib/queue.h"
 #include "macros.h"
@@ -602,21 +602,21 @@ ttyclose_noop(short minor)
 }
 
 void
-consoleinit(void)
+dev_console_init(void)
 {
 	initlock(&cons.lock, "console");
 
-	devsw[CONSOLE].write = consolewrite;
-	devsw[CONSOLE].read = consoleread;
-	devsw[CONSOLE].mmap = consolemmap_noop;
-	devsw[CONSOLE].open = consoleopen_noop;
-	devsw[CONSOLE].close = consoleclose_noop;
+	devsw[DEV_CONSOLE].write = consolewrite;
+	devsw[DEV_CONSOLE].read = consoleread;
+	devsw[DEV_CONSOLE].mmap = consolemmap_noop;
+	devsw[DEV_CONSOLE].open = consoleopen_noop;
+	devsw[DEV_CONSOLE].close = consoleclose_noop;
 
-	devsw[TTY].write = ttywrite;
-	devsw[TTY].read = ttyread;
-	devsw[TTY].mmap = ttymmap_noop;
-	devsw[TTY].open = ttyopen_noop;
-	devsw[TTY].close = ttyclose_noop;
+	devsw[DEV_TTY].write = ttywrite;
+	devsw[DEV_TTY].read = ttyread;
+	devsw[DEV_TTY].mmap = ttymmap_noop;
+	devsw[DEV_TTY].open = ttyopen_noop;
+	devsw[DEV_TTY].close = ttyclose_noop;
 	cons.locking = 1;
 	// Notice: we start all terminals in echo mode.
 	struct termios termios = {

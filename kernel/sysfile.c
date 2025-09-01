@@ -749,7 +749,7 @@ sys_ioctl(void)
 		break;
 	}
 	case FBIOCGET_VSCREENINFO: {
-		if (file->ip->major != FB) {
+		if (file->ip->major != DEV_FB) {
 			return -EINVAL;
 		}
 		struct fb_var_screeninfo *scr_info;
@@ -766,7 +766,7 @@ sys_ioctl(void)
 		break;
 	}
 	case TIOCGPGRP: {
-		if (file->ip->major != TTY) {
+		if (file->ip->major != DEV_TTY) {
 			return -EINVAL;
 		}
 		pid_t *pgrp;
@@ -781,7 +781,7 @@ sys_ioctl(void)
 	case TIOCGETAW:
 	case TIOCGETAF:
 	case TIOCGETA: {
-		if (file->ip->major != TTY) {
+		if (file->ip->major != DEV_TTY) {
 			return -EINVAL;
 		}
 		struct termios *termios;
@@ -798,7 +798,7 @@ sys_ioctl(void)
 		break;
 	}
 	case TIOCSPGRP: {
-		if (file->ip->major != TTY) {
+		if (file->ip->major != DEV_TTY) {
 			return -EINVAL;
 		}
 		pid_t pgid;
@@ -813,7 +813,7 @@ sys_ioctl(void)
 	case TIOCSETAW:
 	case TIOCSETAF:
 	case TIOCSETA: {
-		if (file->ip->major != TTY) {
+		if (file->ip->major != DEV_TTY) {
 			return -EINVAL;
 		}
 		struct termios *termios;

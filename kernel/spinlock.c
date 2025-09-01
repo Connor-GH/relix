@@ -2,11 +2,12 @@
 
 #include "spinlock.h"
 #include "console.h"
-#include "drivers/memlayout.h"
-#include "drivers/mmu.h"
 #include "kernel_assert.h"
+#include "memlayout.h"
+#include "mmu.h"
 #include "proc.h"
 #include "x86.h"
+
 #include <stdatomic.h>
 #include <stdint.h>
 #include <string.h>

@@ -50,9 +50,9 @@ mboot_info_framebuffer_tag_start:
 .short MULTIBOOT_HEADER_TAG_FRAMEBUFFER
 .short 0 # flags
 .long mboot_info_framebuffer_tag_end - mboot_info_framebuffer_tag_start # size = 20
-.long WIDTH # width
-.long HEIGHT # height
-.long BPP_DEPTH
+.long SCREEN_WIDTH # width
+.long SCREEN_HEIGHT # height
+.long SCREEN_BPP_DEPTH
 mboot_info_framebuffer_tag_end:
 .short MULTIBOOT_HEADER_TAG_END
 .long 8

@@ -760,7 +760,8 @@ sys_ioctl(void)
 			return -EFAULT;
 		}
 
-		struct fb_var_screeninfo info = { WIDTH, HEIGHT, BPP_DEPTH };
+		struct fb_var_screeninfo info = { SCREEN_WIDTH, SCREEN_HEIGHT,
+			                                SCREEN_BPP_DEPTH };
 		memcpy(scr_info, &info, sizeof(struct fb_var_screeninfo));
 		return 0;
 		break;

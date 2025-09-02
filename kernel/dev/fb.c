@@ -37,7 +37,8 @@ fb_close(short minor)
 static struct mmap_info
 fb_mmap(short minor, size_t length, uintptr_t addr, int perm)
 {
-	return (struct mmap_info){ (size_t)WIDTH * HEIGHT * (BPP_DEPTH / 8),
+	return (struct mmap_info){ (size_t)SCREEN_WIDTH * SCREEN_HEIGHT *
+		                           (SCREEN_BPP_DEPTH / 8),
 		                         s_fb_common.framebuffer_addr, 0, NULL, perm };
 }
 

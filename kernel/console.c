@@ -382,8 +382,8 @@ consoleintr(int (*getc)(void))
 				}
 			}
 			break;
+		// Backspace
 		case C('H'):
-		case '\x7f': // Backspace
 			if (input.e != input.w) {
 				input.e--;
 				consputc3(BACKSPACE, static_foreg, static_backg);

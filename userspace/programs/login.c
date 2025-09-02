@@ -19,9 +19,11 @@ int
 main(int argc, char **argv)
 {
 	char username[LOGIN_NAME_MAX];
-	char passwd[MAX_INPUT];
+	char password[MAX_INPUT];
 	struct passwd *entry;
-	int uid = -1;
+	uid_t uid;
+	bool uid_var_set = false;
+	char *shell_path = "/bin/sh";
 
 	char c;
 	bool fflag = false;
@@ -46,12 +48,13 @@ main(int argc, char **argv)
 
 		if (entry != NULL) {
 			uid = entry->pw_uid;
+			uid_var_set = true;
 		}
 		goto autologin;
 	}
 try_again:
 	memset(username, 0, LOGIN_NAME_MAX);
-	memset(passwd, 0, MAX_INPUT);
+	memset(password, 0, MAX_INPUT);
 	printf("username: ");
 	if (fgets(username, LOGIN_NAME_MAX, stdin) != username) {
 		perror("fgets");
@@ -66,38 +69,46 @@ try_again:
 	term.c_lflag &= ~ECHO;
 	tcsetattr(STDIN_FILENO, TCSADRAIN, &term);
 
-	if (fgets(passwd, MAX_INPUT, stdin) != passwd) {
+	if (fgets(password, MAX_INPUT, stdin) != password) {
 		perror("fgets");
 		exit(1);
 	}
-	passwd[strlen(passwd) - 1] = '\0';
+	password[strlen(password) - 1] = '\0';
 
 	tcgetattr(STDIN_FILENO, &term);
 	term.c_lflag |= ECHO;
 	tcsetattr(STDIN_FILENO, TCSADRAIN, &term);
 
-	if (uid == -1) {
+	setpwent();
+
+	if (!uid_var_set) {
 		entry = getpwnam(username);
 
 		if (entry != NULL) {
 			uid = entry->pw_uid;
-		}
-		if (uid == -1) {
+			uid_var_set = true;
+		} else {
 			fprintf(stderr, "User does not exist!\n");
 			goto try_again;
+		}
+	}
+	if (uid_var_set) {
+		shell_path = entry->pw_shell;
+		if (shell_path == NULL) {
+			shell_path = "/bin/sh";
 		}
 	}
 
 	char *actual_password = "x";
 
-	if (strcmp(passwd, actual_password) == 0) {
+	if (strcmp(password, actual_password) == 0) {
 autologin:;
-		if (uid == 0) {
+		if (getuid() == 0 && uid_var_set) {
 			setuid(uid);
 		}
-		char *const sh_argv[] = { "/bin/sh", NULL };
-		execve("/bin/sh", sh_argv, environ);
-		printf("execv sh failed\n");
+		char *const sh_argv[] = { shell_path, "-i", NULL };
+		execve(shell_path, sh_argv, environ);
+		printf("execv %s failed\n", shell_path);
 		return 1;
 	} else {
 		fprintf(stderr, "Password is incorrect.\n");

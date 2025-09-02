@@ -72,7 +72,7 @@ int vsnprintf(char *restrict str, size_t n, const char *restrict fmt,
 int vsprintf(char *restrict str, const char *restrict fmt, va_list argp);
 int sprintf(char *restrict str, const char *restrict fmt, ...)
 	__PRINTF_LIKE(2, 3);
-char *fgets(char *restrict buf, int max, FILE *restrict steam) __NONNULL(3);
+char *fgets(char *restrict buf, int max, FILE *restrict stream) __NONNULL(3);
 int fputs(const char *restrict s, FILE *restrict stream) __NONNULL(2);
 int puts(const char *s);
 void setlinebuf(FILE *restrict stream) __NONNULL(1);

@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,11 +23,6 @@
 extern char **environ;
 
 #define MAXARG 32
-
-void
-sigint_handler(int signum)
-{
-}
 
 struct cmd {
 	int type;
@@ -169,10 +165,12 @@ getcmd(char *buf, int nbuf)
 }
 
 int
-main(void)
+main(int argc, char *argv[])
 {
 	static char buf[100];
 	int fd;
+	int c;
+	bool iflag = false;
 
 	// Ensure that three file descriptors are open.
 	while ((fd = open("console", O_RDWR)) >= 0) {
@@ -181,18 +179,38 @@ main(void)
 			break;
 		}
 	}
-	sighandler_t sighandler = signal(SIGINT, sigint_handler);
-	if (sighandler == SIG_ERR) {
-		perror("signal");
-		exit(EXIT_FAILURE);
+	while ((c = getopt(argc, argv, "i")) != -1) {
+		switch (c) {
+		case 'i':
+			iflag = true;
+			break;
+		default:
+			break;
+		}
 	}
-	if (tcsetpgrp(STDIN_FILENO, getpid()) < 0) {
-		perror("tcsetpgrp");
-		exit(EXIT_FAILURE);
-	}
-	if (setpgid(0, 0) < 0) {
-		perror("setpgid");
-		exit(EXIT_FAILURE);
+
+	argc -= optind;
+	argv += optind;
+	if (iflag) {
+		sighandler_t sighandler = signal(SIGINT, SIG_IGN);
+		if (sighandler == SIG_ERR) {
+			perror("signal");
+			exit(EXIT_FAILURE);
+		}
+		sighandler = signal(SIGQUIT, SIG_IGN);
+		if (sighandler == SIG_ERR) {
+			perror("signal");
+			exit(EXIT_FAILURE);
+		}
+
+		if (tcsetpgrp(STDIN_FILENO, getpid()) < 0) {
+			perror("tcsetpgrp");
+			exit(EXIT_FAILURE);
+		}
+		if (setpgid(0, 0) < 0) {
+			perror("setpgid");
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	// TODO make more general builtin parser.

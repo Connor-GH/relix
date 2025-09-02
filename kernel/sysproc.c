@@ -18,6 +18,7 @@
 #include <sys/reboot.h>
 #include <sys/times.h>
 #include <sys/utsname.h>
+#include <sys/wait.h>
 #include <time.h>
 
 size_t
@@ -46,6 +47,13 @@ sys_waitpid(void)
 	PROPOGATE_ERR(argptr(1, (char **)&status, sizeof(*status)));
 	PROPOGATE_ERR(argint(2, &options));
 
+	if (options != 0 && options != WNOHANG && options != WCONTINUED &&
+	    options != WSTOPPED) {
+		return -EINVAL;
+	}
+	if (options != 0) {
+		return -ENOSYS;
+	}
 	return waitpid(pid, status, options);
 }
 

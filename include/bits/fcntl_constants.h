@@ -44,11 +44,6 @@
 #define FD_CLOEXEC 0x01
 #define FD_CLOFORK 0x02
 
-#define F_OK 0
-#define X_OK (1 << 0)
-#define W_OK (1 << 1)
-#define R_OK (1 << 2)
-
 #define AT_FDCWD -42
 
 #define AT_SYMLINK_NOFOLLOW (1 << 0)

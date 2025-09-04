@@ -36,15 +36,9 @@ main(void)
 			continue;
 		}
 
-		if ((mouse_data[0] & BUTTON_LEFT)) {
-			left = true;
-		}
-		if ((mouse_data[0] & BUTTON_RIGHT)) {
-			right = true;
-		}
-		if ((mouse_data[0] & BUTTON_MIDDLE)) {
-			middle = true;
-		}
+		left = mouse_data[0] & BUTTON_LEFT;
+		right = mouse_data[0] & BUTTON_RIGHT;
+		middle = mouse_data[0] & BUTTON_MIDDLE;
 
 		printf("dx: %d dy: %d left: %d right: %d mid: %d\n", delta_x, delta_y, left,
 		       right, middle);

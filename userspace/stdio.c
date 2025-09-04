@@ -249,7 +249,7 @@ ungetc(int c, FILE *stream)
 }
 
 int
-getc(FILE *stream)
+fgetc(FILE *stream)
 {
 	int c;
 	if (read(fileno(stream), &c, 1) != 1) {
@@ -257,6 +257,12 @@ getc(FILE *stream)
 	}
 	stream->previous_char = c;
 	return c;
+}
+
+int
+getc(FILE *stream)
+{
+	return fgetc(stream);
 }
 
 int
@@ -330,9 +336,15 @@ fputc(int c, FILE *stream)
 }
 
 int
+putc(int c, FILE *stream)
+{
+	return fputc(c, stream);
+}
+
+int
 putchar(int c)
 {
-	return fputc(c, stdout);
+	return putc(c, stdout);
 }
 
 static size_t

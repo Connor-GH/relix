@@ -184,42 +184,50 @@ stpncpy(char *dst, const char *src, size_t n)
 	return dst;
 }
 
-static char *restrict __strtok_token = NULL;
+static char *__strtok_token = NULL;
 /*
  * Break a string into a sequence of zero or more nonempty tokens.
  * If the same string is being parsed as the previous invocation, str must be
  * NULL.
  */
 char *
-strtok(char *restrict str, const char *restrict delimeter)
+strtok_r(char *restrict str, const char *restrict delim,
+         char **restrict saveptr)
 {
 	if (str != NULL) {
-		__strtok_token = str;
+		*saveptr = str;
 	}
 
-	if (__strtok_token == NULL) {
+	if (*saveptr == NULL) {
 		return NULL;
 	}
 
-	while (*__strtok_token && strchr(delimeter, *__strtok_token) != NULL) {
-		__strtok_token++;
+	while (**saveptr && strchr(delim, **saveptr) != NULL) {
+		(*saveptr)++;
 	}
 
-	if (*__strtok_token == '\0') {
+	if (**saveptr == '\0') {
 		return NULL;
 	}
 
-	char *start = __strtok_token;
-	while (*__strtok_token && strchr(delimeter, *__strtok_token) == NULL) {
-		__strtok_token++;
+	char *start = *saveptr;
+	while (**saveptr && strchr(delim, **saveptr) == NULL) {
+		(*saveptr)++;
 	}
 
 	// The input string gets consumed from the input, so we modify it here.
-	if (*__strtok_token) {
-		*__strtok_token++ = '\0';
+	if (**saveptr) {
+		// C does not recognize "(**saveptr)++" as an lvalue.
+		*(*saveptr)++ = '\0';
 	}
 
 	return start;
+}
+
+char *
+strtok(char *restrict str, const char *restrict delim)
+{
+	return strtok_r(str, delim, &__strtok_token);
 }
 
 void *

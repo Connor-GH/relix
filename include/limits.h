@@ -11,24 +11,24 @@
 
 #define UCHAR_MAX 255
 
-#define SHRT_MIN __SHRT_MIN__
+#define SHRT_MIN (-SHRT_MAX - 1)
 #define SHRT_MAX __SHRT_MAX__
 
 #define USHRT_MAX __USHRT_MAX__
 
 #define WORD_BIT __INT_WIDTH__
-#define INT_MIN -2147483647
+#define INT_MIN (-INT_MAX - 1)
 #define INT_MAX __INT_MAX__
 
 #define UINT_MAX __UINT_MAX__
 
 #define LONG_BIT __LONG_WIDTH__
-#define LONG_MIN __LONG_MIN__
+#define LONG_MIN (-LONG_MAX - 1)
 #define LONG_MAX __LONG_MAX__
 
 #define ULONG_MAX (~0UL)
 
-#define LLONG_MIN __LONG_LONG_MIN__
+#define LLONG_MIN (-LLONG_MAX - 1)
 #define LLONG_MAX __LONG_LONG_MAX__
 
 #define ULLONG_MAX (~0ULL)

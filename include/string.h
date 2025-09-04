@@ -44,6 +44,8 @@ void *memchr(const void *s, int c, size_t n);
 void *memrchr(const void *s, int c, size_t n);
 char *strerror(int err_no);
 char *strtok(char *restrict str, const char *restrict delim) __NONNULL(2);
+char *strtok_r(char *restrict str, const char *restrict delim,
+               char **restrict saveptr) __NONNULL(2, 3);
 char *strdup(const char *s) __NONNULL(1);
 char *strndup(const char *s, size_t n);
 

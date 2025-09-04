@@ -626,8 +626,10 @@ kvmalloc(void)
 		get_multiboot_framebuffer()->common;
 	uintptr_t fb_addr = fb_common.framebuffer_addr;
 	for (n = 0; n < 16; n++) {
-		iopgdir[n] = (fb_addr + (n << PDXSHIFT)) | PDE_PS | PTE_P | PTE_W |
-		             PTE_PWT | PTE_PCD;
+		iopgdir[n] = (fb_addr + (n << PDXSHIFT)) | PDE_PS | PDE_P | PDE_W |
+		             /* Comment out PCD for now so that we can get write-combining.
+		              * when VM gets redone, we should change this. */
+		             PDE_PWT /*| PDE_PCD*/;
 	}
 	switchkvm();
 }

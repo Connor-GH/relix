@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bits/__NULL.h>
+#include <bits/access_constants.h>
 #include <bits/seek_constants.h>
 #include <bits/size_t.h>
 #include <bits/stdint.h>

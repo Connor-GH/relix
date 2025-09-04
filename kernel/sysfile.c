@@ -22,8 +22,10 @@
 #include "proc.h"
 #include "syscall.h"
 #include "termios.h"
+#include "trap.h"
 #include "vga.h"
 #include "vm.h"
+#include <bits/access_constants.h>
 #include <bits/fcntl_constants.h>
 #include <dirent.h>
 #include <errno.h>

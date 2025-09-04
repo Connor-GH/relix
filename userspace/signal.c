@@ -21,6 +21,12 @@ kill(pid_t pid, int sig)
 }
 
 int
+killpg(pid_t pgid, int sig)
+{
+	return kill(-pgid, sig);
+}
+
+int
 sigprocmask(int how, const sigset_t *restrict set, sigset_t *restrict oldset)
 {
 	return __syscall_ret(

@@ -11,6 +11,6 @@ struct rlimit {
 };
 
 struct rusage {
-	struct timeval r_utime; // User time
-	struct timeval r_stime; // System time
+	struct timeval ru_utime; // User time
+	struct timeval ru_stime; // System time
 };

@@ -93,6 +93,7 @@ struct sigaction {
 #define MINSIGSTKSZ 10
 #define SIGSTKSZ 11
 int kill(pid_t pid, int signal);
+int killpg(pid_t pgid, int sig);
 sighandler_t signal(int signum, sighandler_t handler);
 // Seems strange, but everyone defines it this way.
 // Int modifications, at least on x86, are an atomic transaction.

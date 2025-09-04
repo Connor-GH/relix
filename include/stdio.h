@@ -79,13 +79,19 @@ void setlinebuf(FILE *restrict stream) __NONNULL(1);
 int setvbuf(FILE *restrict stream, char *restrict buf, int modes, size_t n)
 	__NONNULL(1);
 void setbuf(FILE *restrict stream, char *restrict buf) __NONNULL(1);
+
+int fgetc(FILE *stream) __NONNULL(1);
 int getc(FILE *stream) __NONNULL(1);
 int getchar(void);
+
 int ungetc(int c, FILE *stream) __NONNULL(2);
+
+int fputc(int c, FILE *stream) __NONNULL(2);
+int putc(int c, FILE *stream) __NONNULL(2);
+int putchar(int c);
+
 int fileno(FILE *stream) __NONNULL(1);
 void perror(const char *s);
-int fputc(int c, FILE *stream) __NONNULL(2);
-int putchar(int c);
 // stream can be NULL.
 int fflush(FILE *stream);
 FILE *fdopen(int fd, const char *restrict mode);
@@ -110,6 +116,6 @@ void rewind(FILE *stream) __NONNULL(1);
 int remove(const char *pathname);
 int rename(const char *oldpath, const char *newpath);
 long ftell(FILE *stream) __NONNULL(1);
-#define putc(c, stream) fputc(c, stream)
+
 #endif
 #endif /* USE_HOST_TOOLS */

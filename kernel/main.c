@@ -3,6 +3,7 @@
 #include "boot/multiboot2.h"
 
 #include "dev/acpi.h"
+#include "dev/fb.h"
 #include "dev/kbd.h"
 #include "dev/lapic.h"
 #include "dev/mouse.h"
@@ -81,6 +82,7 @@ main(struct multiboot_info *mbinfo)
 	dev_null_init();
 	dev_mouse_init();
 	dev_sd_init();
+	dev_fb_init();
 	pinit(); // process table
 	block_init(); // buffer cache
 	fileinit(); // file table

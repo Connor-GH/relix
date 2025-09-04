@@ -44,7 +44,7 @@ fb_mmap(short minor, size_t length, uintptr_t addr, int perm)
 
 // INVARIANT: this must come after parse_multiboot().
 void
-fb_init(void)
+dev_fb_init(void)
 {
 	s_fb_common = get_multiboot_framebuffer()->common;
 	devsw[DEV_FB].read = fb_read;

@@ -1,13 +1,14 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 static void
 usage(char **argv)
 {
 	fprintf(stderr, "usage: %s [-l|number]\n", argv[0]);
-	exit(-1);
+	exit(EXIT_FAILURE);
 }
 
 int
@@ -20,9 +21,14 @@ main(int argc, char **argv)
 		if (argv[i][0] == '-') {
 			switch (argv[i][1]) {
 			case 'l':
-				for (size_t j = 0; j < sizeof(errno_codes) / sizeof(errno_codes[0]);
-				     j++) {
-					printf("%s\n", errno_codes[j]);
+				for (int j = 0;; j++) {
+					errno = 0;
+					char *s = strerror(j);
+					if (errno == 0) {
+						printf("%s\n", s);
+					} else {
+						break;
+					}
 				}
 				return 0;
 			default:
@@ -35,10 +41,13 @@ main(int argc, char **argv)
 	if (err == 0) {
 		usage(argv);
 	}
-	if (err > MAX_ERRNO - 1) {
+
+	errno = 0;
+	char *s = strerror(err);
+	if (errno == 0) {
+		printf("%s\n", s);
+	} else {
 		usage(argv);
 	}
-	printf("%s\n", errno_codes[err]);
-
 	return 0;
 }

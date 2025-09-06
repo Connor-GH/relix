@@ -26,6 +26,7 @@ int execve(const char *, char *const *, char *const *);
 int execvp(const char *file, char *const *argv);
 int execv(const char *prog, char *const *argv);
 int execl(const char *path, const char *arg, ...);
+int execlp(const char *file, const char *arg, ...);
 int execle(const char *path, const char *arg, ...);
 
 ssize_t write(int, const void *, size_t);

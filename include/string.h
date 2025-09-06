@@ -42,7 +42,7 @@ void *memcpy(void *dst, const void *src, size_t n);
 void *mempcpy(void *dst, const void *src, size_t n);
 void *memchr(const void *s, int c, size_t n);
 void *memrchr(const void *s, int c, size_t n);
-char *strerror(int err_no);
+char *strerror(int errnum);
 char *strtok(char *restrict str, const char *restrict delim) __NONNULL(2);
 char *strtok_r(char *restrict str, const char *restrict delim,
                char **restrict saveptr) __NONNULL(2, 3);

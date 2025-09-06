@@ -44,49 +44,44 @@ extern int errno;
 #define ENOSYS 38 /* Functionality not supported */
 #define ENOTEMPTY 39 /* Directory not empty */
 #define ELOOP 40 /* Too many symbolic links */
-#define MAX_ERRNO 40
-#if !defined(__ASSEMBLER__)
-static const char *const errno_codes[] = {
-	[0] = "Success",
-	[EPERM] = "Operation not permitted",
-	[ENOENT] = "No such file or directory",
-	[ESRCH] = "No such process",
-	[EINTR] = "Interrupted system call",
-	[EIO] = "I/O error",
-	[ENXIO] = "No such device or address",
-	[E2BIG] = "Argument list too long",
-	[ENOEXEC] = "Exec format error",
-	[EBADF] = "Bad file number",
-	[ECHILD] = "No child processes",
-	[EAGAIN] = "Try again",
-	[ENOMEM] = "Out of memory",
-	[EACCES] = "Permission denied",
-	[EFAULT] = "Bad address",
-	[ENOTBLK] = "Block device required",
-	[EBUSY] = "Device or resource busy",
-	[EEXIST] = "File exists",
-	[EXDEV] = "Cross-device link",
-	[ENODEV] = "No such device",
-	[ENOTDIR] = "Not a directory",
-	[EISDIR] = "Is a directory",
-	[EINVAL] = "Invalid argument",
-	[ENFILE] = "File table overflow",
-	[EMFILE] = "Too many open files",
-	[ENOTTY] = "Not a typewriter",
-	[ETXTBSY] = "Text file busy",
-	[EFBIG] = "File too large",
-	[ENOSPC] = "No space left on device",
-	[ESPIPE] = "Illegal seek",
-	[EROFS] = "Read-only file system",
-	[EMLINK] = "Too many links",
-	[EPIPE] = "Broken pipe",
-	[EDOM] = "Math argument out of domain of func",
-	[ERANGE] = "Math result not representable",
-	[EDEADLK] = "Resource deadlock",
-	[ENAMETOOLONG] = "Name too long",
-	[ENOLCK] = "No record locks available",
-	[ENOSYS] = "function not implemented",
-	[ENOTEMPTY] = "Directory not empty",
-	[ELOOP] = "Too many symbolic links",
-};
-#endif
+#define EADDRINUSE 41 /* Address in use */
+#define EADDRNOTAVAIL 42 /* Address not available */
+#define EAFNOSUPPORT 43 /* Address family not supported */
+#define EALREADY 44 /* Connection already in progress */
+#define EBADMSG 45 /* Bad message */
+#define ECANCELED 46 /* Operation canceled */
+#define ECONNABORTED 47 /* Connection aborted */
+#define ECONNREFUSED 48 /* Connection refused */
+#define ECONNRESET 49 /* Connection reset */
+#define EDESTADDRREQ 50 /* Destination address required */
+#define EDQUOT 51 /* Reserved */
+#define EHOSTUNREACH 52 /* Host is unreachable */
+#define EIDRM 53 /* Identifier removed */
+#define EILSEQ 54 /* Illegal byte sequence */
+#define EINPROGRESS 55 /* Operation in progress */
+#define EISCONN 56 /* Socket is connected */
+#define EMSGSIZE 57 /* Message too large */
+#define EMULTIHOP 58 /* Reserved */
+#define ENETDOWN 59 /* Network is down */
+#define ENETRESET 60 /* Connection aborted by network */
+#define ENETUNREACH 61 /* Network unreachable */
+#define ENOBUFS 62 /* No buffer space available */
+#define ENOLINK 63 /* Reserved */
+#define ENOMSG 64 /* No message of the desired type */
+#define ENOPROTOOPT 65 /* Protocol not available */
+#define ENOTCONN 66 /* The socket is not connected */
+#define ENOTRECOVERABLE 67 /* State not recoverable */
+#define ENOTSOCK 68 /* Not a socket */
+#define ENOTSUP 69 /* Not supported (may be the same value as [EOPNOTSUPP]) */
+/*
+ * Operation not supported on socket (may be the same value as [ENOTSUP])
+ */
+#define EOPNOTSUPP ENOTSUP
+#define EOVERFLOW 70 /* Value too large to be stored in data type */
+#define EOWNERDEAD 71 /* Previous owner died */
+#define EPROTO 72 /* Protocol error */
+#define EPROTONOSUPPORT 73 /* Protocol not supported */
+#define EPROTOTYPE 74 /* Protocol wrong type for socket */
+#define ESOCKTNOSUPPORT 75 /* Socket type not supported */
+#define ESTALE 76 /* Reserved */
+#define ETIMEDOUT 77 /* Connection timed out */

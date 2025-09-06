@@ -144,6 +144,19 @@ execl(const char *path, const char *arg, ...)
 }
 
 int
+execlp(const char *file, const char *arg, ...)
+{
+	char *argv[ARG_MAX] = {};
+	va_list listp;
+
+	va_start(listp, arg);
+	(void)execl_core(listp, argv);
+	va_end(listp);
+
+	return execvp(file, argv);
+}
+
+int
 execle(const char *path, const char *arg, ...)
 {
 	char *argv[ARG_MAX] = {};

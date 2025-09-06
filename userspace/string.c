@@ -450,3 +450,169 @@ strdup(const char *s)
 {
 	return strndup(s, strlen(s) + 1);
 }
+
+char *
+strerror(int errnum)
+{
+	switch (errnum) {
+	case EPERM:
+		return "Operation not permitted";
+	case ENOENT:
+		return "No such file or directory";
+	case ESRCH:
+		return "No such process";
+	case EINTR:
+		return "Interrupted system call";
+	case EIO:
+		return "I/O error";
+	case ENXIO:
+		return "No such device or address";
+	case E2BIG:
+		return "Argument list too long";
+	case ENOEXEC:
+		return "Exec format error";
+	case EBADF:
+		return "Bad file number";
+	case ECHILD:
+		return "No child processes";
+	case EAGAIN:
+		return "Try again";
+	case ENOMEM:
+		return "Out of memory";
+	case EACCES:
+		return "Permission denied";
+	case EFAULT:
+		return "Bad address";
+	case ENOTBLK:
+		return "Block device required";
+	case EBUSY:
+		return "Device or resource busy";
+	case EEXIST:
+		return "File exists";
+	case EXDEV:
+		return "Cross-device link";
+	case ENODEV:
+		return "No such device";
+	case ENOTDIR:
+		return "Not a directory";
+	case EISDIR:
+		return "Is a directory";
+	case EINVAL:
+		return "Invalid argument";
+	case ENFILE:
+		return "File table overflow";
+	case EMFILE:
+		return "Too many open files";
+	case ENOTTY:
+		return "Not a typewriter";
+	case ETXTBSY:
+		return "Text file busy";
+	case EFBIG:
+		return "File too large";
+	case ENOSPC:
+		return "No space left on device";
+	case ESPIPE:
+		return "Illegal seek";
+	case EROFS:
+		return "Read-only file system";
+	case EMLINK:
+		return "Too many links";
+	case EPIPE:
+		return "Broken pipe";
+	case EDOM:
+		return "Math argument out of domain of func";
+	case ERANGE:
+		return "Math result not representable";
+	case EDEADLK:
+		return "Resource deadlock";
+	case ENAMETOOLONG:
+		return "Name too long";
+	case ENOLCK:
+		return "No record locks available";
+	case ENOSYS:
+		return "function not implemented";
+	case ENOTEMPTY:
+		return "Directory not empty";
+	case ELOOP:
+		return "Too many symbolic links";
+	case EADDRINUSE:
+		return "Address in use";
+	case EADDRNOTAVAIL:
+		return "Address not available";
+	case EAFNOSUPPORT:
+		return "Address family not supported";
+	case EALREADY:
+		return "Connection already in progress";
+	case EBADMSG:
+		return "Bad message";
+	case ECANCELED:
+		return "Operation canceled";
+	case ECONNABORTED:
+		return "Connection aborted";
+	case ECONNREFUSED:
+		return "Connection refused";
+	case ECONNRESET:
+		return "Connection reset";
+	case EDESTADDRREQ:
+		return "Destination address required";
+	case EDQUOT:
+		return "Reserved";
+	case EHOSTUNREACH:
+		return "Host is unreachable";
+	case EIDRM:
+		return "Identifier removed";
+	case EILSEQ:
+		return "Illegal byte sequence";
+	case EINPROGRESS:
+		return "Operation in progress";
+	case EISCONN:
+		return "Socket is connected";
+	case EMSGSIZE:
+		return "Message too large";
+	case EMULTIHOP:
+		return "Reserved";
+	case ENETDOWN:
+		return "Network is down";
+	case ENETRESET:
+		return "Connection aborted by network";
+	case ENETUNREACH:
+		return "Network unreachable";
+	case ENOBUFS:
+		return "No buffer space available";
+	case ENOLINK:
+		return "Reserved";
+	case ENOMSG:
+		return "No message of the desired type";
+	case ENOPROTOOPT:
+		return "Protocol not available";
+	case ENOTCONN:
+		return "The socket is not connected";
+	case ENOTRECOVERABLE:
+		return "State not recoverable";
+	case ENOTSOCK:
+		return "Not a socket";
+	case ENOTSUP:
+		return "Not supported";
+	case EOVERFLOW:
+		return "Value too large to be stored in data type";
+	case EOWNERDEAD:
+		return "Previous owner died";
+	case EPROTO:
+		return "Protocol error";
+	case EPROTONOSUPPORT:
+		return "Protocol not supported";
+	case EPROTOTYPE:
+		return "Protocol wrong type for socket";
+	case ESOCKTNOSUPPORT:
+		return "Socket type not supported";
+	case ESTALE:
+		return "Reserved";
+	case ETIMEDOUT:
+		return "Connection timed out";
+	default:
+		errno = EINVAL;
+		return "Unknown errno value";
+	case 0:
+		return "Success";
+	}
+}

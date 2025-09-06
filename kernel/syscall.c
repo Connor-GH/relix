@@ -403,7 +403,7 @@ syscall(struct proc *curproc)
 			cprintf("pid %d: syscall %s => %ld (%lu ticks)", curproc->pid,
 			        syscall_names[num], curproc->tf->rax, yticks - xticks);
 			if ((signed)curproc->tf->rax < 0) {
-				cprintf(" \"%s\"", errno_codes[-(signed)curproc->tf->rax]);
+				cprintf(" errno %d", -(signed)curproc->tf->rax);
 			}
 			cprintf("\n");
 		} else {

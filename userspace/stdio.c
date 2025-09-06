@@ -562,7 +562,7 @@ setbuf(FILE *restrict stream, char *restrict buf)
 void
 perror(const char *s)
 {
-	fprintf(stderr, "%s: %s\n", s, errno_codes[errno]);
+	fprintf(stderr, "%s: %s\n", s, strerror(errno));
 }
 
 void
@@ -572,11 +572,6 @@ clearerr(FILE *stream)
 	stream->error = false;
 }
 
-char *
-strerror(int err_no)
-{
-	return (char *)errno_codes[err_no];
-}
 int
 remove(const char *pathname)
 {

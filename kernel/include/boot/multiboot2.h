@@ -23,6 +23,8 @@
 #ifndef MULTIBOOT2_HEADER_H
 #define MULTIBOOT2_HEADER_H
 
+// https://www.gnu.org/software/grub/manual/multiboot2/multiboot.pdf
+
 /* How many bytes from the start of the file we search for the header.  */
 #define MULTIBOOT_SEARCH 32768
 #define MULTIBOOT_HEADER_ALIGN 8
@@ -104,7 +106,7 @@ typedef unsigned long long multiboot_uint64_t;
 struct multiboot_tag {
 	multiboot_uint32_t type;
 	multiboot_uint32_t size;
-} __attribute__((packed));
+};
 
 struct multiboot_info {
 	multiboot_uint32_t total_size;
@@ -125,13 +127,13 @@ struct multiboot_header {
 
 	/* The above fields plus this one must equal 0 mod 2^32. */
 	multiboot_uint32_t checksum;
-} __attribute__((packed));
+};
 
 struct multiboot_header_tag {
 	multiboot_uint16_t type;
 	multiboot_uint16_t flags;
 	multiboot_uint32_t size;
-} __attribute__((packed));
+};
 
 struct multiboot_header_tag_information_request {
 	multiboot_uint16_t type;
@@ -148,21 +150,21 @@ struct multiboot_header_tag_address {
 	multiboot_uint32_t load_addr;
 	multiboot_uint32_t load_end_addr;
 	multiboot_uint32_t bss_end_addr;
-} __attribute__((packed));
+};
 
 struct multiboot_header_tag_entry_address {
 	multiboot_uint16_t type;
 	multiboot_uint16_t flags;
 	multiboot_uint32_t size;
 	multiboot_uint32_t entry_addr;
-} __attribute__((packed));
+};
 
 struct multiboot_header_tag_console_flags {
 	multiboot_uint16_t type;
 	multiboot_uint16_t flags;
 	multiboot_uint32_t size;
 	multiboot_uint32_t console_flags;
-} __attribute__((packed));
+};
 
 struct multiboot_header_tag_framebuffer {
 	multiboot_uint16_t type;
@@ -171,13 +173,13 @@ struct multiboot_header_tag_framebuffer {
 	multiboot_uint32_t width;
 	multiboot_uint32_t height;
 	multiboot_uint32_t depth;
-} __attribute__((packed));
+};
 
 struct multiboot_header_tag_module_align {
 	multiboot_uint16_t type;
 	multiboot_uint16_t flags;
 	multiboot_uint32_t size;
-} __attribute__((packed));
+};
 
 struct multiboot_header_tag_relocatable {
 	multiboot_uint16_t type;
@@ -187,13 +189,13 @@ struct multiboot_header_tag_relocatable {
 	multiboot_uint32_t max_addr;
 	multiboot_uint32_t align;
 	multiboot_uint32_t preference;
-} __attribute__((packed));
+};
 
 struct multiboot_color {
 	multiboot_uint8_t red;
 	multiboot_uint8_t green;
 	multiboot_uint8_t blue;
-} __attribute__((packed));
+};
 
 struct multiboot_mmap_entry {
 	multiboot_uint64_t addr;
@@ -205,7 +207,7 @@ struct multiboot_mmap_entry {
 #define MULTIBOOT_MEMORY_BADRAM 5
 	multiboot_uint32_t type;
 	multiboot_uint32_t zero;
-} __attribute__((packed));
+};
 typedef struct multiboot_mmap_entry multiboot_memory_map_t;
 
 struct multiboot_tag_string {
@@ -227,7 +229,7 @@ struct multiboot_tag_basic_meminfo {
 	multiboot_uint32_t size;
 	multiboot_uint32_t mem_lower;
 	multiboot_uint32_t mem_upper;
-} __attribute__((packed));
+};
 
 struct multiboot_tag_bootdev {
 	multiboot_uint32_t type;
@@ -235,7 +237,7 @@ struct multiboot_tag_bootdev {
 	multiboot_uint32_t biosdev;
 	multiboot_uint32_t slice;
 	multiboot_uint32_t part;
-} __attribute__((packed));
+};
 
 struct multiboot_tag_mmap {
 	multiboot_uint32_t type;
@@ -247,11 +249,11 @@ struct multiboot_tag_mmap {
 
 struct multiboot_vbe_info_block {
 	multiboot_uint8_t external_specification[512];
-} __attribute__((packed));
+};
 
 struct multiboot_vbe_mode_info_block {
 	multiboot_uint8_t external_specification[256];
-} __attribute__((packed));
+};
 
 struct multiboot_tag_vbe {
 	multiboot_uint32_t type;
@@ -264,7 +266,7 @@ struct multiboot_tag_vbe {
 
 	struct multiboot_vbe_info_block vbe_control_info;
 	struct multiboot_vbe_mode_info_block vbe_mode_info;
-} __attribute__((packed));
+};
 
 struct multiboot_tag_framebuffer_common {
 	multiboot_uint32_t type;
@@ -280,7 +282,7 @@ struct multiboot_tag_framebuffer_common {
 #define MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT 2
 	multiboot_uint8_t framebuffer_type;
 	multiboot_uint16_t reserved;
-} __attribute__((packed));
+};
 
 struct multiboot_tag_framebuffer {
 	struct multiboot_tag_framebuffer_common common;
@@ -299,7 +301,7 @@ struct multiboot_tag_framebuffer {
 			multiboot_uint8_t framebuffer_blue_mask_size;
 		} rgb;
 	};
-} __attribute__((packed));
+};
 
 struct multiboot_tag_elf_sections {
 	multiboot_uint32_t type;
@@ -308,12 +310,10 @@ struct multiboot_tag_elf_sections {
 	// correspond to the e_sh fields of the Elf64_Ehdr
 	// The difference is that these sizes are different.
 	// In the ELF spec, all of these are u16, while here
-	// they are sometimes u32 and sometimes u16.
+	// they are u32.
 	multiboot_uint32_t num;
 	multiboot_uint32_t entsize;
-	multiboot_uint16_t strndx;
-
-	multiboot_uint16_t reserved;
+	multiboot_uint32_t shndx;
 	char section_headers[];
 };
 
@@ -329,19 +329,19 @@ struct multiboot_tag_apm {
 	multiboot_uint16_t cseg_len;
 	multiboot_uint16_t cseg_16_len;
 	multiboot_uint16_t dseg_len;
-} __attribute__((packed));
+};
 
 struct multiboot_tag_efi32 {
 	multiboot_uint32_t type;
 	multiboot_uint32_t size;
 	multiboot_uint32_t pointer;
-} __attribute__((packed));
+};
 
 struct multiboot_tag_efi64 {
 	multiboot_uint32_t type;
 	multiboot_uint32_t size;
 	multiboot_uint64_t pointer;
-} __attribute__((packed));
+};
 
 struct multiboot_tag_smbios {
 	multiboot_uint32_t type;
@@ -382,19 +382,19 @@ struct multiboot_tag_efi32_ih {
 	multiboot_uint32_t type;
 	multiboot_uint32_t size;
 	multiboot_uint32_t pointer;
-} __attribute__((packed));
+};
 
 struct multiboot_tag_efi64_ih {
 	multiboot_uint32_t type;
 	multiboot_uint32_t size;
 	multiboot_uint64_t pointer;
-} __attribute__((packed));
+};
 
 struct multiboot_tag_load_base_addr {
 	multiboot_uint32_t type;
 	multiboot_uint32_t size;
 	multiboot_uint32_t load_base_addr;
-} __attribute__((packed));
+};
 
 #endif // __ASSEMBLER__
 

@@ -8,8 +8,9 @@ USER_EXTRAS = -D__USER__
 
 ULIB_STATIC = $(BIN)/libc.a
 
-UCFLAGS = -fno-lto -m80387 -msse -mno-sse2 \
-					-mno-avx -mno-avx2 $(USER_EXTRAS) -I$(UDIR)/include -I. $(IVARS)
+# CFLAGS already includes all floating point off so
+# we opt into what we want here.
+UCFLAGS = -fno-lto -m80387 -msse $(USER_EXTRAS) -I$(UDIR)/include -I. $(IVARS)
 ifneq ($(RELEASE),)
 	UCFLAGS += -flto -O3
 else

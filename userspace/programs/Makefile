@@ -1,7 +1,7 @@
-UPROGS_DIR = $(UDIR)/programs
-UPROGS_SRC = $(wildcard $(UPROGS_DIR)/*.c)
-UPROGS_OBJ = $(UPROGS_SRC:$(UPROGS_DIR)/%.c=$(BIN)/%.o)
-UPROGS = $(UPROGS_OBJ:$(BIN)/%.o=$(SYSROOT)/$(BIN)/_%)
+UPROGS_DIR := $(UDIR)/programs
+UPROGS_SRC := $(wildcard $(UPROGS_DIR)/*.c)
+UPROGS_OBJ := $(UPROGS_SRC:$(UPROGS_DIR)/%.c=$(BIN)/%.o)
+UPROGS := $(UPROGS_OBJ:$(BIN)/%.o=$(SYSROOT)/$(BIN)/_%)
 
 define rust_libs
 $(foreach x, $(1) $(2) $(3) $(4) $(5) $(6) $(7) $(8) $(9) $(10), $(FULL_BIN)/lib$(x).a)
@@ -15,7 +15,7 @@ endef
 $(BIN)/%.o: $(UPROGS_DIR)/%.c
 	$(CC) $(CFLAGS) $(UCFLAGS) -c -o $@ $^
 
-ULIBS = $(ULIB_STATIC) $(SHAREDLIBS_STATIC)
+ULIBS := $(ULIB_STATIC) $(SHAREDLIBS_STATIC)
 
 define prog
 $(SYSROOT)/$(BIN)/_$(1): $(BIN)/$(1).o

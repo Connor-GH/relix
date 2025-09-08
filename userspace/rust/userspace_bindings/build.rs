@@ -26,7 +26,7 @@ fn main() {
         .clang_args([
             "-I../../../",
             "-I../../../include",
-            "-D__USER__=1",
+            "-D__RELIX_USER__=1",
             "-fno-builtin",
         ])
         // Tell cargo to invalidate the built crate whenever any of the

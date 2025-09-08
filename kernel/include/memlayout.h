@@ -21,11 +21,11 @@
 #define V2P_WO(x) ((x) - KERNBASE) // same as V2P, but without casts
 #define P2V_WO(x) ((x) + KERNBASE) // same as P2V, but without casts
 
-#ifdef X86_64
+#ifdef __x86_64__
 #define PHYSLIMIT 0x80000000ULL
 #endif
 // Key addresses for address space layout (see kmap in vm.c for layout)
-#ifdef X86_64
+#ifdef __x86_64__
 // First kernel virtual address
 #define KERNBASE (ULONG_MAX - PHYSLIMIT + 1) // 0xFFFFFFFF80000000ULL
 // First device virtual address

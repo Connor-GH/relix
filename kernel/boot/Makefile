@@ -1,5 +1,5 @@
-BOOTDIR = $(KERNELDIR)/boot
-BOOT_INC = -I$(BOOTDIR) $(IVARS) $(KERNEL_INC)
+BOOTDIR := $(KERNELDIR)/boot
+BOOT_INC := -I$(BOOTDIR) $(IVARS) $(KERNEL_INC)
 
 $(BIN)/sign:
 	$(CC) -Werror -Wall -o $@ $(TOOLSDIR)/sign.c

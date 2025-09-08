@@ -6,7 +6,7 @@
 #include "param.h"
 #include <stdint.h>
 #include <sys/stat.h>
-#if __KERNEL__
+#if __RELIX_KERNEL__
 struct file {
 	enum {
 		FD_NONE,
@@ -57,7 +57,7 @@ enum {
 
 _Static_assert(__DEVSW_last <= NDEV,
                "Too many devices; adjust NDEV in param.h");
-#if __KERNEL__
+#if __RELIX_KERNEL__
 extern struct devsw devsw[];
 
 // Helper functions for file manipulation that

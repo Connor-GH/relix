@@ -1,5 +1,5 @@
 #pragma once
-#if __KERNEL__
+#if __RELIX_KERNEL__
 #include <stddef.h>
 char *kpage_alloc(void);
 void kpage_free(char *);

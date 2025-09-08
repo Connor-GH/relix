@@ -1,5 +1,5 @@
 #pragma once
-#if __KERNEL__
+#if __RELIX_KERNEL__
 void picenable(int);
 void picinit(void);
 #endif

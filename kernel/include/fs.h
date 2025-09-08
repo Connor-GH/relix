@@ -17,7 +17,7 @@
 #include "include/sys/types.h"
 #include <kernel/include/sleeplock.h>
 #endif
-#if __KERNEL__ || defined(USE_HOST_TOOLS)
+#if __RELIX_KERNEL__ || defined(USE_HOST_TOOLS)
 #define NDIRECT __NDIRECT
 #define NINDIRECT __NINDIRECT
 #define MAXFILE __MAXFILE
@@ -109,7 +109,7 @@ struct dinode {
 // Block of free map containing bit for block b
 #define BBLOCK(b, sb) ((b) / BPB + (sb).bmapstart)
 
-#if !defined(USE_HOST_TOOLS) || __KERNEL__
+#if !defined(USE_HOST_TOOLS) || __RELIX_KERNEL__
 #include <sys/stat.h>
 void read_superblock(dev_t dev, struct superblock *sb);
 // Directory is a file containing a sequence of dirent structures.

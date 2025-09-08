@@ -170,7 +170,7 @@ lgdt(struct segdesc *p, int size)
 	pd[0] = size - 1;
 	pd[1] = (uintptr_t)p;
 	pd[2] = (uintptr_t)p >> 16;
-#if X86_64
+#if __x86_64__
 	pd[3] = (uintptr_t)p >> 32;
 	pd[4] = (uintptr_t)p >> 48;
 #endif
@@ -188,7 +188,7 @@ lidt(struct gatedesc *p, int size)
 	pd[0] = size - 1;
 	pd[1] = (uintptr_t)p;
 	pd[2] = (uintptr_t)p >> 16;
-#if X86_64
+#if __x86_64__
 	pd[3] = (uintptr_t)p >> 32;
 	pd[4] = (uintptr_t)p >> 48;
 #endif
@@ -291,7 +291,7 @@ wrmsr(uint32_t msr, uint64_t val)
 // Layout of the trap frame built on the stack by the
 // hardware and by trapasm.S, and passed to trap().
 struct trapframe {
-#ifdef X86_64
+#ifdef __x86_64__
 	uint64_t rax;
 	uint64_t rbx;
 	uint64_t rcx;

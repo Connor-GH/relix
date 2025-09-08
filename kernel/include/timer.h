@@ -1,4 +1,4 @@
 #pragma once
-#if __KERNEL__
+#if __RELIX_KERNEL__
 void timerinit(void);
 #endif

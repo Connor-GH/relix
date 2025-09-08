@@ -1,5 +1,5 @@
 #pragma once
-#if __KERNEL__
+#if __RELIX_KERNEL__
 #include "lib/compiler_attributes.h"
 #include <buf.h>
 void initlog(dev_t dev);

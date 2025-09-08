@@ -1,4 +1,4 @@
 #pragma once
-#if __KERNEL__
+#if __RELIX_KERNEL__
 void dev_null_init(void);
 #endif

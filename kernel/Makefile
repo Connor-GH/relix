@@ -1,22 +1,22 @@
 KERNELDIR = kernel
-KERNEL_SRC = $(wildcard $(KERNELDIR)/*.c)
-KERNEL_ASM = $(wildcard $(KERNELDIR)/*.S)
+KERNEL_SRC := $(wildcard $(KERNELDIR)/*.c)
+KERNEL_ASM := $(wildcard $(KERNELDIR)/*.S)
 
 KERNEL_SRC += $(wildcard $(KERNELDIR)/64/*.c)
 KERNEL_ASM += $(wildcard $(KERNELDIR)/64/*.S)
 
-KERNEL_DRIVER_DIR = $(KERNELDIR)/dev
+KERNEL_DRIVER_DIR := $(KERNELDIR)/dev
 
-KERNEL_DRIVERS_SRC = $(wildcard $(KERNEL_DRIVER_DIR)/*.c)
+KERNEL_DRIVERS_SRC := $(wildcard $(KERNEL_DRIVER_DIR)/*.c)
 
-KERNEL_OBJS = $(KERNEL_SRC:$(KERNELDIR)/%.c=$(BIN)/%.o) $(KERNEL_ASM:$(KERNELDIR)/%.S=$(BIN)/%.o) \
+KERNEL_OBJS := $(KERNEL_SRC:$(KERNELDIR)/%.c=$(BIN)/%.o) $(KERNEL_ASM:$(KERNELDIR)/%.S=$(BIN)/%.o) \
 	$(KERNEL_DRIVERS_SRC:$(KERNEL_DRIVER_DIR)/%.c=$(BIN)/%.o)
-KERNEL_EXTRAS = -D__KERNEL__=1
+KERNEL_EXTRAS = -D__RELIX_KERNEL__=1
 
 ifneq ($(KUBSAN),)
 	KUBSAN_FLAGS = -fsanitize=undefined
 endif
-KERNEL_INC = $(IVARS) \
+KERNEL_INC := $(IVARS) \
 						 -I$(KERNELDIR)/include \
 						 -I$(KERNELDIR)/drivers \
 							$(KERNEL_EXTRAS)

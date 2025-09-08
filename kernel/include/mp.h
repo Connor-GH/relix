@@ -1,5 +1,5 @@
 #pragma once
-#if __KERNEL__
+#if __RELIX_KERNEL__
 #include <stdint.h>
 // See MultiProcessor Specification Version 1.[14]
 

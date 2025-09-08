@@ -1,5 +1,5 @@
 #pragma once
-#if __KERNEL__
+#if __RELIX_KERNEL__
 #include "proc.h"
 #include <stdint.h>
 void seginit(void);

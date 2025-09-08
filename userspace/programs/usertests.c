@@ -1628,15 +1628,13 @@ void
 validateint(__attribute__((unused)) int *p)
 {
 	int res;
-#ifndef X86_64
 	asm("mov %%esp, %%ebx\n\t"
-	    "mov %3, %%rsp\n\t"
-	    "int %2\n\t"
+	    "mov %2, %%rsp\n\t"
+	    "syscall\n\t"
 	    "mov %%ebx, %%esp"
 	    : "=a"(res)
-	    : "a"(SYS_sleep), "n"(T_SYSCALL), "c"(p)
+	    : "a"(SYS_alarm), "c"(p), "d"(1)
 	    : "ebx");
-#endif
 }
 
 void

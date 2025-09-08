@@ -3,7 +3,7 @@
 // mkfs defines this when building.
 #ifndef USE_HOST_TOOLS
 
-#if defined(__USER__)
+#ifdef __RELIX_USER__
 #include <bits/__NULL.h>
 #include <bits/seek_constants.h>
 #include <bits/size_t.h>

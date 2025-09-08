@@ -1,5 +1,5 @@
 #pragma once
-#if __KERNEL__
+#if __RELIX_KERNEL__
 #include <inttypes.h>
 #include <stdbool.h>
 enum SSE {

@@ -1,20 +1,20 @@
 UDIR = userspace
-ULIB = $(wildcard $(UDIR)/*.c)
-ULIB_OBJ = $(ULIB:$(UDIR)/%.c=$(BIN)/ulib_%.o)
-ULIB_ASM = $(wildcard $(UDIR)/*.S)
-ULIB_ASM_OBJ = $(ULIB_ASM:$(UDIR)/%.S=$(BIN)/asm_%.o)
+ULIB := $(wildcard $(UDIR)/*.c)
+ULIB_OBJ := $(ULIB:$(UDIR)/%.c=$(BIN)/ulib_%.o)
+ULIB_ASM := $(wildcard $(UDIR)/*.S)
+ULIB_ASM_OBJ := $(ULIB_ASM:$(UDIR)/%.S=$(BIN)/asm_%.o)
 
-USER_EXTRAS = -D__USER__
+USER_EXTRAS = -D__RELIX_USER__
 
-ULIB_STATIC = $(BIN)/libc.a
+ULIB_STATIC := $(BIN)/libc.a
 
 # CFLAGS already includes all floating point off so
 # we opt into what we want here.
-UCFLAGS = -fno-lto -m80387 -msse $(USER_EXTRAS) -I$(UDIR)/include -I. $(IVARS)
+UCFLAGS := -fno-lto -m80387 -msse $(USER_EXTRAS) -I$(UDIR)/include -I. $(IVARS)
 ifneq ($(RELEASE),)
 	UCFLAGS += -flto -O3
 else
-	UCFLAGS += -DMEMORY_GUARDS
+	UCFLAGS += -D__RELIX_MEMORY_GUARDS__
 endif
 
 $(ULIB_OBJ): $(BIN)/ulib_%.o : $(UDIR)/%.c

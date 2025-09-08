@@ -1,5 +1,5 @@
 #pragma once
-#if __KERNEL__
+#if __RELIX_KERNEL__
 // x86 trap and interrupt constants.
 
 // Processor-defined:
@@ -28,7 +28,7 @@
 // processor defined exceptions or interrupt vectors.
 #endif
 #define T_SYSCALL 64 // system call
-#if __KERNEL__
+#if __RELIX_KERNEL__
 #define T_DEFAULT 500 // catchall
 
 #define T_IRQ0 32 // IRQ 0 corresponds to int T_IRQ

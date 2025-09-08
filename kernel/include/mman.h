@@ -10,7 +10,7 @@
 #define MAP_ANONYMOUS 0x2
 #define MAP_ANON MAP_ANONYMOUS
 
-#if __KERNEL__
+#if __RELIX_KERNEL__
 #include "file.h"
 #include <stddef.h>
 #include <stdint.h>

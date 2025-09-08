@@ -32,7 +32,7 @@ enum {
 	VGA_COLOR_BRIGHT_CYAN = R(85) | G(255) | B(255),
 	VGA_COLOR_BRIGHT_WHITE = R(255) | G(255) | B(255),
 };
-#if __KERNEL__
+#if __RELIX_KERNEL__
 struct vga_rectangle {
 	uint32_t x;
 	uint32_t y;

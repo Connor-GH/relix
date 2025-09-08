@@ -1,5 +1,5 @@
 #pragma once
-#if __KERNEL__
+#if __RELIX_KERNEL__
 
 __attribute__((noreturn)) void kernel_assert_fail(const char *assertion,
                                                   const char *file, int lineno,

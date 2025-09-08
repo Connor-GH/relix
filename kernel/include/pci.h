@@ -26,7 +26,7 @@ struct pci_conf {
 };
 
 // Kernel implementation details
-#if __KERNEL__
+#if __RELIX_KERNEL__
 #include <stddef.h>
 struct FatPointerArray_pci_conf {
 	struct pci_conf *ptr;

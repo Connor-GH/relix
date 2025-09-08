@@ -75,7 +75,7 @@ void
 getcallerpcs(uintptr_t pcs[])
 {
 	uintptr_t *rbp;
-#if X86_64
+#if __x86_64__
 	asm volatile("mov %%rbp, %0" : "=r"(rbp));
 #endif
 	getcallerpcs_with_bp(pcs, rbp, 10);

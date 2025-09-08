@@ -1,5 +1,5 @@
 #pragma once
-#if __KERNEL__
+#if __RELIX_KERNEL__
 #include <stdint.h>
 void ioapicenable(int irq, int cpu);
 extern uint8_t ioapicid;

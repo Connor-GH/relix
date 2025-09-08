@@ -215,7 +215,7 @@ ok:
 	ustack[3] = sp - (envc_size) * sizeof(uintptr_t);
 	uint32_t total_mainargs_size =
 		(4 + argv_size + envc_size) * sizeof(uintptr_t);
-#ifdef X86_64
+#ifdef __x86_64__
 	myproc()->tf->rdi = ustack[1];
 	myproc()->tf->rsi = ustack[2];
 	myproc()->tf->rdx = ustack[3];

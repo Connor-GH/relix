@@ -34,7 +34,7 @@
 
 #define CR4_PSE 0x00000010 // Page size extension
 
-#if X86_64 || __ASSEMBLER__
+#if __x86_64__ || __ASSEMBLER__
 // mycpu()->gdt holds these segments.
 
 // various segment selectors.
@@ -122,7 +122,7 @@ struct segdesc {
 #define STA_R 0x2 // Readable (executable segments)
 
 // System segment type bits
-#if X86_64
+#if __x86_64__
 #define STS_RESERVED 0
 #define STS_LDT 0x2
 #define STS_T64A 0x9 // Available 64-bit TSS
@@ -153,7 +153,7 @@ struct segdesc {
 // construct virtual address from indexes and offset
 #define PGADDR(d, t, o) ((uintptr_t)((d) << PDXSHIFT | (t) << PTXSHIFT | (o)))
 
-#if X86_64
+#if __x86_64__
 #define NPDENTRIES 512
 #define NPTENTRIES 512
 #define PGSIZE 4096

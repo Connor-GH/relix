@@ -14,7 +14,7 @@ struct sleeplock {
 	const char *name; // Name of lock.
 	int pid; // Process holding lock
 };
-#if __KERNEL__
+#if __RELIX_KERNEL__
 void acquiresleep(struct sleeplock *s) __acquires(s);
 void releasesleep(struct sleeplock *s) __releases(s);
 int holdingsleep(struct sleeplock *);

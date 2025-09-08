@@ -1,5 +1,5 @@
 #pragma once
-#if __KERNEL__
+#if __RELIX_KERNEL__
 void uartinit1(void);
 void uartinit2(void);
 void uartintr(void);

@@ -536,7 +536,7 @@ struct Elf32_Dyn {
 	} d_un;
 };
 
-#ifdef X86_64
+#ifdef __x86_64__
 /* elf64 stuff */
 typedef uint64_t Elf64_Addr;
 typedef uint16_t Elf64_Half;

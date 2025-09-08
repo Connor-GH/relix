@@ -24,8 +24,7 @@ fn main() {
         .formatter(bindgen::Formatter::Rustfmt)
         .enable_function_attribute_detection()
         .clang_args([
-            "-D__KERNEL__=1",
-            "-DX86_64=1",
+            "-D__RELIX_KERNEL__=1",
             "-fno-builtin",
             "-I../../../",
             "-I../../../include",

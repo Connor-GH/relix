@@ -23,7 +23,7 @@ struct spinlock {
 	uintptr_t pcs[10]; // The call stack (an array of program counters)
 	                   // that locked the lock.
 };
-#if __KERNEL__
+#if __RELIX_KERNEL__
 void acquire(struct spinlock *s) __acquires(s);
 void getcallerpcs(uintptr_t pcs[]);
 void getcallerpcs_with_bp(uintptr_t pcs[], uintptr_t *rbp, size_t size);

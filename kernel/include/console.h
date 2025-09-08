@@ -1,5 +1,5 @@
 #pragma once
-#if __KERNEL__
+#if __RELIX_KERNEL__
 #include "lib/compiler_attributes.h"
 #include "spinlock.h"
 #include <bits/types.h>
@@ -21,7 +21,7 @@ __nonnull(1) void uart_printf_unlocked(const char *fmt, ...);
 __attribute__((format(printf, 2, 3)))
 __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...);
 
-#if __KERNEL_DEBUG__ && defined(__FILE_NAME__)
+#if __RELIX_KERNEL_DEBUG__ && defined(__FILE_NAME__)
 #define pr_debug_file(...) uart_printf(__FILE_NAME__ ": " __VA_ARGS__)
 #define pr_debug(...) uart_printf(__VA_ARGS__)
 #else

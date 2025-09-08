@@ -115,7 +115,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_uname] = "uname",
 };
 #endif
-#if __KERNEL__ && !defined(__ASSEMBLER__)
+#if __RELIX_KERNEL__ && !defined(__ASSEMBLER__)
 #include <stdint.h>
 /*
  * All of the generic integer type "arg" and "fetch" family of functions

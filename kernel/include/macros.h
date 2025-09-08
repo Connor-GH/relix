@@ -1,5 +1,5 @@
 #pragma once
-#if __KERNEL__
+#if __RELIX_KERNEL__
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define swap(a, b)              \
 	do {                          \

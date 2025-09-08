@@ -178,7 +178,7 @@ lgdt(struct segdesc *p, int size)
 	pd[0] = size - 1;
 	pd[1] = (uintptr_t)p;
 	pd[2] = (uintptr_t)p >> 16;
-#if X86_64
+#if __x86_64__
 	pd[3] = (uintptr_t)p >> 32;
 	pd[4] = (uintptr_t)p >> 48;
 #endif
@@ -196,7 +196,7 @@ lidt(struct gatedesc *p, int size)
 	pd[0] = size - 1;
 	pd[1] = (uintptr_t)p;
 	pd[2] = (uintptr_t)p >> 16;
-#if X86_64
+#if __x86_64__
 	pd[3] = (uintptr_t)p >> 32;
 	pd[4] = (uintptr_t)p >> 48;
 #endif

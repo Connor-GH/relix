@@ -538,7 +538,7 @@ probe_port(HBAMem *abar_)
 				disk_identify(&abar->ports[i], &pio);
 				ata_parse_identify_device_info(pio);
 
-#if __KERNEL_DEBUG__
+#if __RELIX_KERNEL_DEBUG__
 				uint16_t buf[256] = { 1, 2, 3, 0 };
 				pr_debug_file("Reading first 512 bytes...\n");
 				read_port(&abar_->ports[i], 0, 1, buf);

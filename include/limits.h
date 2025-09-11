@@ -3,24 +3,24 @@
 #define MB_LEN_MAX 16 // Maximum number of bytes in a multibyte character.
 
 #define CHAR_BIT 8
-#define CHAR_MIN __CHAR_MIN__
-#define CHAR_MAX __CHAR_MAX__
+#define CHAR_MIN -128
+#define CHAR_MAX 127
 
 #define SCHAR_MIN -128
 #define SCHAR_MAX 127
 
-#define UCHAR_MAX 255
+#define UCHAR_MAX 255U
 
 #define SHRT_MIN (-SHRT_MAX - 1)
 #define SHRT_MAX __SHRT_MAX__
 
-#define USHRT_MAX __USHRT_MAX__
+#define USHRT_MAX 65535U
 
 #define WORD_BIT __INT_WIDTH__
 #define INT_MIN (-INT_MAX - 1)
 #define INT_MAX __INT_MAX__
 
-#define UINT_MAX __UINT_MAX__
+#define UINT_MAX 4294967295U
 
 #define LONG_BIT __LONG_WIDTH__
 #define LONG_MIN (-LONG_MAX - 1)

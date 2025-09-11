@@ -185,7 +185,7 @@ found:
 
 	memset(p->ptrace_mask_ptr, 0, SYSCALL_AMT);
 
-	for (int i = 0; i < __SIG_last; i++) {
+	for (int i = 0; i < NSIG; i++) {
 		p->sig_handlers[i] = SIG_DFL;
 	}
 	p->last_signal = 0;
@@ -413,7 +413,7 @@ waitpid(pid_t pid, int *wstatus, int options)
 				p->name[0] = 0;
 				p->killed = 0;
 				p->last_signal = 0;
-				for (int i = 0; i < __SIG_last; i++) {
+				for (int i = 0; i < NSIG; i++) {
 					p->sig_handlers[i] = SIG_DFL;
 				}
 				p->state = UNUSED;
@@ -790,7 +790,7 @@ kernel_attach_signal(int signum, sighandler_t handler)
 	    signum == SIGILL) {
 		return SIG_ERR;
 	}
-	if (signum >= __SIG_last || signum < 0) {
+	if (signum >= NSIG || signum < 0) {
 		return SIG_ERR;
 	} else {
 		sighandler_t old = myproc()->sig_handlers[signum];

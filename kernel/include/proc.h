@@ -93,7 +93,7 @@ struct proc {
 	size_t mmap_count;
 	uintptr_t heap; // Location of the heap.
 	uintptr_t heapsz;
-	sighandler_t sig_handlers[__SIG_last];
+	sighandler_t sig_handlers[NSIG];
 	int last_signal;
 	mode_t umask;
 	uint8_t legacy_fpu_state[512] __attribute__((aligned(16)));

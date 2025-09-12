@@ -304,8 +304,6 @@ fgets(char *buf, int max, FILE *restrict stream)
 
 /* We don't care about what's passed in buf */
 // This is where the buffered IO happens.
-// It functions for both characters and pixels
-// (in the format described in libgui)
 __NONNULL(1)
 static void
 fd_putc(FILE *fp, char c, char *__attribute__((unused)) buf)
@@ -347,17 +345,11 @@ putchar(int c)
 	return putc(c, stdout);
 }
 
-static size_t
-ansi_noop(const char *s)
-{
-	return 1;
-}
-
 int
 vfprintf(FILE *restrict stream, const char *restrict fmt, va_list argp)
 {
-	int ret = __libc_vprintf_template(fd_putc, ansi_noop, stream, NULL, fmt, argp,
-	                                  SIZE_MAX);
+	int ret =
+		__libc_vprintf_template(fd_putc, NULL, stream, NULL, fmt, argp, SIZE_MAX);
 	if (stream->stdio_flush) {
 		flush(stream);
 	}
@@ -368,8 +360,7 @@ int
 vsnprintf(char *restrict str, size_t n, const char *restrict fmt, va_list argp)
 {
 	global_idx = 0;
-	int idx =
-		__libc_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp, n);
+	int idx = __libc_vprintf_template(string_putc, NULL, NULL, str, fmt, argp, n);
 	str[idx] = '\0';
 	return idx;
 }
@@ -377,7 +368,7 @@ int
 vsprintf(char *restrict str, const char *restrict fmt, va_list argp)
 {
 	global_idx = 0;
-	return __libc_vprintf_template(string_putc, ansi_noop, NULL, str, fmt, argp,
+	return __libc_vprintf_template(string_putc, NULL, NULL, str, fmt, argp,
 	                               SIZE_MAX);
 }
 int
@@ -409,8 +400,8 @@ vfscanf(FILE *restrict stream, const char *restrict fmt, va_list argp)
 {
 	static char static_buffer[BUFSIZ];
 	global_idx_fgetc = 0;
-	return __libc_vprintf_template(static_fgetc, ansi_noop, stream, static_buffer,
-	                               fmt, argp, -1);
+	return __libc_vprintf_template(static_fgetc, NULL, stream, static_buffer, fmt,
+	                               argp, -1);
 }
 
 int

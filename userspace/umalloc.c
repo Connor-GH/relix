@@ -60,7 +60,7 @@ free(void *ap)
 // "nu" is "number of units".
 //
 static Header *
-morecore(size_t nu)
+allocate_units(size_t nu)
 {
 	char *p;
 	Header *hp;
@@ -118,7 +118,7 @@ malloc(size_t nbytes)
 			return (void *)(p + 1);
 		}
 		if (p == freep) {
-			if ((p = morecore(nunits)) == NULL) {
+			if ((p = allocate_units(nunits)) == NULL) {
 				return NULL;
 			}
 		}

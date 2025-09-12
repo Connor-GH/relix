@@ -119,7 +119,7 @@ execvp(const char *file, char *const argv[])
 }
 
 static size_t
-execl_core(va_list listp, char *vector[ARG_MAX])
+va_list_to_array(va_list listp, char *vector[ARG_MAX])
 {
 	char *val;
 	size_t i = 0;
@@ -137,7 +137,7 @@ execl(const char *path, const char *arg, ...)
 	va_list listp;
 
 	va_start(listp, arg);
-	(void)execl_core(listp, argv);
+	(void)va_list_to_array(listp, argv);
 	va_end(listp);
 
 	return execv(path, argv);
@@ -150,7 +150,7 @@ execlp(const char *file, const char *arg, ...)
 	va_list listp;
 
 	va_start(listp, arg);
-	(void)execl_core(listp, argv);
+	(void)va_list_to_array(listp, argv);
 	va_end(listp);
 
 	return execvp(file, argv);
@@ -163,8 +163,8 @@ execle(const char *path, const char *arg, ...)
 	va_list listp;
 
 	va_start(listp, arg);
-	size_t i = execl_core(listp, argv);
-	execl_core(listp, argv + i);
+	size_t i = va_list_to_array(listp, argv);
+	va_list_to_array(listp, argv + i);
 	va_end(listp);
 
 	return execve(path, argv, argv + i);
@@ -430,14 +430,14 @@ isatty(int fd)
 }
 
 static void
-sleep_noop(int signum)
+sleep_signal_noop(int signum)
 {
 }
 
 unsigned int
 sleep(unsigned int seconds)
 {
-	signal(SIGALRM, sleep_noop);
+	signal(SIGALRM, sleep_signal_noop);
 	return alarm(seconds);
 }
 

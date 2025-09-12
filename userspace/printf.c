@@ -193,7 +193,9 @@ __libc_vprintf_template(void (*put_function)(FILE *fp, char c, char *buf),
 			if (c == '%') {
 				state = '%';
 			} else if (c == '\033') {
-				i += ansi_func(fmt + i);
+				if (ansi_func != NULL) {
+					i += ansi_func(fmt + i);
+				}
 				continue;
 			} else {
 				put_function(fp, c, buf);

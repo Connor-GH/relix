@@ -1,0 +1,1 @@
+CFLAGS="-Os -pipe -fno-pic -static -fno-builtin -ffreestanding -nostdlib -nostdinc -D__USER__ -mmmx -m80387 -msse -mno-avx -I$(pwd)/../../../include -I$(pwd)/../../../. -fno-stack-protector" LDFLAGS="-Wl,--gc-sections -Wl,-z,noexecstack -Wl,-O1 -Wl,-N,-e,_start -Wl,--section-start=.text=0x1000" LIBS="$(pwd)/../../../bin/libc.a $(pwd)/../../../bin/sharedlib.a" make

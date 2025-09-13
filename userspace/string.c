@@ -23,9 +23,10 @@ strcpy(char *s, const char *t)
 int
 strcmp(const char *p, const char *q)
 {
-	size_t np = strlen(p);
-	size_t nq = strlen(q);
-	return strncmp(p, q, min(np, nq) + 1);
+	while (*p && *q && *p == *q) {
+		p++, q++;
+	}
+	return (uint8_t)*p - (uint8_t)*q;
 }
 
 // We do not currently support locales outside of C.
@@ -84,10 +85,14 @@ strncasecmp(const char *p, const char *q, size_t n)
 	}
 	return (uint8_t)*p - (uint8_t)*q;
 }
+
 int
 strcasecmp(const char *p, const char *q)
 {
-	return strncasecmp(p, q, min(strlen(p), strlen(q)));
+	while (*p && *q && tolower(*p) == tolower(*q)) {
+		p++, q++;
+	}
+	return (uint8_t)*p - (uint8_t)*q;
 }
 
 size_t
@@ -99,6 +104,7 @@ strlen(const char *s)
 		;
 	return n;
 }
+
 size_t
 strnlen(const char *s, size_t size)
 {
@@ -115,12 +121,7 @@ strnlen(const char *s, size_t size)
 char *
 strchr(const char *s, int c)
 {
-	for (; *s; s++) {
-		if (*s == c) {
-			return (char *)s;
-		}
-	}
-	return NULL;
+	return memchr(s, c, strlen(s) + 1);
 }
 
 void *
@@ -148,7 +149,7 @@ memrchr(const void *s, int c, size_t n)
 char *
 strrchr(const char *s, int c)
 {
-	return memchr(s, c, strlen(s) + 1);
+	return memrchr(s, c, strlen(s) + 1);
 }
 
 // This sufficiently handles the case where
@@ -300,7 +301,6 @@ mempcpy(void *dst, const void *src, size_t n)
 void *
 memcpy(void *dst, const void *src, size_t n)
 {
-	return movsb(dst, src, n);
 	for (size_t i = 0; i < n; i++) {
 		((char *)dst)[i] = ((char *)src)[i];
 	}

@@ -320,9 +320,17 @@ fd_putc(FILE *fp, char c, char *__attribute__((unused)) buf)
 
 __NONNULL(3)
 static void
-string_putc(FILE *__attribute__((unused)) fp, char c, char *buf)
+string_putc(__attribute__((unused)) FILE *fp, char c, char *buf)
 {
 	buf[global_idx] = c;
+	global_idx++;
+}
+
+static void
+null_string_putc(__attribute__((unused)) FILE *fp,
+                 __attribute__((unused)) char c,
+                 __attribute__((unused)) char *buf)
+{
 	global_idx++;
 }
 
@@ -360,16 +368,24 @@ int
 vsnprintf(char *restrict str, size_t n, const char *restrict fmt, va_list argp)
 {
 	global_idx = 0;
-	int idx = __libc_vprintf_template(string_putc, NULL, NULL, str, fmt, argp, n);
-	str[idx] = '\0';
+	int idx =
+		__libc_vprintf_template(str == NULL ? null_string_putc : string_putc, NULL,
+	                          NULL, str, fmt, argp, n);
+	if (str != NULL) {
+		str[idx] = '\0';
+	}
 	return idx;
 }
 int
 vsprintf(char *restrict str, const char *restrict fmt, va_list argp)
 {
 	global_idx = 0;
-	return __libc_vprintf_template(string_putc, NULL, NULL, str, fmt, argp,
-	                               SIZE_MAX);
+	int ret =
+		__libc_vprintf_template(string_putc, NULL, NULL, str, fmt, argp, SIZE_MAX);
+	if (str != NULL) {
+		str[ret] = '\0';
+	}
+	return ret;
 }
 int
 snprintf(char *restrict str, size_t n, const char *restrict fmt, ...)
@@ -378,7 +394,6 @@ snprintf(char *restrict str, size_t n, const char *restrict fmt, ...)
 	va_list listp;
 	va_start(listp, fmt);
 	ret = vsnprintf(str, n, fmt, listp);
-	str[ret] = '\0';
 	va_end(listp);
 	return ret;
 }
@@ -390,8 +405,10 @@ sprintf(char *restrict str, const char *restrict fmt, ...)
 	va_list listp;
 	va_start(listp, fmt);
 	ret = vsprintf(str, fmt, listp);
-	str[ret] = '\0';
 	va_end(listp);
+	if (str != NULL) {
+		str[ret] = '\0';
+	}
 	return ret;
 }
 

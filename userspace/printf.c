@@ -32,16 +32,17 @@ static int print_string(void (*put_function)(FILE *fp, char c, char *buf),
 // backwards, thus printing it forwards.
 //
 // Example:
-// printf("%-#04d", -32);
-// buf = "0200x0-"
-// prints as "-0x0020"
+// printf("%#04d", 32);
+// buf = "2300"
+// prints as "0032"
 static int
 printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
          FILE *fp, int64_t xx, int base, bool sgn, int flags, int padding)
 {
 	static const char digits[] = "0123456789abcdef";
 	char buf[PRINTF_INT_BUF_SIZE];
-	ssize_t i = 0;
+	int i = 0;
+	int ret = 0;
 	bool neg = false;
 	uint64_t x;
 
@@ -58,12 +59,26 @@ printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 	while ((x_copy /= base) != 0) {
 		numlen++;
 	}
+	x_copy = x;
+
+	// If we need to set special padding for
+	// alternative form, we do it here.
+	if (IS_SET(flags, FLAG_ALTFORM)) {
+		if (base == 16 || base == 2) {
+			// Remove 2 padding in place for "0x" or "0b".
+			padding -= 2;
+		} else if (base == 8) {
+			// printf says that for octal, you
+			// increase the precision "if and only if necessary" to
+			// force the first digit to be a zero.
+			// zero is a special case, as 0o0 == "0" from printf.
+			if (x_copy != 0 && padding < numlen) {
+				padding++;
+			}
+		}
+	}
 
 	if (IS_SET(flags, FLAG_LJUST) && !IS_SET(flags, FLAG_PRECISION)) {
-		if (base == 16 && IS_SET(flags, FLAG_ALTFORM)) {
-			// Remove 2 padding in place for "0x".
-			padding -= 2;
-		}
 		while (i < padding - numlen) {
 			MAYBE_APPEND(buf, ' ');
 		}
@@ -79,9 +94,15 @@ printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 			MAYBE_APPEND(buf, '0');
 		}
 	}
-	if (base == 16 && IS_SET(flags, FLAG_ALTFORM)) {
-		MAYBE_APPEND(buf, 'x');
-		MAYBE_APPEND(buf, '0');
+	if (IS_SET(flags, FLAG_ALTFORM)) {
+		if (x_copy != 0) {
+			if (base == 16) {
+				MAYBE_APPEND(buf, 'x');
+			} else if (base == 2) {
+				MAYBE_APPEND(buf, 'b');
+			}
+			MAYBE_APPEND(buf, '0');
+		}
 	}
 	// append negative/positive sign
 	if (neg) {
@@ -106,10 +127,12 @@ printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 		}
 	}
 
+	ret = i;
+
 	while (--i >= 0) {
 		put_function(fp, buf[i], put_func_buf);
 	}
-	return padding > numlen ? padding : numlen;
+	return ret;
 }
 
 static uint64_t
@@ -184,9 +207,6 @@ __libc_vprintf_template(void (*put_function)(FILE *fp, char c, char *buf),
 	size_t count = 0;
 
 	for (; fmt[i]; i++) {
-		if (count >= print_n_chars) {
-			break;
-		}
 		// 'floor' character down to bottom 255 chars
 		c = fmt[i] & 0xff;
 		if (state == 0) {
@@ -271,7 +291,7 @@ numerical_padding:
 			}
 			case 'b': {
 				if (IS_SET(flags, FLAG_LONG)) {
-					long lb = va_arg(argp, unsigned long);
+					unsigned long lb = va_arg(argp, unsigned long);
 					count +=
 						printint(put_function, buf, fp, lb, 2, false, flags, str_pad);
 				} else {
@@ -290,7 +310,7 @@ numerical_padding:
 			}
 			case 'u': {
 				if (IS_SET(flags, FLAG_LONG)) {
-					long lu = va_arg(argp, unsigned long);
+					unsigned long lu = va_arg(argp, unsigned long);
 					count +=
 						printint(put_function, buf, fp, lu, 10, false, flags, str_pad);
 				} else {

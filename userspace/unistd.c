@@ -336,10 +336,17 @@ getcwd(char *buf, size_t n)
 	}
 }
 
+// Without this code,
+// dash will fail to run commands.
+// It uses vfork instead of fork, but we don't have vfork.
+// As a temporary fix, just use fork.
 __deprecated("Removed in POSIX.1-2008; use fork()") pid_t vfork(void)
 {
+	return fork();
+#if 0
 	errno = ENOSYS;
 	return -1;
+#endif
 }
 
 clock_t

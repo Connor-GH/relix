@@ -84,14 +84,17 @@ typedef __time_t time_t;
 struct stat {
 	dev_t st_dev; // File system's disk device
 	ino_t st_ino; // Inode number
-	short st_nlink; /* u32 or u64 */ // Number of links to file
+	nlink_t st_nlink; /* u32 or u64 */ // Number of links to file
 	off_t st_size; // Size of file in bytes
 	mode_t st_mode;
 	uid_t st_uid;
 	gid_t st_gid;
+	dev_t st_rdev; // Device ID (if file is char or block device)
 	struct timespec st_ctim; // change
 	struct timespec st_atim; // access
 	struct timespec st_mtim; // modification
+	blksize_t st_blksize;
+	blkcnt_t st_blocks;
 #define st_atime st_atim.tv_sec
 #define st_mtime st_mtim.tv_sec
 #define st_ctime st_ctim.tv_sec

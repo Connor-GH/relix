@@ -553,6 +553,8 @@ inode_stat(struct inode *ip, struct stat *st) __must_hold(&ip->lock)
 	st->st_atime = ip->atime;
 	st->st_ctime = ip->ctime;
 	st->st_mtime = ip->mtime;
+	st->st_blocks = ROUND_UP(ip->size / BSIZE, BSIZE);
+	st->st_blksize = BSIZE;
 }
 
 // Read data from inode.

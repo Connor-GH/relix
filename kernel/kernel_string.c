@@ -255,9 +255,9 @@ void *
 memcpy(void *dst, const void *src, size_t n)
 {
 	if (n % 8 == 0) {
-		return movsq((uint64_t *)dst, (uint64_t *)src, n / sizeof(uint64_t));
+		return movsq((uint64_t *)dst, (uint64_t *)src, n / sizeof(uint64_t)) - n;
 	} else {
-		return movsb((uint8_t *)dst, (uint8_t *)src, n / sizeof(uint8_t));
+		return movsb((uint8_t *)dst, (uint8_t *)src, n / sizeof(uint8_t)) - n;
 	}
 }
 

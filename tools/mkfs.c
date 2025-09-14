@@ -232,25 +232,6 @@ main(int32_t argc, char *argv[])
 			exit(1);
 		}
 
-		// Skip leading _ in name when writing to file system.
-		// The binaries are named _rm, _cat, etc. to keep the
-		// build operating system from trying to execute them
-		// in place of system binaries like rm and cat.
-		// ../bin/_rm => ../bin/rm
-		size_t k = 0;
-		char *str = malloc(FILENAME_MAX);
-		for (size_t j = 0; j < strlen(argv[i]); j++) {
-			if (argv[i][j] != '_') {
-				str[k] = argv[i][j];
-				k++;
-			}
-		}
-		// add NULL terminator
-		str[k] = '\0';
-		if (k > 0) {
-			strcpy(argv[i], str);
-		}
-		free(str);
 		// "../README" => "README"
 		// "../bin/rm" => bin/rm
 		while (*argv[i] == '.' || *argv[i] == '/') {

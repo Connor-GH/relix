@@ -436,19 +436,29 @@ strndup(const char *s, size_t n)
 	if (__unlikely(s == NULL || n == 0)) {
 		return (char *)s;
 	}
-	char *new_s = malloc(n);
+	size_t len = strnlen(s, n);
+	char *new_s = malloc(len + 1);
 	if (new_s == NULL) {
 		errno = ENOMEM;
 		return NULL;
 	}
-	strncpy(new_s, s, n);
+	// Slightly cheaper than using strncpy.
+	memcpy(new_s, s, len);
+	new_s[len] = '\0';
 	return new_s;
 }
 
 char *
 strdup(const char *s)
 {
-	return strndup(s, strlen(s) + 1);
+	size_t len = strlen(s);
+	char *new_s = malloc(len + 1);
+	if (new_s == NULL) {
+		errno = ENOMEM;
+		return NULL;
+	}
+	// We are trusting here that "s" is null-terminated.
+	return memcpy(new_s, s, len + 1);
 }
 
 char *

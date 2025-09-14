@@ -101,48 +101,30 @@ fileno(FILE *stream)
 static int
 string_to_flags(const char *restrict mode)
 {
-	if (__unlikely(mode == NULL)) {
-		goto bad_mode;
+	int flags;
+	if (strchr(mode, '+')) {
+		flags = O_RDWR;
+	} else if (mode[0] == 'r') {
+		flags = O_RDONLY;
+	} else {
+		flags = O_WRONLY;
 	}
-	int flags_val = -1;
-	switch (mode[0]) {
-	case 'w': {
-		if (mode[1] != '\0') {
-			if (mode[1] == '+') {
-				flags_val = O_RDWR | O_CREATE | O_TRUNC;
-				break;
-			}
-		}
-		flags_val = O_WRONLY | O_CREATE | O_TRUNC;
-		break;
+	if (strchr(mode, 'x')) {
+		flags |= O_EXCL;
 	}
-	case 'r': {
-		if (mode[1] != '\0') {
-			if (mode[1] == '+') {
-				flags_val = O_RDWR;
-				break;
-			}
-		}
-		flags_val = O_RDONLY;
-		break;
+	if (strchr(mode, 'e')) {
+		flags |= O_CLOEXEC;
 	}
-	case 'a': {
-		if (mode[1] != '\0') {
-			if (mode[1] == '+') {
-				flags_val = O_RDWR | O_CREATE | O_APPEND;
-				break;
-			}
-		}
-		flags_val = O_WRONLY | O_CREATE | O_APPEND;
-		break;
+	if (mode[0] != 'r') {
+		flags |= O_CREAT;
 	}
-	default:
-		goto bad_mode;
+	if (mode[0] == 'w') {
+		flags |= O_TRUNC;
 	}
-	return flags_val;
-bad_mode:
-	errno = EINVAL;
-	return -1;
+	if (mode[0] == 'a') {
+		flags |= O_APPEND;
+	}
+	return flags;
 }
 
 // The "mode" is the "file open mode", not the "permissions mode".
@@ -151,17 +133,39 @@ fopen(const char *restrict pathname, const char *restrict mode)
 {
 	const mode_t file_mode = S_IWGRP | S_IRGRP | S_IWOTH | S_IROTH | S_IWUSR |
 	                         S_IRUSR;
-	return fdopen(open(pathname, string_to_flags(mode), file_mode), mode);
+	// First character of mode must be r, w, or a.
+	if (strchr("rwa", mode[0]) == NULL) {
+		errno = EINVAL;
+		return NULL;
+	}
+	int flags = string_to_flags(mode);
+	int fd = open(pathname, flags, file_mode);
+	if (fd == -1) {
+		return NULL;
+	}
+	return fdopen(fd, mode);
 }
 
 FILE *
 freopen(const char *restrict pathname, const char *restrict mode,
         FILE *restrict stream)
 {
-	if (__likely(!stream->error && stream->fd != -1)) {
-		fclose(stream);
+	int flags = string_to_flags(mode);
+
+	(void)fflush(stream);
+
+	if (pathname != NULL) {
+		(void)close(stream->fd);
 	}
-	stream = fopen(pathname, mode);
+
+	clearerr(stream);
+
+	if (pathname == NULL) {
+		fcntl(stream->fd, F_SETFL, flags);
+		stream->flags = flags;
+	}
+	stream->fd = open(pathname, flags, stream->mode);
+	stream->write_buffer_index = 0;
 	return stream;
 }
 
@@ -213,6 +217,7 @@ fdopen(int fd, const char *restrict mode)
 				return fp;
 			}
 		}
+		free(fp->write_buffer);
 		free(fp);
 		return NULL;
 	}

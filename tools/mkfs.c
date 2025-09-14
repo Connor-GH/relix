@@ -155,7 +155,7 @@ makedirs(void)
 }
 
 int
-main(int32_t argc, char *argv[])
+main(int argc, char *argv[])
 {
 	ssize_t cc;
 	int fd;
@@ -164,8 +164,6 @@ main(int32_t argc, char *argv[])
 	char buf[BSIZE];
 	struct dinode din;
 	char *name;
-
-	static_assert(sizeof(int) == 4, "Integers must be 4 bytes!");
 
 	if (argc < 2) {
 		fprintf(stderr, "Usage: mkfs fs.img files...\n");
@@ -247,6 +245,9 @@ main(int32_t argc, char *argv[])
 		} else if (strncmp("etc/", argv[i], 4) == 0) {
 			name = (argv[i] += 4);
 			ino = etcino;
+		} else if (strncmp("root/", argv[i], 5) == 0) {
+			name = (argv[i] += 5);
+			ino = slashroot_ino;
 		} else {
 			name = argv[i];
 			ino = rootino;

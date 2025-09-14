@@ -106,6 +106,8 @@ autologin:;
 		if (getuid() == 0 && uid_var_set) {
 			setuid(uid);
 		}
+		// cd $HOME || cd /
+		chdir(entry->pw_dir ? entry->pw_dir : "/");
 		char *const sh_argv[] = { shell_path, "-i", NULL };
 		execve(shell_path, sh_argv, environ);
 		printf("execv %s failed\n", shell_path);

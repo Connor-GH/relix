@@ -106,8 +106,20 @@ autologin:;
 		if (getuid() == 0 && uid_var_set) {
 			setuid(uid);
 		}
+		int ret;
+		char *homedir = entry->pw_dir ? entry->pw_dir : "/";
 		// cd $HOME || cd /
-		chdir(entry->pw_dir ? entry->pw_dir : "/");
+		chdir(homedir);
+		ret = setenv("HOME", homedir, 1);
+		if (ret != 0) {
+			perror("setenv HOME");
+			exit(EXIT_FAILURE);
+		}
+		ret = setenv("SHELL", shell_path, 1);
+		if (ret != 0) {
+			perror("setenv SHELL");
+			exit(EXIT_FAILURE);
+		}
 		char *const sh_argv[] = { shell_path, "-i", NULL };
 		execve(shell_path, sh_argv, environ);
 		printf("execv %s failed\n", shell_path);

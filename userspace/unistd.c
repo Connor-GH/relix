@@ -104,15 +104,17 @@ execvp(const char *file, char *const argv[])
 		return -1;
 	}
 
-	char *path = strdup(path_env); // TODO leak of this memory
-	if (path != NULL) {
-		char *s = strtok(path, ":");
-		while (s != NULL) {
-			sprintf(str, "%s/%s", s, file);
-			errno = 0;
-			execve(str, argv, environ);
-			s = strtok(NULL, ":");
-		}
+	char path[PATH_MAX];
+	strncpy(path, path_env, PATH_MAX - 1);
+	path[PATH_MAX - 1] = '\0';
+
+	char *s = strtok(path, ":");
+	while (s != NULL) {
+		snprintf(str, PATH_MAX - 1, "%s/%s", s, file);
+		str[PATH_MAX - 1] = '\0';
+		errno = 0;
+		execve(str, argv, environ);
+		s = strtok(NULL, ":");
 	}
 
 	return -1;

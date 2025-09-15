@@ -29,10 +29,9 @@ include $(KERNELDIR)/rust/Makefile
 
 $(BIN)/relix.img: $(BIN)/kernel
 	dd if=/dev/zero of=$@ count=10000
-	dd if=$(BIN)/bootblock of=$@ conv=notrunc
 	dd if=$(BIN)/kernel of=$@ seek=1 conv=notrunc
 
-$(BIN)/kernel: $(KERNELDIR)/kernel64.ld $(KERNEL_OBJS) $(BIN)/entry.o $(BIN)/entryother.o $(BIN)/initcode.o $(BIN)/bootblock $(BIN)/sign $(KERNEL_RUST_OBJ) $(SHAREDLIBS_STATIC)
+$(BIN)/kernel: $(KERNELDIR)/kernel64.ld $(KERNEL_OBJS) $(BIN)/entry.o $(BIN)/entryother $(BIN)/initcode $(KERNEL_RUST_OBJ) $(SHAREDLIBS_STATIC)
 	$(CC) $(CFLAGS) $(KUBSAN_FLAGS) -Wl,-melf_x86_64,-z,noexecstack,-O1 -Wl,-T,$(KERNELDIR)/kernel64.ld -o $@ $(BIN)/entry.o $(KERNEL_OBJS) $(KERNEL_RUST_OBJ) $(SHAREDLIBS_STATIC) -Wl,-b,binary $(BIN)/initcode $(BIN)/entryother
 	./tools/gensyms.sh > sysroot/etc/ksyms.map
 

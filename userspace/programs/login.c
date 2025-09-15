@@ -11,8 +11,13 @@
 extern char **environ;
 
 static void
-noop(int signum)
+xsetenv(const char *name, const char *value, int overwrite)
 {
+	int ret = setenv(name, value, overwrite);
+	if (ret != 0) {
+		perror("setenv");
+		exit(EXIT_FAILURE);
+	}
 }
 
 int
@@ -37,7 +42,7 @@ main(int argc, char **argv)
 			break;
 		}
 	}
-	if (signal(SIGINT, noop) == SIG_ERR) {
+	if (signal(SIGINT, SIG_IGN) == SIG_ERR) {
 		perror("signal");
 		exit(EXIT_FAILURE);
 	}
@@ -106,20 +111,15 @@ autologin:;
 		if (getuid() == 0 && uid_var_set) {
 			setuid(uid);
 		}
-		int ret;
 		char *homedir = entry->pw_dir ? entry->pw_dir : "/";
+		char *logname = entry->pw_name ? entry->pw_name : "unknown";
+
 		// cd $HOME || cd /
 		chdir(homedir);
-		ret = setenv("HOME", homedir, 1);
-		if (ret != 0) {
-			perror("setenv HOME");
-			exit(EXIT_FAILURE);
-		}
-		ret = setenv("SHELL", shell_path, 1);
-		if (ret != 0) {
-			perror("setenv SHELL");
-			exit(EXIT_FAILURE);
-		}
+		xsetenv("HOME", homedir, 1);
+		xsetenv("SHELL", shell_path, 1);
+		xsetenv("LOGNAME", logname, 1);
+		xsetenv("USER", logname, 1);
 		char *const sh_argv[] = { shell_path, "-i", NULL };
 		execve(shell_path, sh_argv, environ);
 		printf("execv %s failed\n", shell_path);

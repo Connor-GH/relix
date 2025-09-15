@@ -28,10 +28,8 @@ init:
 .align 8
 # This is where system-wide default environment variables are set.
 env0: .string "PATH=/bin:/usr/bin\0"
-env1: .string "HOME=/\0"
-env2: .string "SHELL=/bin/sh\0"
 # We don't support all of xterm, but let's pretend we do.
-env3: .string "TERM=xterm\0"
+env1: .string "TERM=xterm\0"
 
 # char *argv[] = { init, 0 };
 .align 8
@@ -43,6 +41,4 @@ argv:
 envp:
 	.quad env0
 	.quad env1
-	.quad env2
-	.quad env3
 	.quad 0

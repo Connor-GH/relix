@@ -139,6 +139,11 @@ realloc(void *ptr, size_t size)
 	}
 
 	Header *old_ptr_hdr = ptr_to_header(ptr);
+
+	size_t old_size = old_ptr_hdr->size * sizeof(Header);
+	if (old_size >= size) {
+		return ptr;
+	}
 	void *new_ptr = malloc(size);
 
 	// C spec:
@@ -150,7 +155,7 @@ realloc(void *ptr, size_t size)
 	if (new_ptr == NULL) {
 		return NULL;
 	}
-	memcpy(new_ptr, ptr, MIN(old_ptr_hdr->size, size));
+	memcpy(new_ptr, ptr, old_size);
 	free(ptr);
 	return new_ptr;
 }

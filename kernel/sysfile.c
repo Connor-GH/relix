@@ -281,20 +281,20 @@ bad:
 }
 
 // Is the directory dp empty except for "." and ".." ?
-static int
+static bool
 isdirempty(struct inode *dp)
 {
 	struct dirent de;
 
-	for (uint64_t off = 2 * sizeof(de); off < dp->size; off += sizeof(de)) {
-		if (inode_read(dp, (char *)&de, off, sizeof(de)) != sizeof(de)) {
+	for (off_t off = 2 * sizeof(de); off < dp->size; off += sizeof(de)) {
+		if (inode_read(dp, (char *)&de, off, sizeof(de)) < 0) {
 			panic("isdirempty: inode_read");
 		}
 		if (de.d_ino != 0) {
-			return 0;
+			return false;
 		}
 	}
-	return 1;
+	return true;
 }
 
 size_t
@@ -333,8 +333,12 @@ sys_unlinkat(void)
 
 	inode_lock(ip);
 
+	// If this file has no links,
+	// why are we trying to remove it?
 	if (ip->nlink < 1) {
-		panic("unlink: nlink < 1");
+		inode_unlock(ip);
+		end_op();
+		return -ENOENT;
 	}
 	if (((S_ISDIR(ip->mode)) || (flags & AT_REMOVEDIR)) && !isdirempty(ip)) {
 		inode_unlockput(ip);
@@ -343,9 +347,12 @@ sys_unlinkat(void)
 	}
 
 	memset(&de, 0, sizeof(de));
-	if (inode_write(dp, (char *)&de, off, sizeof(de)) != sizeof(de)) {
-		panic("unlink: inode_write");
-	}
+	PROPOGATE_ERR_WITH(inode_write(dp, (char *)&de, off, sizeof(de)), {
+		inode_unlockput(ip);
+		inode_unlockput(dp);
+		end_op();
+	});
+
 	if (S_ISDIR(ip->mode)) {
 		dp->nlink--;
 		inode_update(dp);
@@ -1168,7 +1175,10 @@ sys_renameat(void)
 			// Remove the old entry.
 			memset(&de, '\0', sizeof(de));
 			if (inode_write(dp, (char *)&de, off, sizeof(de)) != sizeof(de)) {
-				panic("rename: inode_write");
+				end_op();
+				inode_unlockput(dp);
+				inode_put(new_dp);
+				return -ENOSPC;
 			}
 
 			// In the case of "mv /foo /bar", we use the same directory pointer

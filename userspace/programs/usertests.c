@@ -199,8 +199,6 @@ writetest(void)
 void
 writetest1(void)
 {
-	char *writetest1_buf =
-		malloc(__NDIRECT + __NINDIRECT + __NINDIRECT * __NINDIRECT + 1);
 	int fd;
 	const size_t writetest_max =
 		__NDIRECT + __NINDIRECT + __NINDIRECT * __NINDIRECT + 1;
@@ -218,7 +216,6 @@ writetest1(void)
 	}
 
 	for (size_t i = 0; i < writetest_max; i++) {
-		((size_t *)writetest1_buf)[0] = i;
 		if (write(fd, buf, __BSIZE) != __BSIZE) {
 			fprintf(stdout, "error: write big file failed %lu\n", i);
 			exit(0);

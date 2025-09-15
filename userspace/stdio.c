@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -27,7 +28,6 @@ static size_t open_files_index = 0;
 static size_t global_idx = 0;
 static size_t global_idx_fgetc = 0;
 
-// This runs on all processes besides init.
 void
 __init_stdio(void)
 {
@@ -35,6 +35,9 @@ __init_stdio(void)
 	FILE *file_stdout = fdopen(STDOUT_FILENO, "w"); // maybe should be a+?
 	FILE *file_stderr = fdopen(STDERR_FILENO, "w"); // maybe should be a+?
 	/* stdin, stdout are line buffered by default. */
+	if (file_stdin == NULL || file_stderr == NULL || file_stdout == NULL) {
+		raise(SIGSEGV);
+	}
 	setvbuf(file_stdin, NULL, _IOLBF, 0);
 	setvbuf(file_stdout, NULL, _IOLBF, 0);
 	/* stderr is unbuffered by default. */

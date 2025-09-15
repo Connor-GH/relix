@@ -29,6 +29,8 @@ main(int argc, char **argv)
 	uid_t uid;
 	bool uid_var_set = false;
 	char *shell_path = "/bin/sh";
+	char *homedir = "/";
+	char *logname = "unknown";
 
 	char c;
 	bool fflag = false;
@@ -98,10 +100,9 @@ try_again:
 		}
 	}
 	if (uid_var_set) {
-		shell_path = entry->pw_shell;
-		if (shell_path == NULL) {
-			shell_path = "/bin/sh";
-		}
+		shell_path = entry->pw_shell ? entry->pw_shell : "/bin/sh";
+		homedir = entry->pw_dir ? entry->pw_dir : "/";
+		logname = entry->pw_name ? entry->pw_name : "unknown";
 	}
 
 	char *actual_password = "x";
@@ -111,8 +112,6 @@ autologin:;
 		if (getuid() == 0 && uid_var_set) {
 			setuid(uid);
 		}
-		char *homedir = entry->pw_dir ? entry->pw_dir : "/";
-		char *logname = entry->pw_name ? entry->pw_name : "unknown";
 
 		// cd $HOME || cd /
 		chdir(homedir);

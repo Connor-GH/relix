@@ -58,6 +58,8 @@ strtoll(const char *restrict s, char **restrict endptr, int base)
 		} else if (strncmp(s + i, "0", 1) == 0) {
 			i++;
 			base = 8;
+		} else {
+			base = 10;
 		}
 	}
 	if (base <= 10) {

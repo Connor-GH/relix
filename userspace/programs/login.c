@@ -99,11 +99,6 @@ try_again:
 			goto try_again;
 		}
 	}
-	if (uid_var_set) {
-		shell_path = entry->pw_shell ? entry->pw_shell : "/bin/sh";
-		homedir = entry->pw_dir ? entry->pw_dir : "/";
-		logname = entry->pw_name ? entry->pw_name : "unknown";
-	}
 
 	char *actual_password = "x";
 
@@ -113,6 +108,9 @@ autologin:;
 			setuid(uid);
 		}
 
+		shell_path = entry->pw_shell ? entry->pw_shell : "/bin/sh";
+		homedir = entry->pw_dir ? entry->pw_dir : "/";
+		logname = entry->pw_name ? entry->pw_name : "unknown";
 		// cd $HOME || cd /
 		chdir(homedir);
 		xsetenv("HOME", homedir, 1);

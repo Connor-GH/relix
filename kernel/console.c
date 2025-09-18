@@ -486,7 +486,11 @@ consolewrite(short minor, __attribute__((unused)) struct inode *ip,
 {
 	acquire(&cons.lock);
 	for (size_t i = 0; i < n; i++) {
-		vga_write_char(buf[i] & 0xff, static_foreg, static_backg);
+		if (buf[i] == '\033') {
+			i += let_rust_handle_it(buf + i);
+		} else {
+			vga_write_char(buf[i] & 0xff, static_foreg, static_backg);
+		}
 	}
 	release(&cons.lock);
 	return n;

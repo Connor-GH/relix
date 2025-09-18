@@ -61,7 +61,7 @@ main(void)
 	int16_t sAsB = 0, cAsB = 0;
 	int16_t sAcB = 11583, cAcB = 11583;
 
-	for (int _foo = 0; _foo < 10; _foo++) {
+	for (;;) {
 		// yes this is a multiply but dz is 5 so it's (sb + (sb<<2)) >> 6
 		// effectively
 		int p0x = dz * sB >> 6;

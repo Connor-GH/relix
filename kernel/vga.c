@@ -176,13 +176,42 @@ vga_write_tab(uint32_t fb_width, uint8_t font_width)
 }
 
 static void
-vga_backspace(uint8_t font_width, uint32_t background)
+move_cursor(struct CursorPosition *position, uint32_t from_x, uint32_t from_y,
+            uint32_t to_x, uint32_t to_y)
 {
-	fb_char_index -= font_width;
-	vga_write_char(' ', 0, background);
-	fb_char_index -= font_width;
+	struct font_data_8x16 font_data = { FONT_WIDTH, FONT_HEIGHT, &font_termplus };
+	// Erase the previous cursor.
+	render_font_glyph(' ', to_x * font_data.width, to_y * font_data.height,
+	                  font_data.width, font_data.height, *font_data.font,
+	                  damage_tracking_data.bg[position->x][position->y],
+	                  damage_tracking_data.fg[position->x][position->y]);
+	// Create a new cursor at (to_x, to_y).
+	render_font_glyph(damage_tracking_data.data[from_x][from_y],
+	                  from_x * font_data.width, from_y * font_data.height,
+	                  font_data.width, font_data.height, *font_data.font,
+	                  damage_tracking_data.fg[from_x][from_y],
+	                  damage_tracking_data.bg[from_x][from_y]);
+	// Update our internal position of the cursor.
+	cursor_position = (struct CursorPosition){ to_x, to_y };
 }
 
+static void
+vga_backspace(struct font_data_8x16 *font_data, struct CursorPosition *position,
+              uint32_t foreground, uint32_t background)
+{
+	// We are in the very corner of the screen.
+	if (fb_char_index <= 0) {
+		return;
+	}
+	fb_char_index -= font_data->width;
+	vga_write_char(' ', foreground, background);
+
+	uint32_t x = fb_char_index_to_char_x_coord(fb_char_index, font_data->width);
+	uint32_t y = fb_char_index_to_char_y_coord(fb_char_index);
+	move_cursor(position, x, y, x - 1, y);
+
+	fb_char_index -= font_data->width;
+}
 // This scrolling algorithm is *way* more complex than it should've been.
 // The good news is that when using damage tracking for every char,
 // the speedup is around 2x.
@@ -263,27 +292,25 @@ ansi_erase_in_front_of_cursor(void)
 	/*
 	 * Observe the following situation where we want to erase from '$' to 'END':
 	 * $ foo bar baz
-	 * more foo     END
+	 * more foo       END
 	 *
 	 * You can do this with 2 rectangles.
 	 *
-	 * First, draw from cursor to end of line, with the height of the rectangle
-	 * being as large as it needs to be until it reaches the end of the screen:
+	 * First, clear from cursor to end of line.
 	 * $[ foo bar baz]
-	 * m[ore foo     ]END
+	 * more foo       END
 	 *
 	 *
-	 * Second, draw from width=0 to the cursor's x coordinate, and a height
-	 * also being as large as it needs to be:
+	 * Second, clear a rectangle from y+1 to the end of the screen, with the width
+	 * of the screen.
 	 * $
-	 * [m]              END
+	 * [             ]END
 	 */
 	clear_cells(cursor_position.x, cursor_position.y,
-	            screen_width_in_chars(font_data.width) - cursor_position.x,
-	            screen_height_in_chars(font_data.height) - cursor_position.y + 1,
+	            screen_width_in_chars(font_data.width) - cursor_position.x, 1,
 	            font_data.width, font_data.height, foreground, background,
 	            *font_data.font);
-	clear_cells(0, cursor_position.y, cursor_position.x - 1,
+	clear_cells(0, cursor_position.y + 1, screen_height_in_chars(font_data.width),
 	            screen_height_in_chars(font_data.height) - cursor_position.y + 1,
 	            font_data.width, font_data.height, foreground, background,
 	            *font_data.font);
@@ -292,6 +319,8 @@ ansi_erase_in_front_of_cursor(void)
 // Consistent with the define found in console.c.
 #define BACKSPACE 0x100
 
+// TODO: there is a one-pixel wide column created on lines that have more than
+// 80 characters.
 void
 vga_write_char(int c, uint32_t foreground, uint32_t background)
 {
@@ -307,18 +336,30 @@ vga_write_char(int c, uint32_t foreground, uint32_t background)
 		           font_termplus);
 	} else {
 		switch (c) {
-		case '\n':
+		case '\n': {
+			// move_cursor requires the old x and y values.
+			uint32_t old_x =
+				fb_char_index_to_char_x_coord(fb_char_index, font_data.width);
+			uint32_t old_y = fb_char_index_to_char_y_coord(fb_char_index);
+
 			vga_write_newline(SCREEN_WIDTH, font_data.width);
+
+			uint32_t x =
+				fb_char_index_to_char_x_coord(fb_char_index, font_data.width);
+			uint32_t y = fb_char_index_to_char_y_coord(fb_char_index);
+			move_cursor(&cursor_position, old_x, old_y, x, y);
 			break;
+		}
 		case '\r':
 			vga_write_carriage_return(SCREEN_WIDTH, font_data.width);
 			break;
 		case '\t':
+			// TODO: handle backspace on a tab character.
 			vga_write_tab(SCREEN_WIDTH, font_data.width);
 			break;
 		case '\b':
 		case BACKSPACE:
-			vga_backspace(font_data.width, background);
+			vga_backspace(&font_data, &cursor_position, foreground, background);
 			break;
 		default:;
 			uint32_t x =
@@ -330,7 +371,8 @@ vga_write_char(int c, uint32_t foreground, uint32_t background)
 			damage_tracking_data.data[x][y] = (char)c;
 			damage_tracking_data.fg[x][y] = foreground;
 			damage_tracking_data.bg[x][y] = background;
-			cursor_position = (struct CursorPosition){ x, y };
+			// Move the cursor forward by one.
+			move_cursor(&cursor_position, x, y, x + 1, y);
 			fb_char_index += font_data.width;
 			break;
 		}

@@ -108,9 +108,9 @@ autologin:;
 			setuid(uid);
 		}
 
-		shell_path = entry->pw_shell ? entry->pw_shell : "/bin/sh";
-		homedir = entry->pw_dir ? entry->pw_dir : "/";
-		logname = entry->pw_name ? entry->pw_name : "unknown";
+		shell_path = entry != NULL && entry->pw_shell ? entry->pw_shell : "/bin/sh";
+		homedir = entry != NULL && entry->pw_dir ? entry->pw_dir : "/";
+		logname = entry != NULL && entry->pw_name ? entry->pw_name : "unknown";
 		// cd $HOME || cd /
 		chdir(homedir);
 		xsetenv("HOME", homedir, 1);

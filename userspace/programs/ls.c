@@ -208,7 +208,7 @@ ls_format(char *buf, struct stat st)
 				fprintf(stdout, "%6lu ", st.st_size);
 			}
 		} else {
-			fprintf(stdout, " %2d,%2d ", major(st.st_dev), minor(st.st_dev));
+			fprintf(stdout, " %2d,%2d ", major(st.st_rdev), minor(st.st_rdev));
 		}
 		struct tm *lt = localtime(&st.st_mtime);
 		fprintf(stdout, "%02d-%02d %02d:%02d ", lt->tm_mon, lt->tm_mday,

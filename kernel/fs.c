@@ -543,7 +543,9 @@ void
 inode_stat(struct inode *ip, struct stat *st) __must_hold(&ip->lock)
 {
 	kernel_assert(holdingsleep(&ip->lock));
-	st->st_dev = makedev(ip->major, ip->minor);
+	// TODO: add this when we support multiple filesystems.
+	st->st_dev = 0;
+	st->st_rdev = makedev(ip->major, ip->minor);
 	st->st_ino = ip->inum;
 	st->st_nlink = ip->nlink;
 	st->st_size = (off_t)ip->size;
@@ -553,7 +555,7 @@ inode_stat(struct inode *ip, struct stat *st) __must_hold(&ip->lock)
 	st->st_atime = ip->atime;
 	st->st_ctime = ip->ctime;
 	st->st_mtime = ip->mtime;
-	st->st_blocks = ROUND_UP(ip->size / BSIZE, BSIZE);
+	st->st_blocks = ROUND_UP(ip->size, BSIZE) / 512;
 	st->st_blksize = BSIZE;
 }
 

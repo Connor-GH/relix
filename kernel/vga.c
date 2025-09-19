@@ -319,8 +319,6 @@ ansi_erase_in_front_of_cursor(void)
 // Consistent with the define found in console.c.
 #define BACKSPACE 0x100
 
-// TODO: there is a one-pixel wide column created on lines that have more than
-// 80 characters.
 void
 vga_write_char(int c, uint32_t foreground, uint32_t background)
 {
@@ -371,9 +369,14 @@ vga_write_char(int c, uint32_t foreground, uint32_t background)
 			damage_tracking_data.data[x][y] = (char)c;
 			damage_tracking_data.fg[x][y] = foreground;
 			damage_tracking_data.bg[x][y] = background;
-			// Move the cursor forward by one.
-			move_cursor(&cursor_position, x, y, x + 1, y);
+			// We need to update the char index.
 			fb_char_index += font_data.width;
+			// There is the edge case that we are at the last char on the screen.
+			// In that case, we need to draw the cursor on the next line.
+			uint32_t to_x =
+				fb_char_index_to_char_x_coord(fb_char_index, font_data.width);
+			uint32_t to_y = fb_char_index_to_char_y_coord(fb_char_index);
+			move_cursor(&cursor_position, x, y, to_x, to_y);
 			break;
 		}
 	}

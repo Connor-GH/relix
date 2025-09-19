@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2025 Connor-GH. All Rights Reserved.
+ */
 #include "printf.h"
 #include <stdarg.h>
 #include <stdbool.h>

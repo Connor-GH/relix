@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2025 Connor-GH. All Rights Reserved.
+ */
 #include "vga.h"
 #include "boot/multiboot2.h"
 #include "console.h"

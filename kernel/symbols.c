@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2025 Connor-GH. All Rights Reserved.
+ */
 #include "console.h"
 #include "kalloc.h"
 #include "kernel_assert.h"

@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2025 Connor-GH. All Rights Reserved.
+ */
 #include "memlayout.h"
 #include "lib/compiler_attributes.h"
 

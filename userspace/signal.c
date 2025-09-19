@@ -1,3 +1,7 @@
+/*
+ * SPDX-License-Identifier: MIT
+ * Copyright (c) 2025 Connor-GH. All Rights Reserved.
+ */
 #include "libc_syscalls.h"
 #include <errno.h>
 #include <setjmp.h>

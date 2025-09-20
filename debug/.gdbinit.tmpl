@@ -20,8 +20,8 @@ define hook-stop
   set $lastcs = $cs
 end
 
-echo + target remote localhost:26000\n
-target remote localhost:26000
+echo + target remote localhost:26123\n
+target remote localhost:26123
 
 macro define offsetof(t, f) &((t *)0)->f
 

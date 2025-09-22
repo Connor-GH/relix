@@ -53,3 +53,7 @@ int system(const char *command);
 
 int mkstemp(char *template);
 char *mkdtemp(char *template);
+
+int abs(int i);
+long labs(long i);
+long long llabs(long long i);

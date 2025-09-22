@@ -77,7 +77,11 @@ char *getcwd(char *buf, size_t size);
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
 // POSIX specifies a value other than -1.
-#define _POSIX_VDISABLE 0
+#define _POSIX_VDISABLE '\0'
+
+#define _POSIX_VERSION 200809L
+#define _POSIX_JOB_CONTROL 1
+#define _POSIX_V7_LP64_OFF64 1
 
 #define MB_CUR_MAX 1
 

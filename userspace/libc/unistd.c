@@ -481,3 +481,26 @@ rmdir(const char *path)
 	// TODO handle non-empty directory.
 	return unlink(path);
 }
+
+char *
+getlogin(void)
+{
+	return getenv("LOGNAME");
+}
+
+int
+getlogin_r(char *name, size_t size)
+{
+	char *logname = getlogin();
+	if (logname == NULL) {
+		errno = ENXIO;
+		return 1;
+	}
+	if (strlen(logname) >= size) {
+		errno = ERANGE;
+		return 1;
+	}
+	strncpy(name, logname, size);
+	name[size - 1] = '\0';
+	return 0;
+}

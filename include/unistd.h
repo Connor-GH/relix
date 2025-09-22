@@ -87,3 +87,6 @@ int faccessat(int fd, const char *pathname, int mode, int flags);
 int isatty(int fd);
 int ttyname_r(int fd, char *buf, size_t buflen);
 char *ttyname(int fd);
+
+int getlogin_r(char *name, size_t size);
+char *getlogin(void);

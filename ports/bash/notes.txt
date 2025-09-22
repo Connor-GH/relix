@@ -1,0 +1,10 @@
+Bash won't run unmodified. It won't compile without modifications because the codepath we take is not tested often.
+
+Make the following changes:
+lib/sh/random.c: get rid of gettimeofday, but initialize `tv`
+lib/sh/tmpfile.c: replace mktemp with mkstemp
+lib/sh/netopen.c: move the ifdef guard for HANDLE_MULTIBYTE after the included headers
+externs.h: change gethostname's prototype to be `int gethostname(char *, unsigned long int)`
+lib/glob/sm_loop.c: replace bcopy with memmove and swap the arguments.
+lib/glob/smmatch.c: add more ifdef guards around `mb_cur_max` code
+builtins/printf.def: cast `&c` to `(char *)` in tescape

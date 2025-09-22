@@ -136,6 +136,8 @@ clean: user_cargo_clean kernel_cargo_clean
 	@if [ "x$(KERNELDIR)" = "x" ]; then exit 1; fi
 	@if [ "x$(BIN)" = "x$$HOME" ]; then exit 1; fi
 
+	$(MAKE) -C $(UDIR)/openlibm clean
+
 	rm -rf \
 	$(SYSROOT)/bin/* \
 	$(BIN)/mkfs \

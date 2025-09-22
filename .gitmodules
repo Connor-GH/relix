@@ -1,0 +1,3 @@
+[submodule "userspace/openlibm"]
+	path = userspace/openlibm
+	url = https://github.com/juliamath/openlibm

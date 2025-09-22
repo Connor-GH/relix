@@ -15,7 +15,7 @@ endef
 $(BIN)/%.o: $(UPROGS_DIR)/%.c
 	$(CC) $(CFLAGS) $(UCFLAGS) -c -o $@ $^
 
-ULIBS := $(LIBC_STATIC) $(LIBSHARED_STATIC)
+ULIBS := $(LIBC_STATIC) $(LIBSHARED_STATIC) $(LIBM_STATIC)
 
 define prog
 $(SYSROOT)/$(BIN)/$(1): $(BIN)/$(1).o
@@ -32,6 +32,6 @@ $(call prog,fps) $(call rust_libs,gui) $(ULIBS)
 
 # Generic recipe for those who do not require complicated and expensive linkage.
 # link together, then remove the .note.gnu.property that GCC generates.
-$(SYSROOT)/$(BIN)/%: $(BIN)/%.o $(LIBC_STATIC) $(LIBSHARED_STATIC)
+$(SYSROOT)/$(BIN)/%: $(BIN)/%.o $(LIBC_STATIC) $(LIBSHARED_STATIC) $(LIBM_STATIC)
 	$(CC) $(CFLAGS) $(UCFLAGS) $(LINKER_FLAGS) -Wl,-z,noexecstack -Wl,-O1 -Wl,-N,-e,_start -Wl,--section-start=.text=0x1000 -o $@ $^
 	$(OBJCOPY) --remove-section .note.gnu.* $@

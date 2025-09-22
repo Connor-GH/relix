@@ -12,7 +12,6 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <locale.h>
-#include <math.h>
 #include <pci.h>
 #include <pwd.h>
 #include <setjmp.h>

@@ -12,6 +12,10 @@ initcode.out
 kernelmemfs
 mkfs
 .gdbinit
+/include/math.h
+/include/fenv.h
+/include/complex.h
+/userspace/include/openlibm_defs.h
 /bin/*
 /compile_commands.json
 /.cache/*

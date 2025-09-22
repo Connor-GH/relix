@@ -8,7 +8,7 @@ $(foreach x, $(1) $(2) $(3) $(4) $(5) $(6) $(7) $(8) $(9) $(10), $(FULL_BIN)/lib
 endef
 
 define _
-	$(CC) $(CFLAGS) $(UCFLAGS) $(LINKER_FLAGS) -Wl,-z,noexecstack -Wl,-O1 -Wl,-N,-e,_start -Wl,--section-start=.text=0x1000 -o $@ $^
+	$(CC) $(CFLAGS) $(UCFLAGS) $(ULDFLAGS) -o $@ $^
 	$(OBJCOPY) --remove-section .note.gnu.* $@
 endef
 
@@ -33,5 +33,5 @@ $(call prog,fps) $(call rust_libs,gui) $(ULIBS)
 # Generic recipe for those who do not require complicated and expensive linkage.
 # link together, then remove the .note.gnu.property that GCC generates.
 $(SYSROOT)/$(BIN)/%: $(BIN)/%.o $(LIBC_STATIC) $(LIBSHARED_STATIC) $(LIBM_STATIC)
-	$(CC) $(CFLAGS) $(UCFLAGS) $(LINKER_FLAGS) -Wl,-z,noexecstack -Wl,-O1 -Wl,-N,-e,_start -Wl,--section-start=.text=0x1000 -o $@ $^
+	$(CC) $(CFLAGS) $(UCFLAGS) $(ULDFLAGS) -o $@ $^
 	$(OBJCOPY) --remove-section .note.gnu.* $@

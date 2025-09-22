@@ -30,7 +30,7 @@ $(KERNEL_AUTOGEN_HEADER_DIR):
 
 KERNEL_AUTOGEN_HEADERS := $(KERNEL_AUTOGEN_HEADER_DIR)/compiler_information.h
 
-$(KERNEL_AUTOGEN_HEADERS): $(KERNEL_AUTOGEN_HEADER_DIR) .WAIT $(KERNEL_AUTOGEN_HEADER_DIR)/compiler_information.h
+kernel_autogen_headers: $(KERNEL_AUTOGEN_HEADER_DIR) .WAIT $(KERNEL_AUTOGEN_HEADERS)
 
 $(KERNEL_AUTOGEN_HEADER_DIR)/compiler_information.h:
 	printf \
@@ -48,7 +48,7 @@ $(BIN)/relix.img: $(BIN)/kernel
 	dd if=/dev/zero of=$@ count=10000
 	dd if=$(BIN)/kernel of=$@ seek=1 conv=notrunc
 
-$(BIN)/kernel: $(KERNEL_AUTOGEN_HEADERS) .WAIT $(KERNEL_OBJS) $(BIN)/entry.o $(BIN)/entryother $(BIN)/initcode $(KERNEL_RUST_OBJ) $(LIBSHARED_STATIC)
+$(BIN)/kernel: kernel_autogen_headers .WAIT $(KERNEL_OBJS) $(BIN)/entry.o $(BIN)/entryother $(BIN)/initcode $(KERNEL_RUST_OBJ) $(LIBSHARED_STATIC)
 	$(CC) $(CFLAGS) $(KUBSAN_FLAGS) -Wl,-melf_x86_64,-z,noexecstack,-O1 \
 		-Wl,-T,$(KERNELDIR)/kernel64.ld -o $@ $(BIN)/entry.o $(KERNEL_OBJS) \
 		$(KERNEL_RUST_OBJ) $(LIBSHARED_STATIC) -Wl,-b,binary $(BIN)/initcode $(BIN)/entryother

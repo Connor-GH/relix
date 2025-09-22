@@ -462,7 +462,7 @@ strdup(const char *s)
 		return NULL;
 	}
 	// We are trusting here that "s" is null-terminated.
-	return memcpy(new_s, s, len + 1);
+	return strcpy(new_s, s);
 }
 
 char *

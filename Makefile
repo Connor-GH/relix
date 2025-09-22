@@ -105,10 +105,7 @@ SYSROOT = sysroot
 
 DIRECTORIES := $(BIN) $(SYSROOT)/$(BIN) $(BIN)/64
 
-images: $(BIN)/fs.img $(BIN)/kernel
-
-$(DIRECTORIES):
-	mkdir -p $@
+all: default
 
 include lib/Makefile
 include userspace/Makefile
@@ -116,6 +113,10 @@ include kernel/Makefile
 
 default: $(CLEAN) .WAIT $(DIRECTORIES) .WAIT images
 
+images: $(BIN)/fs.img $(BIN)/kernel
+
+$(DIRECTORIES):
+	mkdir -p $@
 
 $(BIN)/mkfs: $(TOOLSDIR)/mkfs.c
 	$(CC) $(LINKER_FLAGS) -Werror -Wall -ggdb -o $@ $^ -I.
@@ -132,6 +133,7 @@ $(BIN)/fs.img: $(BIN)/mkfs $(UPROGS)
 
 clean: user_cargo_clean kernel_cargo_clean
 	@if [ -z "$(BIN)" ]; then exit 1; fi
+	@if [ -z "$(SYSROOT)" ]; then exit 1; fi
 	@if [ "x$(SYSROOT)" = "x" ]; then exit 1; fi
 	@if [ "x$(KERNELDIR)" = "x" ]; then exit 1; fi
 	@if [ "x$(BIN)" = "x$$HOME" ]; then exit 1; fi

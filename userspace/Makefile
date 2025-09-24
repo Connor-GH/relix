@@ -7,6 +7,12 @@ USER_EXTRAS = -D__RELIX_USER__
 UCFLAGS := -fno-lto -m80387 -msse $(USER_EXTRAS) -I$(UDIR)/include  $(IVARS)
 ULDFLAGS := $(LINKER_FLAGS) -Wl,-z,noexecstack,-O1 -Wl,-N,-e,_start,--section-start=.text=0x1000
 
+ifneq ($(RELEASE),)
+	UCFLAGS += -flto -O3
+else
+	UCFLAGS += -D__RELIX_MEMORY_GUARDS__
+endif
+
 LIBM_STATIC := $(BIN)/libm.a
 
 libm_clean:

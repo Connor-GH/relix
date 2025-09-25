@@ -1,3 +1,4 @@
+#include "dirent.h"
 #include "kernel/include/fs.h"
 #include "kernel/include/memlayout.h"
 #include "kernel/include/param.h"
@@ -822,10 +823,7 @@ concreate(void)
 	char file[3];
 	int i, pid, n, fd;
 	char fa[40];
-	struct {
-		uint16_t inum;
-		char name[14];
-	} de;
+	struct dirent de;
 
 	fprintf(stdout, "concreate test\n");
 	file[0] = 'C';
@@ -857,17 +855,17 @@ concreate(void)
 	fd = open(".", 0);
 	n = 0;
 	while (read(fd, &de, sizeof(de)) > 0) {
-		if (de.inum == 0) {
+		if (de.d_ino == 0) {
 			continue;
 		}
-		if (de.name[0] == 'C' && de.name[2] == '\0') {
-			i = de.name[1] - '0';
+		if (de.d_name[0] == 'C' && de.d_name[2] == '\0') {
+			i = de.d_name[1] - '0';
 			if (i < 0 || i >= sizeof(fa)) {
-				fprintf(stdout, "concreate weird file %s\n", de.name);
+				fprintf(stdout, "concreate weird file %s\n", de.d_name);
 				exit(0);
 			}
 			if (fa[i]) {
-				fprintf(stdout, "concreate duplicate file %s\n", de.name);
+				fprintf(stdout, "concreate duplicate file %s\n", de.d_name);
 				exit(0);
 			}
 			fa[i] = 1;

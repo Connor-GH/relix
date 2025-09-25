@@ -31,6 +31,7 @@ typedef int __id_t;
 typedef __uint32_t __ino_t;
 typedef __uint64_t __fsblkcnt_t;
 typedef __uint64_t __fsfilcnt_t;
+typedef __uint64_t __reclen_t;
 
 typedef __uint64_t __dev_t;
 

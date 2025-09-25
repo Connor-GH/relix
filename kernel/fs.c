@@ -205,8 +205,6 @@ inode_init(dev_t dev)
 	}
 }
 
-static struct inode *inode_get(dev_t dev, ino_t inum);
-
 // Allocate an inode on device dev.
 // Mark it as allocated by giving it type type.
 // Returns an unlocked but allocated and referenced inode.
@@ -261,7 +259,7 @@ inode_update(struct inode *ip)
 // Find the inode with number inum on device dev
 // and return the in-memory copy. Does not lock
 // the inode and does not read it from disk.
-static struct inode *
+struct inode *
 inode_get(dev_t dev, ino_t inum)
 {
 	struct inode *ip;

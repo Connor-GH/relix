@@ -172,7 +172,6 @@ main(int argc, char *argv[])
 
 	printf("sizeof(struct dinode): %lu\n", sizeof(struct dinode));
 	_Static_assert((BSIZE % sizeof(struct dinode)) == 0, "");
-	_Static_assert((BSIZE % sizeof(struct dirent)) == 0, "");
 
 	fsfd = open(argv[1], O_RDWR | O_CREAT | O_TRUNC, 0666);
 	if (fsfd < 0) {

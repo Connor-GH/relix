@@ -1,5 +1,7 @@
 #pragma once
 
+#include <bits/__NAME_MAX.h>
+
 #define MB_LEN_MAX 16 // Maximum number of bytes in a multibyte character.
 
 #define CHAR_BIT 8
@@ -72,7 +74,7 @@
 #define SYMLINK_MAX _POSIX_SYMLINK_MAX
 #define SYMLOOP_MAX _POSIX_SYMLOOP_MAX
 #define LOGIN_NAME_MAX 256
-#define NAME_MAX 254
+#define NAME_MAX __NAME_MAX
 #define TTY_NAME_MAX NAME_MAX
 
 #define MAX_INPUT _POSIX_MAX_INPUT

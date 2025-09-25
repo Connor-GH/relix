@@ -27,10 +27,12 @@
 #include "vm.h"
 #include <bits/access_constants.h>
 #include <bits/fcntl_constants.h>
+#include <bits/seek_constants.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <stdalignof.h>
 #include <stdatomic.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -346,6 +348,7 @@ sys_unlinkat(void)
 		goto bad;
 	}
 
+	// Write all zeroes to the place where the data was.
 	memset(&de, 0, sizeof(de));
 	PROPOGATE_ERR_WITH(inode_write(dp, (char *)&de, off, sizeof(de)), {
 		inode_unlockput(ip);
@@ -398,6 +401,106 @@ sys_openat(void)
 	}
 
 	return vfs_openat(dirfd, path, flags, mode & ~(myproc()->umask));
+}
+
+static int
+stat_type_to_getdents_type(mode_t mode)
+{
+	switch (mode) {
+	case S_IFBLK:
+		return DT_BLK;
+	case S_IFCHR:
+		return DT_CHR;
+	case S_IFDIR:
+		return DT_DIR;
+	case S_IFIFO:
+		return DT_FIFO;
+	case S_IFLNK:
+		return DT_LNK;
+	case S_IFSOCK:
+		return DT_SOCK;
+	case S_IFREG:
+		return DT_REG;
+	default:
+		return DT_UNKNOWN;
+	}
+}
+
+size_t
+sys_getdents(void)
+{
+	struct file *file;
+	void *buf;
+	size_t nbyte;
+	int flags;
+	PROPOGATE_ERR(argfd(0, NULL, &file));
+	PROPOGATE_ERR(argptr(1, (char **)&buf, sizeof(void *)));
+	PROPOGATE_ERR(argsize_t(2, &nbyte));
+	PROPOGATE_ERR(argint(3, &flags));
+
+	if (flags & ~(DT_FORCE_TYPE)) {
+		return -EINVAL;
+	}
+
+	size_t nread = 0;
+	size_t dir_size;
+
+	inode_lock(file->ip);
+	dir_size = file->ip->size;
+	inode_unlock(file->ip);
+
+	// If we reach the end of the directory, exit.
+	while (file->off < dir_size) {
+		struct posix_dent *buf_loc = buf + nread;
+		struct dirent de;
+		PROPOGATE_ERR(vfs_read(file, (char *)&de, sizeof(struct dirent)));
+		// This directory entry was deleted, so skip over it.
+		if (de.d_ino == 0) {
+			continue;
+		}
+		// Use offsetof to get the offset as sizeof will not be helpful here.
+		// The true size of the struct is this calculation, before we round it
+		// to the alignment.
+		size_t expected_size =
+			ROUND_UP(offsetof(struct posix_dent, d_name) + strlen(de.d_name) + 1,
+		           alignof(struct posix_dent));
+
+		// Also check for the case where the
+		// expected size is over the size
+		// of our buffer. In that case,
+		// seek the file back where it was
+		// and exit.
+		if (nread + expected_size >= nbyte) {
+			fileseek(file, -(off_t)sizeof(struct dirent), SEEK_CUR);
+			break;
+		}
+
+		buf_loc->d_ino = de.d_ino;
+
+		// Copy file name and truncate result if necessary.
+		// We use strlen() instead of sizeof() because posix_dent
+		// has a flexible array member for the file name.
+		strncpy(buf_loc->d_name, de.d_name, strlen(de.d_name));
+		buf_loc->d_name[strlen(de.d_name)] = '\0';
+
+		// POSIX.1-2024 recommends that this flag is implemented, so we do.
+		if (flags & DT_FORCE_TYPE) {
+			struct inode *temp_ip = inode_get(file->ip->dev, de.d_ino);
+			inode_lock(temp_ip);
+			buf_loc->d_type = stat_type_to_getdents_type(temp_ip->mode & S_IFMT);
+			inode_unlockput(temp_ip);
+		} else {
+			// When we get different filesystems, we might be able to get directory
+			// entry types without searching it from the inode number.
+			buf_loc->d_type = DT_UNKNOWN;
+		}
+
+		buf_loc->d_reclen = expected_size;
+
+		nread += buf_loc->d_reclen;
+	}
+
+	return nread;
 }
 
 size_t

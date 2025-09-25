@@ -54,7 +54,8 @@
 #define SYS_faccessat 51
 #define SYS_fcntl 52
 #define SYS_uname 53
-#define SYSCALL_AMT 53
+#define SYS_getdents 54
+#define SYSCALL_AMT 54
 #ifndef __ASSEMBLER__
 #include <stddef.h>
 #include <sys/types.h>
@@ -113,6 +114,7 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_faccessat] = "faccessat",
 	[SYS_fcntl] = "fcntl",
 	[SYS_uname] = "uname",
+	[SYS_getdents] = "getdents",
 };
 #endif
 #if __RELIX_KERNEL__ && !defined(__ASSEMBLER__)

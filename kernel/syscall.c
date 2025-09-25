@@ -187,6 +187,7 @@ extern size_t sys_fchmod(void);
 extern size_t sys_faccessat(void);
 extern size_t sys_fcntl(void);
 extern size_t sys_uname(void);
+extern size_t sys_getdents(void);
 
 static size_t
 unknown_syscall(void)
@@ -248,6 +249,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_faccessat] = sys_faccessat,
 	[SYS_fcntl] = sys_fcntl,
 	[SYS_uname] = sys_uname,
+	[SYS_getdents] = sys_getdents,
 };
 
 noreturn static void syscall_do(void);

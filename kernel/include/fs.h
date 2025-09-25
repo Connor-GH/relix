@@ -123,6 +123,7 @@ void inode_put(struct inode *);
 void inode_unlock(struct inode *ip) __releases(&ip->lock);
 void inode_unlockput(struct inode *ip) __releases(&ip->lock);
 void inode_update(struct inode *);
+struct inode *inode_get(dev_t dev, ino_t inum);
 int namecmp(const char *, const char *);
 struct inode *namei(const char *);
 struct inode *namei_with_fd(int dirfd, const char *path);

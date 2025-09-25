@@ -1,3 +1,4 @@
+#pragma once
 #if __STDC_VERSION__ < 202311L
 #define false 0
 #define true 1

@@ -2,12 +2,15 @@
  * SPDX-License-Identifier: MIT
  * Copyright (c) 2025 Connor-GH. All Rights Reserved.
  */
+#include "private/libc_syscalls.h"
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#define BUF_SIZE 1024
 
 DIR *
 fdopendir(int fd)
@@ -27,14 +30,31 @@ fdopendir(int fd)
 	}
 	dirp->fd = fd;
 	ll->prev = NULL;
+	char buf[BUF_SIZE];
 
-	while (read(fd, &de, sizeof(de)) == sizeof(de) &&
-	       strcmp(de.d_name, "") != 0) {
-		ll->data = de;
-		ll->next = malloc(sizeof(*ll));
-		ll->next->prev = ll;
-		ll = ll->next;
+	for (;;) {
+		ssize_t nread = posix_getdents(fd, buf, BUF_SIZE, 0);
+		if (nread == -1) {
+			return NULL;
+		}
+
+		if (nread == 0) {
+			break;
+		}
+
+		for (size_t bpos = 0; bpos < nread;) {
+			struct posix_dent *d = (struct posix_dent *)(buf + bpos);
+			ll->data.d_ino = d->d_ino;
+			strncpy(ll->data.d_name, d->d_name, strlen(d->d_name));
+			ll->data.d_name[strlen(d->d_name)] = '\0';
+			ll->next = malloc(sizeof(*ll));
+			ll->next->prev = ll;
+			ll = ll->next;
+
+			bpos += d->d_reclen;
+		}
 	}
+
 	ll->next = NULL;
 	ll->data = (struct dirent){ 0, "" };
 
@@ -103,4 +123,11 @@ closedir(DIR *dir)
 	free(dir->list);
 	free(dir);
 	return rc;
+}
+
+ssize_t
+posix_getdents(int fd, void *buf, size_t nbyte, int flags)
+{
+	return __syscall_ret(
+		__syscall4(SYS_getdents, fd, (long)buf, (long)nbyte, flags));
 }

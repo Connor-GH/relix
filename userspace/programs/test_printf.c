@@ -116,6 +116,8 @@ main(void)
 	TEST(my_vsnprintf("%o", 1), 1, "1");
 	TEST(my_vsnprintf("%#o", 1), 2, "01");
 
+	TEST(my_vsnprintf("%#03x", 0), 3, "0x0");
+	TEST(my_vsnprintf("%#04x", 0), 4, "0x00");
 	assert(snprintf(NULL, SIZE_MAX, "%s%s%s", "1", "2", "3") == 3);
 	printf("printf test PASSED\n");
 

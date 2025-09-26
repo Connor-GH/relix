@@ -34,15 +34,23 @@ printint(void (*put_function)(char, char *), char *put_func_buf, int64_t xx,
 		x = xx;
 	}
 	int numlen = 1;
-	int x_copy = x;
+	uint64_t x_copy = x;
 	while ((x_copy /= base) != 0) {
 		numlen++;
 	}
 
-	if (IS_SET(flags, FLAG_LJUST) && !IS_SET(flags, FLAG_PRECISION)) {
-		if (base == 16 && IS_SET(flags, FLAG_ALTFORM)) {
+	x_copy = x;
+
+	if (IS_SET(flags, FLAG_ALTFORM)) {
+		if (base == 16 || base == 2) {
 			padding -= 2;
+		} else if (base == 8) {
+			if (x_copy != 0 && padding < numlen) {
+				padding++;
+			}
 		}
+	}
+	if (IS_SET(flags, FLAG_LJUST) && !IS_SET(flags, FLAG_PRECISION)) {
 		while (i < padding - numlen) {
 			buf[i++] = ' ';
 		}
@@ -56,9 +64,16 @@ printint(void (*put_function)(char, char *), char *put_func_buf, int64_t xx,
 			buf[i++] = '0';
 		}
 	}
-	if (base == 16 && IS_SET(flags, FLAG_ALTFORM)) {
-		buf[i++] = 'x';
-		buf[i++] = '0';
+	if (IS_SET(flags, FLAG_ALTFORM)) {
+		if (x_copy != 0 || (x_copy == 0 && (IS_SET(flags, FLAG_PRECISION) ||
+		                                    IS_SET(flags, FLAG_PADZERO)))) {
+			if (base == 16) {
+				buf[i++] = 'x';
+			} else if (base == 2) {
+				buf[i++] = 'b';
+			}
+			buf[i++] = '0';
+		}
 	}
 	// append negative/positive sign
 	if (neg) {
@@ -179,9 +194,10 @@ kernel_vprintf_template(void (*put_function)(char c, char *buf),
 			case '1' ... '9':
 numerical_padding:
 				str_pad = str_pad * 10 + (c - '0');
-				// soon...
-				// if (IS_SET(flags, FLAG_PADZERO)) {}
-				// str_pad = c - '0';
+				goto skip_state_reset;
+				break;
+			case '*':
+				str_pad = va_arg(argp, int);
 				goto skip_state_reset;
 				break;
 			case '#':
@@ -222,7 +238,7 @@ numerical_padding:
 			}
 			case 'b': {
 				if (IS_SET(flags, FLAG_LONG)) {
-					long lb = va_arg(argp, unsigned long);
+					unsigned long lb = va_arg(argp, unsigned long);
 					printint(put_function, buf, lb, 2, false, flags, str_pad);
 				} else {
 					unsigned int b = va_arg(argp, unsigned int);
@@ -232,7 +248,7 @@ numerical_padding:
 			}
 			case 'u': {
 				if (IS_SET(flags, FLAG_LONG)) {
-					long lu = va_arg(argp, unsigned long);
+					unsigned long lu = va_arg(argp, unsigned long);
 					printint(put_function, buf, lu, 10, false, flags, str_pad);
 				} else {
 					unsigned int u = va_arg(argp, unsigned int);

@@ -99,7 +99,8 @@ printint(void (*put_function)(FILE *, char, char *), char *put_func_buf,
 		}
 	}
 	if (IS_SET(flags, FLAG_ALTFORM)) {
-		if (x_copy != 0) {
+		if (x_copy != 0 || (x_copy == 0 && (IS_SET(flags, FLAG_PRECISION) ||
+		                                    IS_SET(flags, FLAG_PADZERO)))) {
 			if (base == 16) {
 				MAYBE_APPEND(buf, 'x');
 			} else if (base == 2) {
@@ -241,9 +242,6 @@ __libc_vprintf_template(void (*put_function)(FILE *fp, char c, char *buf),
 			case '1' ... '9':
 numerical_padding:
 				str_pad = str_pad * 10 + (c - '0');
-				// soon...
-				// if (IS_SET(flags, FLAG_PADZERO)) {}
-				// str_pad = c - '0';
 				goto skip_state_reset;
 				break;
 			case '*':

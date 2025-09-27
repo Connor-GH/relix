@@ -58,7 +58,7 @@ WFLAGS = -Wall -Wextra -Wformat -Wnull-dereference -Warray-bounds -Wswitch -Wsha
 # TODO get rid of this
 WNOFLAGS = -Wno-unused-parameter -Wno-infinite-recursion -Wno-pointer-arith -Wno-unused -Wno-pedantic -Wno-sign-compare
 
-CFLAGS := -std=gnu23 -pipe -fno-pic -static -fno-builtin -ffreestanding
+CFLAGS := -std=gnu23 -pipe -fno-pic -static -fno-builtin -ffreestanding \
 				 -fno-strict-aliasing -nostdlib -Og -ggdb -fno-omit-frame-pointer \
 				 -nostdinc $(ARCHNOFLAGS) $(WFLAGS) $(WNOFLAGS) $(WNOGCC) $(FUZZFLAGS) \
 				 $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)

@@ -173,7 +173,7 @@ qemu-grub: iso
 qemu: qemu-grub
 
 qemu-gdb: iso
-	$(QEMU) -cdrom $(BIN)/$(ISO).iso $(QEMUOPTS) -S -s $(GDBPORT)
+	$(QEMU) -cdrom $(BIN)/$(ISO).iso $(QEMUOPTS) -gdb tcp::$(GDBPORT)
 
 format:
 	@find . -iname *.h -o -iname *.c | xargs clang-format -style=file:.clang-format -i

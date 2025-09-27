@@ -281,12 +281,15 @@ clear_cells(uint32_t x, uint32_t y, uint32_t x_len, uint32_t y_len,
 		for (uint32_t j = 0; j < y_len; j++) {
 			render_font_glyph(' ', (i + x) * font_width, (j + y) * font_height,
 			                  font_width, font_height, font, foreground, background);
+			damage_tracking_data.data[i][j] = ' ';
+			damage_tracking_data.fg[i][j] = foreground;
+			damage_tracking_data.bg[i][j] = background;
 		}
 	}
 }
 
 void
-ansi_erase_in_front_of_cursor(void)
+ansi_erase_from_cursor_to_end_of_screen(void)
 {
 	struct font_data_8x16 font_data = { FONT_WIDTH, FONT_HEIGHT, &font_termplus };
 	uint32_t background =
@@ -314,8 +317,23 @@ ansi_erase_in_front_of_cursor(void)
 	            screen_width_in_chars(font_data.width) - cursor_position.x, 1,
 	            font_data.width, font_data.height, foreground, background,
 	            *font_data.font);
-	clear_cells(0, cursor_position.y + 1, screen_height_in_chars(font_data.width),
+	clear_cells(0, cursor_position.y + 1, screen_width_in_chars(font_data.width),
 	            screen_height_in_chars(font_data.height) - cursor_position.y + 1,
+	            font_data.width, font_data.height, foreground, background,
+	            *font_data.font);
+}
+
+void
+ansi_erase_from_cursor_to_end_of_line(void)
+{
+	struct font_data_8x16 font_data = { FONT_WIDTH, FONT_HEIGHT, &font_termplus };
+	uint32_t background =
+		damage_tracking_data.bg[cursor_position.x][cursor_position.y];
+	uint32_t foreground =
+		damage_tracking_data.fg[cursor_position.x][cursor_position.y];
+
+	clear_cells(cursor_position.x, cursor_position.y,
+	            screen_width_in_chars(font_data.width) - cursor_position.x, 1,
 	            font_data.width, font_data.height, foreground, background,
 	            *font_data.font);
 }

@@ -10,7 +10,8 @@ unsafe extern "C" {
     fn ansi_set_cursor_location_up(by: u16);
     fn ansi_set_cursor_location(x: u16, y: u16);
     safe fn ansi_4bit_to_hex_color(color: u16, is_bg: bool) -> u32;
-    fn ansi_erase_in_front_of_cursor();
+    fn ansi_erase_from_cursor_to_end_of_line();
+    fn ansi_erase_from_cursor_to_end_of_screen();
 }
 /// A type implementing Perform that just logs actions
 struct Log;
@@ -88,13 +89,16 @@ impl Perform for Log {
                 return;
             }
             // Cursor position.
+            // Locations are '1'-based.
             b'H' => {
-                if param_vec.len() != 2 {
-                    return;
-                }
-                // Locations are '1'-based.
+                let x = **param_vec.get(0).unwrap_or(&&1);
+                let x = if x < 1 { 1 } else { x };
+
+                let y = **param_vec.get(1).unwrap_or(&&1);
+                let y = if y < 1 { 1 } else { y };
+
                 unsafe {
-                    ansi_set_cursor_location(*param_vec[0] - 1, *param_vec[1] - 1);
+                    ansi_set_cursor_location(x - 1, y - 1);
                 }
                 return;
             }
@@ -105,14 +109,33 @@ impl Perform for Log {
                 }
                 return;
             }
+            b'J' => {
+                let n: u16 = **param_vec.get(0).unwrap_or(&&0u16);
+                match n {
+                    0 => unsafe {
+                        ansi_erase_from_cursor_to_end_of_screen();
+                    },
+                    1 => {
+                        todo!()
+                    }
+                    2 => {
+                        todo!()
+                    }
+                    _ => {}
+                }
+            }
             b'K' => {
                 let n: u16 = **param_vec.get(0).unwrap_or(&&0u16);
                 match n {
                     0 => unsafe {
-                        ansi_erase_in_front_of_cursor();
+                        ansi_erase_from_cursor_to_end_of_line();
                     },
-                    1 => {}
-                    2 => {}
+                    1 => {
+                        todo!()
+                    }
+                    2 => {
+                        todo!()
+                    }
                     _ => {}
                 }
                 return;

@@ -11,9 +11,7 @@
 
 #define ELF_MAGIC_NUMBER 0x464C457FU // "\x7FELF" in little endian
 /* elf defines */
-#define ELF_MAGIC \
-	"\x7f"          \
-	"ELF"
+#define ELFMAG "\177ELF"
 
 /* e_ident */
 #define EI_MAG0 0
@@ -49,7 +47,7 @@
 #define EM_RISCV 243
 #define EM_ALPHA 0x9026
 
-/* e_ident[EI_OSABI] */
+/* e_ident[EI_MAG[0-4]] */
 #define ELFMAG0 0x7f
 #define ELFMAG1 'E'
 #define ELFMAG2 'L'
@@ -453,7 +451,7 @@ typedef uint32_t Elf32_Off;
 typedef int32_t Elf32_Sword;
 typedef uint32_t Elf32_Word;
 
-struct Elf32_Ehdr {
+typedef struct {
 	union {
 		struct {
 			unsigned char e_ident[EI_NIDENT];
@@ -474,9 +472,9 @@ struct Elf32_Ehdr {
 	Elf32_Half e_shentsize;
 	Elf32_Half e_shnum;
 	Elf32_Half e_shstrndx;
-};
+} Elf32_Ehdr;
 
-struct Elf32_Shdr {
+typedef struct {
 	Elf32_Word sh_name;
 	Elf32_Word sh_type;
 	Elf32_Word sh_flags;
@@ -487,9 +485,9 @@ struct Elf32_Shdr {
 	Elf32_Word sh_info;
 	Elf32_Word sh_addralign;
 	Elf32_Word sh_entsize;
-};
+} Elf32_Shdr;
 
-struct Elf32_Phdr {
+typedef struct {
 	Elf32_Word p_type;
 	Elf32_Off p_offset;
 	Elf32_Addr p_vaddr;
@@ -498,43 +496,43 @@ struct Elf32_Phdr {
 	Elf32_Word p_memsz;
 	Elf32_Word p_flags;
 	Elf32_Word p_align;
-};
+} Elf32_Phdr;
 
-struct Elf32_Sym {
+typedef struct {
 	Elf32_Word st_name;
 	Elf32_Addr st_value;
 	Elf32_Word st_size;
 	unsigned char st_info;
 	unsigned char st_other;
 	Elf32_Half st_shndx;
-};
+} Elf32_Sym;
 
 #define ELF32_ST_BIND(i) ((i) >> 4)
 #define ELF32_ST_TYPE(i) ((i) & 0xf)
 #define ELF32_ST_INFO(b, t) (((b) << 4) + ((t) & 0xf))
 
-struct Elf32_Rel {
+typedef struct {
 	Elf32_Addr r_offset;
 	Elf32_Word r_info;
-};
+} Elf32_Rel;
 
-struct Elf32_Rela {
+typedef struct {
 	Elf32_Addr r_offset;
 	Elf32_Word r_info;
 	Elf32_Sword r_addend;
-};
+} Elf32_Rela;
 
 #define ELF32_R_SYM(i) ((i) >> 8)
 #define ELF32_R_TYPE(i) ((unsigned char)(i))
 #define ELF32_R_INFO(s, t) (((s) << 8) + (unsigned char)(t))
 
-struct Elf32_Dyn {
+typedef struct {
 	Elf32_Sword d_tag;
 	union {
 		Elf32_Word d_val;
 		Elf32_Addr d_ptr;
 	} d_un;
-};
+} Elf32_Dyn;
 
 #ifdef __x86_64__
 /* elf64 stuff */
@@ -547,13 +545,15 @@ typedef uint32_t Elf64_Word;
 typedef uint64_t Elf64_Lword;
 typedef uint64_t Elf64_Xword;
 
-struct Elf64_Ehdr {
+typedef struct {
 	union {
 		struct {
 			unsigned char e_ident[EI_NIDENT];
 		} __attribute__((packed));
-		uint32_t magic;
-		uint8_t elf[12];
+		struct {
+			uint32_t magic;
+			uint8_t elf[12];
+		} __attribute__((packed));
 	};
 
 	Elf64_Half e_type;
@@ -569,9 +569,9 @@ struct Elf64_Ehdr {
 	Elf64_Half e_shentsize;
 	Elf64_Half e_shnum;
 	Elf64_Half e_shstrndx;
-};
+} Elf64_Ehdr;
 
-struct Elf64_Shdr {
+typedef struct {
 	Elf64_Word sh_name;
 	Elf64_Word sh_type;
 	Elf64_Xword sh_flags;
@@ -582,9 +582,9 @@ struct Elf64_Shdr {
 	Elf64_Word sh_info;
 	Elf64_Xword sh_addralign;
 	Elf64_Xword sh_entsize;
-};
+} Elf64_Shdr;
 
-struct Elf64_Phdr {
+typedef struct {
 	Elf64_Word p_type;
 	Elf64_Word p_flags;
 	Elf64_Off p_offset;
@@ -593,31 +593,31 @@ struct Elf64_Phdr {
 	Elf64_Xword p_filesz;
 	Elf64_Xword p_memsz;
 	Elf64_Xword p_align;
-};
+} Elf64_Phdr;
 
 #define ELF64_ST_BIND(info) ((info) >> 4)
 #define ELF64_ST_TYPE(info) ((info) & 0xf)
 #define ELF64_ST_INFO(bind, type) (((bind) << 4) + ((type) & 0xf))
 
-struct Elf64_Rel {
+typedef struct {
 	Elf64_Addr r_offset;
 	Elf64_Xword r_info;
-};
+} Elf64_Rel;
 
-struct Elf64_Rela {
+typedef struct {
 	Elf64_Addr r_offset;
 	Elf64_Xword r_info;
 	Elf64_Sxword r_addend;
-};
+} Elf64_Rela;
 
-struct Elf64_Sym {
+typedef struct {
 	uint32_t st_name;
 	uint8_t st_info;
 	uint8_t st_other;
 	uint16_t st_shndx;
 	uint64_t st_value;
 	uint64_t st_size;
-};
+} Elf64_Sym;
 
 #define ELF64_R_SYM(info) ((info) >> 32)
 #define ELF64_R_TYPE(info) ((info) & 0xffffffffL)

@@ -13,7 +13,7 @@ get_multiboot_framebuffer(void)
 }
 
 const char *
-multiboot_mmap_type(int type)
+multiboot_mmap_type(uint32_t type)
 {
 	switch (type) {
 	case MULTIBOOT_MEMORY_AVAILABLE:
@@ -32,7 +32,7 @@ multiboot_mmap_type(int type)
 }
 
 const char *
-multiboot_tag_type(int type)
+multiboot_tag_type(uint32_t type)
 {
 	switch (type) {
 	case MULTIBOOT_TAG_TYPE_END:
@@ -90,21 +90,6 @@ struct color_24bpp {
 	uint8_t blue;
 } __attribute__((packed));
 
-static int console_width = 0;
-static int console_height = 0;
-
-int
-__multiboot_console_width_pixels(void)
-{
-	return console_width;
-}
-
-int
-__multiboot_console_height_pixels(void)
-{
-	return console_height;
-}
-
 /* This file is a mess for clang format and so we disable it here. */
 /* Wide screens (>=120 columns) are recommended for editing this file. */
 /* clang-format off */
@@ -147,8 +132,6 @@ parse_multiboot(struct multiboot_info *mbinfo)
 							(void *)fbtag.framebuffer_addr, fbtag.framebuffer_pitch,
 							fbtag.framebuffer_width, fbtag.framebuffer_height,
 							fbtag.framebuffer_bpp, fbtag.framebuffer_type);
-			console_width = fbtag.framebuffer_width;
-			console_height = fbtag.framebuffer_height;
 
 			// direct RGB color.
 			if (fbtag.framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB) {
@@ -166,7 +149,7 @@ parse_multiboot(struct multiboot_info *mbinfo)
 		}
 		case MULTIBOOT_TAG_TYPE_ELF_SECTIONS: {
 			struct multiboot_tag_elf_sections *sections = (struct multiboot_tag_elf_sections *)tag;
-			symbol_table_init((struct Elf64_Shdr *)sections->section_headers,
+			symbol_table_init((Elf64_Shdr *)sections->section_headers,
 										 sections->entsize, sections->num);
 			break;
 		}

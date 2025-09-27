@@ -45,9 +45,9 @@ __nonnull(1, 2) int execve(const char *path, char *const *argv,
 	const char *s, *last;
 	uintptr_t envc = 0;
 	uintptr_t argc = 0, sp, ustack[3 + MAXARG + MAXENV + 1] = {};
-	struct Elf64_Ehdr elf;
+	Elf64_Ehdr elf;
 	struct inode *ip;
-	struct Elf64_Phdr ph;
+	Elf64_Phdr ph;
 	uintptr_t *pgdir = NULL;
 	uintptr_t *oldpgdir;
 	int return_errno = 0, errno_tmp = 0;

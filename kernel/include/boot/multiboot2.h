@@ -94,8 +94,6 @@
 extern uint64_t available_memory;
 extern uint64_t top_memory;
 
-int __multiboot_console_width_pixels(void);
-int __multiboot_console_height_pixels(void);
 struct multiboot_tag_framebuffer *get_multiboot_framebuffer(void);
 
 typedef unsigned char multiboot_uint8_t;
@@ -112,7 +110,7 @@ struct multiboot_info {
 	multiboot_uint32_t total_size;
 	multiboot_uint32_t reserved;
 	struct multiboot_tag tags[0];
-} __attribute__((packed));
+} __attribute__((packed)) __attribute__((aligned(8)));
 void parse_multiboot(struct multiboot_info *mbinfo);
 
 struct multiboot_header {

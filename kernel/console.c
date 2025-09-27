@@ -463,21 +463,6 @@ __nonnull(2, 3) static ssize_t
 
 	return target - n;
 }
-/*
- * INVARIANT: None of the console_{height,width}_{text,pixels} functions should
- * be called before parse_multiboot(struct multiboot_info *).
- */
-int
-console_width_pixels(void)
-{
-	return __multiboot_console_width_pixels();
-}
-
-int
-console_height_pixels(void)
-{
-	return __multiboot_console_height_pixels();
-}
 
 /* clang-format off */
 __nonnull(2, 3) static ssize_t

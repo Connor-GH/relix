@@ -102,7 +102,7 @@ static void
 ata_clear_pending_interrupts(HBAPort *port)
 {
 	// Clear pending interrupt bits
-	port->is = 0xFfffffff;
+	port->is = 0xffffffff;
 }
 
 static HBACmdHeader *
@@ -130,7 +130,8 @@ ata_setup_command_header(HBAPort *port, uint32_t count, int slot, bool writing)
 }
 
 static HBACmdTbl *
-ata_setup_command_table(HBACmdHeader *cmdheader, uint16_t *buf, uint16_t *count)
+ata_setup_command_table(const HBACmdHeader *cmdheader, uint16_t *buf,
+                        uint16_t *count)
 {
 	HBACmdTbl *cmdtbl = (HBACmdTbl *)P2V((uintptr_t)cmdheader->ctba |
 	                                     ((uintptr_t)cmdheader->ctbau << 32));
@@ -147,7 +148,7 @@ ata_setup_command_table(HBACmdHeader *cmdheader, uint16_t *buf, uint16_t *count)
 		                                          // always be set to 1 less than
 		                                          // the actual value)
 		cmdtbl->prdt_entry[i].i = 1;
-		buf += 4 * 1024; // 4K words
+		buf += 4 * 1024UL; // 4K words
 		*count -= 16; // 16 sectors
 	}
 	// Last entry
@@ -289,7 +290,7 @@ disk_identify(HBAPort *port, IdentifyDevicePIO *buf)
 
 // Check device type
 static int
-check_type(HBAPort *port)
+check_type(const HBAPort *port)
 {
 	uint32_t ssts = port->ssts;
 	uint8_t ipm = (ssts >> 8) & 0xF;

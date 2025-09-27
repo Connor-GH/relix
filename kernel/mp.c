@@ -22,7 +22,7 @@ int ncpu;
 uint8_t ioapicid;
 
 static uint8_t
-checksum(uint8_t *addr, int len)
+checksum(const uint8_t *addr, int len)
 {
 	int sum = 0;
 

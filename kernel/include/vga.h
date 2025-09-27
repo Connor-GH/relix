@@ -43,7 +43,6 @@ void vga_init(struct multiboot_tag_framebuffer *tag);
 void vga_write_char(int c, uint32_t foreground, uint32_t background);
 void vga_reset_char_index(void);
 // Raw pixel writing.
-void vga_write_pixel(uint32_t x, uint32_t y, uint32_t color);
 void vga_fill_rect(struct vga_rectangle rect, uint32_t hex_color);
 void clear_cells(uint32_t x, uint32_t y, uint32_t x_len, uint32_t y_len,
                  uint8_t font_height, uint8_t font_width, uint32_t foreground,

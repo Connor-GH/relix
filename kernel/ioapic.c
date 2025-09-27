@@ -52,8 +52,8 @@ ioapicinit(void)
 {
 	ioapic = (volatile struct ioapic *)IO2V(IOAPIC);
 
-	int maxintr = (ioapicread(REG_VER) >> 16) & 0xFF;
-	int id = ioapicread(REG_ID) >> 24;
+	uint32_t maxintr = (ioapicread(REG_VER) >> 16) & 0xFF;
+	uint32_t id = ioapicread(REG_ID) >> 24;
 
 	if (id != ioapicid) {
 		vga_cprintf("ioapicinit: id isn't equal to ioapicid; not a MP\n");

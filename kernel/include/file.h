@@ -16,8 +16,8 @@ struct file {
 	} type;
 	int flags; // Flags like O_CLOEXEC.
 	int ref; // reference count
-	char readable;
-	char writable;
+	bool readable;
+	bool writable;
 	struct pipe *pipe;
 	struct inode *ip;
 	off_t off;

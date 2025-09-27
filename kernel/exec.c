@@ -39,8 +39,7 @@ push_user_stack(uintptr_t *count, char *const *vec, uintptr_t *ustack,
 	return 0;
 }
 
-__nonnull(1, 2) int execve(const char *path, char *const *argv,
-                           char *const *envp)
+__nonnull(1, 2) int execve(const char *path, char **argv, char **envp)
 {
 	const char *s, *last;
 	uintptr_t envc = 0;
@@ -50,7 +49,8 @@ __nonnull(1, 2) int execve(const char *path, char *const *argv,
 	Elf64_Phdr ph;
 	uintptr_t *pgdir = NULL;
 	uintptr_t *oldpgdir;
-	int return_errno = 0, errno_tmp = 0;
+	int return_errno = 0;
+	ssize_t ret = 0;
 	struct proc *curproc = myproc();
 
 	begin_op();
@@ -89,8 +89,8 @@ __nonnull(1, 2) int execve(const char *path, char *const *argv,
 
 ok:
 	// Check ELF header
-	if ((errno_tmp = inode_read(ip, (char *)&elf, 0, sizeof(elf))) < 0) {
-		return_errno = errno_tmp;
+	if ((ret = inode_read(ip, (char *)&elf, 0, sizeof(elf))) < 0) {
+		return_errno = (int)ret;
 		goto bad;
 	}
 	if (elf.magic != ELF_MAGIC_NUMBER) {
@@ -124,8 +124,8 @@ ok:
 	// Load program into memory.
 	for (size_t i = 0, off = elf.e_phoff; i < elf.e_phnum;
 	     i++, off += sizeof(ph)) {
-		if ((errno_tmp = inode_read(ip, (char *)&ph, off, sizeof(ph))) < 0) {
-			return_errno = errno_tmp;
+		if ((ret = inode_read(ip, (char *)&ph, off, sizeof(ph))) < 0) {
+			return_errno = (int)ret;
 			goto bad;
 		}
 		if (ph.p_type != PT_LOAD) {
@@ -160,9 +160,9 @@ ok:
 		// The ph.p_offset cast is okay because we shouldn't
 		// get a program header offset of 2^63.
 		// INVARIANT: ph.p+offset < 2^63
-		if ((errno_tmp = loaduvm(pgdir, (char *)ph.p_vaddr, ip, (off_t)ph.p_offset,
-		                         ph.p_filesz)) < 0) {
-			return_errno = errno_tmp;
+		if ((ret = loaduvm(pgdir, (char *)ph.p_vaddr, ip, (off_t)ph.p_offset,
+		                   ph.p_filesz)) < 0) {
+			return_errno = (int)ret;
 			goto bad;
 		}
 	}
@@ -173,11 +173,11 @@ ok:
 	// Allocate two pages at the next page boundary.
 	// Make the first inaccessible.  Use the second as the user stack.
 	sz = PGROUNDUP(sz);
-	if ((sz = allocuvm(pgdir, sz, sz + 4 * PGSIZE)) == 0) {
+	if ((sz = allocuvm(pgdir, sz, sz + 4LU * PGSIZE)) == 0) {
 		return_errno = -ENOMEM;
 		goto bad;
 	}
-	clearpteu(pgdir, (char *)(sz - 4 * PGSIZE));
+	clearpteu(pgdir, (char *)(sz - 4LU * PGSIZE));
 	// Make NULL dereferences cause a page fault.
 	clearpteu(pgdir, (char *)0);
 	sp = sz;

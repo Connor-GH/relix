@@ -4,10 +4,8 @@
  */
 #include "cpu.h"
 #include "console.h"
-#include "kalloc.h"
 #include "kernel_assert.h"
 #include "mmu.h"
-#include "proc.h"
 #include "x86.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -26,7 +24,7 @@ enum {
 
 static uint8_t clean_fpu[512];
 static void
-fpu_load_control_word(const uint16_t control)
+fpu_load_control_word(uint16_t control)
 {
 	__asm__ __volatile__("fldcw %0\n" ::"m"(control));
 }
@@ -51,8 +49,6 @@ fpu_init(void)
 	fpu_load_control_word(0x37F);
 	fpu_load_control_word(0x37E);
 	fpu_load_control_word(0x37A);
-
-	//__asm__ __volatile__("fxsave %0" : "=m" (clean_fpu));
 }
 
 static bool

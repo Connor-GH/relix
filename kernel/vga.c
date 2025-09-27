@@ -55,7 +55,7 @@ vga_init(struct multiboot_tag_framebuffer *tag)
 }
 
 // The color is in hex: 0xRRGGBB
-void
+static __always_inline void
 vga_write_pixel(uint32_t x, uint32_t y, uint32_t color)
 {
 	if (x > fb_common.framebuffer_width || y > fb_common.framebuffer_height) {

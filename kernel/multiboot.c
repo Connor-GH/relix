@@ -1,7 +1,6 @@
 #include "boot/multiboot2.h"
 #include "console.h"
 #include "symbols.h"
-#include "vga.h"
 #include <stdint.h>
 
 static struct multiboot_tag_framebuffer mb_fb;

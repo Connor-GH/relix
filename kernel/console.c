@@ -3,8 +3,6 @@
 // Output is written to the screen and serial port.
 
 #include "console.h"
-#include "boot/multiboot2.h"
-#include "dev/hpet.h"
 #include "dev/kbd.h"
 #include "dev/lapic.h"
 #include "file.h"
@@ -16,7 +14,6 @@
 #include "spinlock.h"
 #include "symbols.h"
 #include "termios.h"
-#include "time_units.h"
 #include "uart.h"
 #include "vga.h"
 #include "x86.h"
@@ -25,6 +22,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 extern size_t let_rust_handle_it(const char *fmt);
 
@@ -89,22 +87,9 @@ set_active_term(int minor)
 void
 set_term_settings(int minor, struct termios *termios)
 {
-	struct termios local = {
-		.c_lflag = termios->c_lflag,
-		.c_cflag = termios->c_cflag,
-		.c_iflag = termios->c_iflag,
-		.c_oflag = termios->c_oflag,
-		.c_ispeed = termios->c_ispeed,
-		.c_ospeed = termios->c_ospeed,
-	};
-	for (int i = 0; i < NCCS; i++) {
-		local.c_cc[i] = termios->c_cc[i];
-	}
-
-	tty_settings[minor] = local;
+	memcpy(&tty_settings[minor], termios, sizeof(struct termios));
 }
 
-// color is default if it is set to 0xff
 static void
 set_term_color(uint32_t foreground, uint32_t background, bool changed_fg,
                bool changed_bg)
@@ -245,7 +230,7 @@ __nonnull(1) void vga_cprintf(const char *fmt, ...)
 	                        argp, &cons.lock, true, -1);
 	va_end(argp);
 }
-size_t global_string_index = 0;
+static size_t global_string_index = 0;
 static void
 string_putc_wrapper(char c, char *buf)
 {
@@ -299,20 +284,6 @@ panic_print_after(void)
 }
 
 #define BACKSPACE 0x100
-#define CRTPORT 0x3d4
-
-// Cursor position: col + 80*row.
-// TODO: cursor_position currently does nothing. We should change that soon.
-static int
-cursor_position(void)
-{
-	int pos;
-	outb(CRTPORT, 14);
-	pos = inb(CRTPORT + 1) << 8;
-	outb(CRTPORT, 15);
-	pos |= inb(CRTPORT + 1);
-	return pos;
-}
 
 void
 consputc(int c)
@@ -466,7 +437,7 @@ __nonnull(2, 3) static ssize_t
 
 /* clang-format off */
 __nonnull(2, 3) static ssize_t
-consolewrite(short minor, __attribute__((unused)) struct inode *ip,
+consolewrite(short minor, struct inode *ip,
 																		 char *buf, size_t n)
 {
 	acquire(&cons.lock);

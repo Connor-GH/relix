@@ -123,8 +123,6 @@ kpage_alloc(void) __acquires(kpage)
 // Memory allocator by Kernighan and Ritchie,
 // The C programming Language, 2nd ed.  Section 8.7.
 
-typedef long Align;
-
 struct header {
 	struct header *ptr; // Next free list.
 	size_t size;
@@ -253,16 +251,21 @@ krealloc(void *ptr, size_t size)
 		return kmalloc(size);
 	}
 
-	Header *hdr = ptr_to_header(ptr);
-	void *newptr = kmalloc(size);
-	if (newptr == NULL) {
+	Header *old_hdr = ptr_to_header(ptr);
+	size_t old_size = old_hdr->size * sizeof(Header);
+	if (old_size >= size) {
+		return ptr;
+	}
+
+	void *new_ptr = kmalloc(size);
+	if (new_ptr == NULL) {
 		return NULL;
 	}
 
-	memcpy(newptr, ptr, min(hdr->size, size));
+	memcpy(new_ptr, ptr, old_size);
 	kfree(ptr);
 
-	return newptr;
+	return new_ptr;
 }
 
 __attribute__((malloc)) void *

@@ -2,7 +2,6 @@
 #include "errno.h"
 #include "file.h"
 #include "kalloc.h"
-#include "kernel_signal.h"
 #include "lib/ring_buffer.h"
 #include "proc.h"
 #include "spinlock.h"

@@ -39,7 +39,8 @@ push_user_stack(uintptr_t *count, char *const *vec, uintptr_t *ustack,
 	return 0;
 }
 
-__nonnull(1, 2) int execve(const char *path, char **argv, char **envp)
+__nonnull(1, 2) int execve(const char *path, char *const argv[],
+                           char *const envp[])
 {
 	const char *s, *last;
 	uintptr_t envc = 0;

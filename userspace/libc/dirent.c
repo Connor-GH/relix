@@ -18,7 +18,6 @@ fdopendir(int fd)
 	if (fd == -1) {
 		return NULL;
 	}
-	struct dirent de;
 	struct __linked_list_dirent *ll = malloc(sizeof(*ll));
 	if (ll == NULL) {
 		return NULL;

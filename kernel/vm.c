@@ -245,6 +245,7 @@ uintptr_t
 allocuvm_cow(uintptr_t *pgdir, uintptr_t oldsz, uintptr_t newsz)
 {
 	char *mem;
+	(void)mem;
 	uintptr_t a;
 
 	if (newsz >= KERNBASE) {
@@ -504,6 +505,7 @@ extern void *vectors[];
 void
 seginit(void)
 {
+	(void)kmap;
 	void *local;
 	uint32_t *idt = (uint32_t *)kalloc();
 	memset(idt, 0, PGSIZE);

@@ -242,6 +242,7 @@ read_port(HBAPort *port, uint64_t start, uint16_t count, uint16_t *buf)
 
 	FISRegH2D *cmdfis =
 		ata_setup_command_fis(cmdtbl, start, count, ATA_CMD_READ_DMA_EX);
+	(void)cmdfis;
 
 	return wait_on_disk(port, slot);
 }
@@ -261,6 +262,7 @@ write_port(HBAPort *port, uint64_t start, uint16_t count, uint16_t *buf)
 
 	FISRegH2D *cmdfis =
 		ata_setup_command_fis(cmdtbl, start, count, ATA_CMD_WRITE_DMA_EX);
+	(void)cmdfis;
 
 	return wait_on_disk(port, slot);
 }
@@ -284,6 +286,7 @@ disk_identify(HBAPort *port, IdentifyDevicePIO *buf)
 
 	FISRegH2D *cmdfis =
 		ata_setup_command_fis(cmdtbl, start, count, ATA_CMD_IDENTIFY_PIO);
+	(void)cmdfis;
 
 	return wait_on_disk(port, slot);
 }

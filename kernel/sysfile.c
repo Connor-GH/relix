@@ -534,7 +534,6 @@ sys_mknodat(void)
 {
 	struct inode *ip;
 	char *path;
-	int major, minor;
 	mode_t mode;
 	dev_t dev;
 	int fd;
@@ -653,7 +652,6 @@ sys_pipe2(void)
 	int fd0, fd1;
 	int oflags;
 
-	int newoptions = 0;
 	// Arrays don't decay like you'd expect them to
 	// when going into argptr. You must use a raw
 	// pointer type, even for arrays.
@@ -831,7 +829,6 @@ sys_ioctl(void)
 	int fd;
 	struct file *file;
 	unsigned long request;
-	uintptr_t uptr;
 	PROPOGATE_ERR(argfd(0, &fd, &file));
 	PROPOGATE_ERR(argunsigned_long(1, &request));
 

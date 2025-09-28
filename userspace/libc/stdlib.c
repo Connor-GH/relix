@@ -35,8 +35,6 @@ strtoll(const char *restrict s, char **restrict endptr, int base)
 {
 	long long num = 0;
 	bool positive = true;
-	const char base_uppercase[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	const char base_lowercase[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 	if ((base != 0 && base < 2) || base > 36) {
 		errno = EINVAL;
 		return 0;
@@ -89,6 +87,9 @@ strtoll(const char *restrict s, char **restrict endptr, int base)
 		}
 		if (endptr != NULL) {
 			*endptr = (char *)(s + i + 1);
+		}
+		if (!positive) {
+			num = -num;
 		}
 		return num;
 	}
@@ -251,7 +252,6 @@ atexit(void (*function)(void))
 static int
 temp_name_helper(char *template)
 {
-	size_t string_len = strlen(template);
 	if (strncmp(template, "XXXXXX", 6) != 0) {
 		errno = EINVAL;
 		return -1;

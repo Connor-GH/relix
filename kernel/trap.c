@@ -83,34 +83,6 @@ regdump(struct trapframe *tf)
 		tf->r8, tf->r9, tf->r10, tf->r11, tf->r12, tf->r13, tf->r14, tf->r15,
 		tf->rip, tf->cs, tf->ds, tf->rflags, tf->err, tf->trapno);
 }
-static void
-decipher_error_code_nonpagefault(uint64_t error_code)
-{
-	uart_printf("This error code was caused for the following reasons: \n");
-	if (error_code % 2 != 0) {
-		uart_printf("- happened due to external hardware (outside of processor)\n");
-	}
-	uart_printf("- selector index references a descriptor in the ");
-
-	// 0b11 in binary
-	switch ((error_code >> 1) & 3) {
-	case 0:
-		uart_printf("GDT (0b00)\n");
-		break;
-	case 1:
-		uart_printf("IDT (0b01)\n");
-		break;
-	case 2:
-		uart_printf("LDT (0b10)\n");
-		break;
-	case 3:
-		uart_printf("IDT (0b11)\n");
-		break;
-	default:
-		break;
-	}
-	uart_printf("In the index: %lu\n", (error_code & 0x0000FFFF) >> 3);
-}
 
 void
 trap(struct trapframe *tf)

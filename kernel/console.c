@@ -30,14 +30,8 @@ int echo_out = 1;
 static int panicked = 0;
 static uint32_t static_foreg = VGA_COLOR_WHITE;
 static uint32_t static_backg = VGA_COLOR_BLACK;
-static int alt_form = 0;
-static int long_form = 0;
-static int zero_form = 0;
 static int active_term = 0;
 
-typedef void (*putfunc_t)(int, uint32_t, uint32_t);
-__nonnull(1) static void vcprintf(putfunc_t putfunc, const char *fmt,
-                                  va_list argp, int locking);
 static void consputc3(int c, uint32_t foreg, uint32_t backg);
 /*
  * This resource protects any static variable in this file, but mainly:

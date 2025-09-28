@@ -22,7 +22,6 @@ enum {
 	XCR0_AVX = 1 << 2,
 };
 
-static uint8_t clean_fpu[512];
 static void
 fpu_load_control_word(uint16_t control)
 {

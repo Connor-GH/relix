@@ -39,9 +39,7 @@ setpwent(void)
 struct passwd *
 getpwent(void)
 {
-	int fd;
 	memset(s_buf, 0, sizeof(s_buf));
-	size_t n;
 
 	char *ret = fgets(s_buf, sizeof(s_buf), s_file_passwd);
 	if (ret == NULL) {
@@ -53,6 +51,7 @@ getpwent(void)
 
 	char *username = strtok(s_buf, ":");
 	char *password = strtok(NULL, ":");
+	(void)password;
 
 	char *s_uid = strtok(NULL, ":");
 	uid_t this_uid = strtoll(s_uid, NULL, 10);

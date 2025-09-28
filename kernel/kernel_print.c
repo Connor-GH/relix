@@ -105,16 +105,6 @@ printint(void (*put_function)(char, char *), char *put_func_buf, int64_t xx,
 	return ret;
 }
 
-static uint64_t
-pow_10(int n)
-{
-	uint64_t result = 1;
-	for (int i = 0; i < n; i++) {
-		result *= 10;
-	}
-	return result;
-}
-
 static void
 print_string(void (*put_function)(char c, char *buf), char *s, int flags,
              char *restrict buf, int str_pad)

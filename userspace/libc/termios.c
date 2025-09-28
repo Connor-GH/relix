@@ -18,8 +18,6 @@ tcgetattr(int fd, struct termios *t)
 int
 tcsetattr(int fd, int opt, const struct termios *t)
 {
-	struct termios localterm;
-
 	switch (opt) {
 	case TCSANOW:
 		return ioctl(fd, TIOCSETA, t);
@@ -122,6 +120,8 @@ tcsendbreak(int fd, int len)
 	// this should be uncommented.
 #if 0
 	(void)select(0, 0, 0, 0, &sleepytime);
+#else
+	(void)sleepytime;
 #endif
 	if (ioctl(fd, TIOCCBRK) == -1) {
 		return -1;

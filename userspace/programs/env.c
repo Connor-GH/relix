@@ -15,7 +15,7 @@ main(int argc, char **argv)
 		exit(EXIT_SUCCESS);
 	}
 	int i = 1;
-	for (i; i < argc; i++) {
+	for (; i < argc; i++) {
 		if (strchr(argv[i], '=') != NULL) {
 			char *name = strtok(argv[i], "=");
 			char *value = strtok(NULL, "=");

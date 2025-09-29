@@ -155,3 +155,9 @@ time(time_t *tloc)
 	}
 	return 0;
 }
+
+int
+nanosleep(const struct timespec *duration, struct timespec *rem)
+{
+	return __syscall_ret(__syscall2(SYS_nanosleep, (long)duration, (long)rem));
+}

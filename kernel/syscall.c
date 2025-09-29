@@ -187,6 +187,7 @@ extern size_t sys_faccessat(void);
 extern size_t sys_fcntl(void);
 extern size_t sys_uname(void);
 extern size_t sys_getdents(void);
+extern size_t sys_nanosleep(void);
 
 static size_t
 unknown_syscall(void)
@@ -249,6 +250,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_fcntl] = sys_fcntl,
 	[SYS_uname] = sys_uname,
 	[SYS_getdents] = sys_getdents,
+	[SYS_nanosleep] = sys_nanosleep,
 };
 
 __noreturn static void syscall_do(void);

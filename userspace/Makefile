@@ -22,7 +22,7 @@ libm_clean:
 	rm -f include/fenv.h
 
 $(LIBM_STATIC): include/math.h include/fenv.h include/complex.h $(UDIR)/include/openlibm_defs.h
-	env CFLAGS="$(UCFLAGS)" LDFLAGS="$(LDFLAGS)" $(MAKE) -C $(UDIR)/openlibm libopenlibm.a -j$(nproc)
+	env CFLAGS="$(CFLAGS) $(UCFLAGS) -Wno-error -I$(realpath $(UDIR)/../include)" LDFLAGS="$(LDFLAGS)" $(MAKE) -C $(UDIR)/openlibm libopenlibm.a -j$(nproc)
 	cp $(UDIR)/openlibm/libopenlibm.a $(BIN)/libm.a
 
 $(UDIR)/include/openlibm_defs.h:

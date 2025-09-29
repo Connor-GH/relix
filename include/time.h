@@ -34,6 +34,7 @@ time_t time(time_t *tloc);
 struct tm *localtime(const time_t *timep);
 void tzset(void);
 int clock_gettime(clockid_t clock_id, struct timespec *tp);
+int nanosleep(const struct timespec *duration, struct timespec *rem);
 
 extern int daylight;
 extern long timezone;

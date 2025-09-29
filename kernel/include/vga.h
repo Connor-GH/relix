@@ -52,6 +52,7 @@ void ansi_set_cursor_location_y(uint16_t y);
 void ansi_set_cursor_location(uint16_t x, uint16_t y);
 void ansi_erase_from_cursor_to_end_of_line(void);
 void ansi_erase_from_cursor_to_end_of_screen(void);
+void ansi_erase_from_cursor_to_beginning_of_line(void);
 #endif
 #endif
 #endif // !_VGA_H

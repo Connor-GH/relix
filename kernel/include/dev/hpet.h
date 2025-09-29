@@ -58,7 +58,11 @@ _Static_assert(offsetof(struct hpet_registers, timers[1]) == 0x100 + 0x20 * 1,
                "");
 struct acpi_hpet;
 void hpet_init(struct acpi_hpet *hpet);
-volatile struct hpet_registers *hpet_regs_get(void);
+volatile struct hpet_registers *hpet_get_regs(void);
 uint64_t hpet_get_counter_period_fs(void);
 volatile struct hpet_timer *hpet_get_timer_n(uint8_t n);
 void hpet_timer_set_ns(volatile struct hpet_timer *timer, __time_t time_ns);
+void hpet_decrease_counter_ticks_by_period(void);
+
+extern struct spinlock hpet_lock;
+extern bool hpet_waiting;

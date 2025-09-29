@@ -102,8 +102,12 @@ trap(struct trapframe *tf)
 		lapiceoi();
 		break;
 	case T_IRQ0 + IRQ_HPET:
-		uart_printf("HPET Irq arrived.\n");
-		kernel_assert(hpet_regs_get()->general_int_status == 0);
+		if (hpet_waiting) {
+			hpet_waiting = false;
+			// We are sleeping in sys_nanosleep. Wake up.
+			wakeup(&hpet_waiting);
+		}
+		kernel_assert(hpet_get_regs()->general_int_status == 0);
 		lapiceoi();
 		break;
 	case T_IRQ0 + IRQ_IDE + 1:

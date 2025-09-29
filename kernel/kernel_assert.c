@@ -10,3 +10,13 @@ kernel_assert_fail(const char *assertion, const char *file, int lineno,
 	uart_printf("Aborting.\n");
 	panic("Assertion failed.");
 }
+
+__attribute__((noreturn)) void
+kernel_assert_fail_unlocked(const char *assertion, const char *file, int lineno,
+                            const char *func)
+{
+	uart_printf_unlocked("%s:%d: %s: Assertion `%s' failed.\n", file, lineno,
+	                     func, assertion);
+	uart_printf("Aborting.\n");
+	panic_unlocked("Assertion failed.");
+}

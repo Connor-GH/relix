@@ -1,6 +1,7 @@
 // https://www.a1k0n.net/code/donutbitops.c.html
 #include <stdint.h>
 #include <stdio.h>
+#include <time.h>
 #include <unistd.h>
 
 #define USE_MULTIPLIER 1
@@ -162,8 +163,11 @@ main(void)
 		R(6, cAcB, cAsB);
 		R(6, sAcB, sAsB);
 
-		sleep(15);
-		printf("\x1b[23A");
+		struct timespec duration;
+		duration.tv_sec = 0;
+		duration.tv_nsec = 15000;
+		nanosleep(&duration, NULL);
+		printf("\r\x1b[23A");
 	}
 	return 0;
 }

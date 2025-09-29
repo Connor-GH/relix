@@ -136,9 +136,7 @@ ansi_set_cursor_location(uint16_t x, uint16_t y)
 void
 ansi_set_cursor_location_x(uint16_t x)
 {
-	struct font_data_8x16 font_data = { FONT_WIDTH, FONT_HEIGHT,
-
-		                                  &font_termplus };
+	struct font_data_8x16 font_data = { FONT_WIDTH, FONT_HEIGHT, &font_termplus };
 	fb_char_index = x_y_to_fb_char_index(x, cursor_position.y, font_data.width);
 	cursor_position = (struct CursorPosition){ x, cursor_position.y };
 }
@@ -159,8 +157,19 @@ ansi_set_cursor_location_up(uint16_t by)
 static void
 vga_write_carriage_return(uint32_t fb_width, uint8_t font_width)
 {
-	fb_char_index = ROUND_UP(fb_char_index, fb_width) - fb_width;
-	cursor_position = (struct CursorPosition){ fb_char_index, font_width };
+	ansi_set_cursor_location_x(0);
+}
+
+void
+ansi_erase_from_cursor_to_beginning_of_line(void)
+{
+	struct font_data_8x16 font_data = { FONT_WIDTH, FONT_HEIGHT, &font_termplus };
+	uint32_t background =
+		damage_tracking_data.bg[cursor_position.x][cursor_position.y];
+	uint32_t foreground =
+		damage_tracking_data.fg[cursor_position.x][cursor_position.y];
+	clear_cells(0, cursor_position.y, cursor_position.x, 1, font_data.width,
+	            font_data.height, foreground, background, *font_data.font);
 }
 
 static void
@@ -289,6 +298,41 @@ clear_cells(uint32_t x, uint32_t y, uint32_t x_len, uint32_t y_len,
 }
 
 void
+ansi_erase_from_cursor_to_beginning_of_screen(void)
+{
+	struct font_data_8x16 font_data = { FONT_WIDTH, FONT_HEIGHT, &font_termplus };
+	uint32_t background =
+		damage_tracking_data.bg[cursor_position.x][cursor_position.y];
+	uint32_t foreground =
+		damage_tracking_data.fg[cursor_position.x][cursor_position.y];
+	/*
+	 * Observe the following situation where we want to erase from '$' to 'END':
+	 * stuff
+	 * foo bar $ baz
+	 * more foo       END
+	 *
+	 * You can do this with 2 rectangles.
+	 *
+	 * First, clear from cursor to beginning of line.
+	 * stuff
+	 * [foo bar ]$baz
+	 * more foo       END
+	 *
+	 *
+	 * Second, clear a rectangle from y-1 to the beginning of the screen, with the
+	 * width of the screen.
+	 * [stuff        ]
+	 *        $ baz
+	 *                END
+	 */
+	clear_cells(0, cursor_position.y, cursor_position.x, 1, font_data.width,
+	            font_data.height, foreground, background, *font_data.font);
+	clear_cells(0, 0, screen_width_in_chars(font_data.width), cursor_position.y,
+	            font_data.width, font_data.height, foreground, background,
+	            *font_data.font);
+}
+
+void
 ansi_erase_from_cursor_to_end_of_screen(void)
 {
 	struct font_data_8x16 font_data = { FONT_WIDTH, FONT_HEIGHT, &font_termplus };
@@ -308,8 +352,8 @@ ansi_erase_from_cursor_to_end_of_screen(void)
 	 * more foo       END
 	 *
 	 *
-	 * Second, clear a rectangle from y+1 to the end of the screen, with the width
-	 * of the screen.
+	 * Second, clear a rectangle from y+1 to the end of the screen, with the
+	 * width of the screen.
 	 * $
 	 * [             ]END
 	 */

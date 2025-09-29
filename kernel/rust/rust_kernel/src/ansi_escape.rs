@@ -12,6 +12,8 @@ unsafe extern "C" {
     safe fn ansi_4bit_to_hex_color(color: u16, is_bg: bool) -> u32;
     fn ansi_erase_from_cursor_to_end_of_line();
     fn ansi_erase_from_cursor_to_end_of_screen();
+    fn ansi_erase_from_cursor_to_beginning_of_screen();
+    fn ansi_erase_from_cursor_to_beginning_of_line();
 }
 /// A type implementing Perform that just logs actions
 struct Log;
@@ -115,12 +117,13 @@ impl Perform for Log {
                     0 => unsafe {
                         ansi_erase_from_cursor_to_end_of_screen();
                     },
-                    1 => {
-                        todo!()
-                    }
-                    2 => {
-                        todo!()
-                    }
+                    1 => unsafe {
+                        ansi_erase_from_cursor_to_beginning_of_screen();
+                    },
+                    2 => unsafe {
+                        ansi_erase_from_cursor_to_beginning_of_screen();
+                        ansi_erase_from_cursor_to_end_of_screen();
+                    },
                     _ => {}
                 }
             }
@@ -130,12 +133,13 @@ impl Perform for Log {
                     0 => unsafe {
                         ansi_erase_from_cursor_to_end_of_line();
                     },
-                    1 => {
-                        todo!()
-                    }
-                    2 => {
-                        todo!()
-                    }
+                    1 => unsafe {
+                        ansi_erase_from_cursor_to_beginning_of_line();
+                    },
+                    2 => unsafe {
+                        ansi_erase_from_cursor_to_beginning_of_line();
+                        ansi_erase_from_cursor_to_end_of_line();
+                    },
                     _ => {}
                 }
                 return;

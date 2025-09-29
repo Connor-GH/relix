@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "symbols.h"
 #include "x86.h"
 
 #include <stdatomic.h>
@@ -29,9 +30,9 @@ acquire(struct spinlock *lk) __acquires(lk)
 {
 	pushcli(); // disable interrupts to avoid deadlock.
 	if (holding(lk)) {
-		uart_printf("%s\n", lk->name);
+		uart_printf_unlocked("acquire: lock held: %s\n", lk->name);
 	}
-	kernel_assert(!holding(lk));
+	kernel_assert_unlocked(!holding(lk));
 
 	while (atomic_flag_test_and_set(&lk->locked) != 0)
 		;
@@ -49,7 +50,7 @@ acquire(struct spinlock *lk) __acquires(lk)
 void
 release(struct spinlock *lk) __releases(lk)
 {
-	kernel_assert(holding(lk));
+	kernel_assert_unlocked(holding(lk));
 
 	lk->pcs[0] = 0;
 	lk->cpu = NULL;

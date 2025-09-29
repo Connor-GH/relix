@@ -21,7 +21,7 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	int ret = sleep(atoi(argv[1]) * 1000);
+	int ret = sleep(atoi(argv[1]));
 	while (ret != 0) {
 		ret = sleep(ret);
 	}

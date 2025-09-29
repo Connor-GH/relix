@@ -27,8 +27,8 @@ fn rs_panic(info: &core::panic::PanicInfo) -> ! {
 
     let info_cstr = CString::new(s).unwrap_or_default();
     unsafe {
-        panic_print_before();
+        panic_print_before(true);
         vga_cprintf(info_cstr.as_c_str().as_ptr());
-        panic_print_after()
+        panic_print_after(true)
     }
 }

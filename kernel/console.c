@@ -224,6 +224,16 @@ __nonnull(1) void vga_cprintf(const char *fmt, ...)
 	                        argp, &cons.lock, true, -1);
 	va_end(argp);
 }
+__attribute__((format(printf, 1, 2)))
+__nonnull(1) void vga_cprintf_unlocked(const char *fmt, ...)
+{
+	va_list argp;
+	va_start(argp, fmt);
+	kernel_vprintf_template(vga_write_char_wrapper, let_rust_handle_it, NULL, fmt,
+	                        argp, NULL, false, -1);
+	va_end(argp);
+}
+
 static size_t global_string_index = 0;
 static void
 string_putc_wrapper(char c, char *buf)
@@ -244,31 +254,35 @@ __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...)
 }
 
 __cold void
-panic_print_before(void)
+panic_print_before(bool locking)
 {
 	cli();
-	cons.locking = 1;
+	if (locking) {
+		cons.locking = 1;
+	}
 	vga_reset_char_index();
 	// use lapiccpunum so that we can call panic from mycpu()
-	vga_cprintf("\033[1;31mlapicid %d: panic: ", lapicid());
+	(locking ? vga_cprintf :
+	           vga_cprintf_unlocked)("\033[1;31mlapicid %d: panic: ", lapicid());
 }
 
 __noreturn __cold void
-panic_print_after(void)
+panic_print_after(bool locking)
 {
 	uintptr_t pcs[10];
 	getcallerpcs(pcs);
-	vga_cprintf("\nStack frames:\n");
+	(locking ? vga_cprintf : vga_cprintf_unlocked)("\nStack frames:\n");
 	for (int i = 0; i < 10; i++) {
 		// The relative positition within function.
 		size_t relative_pos;
 		const char *name = symbol_resolve(pcs[i], &relative_pos);
 
 		if (name != NULL && relative_pos != 0) {
-			vga_cprintf("%s+%#lx\n", name, relative_pos);
+			(locking ? vga_cprintf : vga_cprintf_unlocked)("%s+%#lx\n", name,
+			                                               relative_pos);
 		}
 	}
-	vga_cprintf("\033[0m");
+	(locking ? vga_cprintf : vga_cprintf_unlocked)("\033[0m");
 	panicked = 1; // freeze other CPU
 #if !defined(__clang__)
 #pragma GCC diagnostic ignored "-Wanalyzer-infinite-loop"

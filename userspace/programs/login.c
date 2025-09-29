@@ -123,7 +123,7 @@ autologin:;
 		return 1;
 	} else {
 		fprintf(stderr, "Password is incorrect.\n");
-		sleep(100);
+		sleep(3);
 		goto try_again;
 	}
 }

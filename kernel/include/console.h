@@ -15,6 +15,8 @@ __attribute__((format(printf, 1, 2))) __nonnull(1) void cprintf(const char *,
 __attribute__((format(printf, 1, 2)))
 __nonnull(1) void vga_cprintf(const char *fmt, ...);
 __attribute__((format(printf, 1, 2)))
+__nonnull(1) void vga_cprintf_unlocked(const char *fmt, ...);
+__attribute__((format(printf, 1, 2)))
 __nonnull(1) void uart_printf(const char *fmt, ...);
 __attribute__((format(printf, 1, 2)))
 __nonnull(1) void uart_printf_unlocked(const char *fmt, ...);
@@ -31,12 +33,18 @@ __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...);
 
 void consputc(int);
 void consoleintr(int (*)(void));
-__cold void panic_print_before(void);
-__noreturn __cold void panic_print_after(void);
+__cold void panic_print_before(bool locking);
+__noreturn __cold void panic_print_after(bool locking);
+
 #define panic(...)          \
-	panic_print_before();     \
+	panic_print_before(true); \
 	vga_cprintf(__VA_ARGS__); \
-	panic_print_after()
+	panic_print_after(true)
+
+#define panic_unlocked(...)          \
+	panic_print_before(false);         \
+	vga_cprintf_unlocked(__VA_ARGS__); \
+	panic_print_after(false)
 
 int kernel_vprintf_template(void (*put_function)(char c, char *buf),
                             size_t (*ansi_func)(const char *),

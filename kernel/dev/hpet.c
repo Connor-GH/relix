@@ -20,6 +20,9 @@
 static volatile struct hpet_registers *s_hpet_regs;
 static uint32_t s_period_fs;
 
+bool hpet_waiting;
+struct spinlock hpet_lock;
+
 #define GENCAP_REV_ID(cap) (uint8_t)((cap) & 0xff)
 #define GENCAP_NUM_TIM_CAP(cap) (uint8_t)(((cap) >> 8 & 0xf) + 1)
 #define GENCAP_COUNT_SIZE_CAP(cap) (bool)((cap) >> 13 & 0b1)
@@ -44,7 +47,7 @@ static uint32_t s_period_fs;
 #define Tn_INT_ROUTE_CAP_N(tc, i) (uint32_t)((tc) >> (32 + (i)) & 0xffffffff)
 
 volatile struct hpet_registers *
-hpet_regs_get(void)
+hpet_get_regs(void)
 {
 	return s_hpet_regs;
 }
@@ -193,6 +196,9 @@ hpet_init(struct acpi_hpet *hpet)
 		            Tn_INT_ROUTE_CNF(regs->timers[0].config_and_capabilities));
 	}
 	hpet_enable();
+
+	initlock(&hpet_lock, "HPET");
+	hpet_waiting = false;
 
 	ioapicenable(IRQ_HPET, 0);
 }

@@ -1081,7 +1081,7 @@ sys_mmap(void)
 	if (!MMAP_HAS_FLAG(flags, MAP_ANONYMOUS) && file != NULL &&
 	    S_ISCHR(file->ip->mode)) {
 		// "The file has been locked, or too much memory has been locked"
-		if (atomic_flag_is_set(&file->ip->lock.locked)) {
+		if (atomic_load(&file->ip->lock.locked)) {
 			return -EAGAIN;
 		}
 		if (file->ip->major < 0 || file->ip->major >= NDEV ||

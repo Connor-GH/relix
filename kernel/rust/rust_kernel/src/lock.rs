@@ -1,6 +1,6 @@
 use core::ffi::CStr;
 use core::ops::{Deref, DerefMut, Drop};
-use kernel_bindings::bindings::{ATOMIC_FLAG_INIT, acquire, release};
+use kernel_bindings::bindings::{acquire, release};
 use kernel_bindings::bindings::{sleeplock, spinlock};
 
 pub struct SpinLock<T> {
@@ -11,7 +11,7 @@ pub struct SpinLock<T> {
 impl<T: Default> SpinLock<T> {
     pub const fn new() -> Self {
         let inner: spinlock = spinlock {
-            locked: ATOMIC_FLAG_INIT,
+            locked: 0,
             name: core::ptr::null(),
             cpu: core::ptr::null_mut(),
             pcs: [0; 10],

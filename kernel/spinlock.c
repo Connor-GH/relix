@@ -17,7 +17,7 @@ void
 initlock(struct spinlock *lk, const char *name)
 {
 	lk->name = name;
-	lk->locked = ATOMIC_FLAG_INIT;
+	lk->locked = 0;
 	lk->cpu = NULL;
 }
 
@@ -34,13 +34,13 @@ acquire(struct spinlock *lk) __acquires(lk)
 	}
 	kernel_assert_unlocked(!holding(lk));
 
-	while (atomic_flag_test_and_set(&lk->locked) != 0)
+	while (atomic_exchange_explicit(&lk->locked, 1, memory_order_acquire) != 0)
 		;
 	__acquire(lk);
 	// Tell the C compiler and the processor to not move loads or stores
 	// past this point, to ensure that the critical section's memory
 	// references happen after the lock is acquired.
-	__sync_synchronize();
+	atomic_thread_fence(memory_order_seq_cst);
 	// Record info about lock acquisition for debugging.
 	lk->cpu = mycpu();
 	getcallerpcs(lk->pcs);
@@ -59,13 +59,13 @@ release(struct spinlock *lk) __releases(lk)
 	// past this point, to ensure that all the stores in the critical
 	// section are visible to other cores before the lock is released.
 	// Both the C compiler and the hardware may re-order loads and
-	// stores; __sync_synchronize() tells them both not to.
-	__sync_synchronize();
+	// stores; atomic_thread_fence() tells them both not to.
+	atomic_thread_fence(memory_order_seq_cst);
 
 	// Release the lock, equivalent to lk->locked = 0.
 	// This code can't use a C assignment, since it might
 	// not be atomic.
-	atomic_flag_clear(&lk->locked);
+	atomic_store_explicit(&lk->locked, 0, memory_order_release);
 	__release(lk);
 
 	popcli();
@@ -105,7 +105,7 @@ holding(struct spinlock *lock)
 {
 	int r;
 	pushcli();
-	r = atomic_flag_is_set(&lock->locked) && lock->cpu == mycpu();
+	r = atomic_load(&lock->locked) && lock->cpu == mycpu();
 	popcli();
 	return r;
 }

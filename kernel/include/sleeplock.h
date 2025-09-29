@@ -7,7 +7,7 @@
 #endif
 // Long-term locks for processes
 struct sleeplock {
-	atomic_flag locked; // Is the lock held?
+	atomic_int locked; // Is the lock held?
 	struct spinlock lk; // spinlock protecting this sleep lock
 
 	// For debugging:

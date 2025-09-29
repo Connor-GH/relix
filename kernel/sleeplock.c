@@ -10,7 +10,7 @@ initsleeplock(struct sleeplock *lk, const char *name)
 {
 	initlock(&lk->lk, "sleep lock");
 	lk->name = name;
-	lk->locked = ATOMIC_FLAG_INIT;
+	lk->locked = 0;
 	lk->pid = 0;
 }
 
@@ -18,10 +18,10 @@ void
 acquiresleep(struct sleeplock *lk) __acquires(lk)
 {
 	acquire(&lk->lk);
-	while (atomic_flag_is_set(&lk->locked)) {
+	while (atomic_load(&lk->locked)) {
 		sleep(lk, &lk->lk);
 	}
-	atomic_flag_test_and_set(&lk->locked);
+	atomic_exchange_explicit(&lk->locked, 1, memory_order_acquire);
 	lk->pid = myproc()->pid;
 	release(&lk->lk);
 }
@@ -30,7 +30,7 @@ void
 releasesleep(struct sleeplock *lk) __releases(lk)
 {
 	acquire(&lk->lk);
-	atomic_flag_clear(&lk->locked);
+	atomic_store_explicit(&lk->locked, 0, memory_order_release);
 	lk->pid = 0;
 	wakeup(lk);
 	release(&lk->lk);
@@ -42,7 +42,7 @@ holdingsleep(struct sleeplock *lk)
 	int r;
 
 	acquire(&lk->lk);
-	r = atomic_flag_is_set(&lk->locked) && (lk->pid == myproc()->pid);
+	r = atomic_load(&lk->locked) && (lk->pid == myproc()->pid);
 	release(&lk->lk);
 	return r;
 }

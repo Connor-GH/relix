@@ -15,7 +15,7 @@
 #include <stdatomic.h>
 // Mutual exclusion lock.
 struct spinlock {
-	atomic_flag locked;
+	atomic_int locked;
 
 	// For debugging:
 	const char *name; // Name of lock.

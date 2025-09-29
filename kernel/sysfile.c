@@ -32,7 +32,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <stdalignof.h>
+#include <stdalign.h>
 #include <stdatomic.h>
 #include <stddef.h>
 #include <stdint.h>

@@ -11,7 +11,6 @@
 #include <fcntl.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdnoreturn.h>
 
 #define SYSCALL_ARG_FETCH(T)                                   \
 	int fetch##T(uintptr_t addr, T *ip)                          \
@@ -252,7 +251,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_getdents] = sys_getdents,
 };
 
-noreturn static void syscall_do(void);
+__noreturn static void syscall_do(void);
 
 __attribute__((noinline)) void
 syscall_init(struct cpu *c)
@@ -296,7 +295,7 @@ syscall_init(struct cpu *c)
 
 void syswrap(struct trapframe *tf);
 
-noreturn __attribute__((naked)) static void
+__noreturn __attribute__((naked)) static void
 syscall_do(void)
 {
 	__asm__ __volatile__(

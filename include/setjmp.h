@@ -14,8 +14,8 @@ typedef struct __jmp_buf_tag jmp_buf[1];
 
 typedef jmp_buf sigjmp_buf;
 
-int setjmp(jmp_buf env) __attribute__((returns_twice));
-void longjmp(jmp_buf env, int val) __attribute__((noreturn));
+[[gnu::returns_twice]] int setjmp(jmp_buf env);
+[[noreturn]] void longjmp(jmp_buf env, int val);
 
-int sigsetjmp(jmp_buf env, int savemask) __attribute__((returns_twice));
-void siglongjmp(jmp_buf env, int val) __attribute__((noreturn));
+[[gnu::returns_twice]] int sigsetjmp(jmp_buf env, int savemask);
+[[noreturn]] void siglongjmp(jmp_buf env, int val);

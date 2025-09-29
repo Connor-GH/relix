@@ -25,7 +25,7 @@ void *bsearch(const void *key, const void *base, size_t nmemb, size_t size,
 int rand(void);
 void srand(unsigned int seed);
 
-__attribute__((noreturn)) void exit(int status);
+[[noreturn]] void exit(int status);
 __attribute__((malloc, alloc_size(1))) void *malloc(size_t);
 __attribute__((malloc, alloc_size(1, 2))) void *calloc(size_t nmemb, size_t sz);
 __attribute__((malloc, alloc_size(2))) void *realloc(void *ptr, size_t size);
@@ -47,7 +47,7 @@ long long strtoll(const char *restrict s, char **restrict nptr, int base);
 unsigned long strtoul(const char *s, char **endptr, int base);
 unsigned long long strtoull(const char *s, char **endptr, int base);
 
-__attribute__((noreturn)) void abort(void);
+[[noreturn]] void abort(void);
 
 int system(const char *command);
 

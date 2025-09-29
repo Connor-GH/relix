@@ -212,7 +212,7 @@ raise(int sig)
 	return kill(getpid(), sig);
 }
 
-__attribute__((noreturn)) void
+[[noreturn]] void
 abort(void)
 {
 	signal(SIGABRT, SIG_DFL);
@@ -223,7 +223,7 @@ abort(void)
 typedef void (*atexit_handler)(void);
 static atexit_handler atexit_handlers[ATEXIT_MAX] = { NULL };
 
-__attribute__((noreturn)) void
+[[noreturn]] void
 exit(int status)
 {
 	for (int i = ATEXIT_MAX - 1; i >= 0; i--) {

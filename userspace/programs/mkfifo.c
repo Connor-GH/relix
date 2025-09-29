@@ -9,14 +9,14 @@ main(int argc, char **argv)
 {
 	char *argv0 = argv[0];
 	char c;
-	mode_t mode = 0644; // rw user and r group and others
+	mode_t mode = 0666; // rw user, group, and others
 	while ((c = getopt(argc, argv, "m:")) != -1) {
 		switch (c) {
 		case 'm':
 			errno = 0;
 			mode = strtol(optarg, NULL, 8);
 			if (errno != 0) {
-				mode = 0644;
+				mode = 0666;
 			}
 			break;
 		default:

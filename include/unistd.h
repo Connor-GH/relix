@@ -16,9 +16,9 @@ typedef __off_t off_t;
 typedef __intptr_t intptr_t;
 #define NULL __NULL
 
-int fork(void) __attribute__((returns_twice));
-int vfork(void) __attribute__((returns_twice));
-void _exit(int) __attribute__((noreturn));
+[[gnu::returns_twice]] int fork(void);
+[[gnu::returns_twice]] int vfork(void);
+[[noreturn]] void _exit(int);
 int pipe(int pipefd[2]);
 int pipe2(int pipefd[2], int oflags);
 

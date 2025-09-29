@@ -838,8 +838,9 @@ concreate(void)
 			link("C0", file);
 		} else {
 			fd = open(file, O_CREATE | O_RDWR, 0777);
-			if (fd < 0) {
-				fprintf(stdout, "concreate create %s failed\n", file);
+			if (fd < 0 && errno != EEXIST) {
+				fprintf(stdout, "concreate create %s failed: %s\n", file,
+				        strerror(errno));
 				exit(0);
 			}
 			close(fd);

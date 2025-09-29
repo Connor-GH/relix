@@ -464,7 +464,6 @@ last_proc_ran(void)
 void
 scheduler(void)
 {
-	int ran = 0;
 	struct cpu *c = mycpu();
 	c->proc = 0;
 
@@ -482,7 +481,6 @@ scheduler(void)
 			// Switch to chosen process.  It is the process's job
 			// to release ptable.lock and then reacquire it
 			// before jumping back to us.
-			ran = 1;
 			c->proc = p;
 			switchuvm(p);
 			p->state = RUNNING;
@@ -498,9 +496,11 @@ scheduler(void)
 			c->proc = NULL;
 		}
 		release(&ptable.lock);
-		if (ran == 0) {
-			hlt();
-		}
+		// Don't burn up the processor doing nothing.
+		// Instead of running the process table endlessly,
+		// sleep until an interrupt.
+		sti();
+		hlt();
 	}
 }
 

@@ -69,6 +69,10 @@
 #define S_IWOTH 00002
 #define S_IXOTH 00001
 
+#define S_ISUID 04000 // set-user-id
+#define S_ISGID 02000 // set-group-id
+#define S_ISVTX 01000 // restricted deletion on directories
+
 #endif
 typedef __blkcnt_t blkcnt_t;
 typedef __blksize_t blksize_t;

@@ -26,7 +26,7 @@ FILE *stderr;
 
 int errno;
 
-static FILE *open_files[OPEN_MAX];
+static FILE *open_files[FOPEN_MAX];
 static size_t open_files_index = 0;
 
 static size_t global_idx = 0;

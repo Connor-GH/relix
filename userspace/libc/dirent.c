@@ -65,6 +65,17 @@ fdopendir(int fd)
 	return dirp;
 }
 
+void
+rewinddir(DIR *dirp)
+{
+	if (dirp == NULL || dirp->list == NULL) {
+		return;
+	}
+	while (dirp->list->prev != NULL) {
+		dirp->list = dirp->list->prev;
+	}
+}
+
 struct dirent *
 readdir(DIR *dirp)
 {

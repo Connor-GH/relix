@@ -15,7 +15,19 @@ typedef __gid_t gid_t;
 typedef __off_t off_t;
 typedef __intptr_t intptr_t;
 #define NULL __NULL
+#define STDIN_FILENO 0
+#define STDOUT_FILENO 1
+#define STDERR_FILENO 2
+// POSIX specifies a value other than -1.
+#define _POSIX_VDISABLE '\0'
 
+#define _POSIX_VERSION 200809L
+#define _POSIX_JOB_CONTROL 1
+#define _POSIX_V7_LP64_OFF64 1
+
+#define MB_CUR_MAX 1
+
+#if __RELIX_USER__
 [[gnu::returns_twice]] int fork(void);
 [[gnu::returns_twice]] int vfork(void);
 [[noreturn]] void _exit(int);
@@ -73,18 +85,6 @@ extern int optind, opterr, optopt;
 int getopt(int argc, char *const argv[], const char *optstring);
 char *getcwd(char *buf, size_t size);
 
-#define STDIN_FILENO 0
-#define STDOUT_FILENO 1
-#define STDERR_FILENO 2
-// POSIX specifies a value other than -1.
-#define _POSIX_VDISABLE '\0'
-
-#define _POSIX_VERSION 200809L
-#define _POSIX_JOB_CONTROL 1
-#define _POSIX_V7_LP64_OFF64 1
-
-#define MB_CUR_MAX 1
-
 off_t lseek(int fd, off_t offset, int whence);
 int access(const char *pathname, int mode);
 int faccessat(int fd, const char *pathname, int mode, int flags);
@@ -94,3 +94,4 @@ char *ttyname(int fd);
 
 int getlogin_r(char *name, size_t size);
 char *getlogin(void);
+#endif

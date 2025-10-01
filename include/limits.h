@@ -54,6 +54,7 @@
 #define _POSIX_TTY_NAME_MAX 9
 #define _XOPEN_IOV_MAX 16
 #define _XOPEN_NAME_MAX 255
+#define _POSIX_LINE_MAX 2048
 
 #define PIPE_BUF _POSIX_PIPE_BUF
 #define PATH_MAX _POSIX_PATH_MAX
@@ -77,4 +78,7 @@
 #define NAME_MAX __NAME_MAX
 #define TTY_NAME_MAX NAME_MAX
 
+#define LINE_MAX 128
 #define MAX_INPUT _POSIX_MAX_INPUT
+#define NZERO 20 // default process priority
+#define SSIZE_MAX LLONG_MAX

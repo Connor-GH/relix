@@ -6,6 +6,10 @@
 #include <bits/__NULL.h>
 #include <bits/size_t.h>
 #include <bits/wchar_t.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <stddef.h>
+#include <sys/wait.h>
 
 typedef __size_t size_t;
 typedef __wchar_t wchar_t;

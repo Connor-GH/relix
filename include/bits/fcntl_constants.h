@@ -41,6 +41,8 @@
 #define F_GETOWN 0x200
 #define F_SETOWN 0x400
 
+#define F_DUPFD_CLOFORK 0x800
+
 #define FD_CLOEXEC 0x01
 #define FD_CLOFORK 0x02
 

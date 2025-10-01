@@ -26,6 +26,7 @@ fn main() {
         .clang_args([
             "-I../../../",
             "-I../../../include",
+            "-I../../include",
             "-D__RELIX_USER__=1",
             "-fno-builtin",
         ])

@@ -4,12 +4,15 @@
 #ifndef USE_HOST_TOOLS
 
 #ifdef __RELIX_USER__
+#include <bits/__NAME_MAX.h>
 #include <bits/__NULL.h>
 #include <bits/seek_constants.h>
 #include <bits/size_t.h>
 #include <bits/types.h>
 #include <bits/va_list.h>
 
+#define FOPEN_MAX OPEN_MAX
+#define FILENAME_MAX __NAME_MAX
 #ifndef __NONNULL
 #define __NONNULL(...) __attribute__((__nonnull__(__VA_ARGS__)))
 #endif

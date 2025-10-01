@@ -980,6 +980,17 @@ sys_fcntl(void)
 		}
 		return fd;
 	}
+	case F_DUPFD_CLOFORK: {
+		int arg;
+		int fd;
+		struct file *duped_file;
+		PROPOGATE_ERR(argint(2, &arg));
+		PROPOGATE_ERR(fd = fdalloc(file));
+		if ((duped_file = filedup(file, O_CLOFORK)) == NULL) {
+			return -EBADF;
+		}
+		return fd;
+	}
 	case F_GETFL: {
 		inode_lock(file->ip);
 		int flags = file->ip->fattrs;

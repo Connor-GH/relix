@@ -110,3 +110,108 @@ typedef __wchar_t wchar_t;
 #define PRIuFAST32 PRIu32
 #define PRIuFAST16 PRIu16
 #define PRIuFAST8 PRIu8
+
+#define __SCN64_PREFIX "l"
+#define __SCNPTR_PREFIX "l"
+
+#define SCNdMAX __SCN64_PREFIX "d"
+#define SCNdPTR __SCN64_PREFIX "d"
+#define SCNd64 __SCN64_PREFIX "d"
+#define SCNd32 "d"
+#define SCNd16 "d"
+#define SCNd8 "d"
+
+#define SCNdLEAST64 SCNd64
+#define SCNdLEAST32 SCNd32
+#define SCNdLEAST16 SCNd16
+#define SCNdLEAST8 SCNd8
+
+#define SCNdFAST64 SCNd64
+#define SCNdFAST32 SCNd32
+#define SCNdFAST16 SCNd16
+#define SCNdFAST8 SCNd8
+
+#define SCNiMAX __SCN64_PREFIX "i"
+#define SCNiPTR __SCN64_PREFIX "i"
+#define SCNi64 __SCN64_PREFIX "i"
+#define SCNi32 "i"
+#define SCNi16 "i"
+#define SCNi8 "i"
+
+#define SCNiLEAST64 SCNi64
+#define SCNiLEAST32 SCNi32
+#define SCNiLEAST16 SCNi16
+#define SCNiLEAST8 SCNi8
+
+#define SCNiFAST64 SCNi64
+#define SCNiFAST32 SCNi32
+#define SCNiFAST16 SCNi16
+#define SCNiFAST8 SCNi8
+
+#define SCNoMAX __SCN64_PREFIX "o"
+#define SCNoPTR __SCN64_PREFIX "o"
+#define SCNo64 __SCN64_PREFIX "o"
+#define SCNo32 "o"
+#define SCNo16 "o"
+#define SCNo8 "o"
+
+#define SCNoLEAST64 SCNo64
+#define SCNoLEAST32 SCNo32
+#define SCNoLEAST16 SCNo16
+#define SCNoLEAST8 SCNo8
+
+#define SCNoFAST64 SCNo64
+#define SCNoFAST32 SCNo32
+#define SCNoFAST16 SCNo16
+#define SCNoFAST8 SCNo8
+
+#define SCNxMAX __SCN64_PREFIX "x"
+#define SCNxPTR __SCN64_PREFIX "x"
+#define SCNx64 __SCN64_PREFIX "x"
+#define SCNx32 "x"
+#define SCNx16 "x"
+#define SCNx8 "x"
+
+#define SCNxLEAST64 SCNx64
+#define SCNxLEAST32 SCNx32
+#define SCNxLEAST16 SCNx16
+#define SCNxLEAST8 SCNx8
+
+#define SCNxFAST64 SCNx64
+#define SCNxFAST32 SCNx32
+#define SCNxFAST16 SCNx16
+#define SCNxFAST8 SCNx8
+
+#define SCNXMAX __SCN64_PREFIX "X"
+#define SCNXPTR __SCN64_PREFIX "X"
+#define SCNX64 __SCN64_PREFIX "X"
+#define SCNX32 "X"
+#define SCNX16 "X"
+#define SCNX8 "X"
+
+#define SCNXLEAST64 SCNX64
+#define SCNXLEAST32 SCNX32
+#define SCNXLEAST16 SCNX16
+#define SCNXLEAST8 SCNX8
+
+#define SCNXFAST64 SCNX64
+#define SCNXFAST32 SCNX32
+#define SCNXFAST16 SCNX16
+#define SCNXFAST8 SCNX8
+
+#define SCNuMAX __SCN64_PREFIX "u"
+#define SCNuPTR __SCN64_PREFIX "u"
+#define SCNu64 __SCN64_PREFIX "u"
+#define SCNu32 "u"
+#define SCNu16 "u"
+#define SCNu8 "u"
+
+#define SCNuLEAST64 SCNu64
+#define SCNuLEAST32 SCNu32
+#define SCNuLEAST16 SCNu16
+#define SCNuLEAST8 SCNu8
+
+#define SCNuFAST64 SCNu64
+#define SCNuFAST32 SCNu32
+#define SCNuFAST16 SCNu16
+#define SCNuFAST8 SCNu8

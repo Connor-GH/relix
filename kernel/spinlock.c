@@ -29,10 +29,7 @@ void
 acquire(struct spinlock *lk) __acquires(lk)
 {
 	pushcli(); // disable interrupts to avoid deadlock.
-	if (holding(lk)) {
-		uart_printf_unlocked("acquire: lock held: %s\n", lk->name);
-	}
-	kernel_assert_unlocked(!holding(lk));
+	kernel_assert(!holding(lk));
 
 	while (atomic_exchange_explicit(&lk->locked, 1, memory_order_acquire) != 0)
 		;

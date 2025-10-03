@@ -486,9 +486,11 @@ scheduler(void)
 			p->state = RUNNING;
 
 			// Depending on the bits set, this may also set the extended state.
-			__asm__ __volatile__("fxsave %0" : "=m"(c->proc->legacy_fpu_state));
-			swtch(&(c->scheduler), p->context);
+			// Restore the state we have saved for userspace.
+			// WARNING: do not use the FPU between fxrstor and swtch!
 			__asm__ __volatile__("fxrstor %0" : : "m"(c->proc->legacy_fpu_state));
+			swtch(&(c->scheduler), p->context);
+			__asm__ __volatile__("fxsave %0" : "=m"(c->proc->legacy_fpu_state));
 			switchkvm();
 
 			// Process is done running for now.

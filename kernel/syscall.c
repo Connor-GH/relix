@@ -301,6 +301,7 @@ __noreturn __attribute__((naked)) static void
 syscall_do(void)
 {
 	__asm__ __volatile__(
+
 		"swapgs\n" // user %gs -> kernel %gs
 
 		"mov %%rsp, %%gs:%c[user_stack]\n"
@@ -309,9 +310,6 @@ syscall_do(void)
 		"pushq $0x1b\n" // ss
 
 		"pushq %%gs:%c[user_stack]\n" // user rsp.
-		// We used %gs for all we need it for (CPU-local data).
-	  // Swap it back.
-		"swapgs\n"
 		"sti\n"
 
 		"pushq %%r11\n" // rflags
@@ -364,11 +362,14 @@ syscall_do(void)
 		"popq %%rsp\n" // rsp
 		// TODO stack leak of %ss?
 
+		// We used %gs for all we need it for (CPU-local data).
+	  // Swap it back.
+		"swapgs\n"
 		"sysretq\n"
 		:
 		/* clang-format off */
 		: [user_stack] "i"(offsetof(struct cpu, user_stack)),
-			[kernel_stack] "i"(offsetof(struct cpu, kernel_stack)));
+		[kernel_stack] "i"(offsetof(struct cpu, kernel_stack)));
 	/* clang-format on */
 }
 

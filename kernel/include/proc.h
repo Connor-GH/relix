@@ -17,6 +17,8 @@
 struct cred {
 	uid_t uid; // User ID
 	pid_t gid; // Group ID of current process
+	uid_t euid; // Effective user ID
+	pid_t egid; // Effective group ID of current process
 	gid_t gids[NGROUPS_MAX]; // all Group IDs the user is in
 };
 

@@ -655,7 +655,7 @@ sys_pipe2(void)
 	// Arrays don't decay like you'd expect them to
 	// when going into argptr. You must use a raw
 	// pointer type, even for arrays.
-	PROPOGATE_ERR(argptr(0, (void *)&fd, 2 * sizeof(fd[0])));
+	PROPOGATE_ERR(argptr(0, (char **)&fd, 2 * sizeof(fd[0])));
 	PROPOGATE_ERR(argint(1, &oflags));
 
 	if (oflags & ~(O_CLOEXEC | O_CLOFORK | O_NONBLOCK)) {

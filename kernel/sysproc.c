@@ -252,6 +252,34 @@ sys_setuid(void)
 }
 
 size_t
+sys_seteuid(void)
+{
+	// cannot setuid if not root
+	if (myproc()->cred.uid != 0) {
+		return -EPERM;
+	}
+	uid_t euid;
+	PROPOGATE_ERR(arguid_t(0, &euid));
+
+	myproc()->cred.euid = euid;
+	return 0;
+}
+
+size_t
+sys_setegid(void)
+{
+	// cannot setuid if not root
+	if (myproc()->cred.uid != 0) {
+		return -EPERM;
+	}
+	gid_t egid;
+	PROPOGATE_ERR(arggid_t(0, &egid));
+
+	myproc()->cred.egid = egid;
+	return 0;
+}
+
+size_t
 sys_setpgid(void)
 {
 	pid_t pid;
@@ -289,6 +317,18 @@ size_t
 sys_getuid(void)
 {
 	return myproc()->cred.uid;
+}
+
+size_t
+sys_geteuid(void)
+{
+	return myproc()->cred.euid;
+}
+
+size_t
+sys_getegid(void)
+{
+	return myproc()->cred.egid;
 }
 
 size_t
@@ -408,4 +448,42 @@ sys_uname(void)
 	PROPOGATE_ERR(ret);
 	strncpy(utsname->nodename, hostname, _UTSNAME_LEN);
 	return 0;
+}
+
+size_t
+sys_getgroups(void)
+{
+	int gidsetsize;
+	int ngroups = 0;
+	gid_t *grouplist;
+	bool copying = true;
+	PROPOGATE_ERR(argint(0, &gidsetsize));
+	// If gidsetsize is 0, getgroups() shall return the number of group IDs that
+	// it would otherwise return without modifying the array pointed to by
+	// grouplist.
+	if (gidsetsize == 0) {
+		copying = false;
+		// POSIX.1-2024: "If the effective group ID of the process is returned with
+		// the supplementary group IDs, the value returned shall always be greater
+		// than or equal to one and less than or equal to the value of
+		// {NGROUPS_MAX}+1."
+		//
+		// Note that our implementation does not return egid. POSIX does not specify
+		// whether or not this changes the bounds of gidgetsize, however.
+	} else if (!(1 <= gidsetsize && gidsetsize <= NGROUPS_MAX + 1)) {
+		return -EINVAL;
+	}
+	PROPOGATE_ERR(argptr(2, (char **)&grouplist, sizeof(gid_t) * gidsetsize));
+	struct proc *curproc = myproc();
+	for (; ngroups < gidsetsize; ngroups++) {
+		// -1 happens to be our indication for an invalid group. We
+		// can use this to know where the end of the groups are.
+		if (curproc->cred.gids[ngroups] == (gid_t)-1) {
+			break;
+		}
+		if (copying) {
+			grouplist[ngroups] = curproc->cred.gids[ngroups];
+		}
+	}
+	return ngroups;
 }

@@ -137,9 +137,20 @@ found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
 	p->pgid = p->pid;
+
+	// Real uid = 0 (root)
 	p->cred.uid = 0;
+	// Real gid = 0 (root)
 	p->cred.gid = 0;
-	memset(p->cred.gids, 0, sizeof(p->cred.gids));
+
+	// The default is e{u,g}id = {u,g}id.
+	p->cred.euid = p->cred.uid;
+	p->cred.egid = p->cred.gid;
+
+	// Additional groups = -1.
+	for (int i = 0; i < sizeof(p->cred.gids) / sizeof(gid_t); i++) {
+		p->cred.gids[i] = (gid_t)-1;
+	}
 
 	release(&ptable.lock);
 
@@ -312,7 +323,9 @@ fork(void)
 	}
 	np->cwd = inode_dup(curproc->cwd);
 	np->cred.uid = curproc->cred.uid;
+	np->cred.euid = curproc->cred.euid;
 	np->cred.gid = curproc->cred.gid;
+	np->cred.egid = curproc->cred.egid;
 	np->pgid = curproc->pgid;
 	memcpy(np->cred.gids, curproc->cred.gids, sizeof(np->cred.gids));
 	np->umask = curproc->umask;

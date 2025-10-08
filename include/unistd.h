@@ -66,14 +66,17 @@ pid_t getpid(void);
 pid_t getppid(void);
 pid_t getpgid(pid_t pid);
 pid_t getpgrp(void);
-gid_t getgid(void);
-gid_t getegid(void);
 uid_t getuid(void);
+gid_t getgid(void);
 uid_t geteuid(void);
+gid_t getegid(void);
 
 int setuid(uid_t uid);
 int setgid(gid_t gid);
+int seteuid(uid_t euid);
+int setegid(gid_t egid);
 int setpgid(pid_t pid, pid_t pgid);
+int getgroups(int size, gid_t *list);
 
 void *sbrk(intptr_t increment);
 unsigned int sleep(unsigned int);

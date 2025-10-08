@@ -11,7 +11,7 @@ panic() {
 }
 
 # Create the disk image if it doesn't exist
-! [ -f ./$SATA_FILENAME.img ] && ( qemu-img create -f raw $SATA_FILENAME.img 2G || panic "Could not create disk \`$SATA_FILENAME.img'!" )
+! [ -f ./$SATA_FILENAME.img ] && (qemu-img create -f raw $SATA_FILENAME.img 2G || panic "Could not create disk \`$SATA_FILENAME.img'!")
 
 for TOOLCHAIN in "${TOOLCHAINS[@]}"; do
 	for BUILD_TYPE in "${BUILD_TYPES[@]}"; do
@@ -28,15 +28,13 @@ for TOOLCHAIN in "${TOOLCHAINS[@]}"; do
 			RELEASE=1
 		fi
 
-		make clean default RELEASE=$RELEASE LLVM=$LLVM -j$(nproc)
+		make clean iso RELEASE=$RELEASE LLVM=$LLVM -j$(nproc)
 
 		if [ "$?" != "0" ]; then
 			echo "Error: build $TOOLCHAIN $BUILD_TYPE exited with an error"
 			exit 1
 		fi
 
-		make qemu CONSOLE_LOG=1 QEMUEXTRA="$SATA_DISK"
+		make qemu RELEASE=$RELEASE LLVM=$LLVM CONSOLE_LOG=1 QEMUEXTRA="$SATA_DISK"
 	done
 done
-
-

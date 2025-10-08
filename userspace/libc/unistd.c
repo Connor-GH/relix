@@ -4,6 +4,7 @@
  */
 #include <sys/stat.h>
 #include <sys/syscall.h>
+#include <sys/sysmacros.h>
 #include <sys/times.h>
 #include <sys/types.h>
 
@@ -377,13 +378,25 @@ access(const char *pathname, int mode)
 uid_t
 geteuid(void)
 {
-	return getuid();
+	return __syscall_ret(__syscall0(SYS_geteuid));
 }
 
-uid_t
+gid_t
 getegid(void)
 {
-	return getgid();
+	return __syscall_ret(__syscall0(SYS_getegid));
+}
+
+int
+seteuid(uid_t euid)
+{
+	return __syscall_ret(__syscall1(SYS_seteuid, euid));
+}
+
+int
+setegid(gid_t egid)
+{
+	return __syscall_ret(__syscall1(SYS_setegid, egid));
 }
 
 static char ttyname_buf[TTY_NAME_MAX];
@@ -439,7 +452,20 @@ dup2(int oldfd, int newfd)
 int
 isatty(int fd)
 {
-	return fd == 0;
+	struct stat statbuf;
+	if (fstat(fd, &statbuf) < 0) {
+		errno = EBADF;
+		return 0;
+	}
+	// This is the value of the TTY device in the kernel.
+	// This needs to be changed if the TTY device's major
+	// device number changes.
+	if (major(statbuf.st_rdev) == 6) {
+		return 1;
+	} else {
+		errno = ENOTTY;
+		return 0;
+	}
 }
 
 static void
@@ -503,4 +529,10 @@ getlogin_r(char *name, size_t size)
 	strncpy(name, logname, size);
 	name[size - 1] = '\0';
 	return 0;
+}
+
+int
+getgroups(int size, gid_t *list)
+{
+	return __syscall_ret(__syscall2(SYS_getgroups, size, (long)list));
 }

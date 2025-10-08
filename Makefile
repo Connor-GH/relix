@@ -95,7 +95,11 @@ CFLAGS += -fno-pie -no-pie
 endif
 
 
-CLEAN := $(filter clean, $(MAKECMDGOALS))
+ifneq ($(filter clean, $(MAKECMDGOALS)),)
+ifneq ($(filter-out clean, $(MAKECMDGOALS)),)
+	sequential-build := 1
+endif
+endif
 
 IVARS = -Iinclude -I.
 # directories
@@ -105,13 +109,21 @@ SYSROOT = sysroot
 
 DIRECTORIES := $(BIN) $(SYSROOT)/$(BIN) $(BIN)/64
 
+# This is a hack so that we can handle multiple targets.
+ifdef sequential-build
+$(MAKECMDGOALS):
+	for x in $(MAKECMDGOALS); do \
+		$(MAKE) $$x; \
+		done
+else
+
 all: default
 
 include lib/Makefile
 include userspace/Makefile
 include kernel/Makefile
 
-default: $(CLEAN) .WAIT $(DIRECTORIES) .WAIT images
+default: .WAIT $(DIRECTORIES) .WAIT images
 
 images: $(BIN)/fs.img $(BIN)/kernel
 
@@ -177,3 +189,4 @@ qemu-gdb: iso
 
 format:
 	@find . -iname *.h -o -iname *.c | xargs clang-format -style=file:.clang-format -i
+endif

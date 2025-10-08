@@ -56,7 +56,12 @@
 #define SYS_uname 53
 #define SYS_getdents 54
 #define SYS_nanosleep 55
-#define SYSCALL_AMT 55
+#define SYS_geteuid 56
+#define SYS_getegid 57
+#define SYS_seteuid 58
+#define SYS_setegid 59
+#define SYS_getgroups 60
+#define SYSCALL_AMT 60
 #ifndef __ASSEMBLER__
 #include <stddef.h>
 #include <sys/types.h>
@@ -117,6 +122,11 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_uname] = "uname",
 	[SYS_getdents] = "getdents",
 	[SYS_nanosleep] = "nanosleep",
+	[SYS_geteuid] = "geteuid",
+	[SYS_getegid] = "getegid",
+	[SYS_seteuid] = "seteuid",
+	[SYS_setegid] = "setegid",
+	[SYS_getgroups] = "getgroups",
 };
 #endif
 #if __RELIX_KERNEL__ && !defined(__ASSEMBLER__)

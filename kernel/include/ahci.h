@@ -521,4 +521,5 @@ typedef struct IdentifyDevicePIO {
 bool read_port(HBAPort *port, uint64_t start, uint16_t count, uint16_t *buf);
 bool write_port(HBAPort *port, uint64_t start, uint16_t count, uint16_t *buf);
 void ahci_init(uint32_t abar_);
+int ahci_read_disk(uint64_t start, uint16_t count, uint8_t *buf);
 #endif

@@ -4,6 +4,7 @@
 #include "kernel_assert.h"
 #include "macros.h"
 #include "memlayout.h"
+#include <errno.h>
 #include <pci.h>
 #include <stdint.h>
 #include <string.h>
@@ -373,20 +374,20 @@ ata_string_to_cstring(char *buf, size_t size)
 }
 
 static void
-ata_parse_identify_device_info(IdentifyDevicePIO info)
+ata_parse_identify_device_info(IdentifyDevicePIO *info)
 {
 	// Assures that ATA_CMD_READ_DMA_EX and ATA_CMD_WRITE_DMA_EX are aupported.
-	kernel_assert(info.commands_feature_sets_supported2 & (1 << 10));
+	kernel_assert(info->commands_feature_sets_supported2 & (1 << 10));
 
 	char model_num_buf[41];
-	memcpy(model_num_buf, info.model_number, 40);
+	memcpy(model_num_buf, info->model_number, 40);
 	ata_string_to_cstring(model_num_buf, 40);
 	model_num_buf[40] = '\0';
 
 	uart_printf("SATA disk name: %s\n", model_num_buf);
 
 	char additional_product_id[9];
-	memcpy(additional_product_id, info.additional_product_id, 8);
+	memcpy(additional_product_id, info->additional_product_id, 8);
 	ata_string_to_cstring(additional_product_id, 8);
 	additional_product_id[8] = '\0';
 
@@ -397,8 +398,8 @@ ata_parse_identify_device_info(IdentifyDevicePIO info)
 
 	// Trivial disk info
 	pr_debug_file("is_ata_device=(%s), %d:1 logical:physical sectors\n",
-	              BOOL_STRING(IS_ATA_DEVICE(info.general_configuration)),
-	              1 << (info.physical_or_logical_sector_size & 0xF));
+	              BOOL_STRING(IS_ATA_DEVICE(info->general_configuration)),
+	              1 << (info->physical_or_logical_sector_size & 0xF));
 
 #if defined(SATA_MAJOR_AND_MINOR) && SATA_MAJOR_AND_MINOR
 	pr_debug_file("Transport Major: ");
@@ -527,8 +528,10 @@ ata_parse_identify_device_info(IdentifyDevicePIO info)
 #endif
 }
 
+static volatile HBAPort *ahci_port;
+
 void
-probe_port(HBAMem *abar_)
+probe_port(HBAMem * /* 'static */ abar_)
 {
 	// Search disk in implemented ports
 	uint32_t pi = abar_->pi;
@@ -536,11 +539,12 @@ probe_port(HBAMem *abar_)
 		if ((pi & (1U << i)) == (1U << i)) {
 			int dt = check_type(&abar_->ports[i]);
 			if (dt == AHCI_DEV_SATA) {
+				ahci_port = &abar_->ports[i];
 				uart_printf("Sata drive found at port %d\n", i);
 				port_rebase(&abar_->ports[i], i);
 				IdentifyDevicePIO pio = { 0 };
 				disk_identify(&abar->ports[i], &pio);
-				ata_parse_identify_device_info(pio);
+				ata_parse_identify_device_info(&pio);
 
 #if __RELIX_KERNEL_DEBUG__
 				uint16_t buf[256] = { 1, 2, 3, 0 };
@@ -563,4 +567,13 @@ probe_port(HBAMem *abar_)
 			}
 		}
 	}
+}
+
+int
+ahci_read_disk(uint64_t start, uint16_t count, uint8_t *buf)
+{
+	if (read_port(ahci_port, start, count, (uint16_t *)buf)) {
+		return 0;
+	}
+	return -EIO;
 }

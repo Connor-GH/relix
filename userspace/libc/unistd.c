@@ -536,3 +536,15 @@ getgroups(int size, gid_t *list)
 {
 	return __syscall_ret(__syscall2(SYS_getgroups, size, (long)list));
 }
+
+pid_t
+getsid(pid_t pid)
+{
+	return __syscall_ret(__syscall1(SYS_getsid, pid));
+}
+
+pid_t
+setsid(void)
+{
+	return __syscall_ret(__syscall0(SYS_setsid));
+}

@@ -61,7 +61,9 @@
 #define SYS_seteuid 58
 #define SYS_setegid 59
 #define SYS_getgroups 60
-#define SYSCALL_AMT 60
+#define SYS_getsid 61
+#define SYS_setsid 62
+#define SYSCALL_AMT 62
 #ifndef __ASSEMBLER__
 #include <stddef.h>
 #include <sys/types.h>
@@ -127,6 +129,8 @@ __attribute__((unused)) static const char *syscall_names[SYSCALL_AMT + 1] = {
 	[SYS_seteuid] = "seteuid",
 	[SYS_setegid] = "setegid",
 	[SYS_getgroups] = "getgroups",
+	[SYS_setsid] = "setsid",
+	[SYS_getsid] = "getsid",
 };
 #endif
 #if __RELIX_KERNEL__ && !defined(__ASSEMBLER__)

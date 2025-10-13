@@ -313,6 +313,7 @@ vfs_openat(int dirfd, char *path, int flags, mode_t mode)
 			end_op();
 			return -EIO;
 		}
+		// We are not trying to create a file.
 	} else {
 		if ((ip = (((flags & O_NOFOLLOW) ? namei_with_fd :
 		                                   resolve_nameat)(dirfd, path))) == NULL) {

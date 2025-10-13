@@ -77,6 +77,8 @@ int seteuid(uid_t euid);
 int setegid(gid_t egid);
 int setpgid(pid_t pid, pid_t pgid);
 int getgroups(int size, gid_t *list);
+pid_t getsid(pid_t pid);
+pid_t setsid(void);
 
 void *sbrk(intptr_t increment);
 unsigned int sleep(unsigned int);

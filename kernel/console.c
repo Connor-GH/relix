@@ -3,6 +3,7 @@
 // Output is written to the screen and serial port.
 
 #include "console.h"
+#include "bits/fcntl_constants.h"
 #include "dev/kbd.h"
 #include "dev/lapic.h"
 #include "file.h"
@@ -23,6 +24,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/sysmacros.h>
 
 extern size_t let_rust_handle_it(const char *fmt);
 
@@ -36,7 +38,7 @@ static void consputc3(int c, uint32_t foreg, uint32_t backg);
 /*
  * This resource protects any static variable in this file, but mainly:
  * - console_buffer
- * - buffer_position
+ * - global_string_index
  */
 static struct {
 	struct spinlock lock;
@@ -45,6 +47,7 @@ static struct {
 
 static struct termios tty_settings[NTTY] = { 0 };
 static pid_t term_pgids[NTTY] = {};
+static bool used_as_ctty[NTTY] = {};
 // This should always be in bounds, provided that
 // only the minor from ip->minor is passed in, and
 // that ip->major == TTY.
@@ -401,11 +404,14 @@ consoleintr(int (*getc)(void))
 	// TODO: handle all VT escape sequences and scancodes.
 	if (do_ctrl_c) {
 		put_ctrl_char('C');
+		// When control-C is pressed, the signal is sent to the
+		// processes in the foreground job. A job is also known
+		// as a process group.
 		kill(-get_term_pgid(get_active_term()), SIGINT);
 	}
 }
 __nonnull(2, 3) static ssize_t
-	consoleread(short minor, struct inode *ip, char *dst, size_t n)
+	console_read(short minor, struct inode *ip, char *dst, size_t n)
 {
 	size_t target;
 	int c;
@@ -445,7 +451,7 @@ __nonnull(2, 3) static ssize_t
 
 /* clang-format off */
 __nonnull(2, 3) static ssize_t
-consolewrite(short minor, struct inode *ip,
+console_write(short minor, struct inode *ip,
 																		 char *buf, size_t n)
 {
 	acquire(&cons.lock);
@@ -462,33 +468,33 @@ consolewrite(short minor, struct inode *ip,
 /* clang-format on */
 
 static struct mmap_info
-consolemmap_noop(short minor, size_t length, uintptr_t addr, int perm)
+console_mmap(short minor, size_t length, uintptr_t addr, int perm)
 {
 	return (struct mmap_info){};
 }
 
 static int
-consoleopen_noop(short minor, int flags)
+console_open(short minor, int flags)
 {
 	return 0;
 }
 
 static int
-consoleclose_noop(short minor)
+console_close(short minor)
 {
 	return 0;
 }
 
 __nonnull(2, 3) static ssize_t
-	uartread(short minor, __attribute__((unused)) struct inode *ip, char *buf,
-           size_t n)
+	uart_read(short minor, __attribute__((unused)) struct inode *ip, char *buf,
+            size_t n)
 {
 	return n;
 }
 
 /* clang-format off */
 __nonnull(2, 3) static ssize_t
-uartwrite(short minor, __attribute__((unused)) struct inode *ip,
+uart_write(short minor, __attribute__((unused)) struct inode *ip,
 																		 char *buf, size_t n)
 {
 	for (size_t i = 0; i < n; i++) {
@@ -499,73 +505,82 @@ uartwrite(short minor, __attribute__((unused)) struct inode *ip,
 /* clang-format on */
 
 static struct mmap_info
-uartmmap_noop(short minor, size_t length, uintptr_t addr, int perm)
+uart_mmap(short minor, size_t length, uintptr_t addr, int perm)
 {
 	return (struct mmap_info){};
 }
 
 static int
-uartopen_noop(short minor, int flags)
+uart_open(short minor, int flags)
 {
 	return 0;
 }
 
 static int
-uartclose_noop(short minor)
+uart_close(short minor)
 {
 	return 0;
 }
 
 __nonnull(2, 3) static ssize_t
-	ttyread(short minor, __attribute__((unused)) struct inode *ip, char *buf,
-          size_t n)
+	tty_read(short minor, __attribute__((unused)) struct inode *ip, char *buf,
+           size_t n)
 {
 	if (minor >= MINOR_TTY_SERIAL) {
-		return uartread(minor, ip, buf, n);
+		return uart_read(minor, ip, buf, n);
 	} else {
-		return consoleread(minor, ip, buf, n);
+		return console_read(minor, ip, buf, n);
 	}
 }
 
 /* clang-format off */
 __nonnull(2, 3) static ssize_t
-ttywrite(short minor, __attribute__((unused)) struct inode *ip,
+tty_write(short minor, __attribute__((unused)) struct inode *ip,
 																		 char *buf, size_t n)
 {
 	if (minor >= MINOR_TTY_SERIAL)
-		return uartwrite(minor, ip, buf, n);
+		return uart_write(minor, ip, buf, n);
 	else
-		return consolewrite(minor, ip, buf, n);
+		return console_write(minor, ip, buf, n);
 }
 /* clang-format on */
 
 static struct mmap_info
-ttymmap_noop(short minor, size_t length, uintptr_t addr, int perm)
+tty_mmap(short minor, size_t length, uintptr_t addr, int perm)
 {
 	if (minor >= MINOR_TTY_SERIAL) {
-		return uartmmap_noop(minor, length, addr, perm);
+		return uart_mmap(minor, length, addr, perm);
 	} else {
-		return consolemmap_noop(minor, length, addr, perm);
+		return console_mmap(minor, length, addr, perm);
 	}
 }
 
 static int
-ttyopen_noop(short minor, int flags)
+tty_open(short minor, int flags)
 {
+	// O_NOCTTY not set means we want to set
+	// controlling terminal.
+	struct proc *proc = myproc();
+	if (proc->ctty == PROC_HAS_NO_CTTY && !(flags & O_NOCTTY) &&
+	    !used_as_ctty[minor]) {
+		proc->ctty = makedev(DEV_TTY, minor);
+		used_as_ctty[minor] = true;
+	}
+
 	if (minor >= MINOR_TTY_SERIAL) {
-		return uartopen_noop(minor, flags);
+		return uart_open(minor, flags);
 	} else {
-		return consoleopen_noop(minor, flags);
+		return console_open(minor, flags);
 	}
 }
 
 static int
-ttyclose_noop(short minor)
+tty_close(short minor)
 {
 	if (minor >= MINOR_TTY_SERIAL) {
-		return uartclose_noop(minor);
+		return uart_close(minor);
 	} else {
-		return consoleclose_noop(minor);
+		return console_close(minor);
 	}
 }
 
@@ -574,17 +589,17 @@ dev_console_init(void)
 {
 	initlock(&cons.lock, "console");
 
-	devsw[DEV_CONSOLE].write = consolewrite;
-	devsw[DEV_CONSOLE].read = consoleread;
-	devsw[DEV_CONSOLE].mmap = consolemmap_noop;
-	devsw[DEV_CONSOLE].open = consoleopen_noop;
-	devsw[DEV_CONSOLE].close = consoleclose_noop;
+	devsw[DEV_CONSOLE].write = console_write;
+	devsw[DEV_CONSOLE].read = console_read;
+	devsw[DEV_CONSOLE].mmap = console_mmap;
+	devsw[DEV_CONSOLE].open = console_open;
+	devsw[DEV_CONSOLE].close = console_close;
 
-	devsw[DEV_TTY].write = ttywrite;
-	devsw[DEV_TTY].read = ttyread;
-	devsw[DEV_TTY].mmap = ttymmap_noop;
-	devsw[DEV_TTY].open = ttyopen_noop;
-	devsw[DEV_TTY].close = ttyclose_noop;
+	devsw[DEV_TTY].write = tty_write;
+	devsw[DEV_TTY].read = tty_read;
+	devsw[DEV_TTY].mmap = tty_mmap;
+	devsw[DEV_TTY].open = tty_open;
+	devsw[DEV_TTY].close = tty_close;
 	cons.locking = 1;
 	// Notice: we start all terminals in echo mode.
 	struct termios termios = {

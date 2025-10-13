@@ -193,6 +193,8 @@ extern size_t sys_getegid(void);
 extern size_t sys_seteuid(void);
 extern size_t sys_setegid(void);
 extern size_t sys_getgroups(void);
+extern size_t sys_getsid(void);
+extern size_t sys_setsid(void);
 
 static size_t
 unknown_syscall(void)
@@ -261,6 +263,8 @@ static size_t (*syscalls[])(void) = {
 	[SYS_seteuid] = sys_seteuid,
 	[SYS_setegid] = sys_setegid,
 	[SYS_getgroups] = sys_getgroups,
+	[SYS_setsid] = sys_setsid,
+	[SYS_getsid] = sys_getsid,
 };
 
 __noreturn static void syscall_do(void);

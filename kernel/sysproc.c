@@ -362,6 +362,48 @@ got_proc:
 }
 
 size_t
+sys_setsid(void)
+{
+	struct proc *proc = myproc();
+	// We cannot create a new session if the
+	// calling process is a process group leader
+	// (which is determined from pid == pgid).
+	if (proc->pid == proc->pgid) {
+		return -EPERM;
+	}
+	proc->sid = proc->pid;
+	proc->pgid = proc->pid;
+	return proc->sid;
+}
+
+size_t
+sys_getsid(void)
+{
+	pid_t pid;
+	PROPOGATE_ERR(argpid_t(0, &pid));
+	// "If pid is 0, getsid() returns the sesstion ID
+	// of the calling process."
+	if (pid == 0) {
+		struct proc *proc = myproc();
+		return proc->sid;
+	}
+
+	struct proc *proc = get_process_from_pid(pid);
+	if (proc == NULL) {
+		return -ESRCH;
+	}
+	// POSIX makes it implementation-defined whether
+	// getsid() returns EPERM in errno if the session ID for
+	// process ID `pid` is different than the
+	// session ID for the calling process. We will
+	// return EPERM.
+	if (proc->sid != myproc()->sid) {
+		return -EPERM;
+	}
+	return proc->sid;
+}
+
+size_t
 sys_ptrace(void)
 {
 	char *trace_ptr;

@@ -18,6 +18,7 @@
 #define TAB_WIDTH 4
 static struct fb_rgb fb_rgb = { 0 };
 static struct multiboot_tag_framebuffer_common fb_common = { 0 };
+static void *fb;
 
 // TODO make this take a dynamic font size?
 // i.e. remove the "8" and "16". We should get
@@ -52,6 +53,7 @@ vga_init(struct multiboot_tag_framebuffer *tag)
 {
 	fb_rgb = tag->rgb;
 	fb_common = tag->common;
+	fb = IO2V(fb_common.framebuffer_addr);
 }
 
 // The color is in hex: 0xRRGGBB
@@ -62,7 +64,6 @@ vga_write_pixel(uint32_t x, uint32_t y, uint32_t color)
 		return;
 	}
 
-	void *fb = IO2V(fb_common.framebuffer_addr);
 	size_t pixel_offset =
 		fb_common.framebuffer_pitch * y + (fb_common.framebuffer_bpp / 8) * x;
 	multiboot_uint32_t *pixel = fb + pixel_offset;
@@ -105,7 +106,6 @@ render_font_glyph(uint8_t character, uint32_t x, uint32_t y, uint8_t font_width,
 			const uint32_t adjusted_x = x + j;
 			const uint32_t adjusted_y = y + i;
 			if (font[character][i] & (1U << j)) {
-				// if (font[character][i * width + j] == 1) {
 				vga_write_pixel(adjusted_x, adjusted_y, foreground);
 			} else {
 				vga_write_pixel(adjusted_x, adjusted_y, background);

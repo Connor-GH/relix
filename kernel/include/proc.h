@@ -80,6 +80,9 @@ struct proc {
 	enum procstate state; // Process state
 	pid_t pid; // Process ID
 	pid_t pgid; // Process Group ID
+	pid_t sid; // Session ID
+#define PROC_HAS_NO_CTTY (~((dev_t)0))
+	dev_t ctty; // Controlling terminal for this session ID
 	int status;
 	struct proc *parent; // Parent process
 	struct trapframe *tf; // Trap frame for current syscall

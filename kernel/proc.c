@@ -137,6 +137,7 @@ found:
 	p->state = EMBRYO;
 	p->pid = nextpid++;
 	p->pgid = p->pid;
+	p->sid = p->pgid;
 
 	// Real uid = 0 (root)
 	p->cred.uid = 0;
@@ -151,6 +152,7 @@ found:
 	for (int i = 0; i < sizeof(p->cred.gids) / sizeof(gid_t); i++) {
 		p->cred.gids[i] = (gid_t)-1;
 	}
+	p->ctty = PROC_HAS_NO_CTTY;
 
 	release(&ptable.lock);
 
@@ -327,7 +329,9 @@ fork(void)
 	np->cred.gid = curproc->cred.gid;
 	np->cred.egid = curproc->cred.egid;
 	np->pgid = curproc->pgid;
+	np->sid = curproc->sid;
 	memcpy(np->cred.gids, curproc->cred.gids, sizeof(np->cred.gids));
+	np->ctty = curproc->ctty;
 	np->umask = curproc->umask;
 
 	__safestrcpy(np->name, curproc->name, sizeof(curproc->name));
@@ -735,6 +739,10 @@ kill_all_children(struct proc *proc, int signal)
 struct proc *
 get_process_from_pid(pid_t pid)
 {
+	// Quickly bail out if the pid is negative.
+	if (pid < 0) {
+		return NULL;
+	}
 	acquire(&ptable.lock);
 	for (struct proc *p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
 		if (p->pid == pid) {

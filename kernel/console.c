@@ -47,7 +47,7 @@ static struct {
 
 static struct termios tty_settings[NTTY] = { 0 };
 static pid_t term_pgids[NTTY] = {};
-static bool used_as_ctty[NTTY] = {};
+static pid_t term_sids[NTTY] = {};
 // This should always be in bounds, provided that
 // only the minor from ip->minor is passed in, and
 // that ip->major == TTY.
@@ -61,6 +61,12 @@ pid_t
 get_term_pgid(int minor)
 {
 	return term_pgids[minor];
+}
+
+pid_t
+get_term_sid(int minor)
+{
+	return term_sids[minor];
 }
 
 void
@@ -562,9 +568,9 @@ tty_open(short minor, int flags)
 	// controlling terminal.
 	struct proc *proc = myproc();
 	if (proc->ctty == PROC_HAS_NO_CTTY && !(flags & O_NOCTTY) &&
-	    !used_as_ctty[minor]) {
+	    term_sids[minor] == 0) {
 		proc->ctty = makedev(DEV_TTY, minor);
-		used_as_ctty[minor] = true;
+		term_sids[minor] = proc->sid;
 	}
 
 	if (minor >= MINOR_TTY_SERIAL) {

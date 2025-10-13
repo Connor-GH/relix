@@ -924,7 +924,7 @@ sys_ioctl(void)
 	case TIOCSETAF:
 	case TIOCSETA: {
 		if (file->ip->major != DEV_TTY) {
-			return -EINVAL;
+			return -ENOTTY;
 		}
 		struct termios *termios;
 		PROPOGATE_ERR(argptr(2, (char **)&termios, sizeof(struct termios *)));
@@ -939,6 +939,26 @@ sys_ioctl(void)
 
 		return 0;
 		break;
+	}
+	case TIOCGSID: {
+		pid_t *user_sid;
+		PROPOGATE_ERR(argptr(2, (char **)&user_sid, sizeof(pid_t *)));
+		// Situations for ENOTTY:
+		// "The calling process does not have a controlling terminal, or the file is
+		// not the controlling terminal."
+
+		if (file->ip->major != DEV_TTY) {
+			return -ENOTTY;
+		}
+		if (myproc()->ctty != makedev(file->ip->major, file->ip->minor)) {
+			return -ENOTTY;
+		}
+		pid_t sid = get_term_sid(file->ip->minor);
+		if (sid == 0) {
+			return -ENOTTY;
+		}
+		// Copy the session ID into user_sid.
+		*user_sid = sid;
 	}
 	default: {
 		return -EINVAL;

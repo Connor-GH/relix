@@ -54,6 +54,7 @@ int kernel_vprintf_template(void (*put_function)(char c, char *buf),
 struct termios *get_term_settings(int minor);
 void set_term_settings(int minor, struct termios *termios);
 __pid_t get_term_pgid(int minor);
+__pid_t get_term_sid(int minor);
 void set_term_pgid(int minor, __pid_t pgid);
 int get_active_term(void);
 void set_active_term(int minor);

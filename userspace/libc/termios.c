@@ -40,25 +40,25 @@ tcsetpgrp(int fd, pid_t pgrp)
 pid_t
 tcgetpgrp(int fd)
 {
-	int pgid;
+	pid_t pgid;
 
 	if (ioctl(fd, TIOCGPGRP, &pgid) < 0) {
 		return (pid_t)-1;
 	}
 
-	return (pid_t)pgid;
+	return pgid;
 }
 
 pid_t
 tcgetsid(int fd)
 {
-	int s;
+	pid_t s;
 
 	if (ioctl(fd, TIOCGSID, &s) < 0) {
 		return (pid_t)-1;
 	}
 
-	return (pid_t)s;
+	return s;
 }
 
 speed_t

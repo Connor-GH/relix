@@ -4,66 +4,66 @@ typedef unsigned int speed_t;
 typedef unsigned int cc_t;
 typedef unsigned int tcflag_t;
 
-enum __termios_nccs {
-	VEOF = 0,
-	VEOL,
-	VERASE,
-	VINTR,
-	VKILL,
-	VMIN,
-	VQUIT,
-	VSTART,
-	VSTOP,
-	VSUSP,
-	VTIME,
-	NCCS,
-};
+#define VEOF 0
+#define VEOL 1
+#define VERASE 2
+#define VINTR 3
+#define VKILL 4
+#define VMIN 5
+#define VQUIT 6
+#define VSTART 7
+#define VSTOP 8
+#define VSUSP 9
+#define VTIME 10
+#define NCCS 11
 
-enum __termios_c_iflag {
-	BRKINT = 0x1, // Signal interrupt on break.
-	ICRNL = 0x2, // Map CR to NL on input.
-	IGNBRK = 0x4, // Ignore break condition.
-	IGNCR = 0x8, // Ignore CR.
-	IGNPAR = 0x10, // Ignore characters with parity errors.
-	INLCR = 0x20, // Map NL to CR on input.
-	INPCK = 0x40, // Enable input parity check.
-	ISTRIP = 0x80, // Strip character.
-	IXANY = 0x100, // Enable any character to restart output.
-	IXOFF = 0x200, // Enable start/stop input control.
-	IXON = 0x400, // Enable start/stop output control.
-	PARMRK = 0x800, // Mark parity errors.
-};
+#define BRKINT 0x1 // Signal interrupt on break.
+#define ICRNL 0x2 // Map CR to NL on input.
+#define IGNBRK 0x4 // Ignore break condition.
+#define IGNCR 0x8 // Ignore CR.
+#define IGNPAR 0x10 // Ignore characters with parity errors.
+#define INLCR 0x20 // Map NL to CR on input.
+#define INPCK 0x40 // Enable input parity check.
+#define ISTRIP 0x80 // Strip character.
+#define IXANY 0x100 // Enable any character to restart output.
+#define IXOFF 0x200 // Enable start/stop input control.
+#define IXON 0x400 // Enable start/stop output control.
+#define PARMRK 0x800 // Mark parity errors.
 
-enum __termios_c_oflag {
-	OPOST = 0x1, // Post-process output.
-	ONLCR = 0x2, // Map NL to CR-NL on output.
-	OCRNL = 0x4, // Map CR to NL on output.
-	ONOCR = 0x8, // No CR output at column 0.
-	ONLRET = 0x10, // NL performs CR function.
-	OFILL = 0x20, // Use fill characters for delay.
-	NLDLY = 0x40, // Select newline delays:
+#define OPOST 0x1 // Post-process output.
+#define ONLCR 0x2 // Map NL to CR-NL on output.
+#define OCRNL 0x4 // Map CR to NL on output.
+#define ONOCR 0x8 // No CR output at column 0.
+#define ONLRET 0x10 // NL performs CR function.
+#define OFILL 0x20 // Use fill characters for delay.
+
+#define NLDLY 0x40 // Select newline delays:
 #define NL0 0x40
 #define NL1 0x41
-	CRDLY = 0x80, // Select carriage-return delays:
+
+#define CRDLY 0x80 // Select carriage-return delays:
 #define CR0 0x80
 #define CR1 0x81
 #define CR2 0x82
 #define CR3 0x83
-	TABDLY = 0x100, // Select horizontal-tab delays:
+
+#define TABDLY 0x100 // Select horizontal-tab delays:
 #define TAB0 0x100
 #define TAB1 0x101
 #define TAB2 0x102
 #define TAB3 0x103
-	BSDLY = 0x200, // Select backspace delays:
+
+#define BSDLY 0x200 // Select backspace delays:
 #define BS0 0x200
 #define BS1 0x201
-	VTDLY = 0x400, // Select vertical-tab delays:
+
+#define VTDLY 0x400 // Select vertical-tab delays:
 #define VT0 0x400
 #define VT1 0x401
-	FFDLY = 0x800, // Select form-feed delays:
+
+#define FFDLY 0x800 // Select form-feed delays:
 #define FF0 0x800
 #define FF1 0x801
-};
 
 // Baud rates.
 #define B0 0
@@ -83,49 +83,44 @@ enum __termios_c_oflag {
 #define B19200 14
 #define B38400 15
 
-enum __termios_c_cflag {
-	CSIZE = 0x8,
+#define CSIZE 0x8
 #define CS5 0x0
 #define CS6 0x1
 #define CS7 0x2
 #define CS8 0x3
-	CSTOPB = 0x10,
-	CREAD = 0x20,
-	PARENB = 0x40,
-	PARODD = 0x80,
-	HUPCL = 0x100,
-	CLOCAL = 0x200,
-};
 
-enum __termios_c_lflag {
-	ECHO = 01, // Enable echo.
-	ECHOE = 02, // Echo erase character as error-correcting backspace.
-	ECHOK = 04, // Echo KILL.
-	ECHONL = 010, // Echo NL.
-	ICANON = 020, // Canonical input (erase and kill processing).
-	IEXTEN = 040, // Enable extended input character processing.
-	ISIG = 0100, // Enable signals.
-	NOFLSH = 0200, // Disable flush after interrupt or quit.
-	TOSTOP = 0400, // Send SIGTTOU for background output.
-};
+#define CSTOPB 0x10
+#define CREAD 0x20
+#define PARENB 0x40
+#define PARODD 0x80
+#define HUPCL 0x100
+#define CLOCAL 0x200
 
-enum __termios_attr {
-	TCSANOW = 1,
-	TCSADRAIN = 2,
-	TCSAFLUSH = 4,
-};
+#define ECHO 0x1 // Enable echo.
+#define ECHOE 0x2 // Echo erase character as error-correcting backspace.
+#define ECHOK 0x4 // Echo KILL.
+#define ECHONL 0x8 // Echo NL.
+#define ICANON 0x10 // Canonical input (erase and kill processing).
+#define IEXTEN 0x20 // Enable extended input character processing.
+#define ISIG 0x40 // Enable signals.
+#define NOFLSH 0x80 // Disable flush after interrupt or quit.
+#define TOSTOP 0x100 // Send SIGTTOU for background output.
 
-enum __termios_line_control {
-	// tcflush()
-	TCIFLUSH = 1,
-	TCIOFLUSH = 2,
-	TCOFLUSH = 4,
-	// tcflow()
-	TCIOFF = 1,
-	TCION = 2,
-	TCOOFF = 4,
-	TCOON = 8,
-};
+// tcsetattr()
+#define TCSANOW 1
+#define TCSADRAIN 2
+#define TCSAFLUSH 4
+
+// tcflush()
+#define TCIFLUSH 1
+#define TCIOFLUSH 2
+#define TCOFLUSH 4
+
+// tcflow()
+#define TCIOFF 1
+#define TCION 2
+#define TCOOFF 4
+#define TCOON 8
 
 struct termios {
 	tcflag_t c_iflag;

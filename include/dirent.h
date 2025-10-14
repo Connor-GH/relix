@@ -63,5 +63,6 @@ DIR *fdopendir(int fd);
 int closedir(DIR *dir);
 struct dirent *readdir(DIR *dirp);
 void rewinddir(DIR *dirp);
+int dirfd(DIR *dirp);
 
 ssize_t posix_getdents(int fd, void *buf, size_t nbyte, int flags);

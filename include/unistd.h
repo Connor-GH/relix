@@ -22,8 +22,15 @@ typedef __intptr_t intptr_t;
 #define _POSIX_VDISABLE '\0'
 
 #define _POSIX_VERSION 200809L
+#define _POSIX2_VERSION 200809L
 #define _POSIX_JOB_CONTROL 1
 #define _POSIX_V7_LP64_OFF64 1
+#define _POSIX_ASYNC_IO (-1)
+#define _POSIX_FALLOC (-1)
+#define _POSIX_PRIO_IO (-1)
+#define _POSIX_SYNC_IO (-1)
+#define _POSIX_TIMESTAMP_RESOLUTION 100
+#define _POSIX2_SYMLINKS 1
 
 #define MB_CUR_MAX 1
 
@@ -99,4 +106,5 @@ char *ttyname(int fd);
 
 int getlogin_r(char *name, size_t size);
 char *getlogin(void);
+int gethostname(char *name, size_t len);
 #endif

@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: MIT
  * Copyright (c) 2025 Connor-GH. All Rights Reserved.
  */
+#include "sys/utsname.h"
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/sysmacros.h>
@@ -528,6 +529,27 @@ getlogin_r(char *name, size_t size)
 	}
 	strncpy(name, logname, size);
 	name[size - 1] = '\0';
+	return 0;
+}
+
+int
+gethostname(char *name, size_t len)
+{
+	struct utsname utsname;
+	if (uname(&utsname) < 0) {
+		errno = EFAULT;
+		return -1;
+	}
+	if (name == NULL) {
+		errno = EFAULT;
+		return -1;
+	}
+	memcpy(name, utsname.nodename, len);
+	if (strlen(utsname.nodename) >= len) {
+		errno = ENAMETOOLONG;
+		return -1;
+	}
+	name[strlen(utsname.nodename)] = '\0';
 	return 0;
 }
 

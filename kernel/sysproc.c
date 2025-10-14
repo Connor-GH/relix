@@ -488,7 +488,8 @@ sys_uname(void)
 	char hostname[HOST_NAME_MAX] = {};
 	int ret = gethostname(hostname, HOST_NAME_MAX);
 	PROPOGATE_ERR(ret);
-	strncpy(utsname->nodename, hostname, _UTSNAME_LEN);
+	strncpy(utsname->nodename, hostname, sizeof(utsname->nodename));
+	utsname->nodename[sizeof(utsname->nodename) - 1] = '\0';
 	return 0;
 }
 

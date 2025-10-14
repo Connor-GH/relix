@@ -76,6 +76,12 @@ rewinddir(DIR *dirp)
 	}
 }
 
+int
+dirfd(DIR *dirp)
+{
+	return dirp->fd;
+}
+
 struct dirent *
 readdir(DIR *dirp)
 {

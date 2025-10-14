@@ -959,6 +959,8 @@ sys_ioctl(void)
 		}
 		// Copy the session ID into user_sid.
 		*user_sid = sid;
+		return 0;
+		break;
 	}
 	default: {
 		return -EINVAL;

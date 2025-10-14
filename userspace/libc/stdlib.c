@@ -252,7 +252,7 @@ atexit(void (*function)(void))
 static int
 temp_name_helper(char *template)
 {
-	if (strncmp(template, "XXXXXX", 6) != 0) {
+	if (strncmp(strstr(template, "XXXXXX"), "XXXXXX", 6) != 0) {
 		errno = EINVAL;
 		return -1;
 	}

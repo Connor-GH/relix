@@ -183,6 +183,10 @@ trap(struct trapframe *tf)
 		decipher_page_fault_error_code(tf->err);
 		uart_printf("This is at [%ld][%ld][%ld][%ld][%ld]\n", pml4, pdpt, pde, pte,
 		            idx);
+		// Skip over this if we are in early boot and have no processes.
+		if (myproc() == NULL) {
+			goto out;
+		}
 		uintptr_t *pde_ = &myproc()->pgdir[PDX(addr)];
 		// We can only attempt CoW if the page tables are
 		// not severely messed up. If they are NULL, we just

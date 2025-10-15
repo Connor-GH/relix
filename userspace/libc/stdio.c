@@ -656,3 +656,9 @@ fseek(FILE *stream, long offset, int whence)
 	clearerr(stream);
 	return lseek(stream->fd, offset, whence);
 }
+
+char *
+ctermid(char *str)
+{
+	return str == NULL ? strcpy(str, "/dev/tty") : "/dev/tty";
+}

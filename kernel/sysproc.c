@@ -8,6 +8,7 @@
 #include "kernel_signal.h"
 #include "proc.h"
 #include "syscall.h"
+#include "time_units.h"
 #include "trap.h"
 #include "x86.h"
 
@@ -152,7 +153,11 @@ sys_nanosleep(void)
 	if (n < 0 || n > 9999999999) {
 		return -EINVAL;
 	}
-	hpet_timer_set_ns(hpet_get_timer_n(0), n);
+
+	// We just validated above that n is non-negative, so this is
+	// a safe conversion.
+	time_t nseconds = (time_t)n + duration->tv_sec * NSEC_PER_SEC;
+	hpet_timer_set_ns(hpet_get_timer_n(0), nseconds);
 	hpet_waiting = true;
 
 	acquire(&hpet_lock);

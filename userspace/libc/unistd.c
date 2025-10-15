@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "libc_syscalls.h"
@@ -469,16 +470,17 @@ isatty(int fd)
 	}
 }
 
-static void
-sleep_signal_noop(int signum)
-{
-}
-
 unsigned int
 sleep(unsigned int seconds)
 {
-	signal(SIGALRM, sleep_signal_noop);
-	return alarm(seconds);
+	struct timespec tv = { .tv_sec = seconds, .tv_nsec = 0 };
+	// nanosleep() returns nonzero if it couldn't sleep for that amount of time.
+	// We know that our arguments are valid, so there is no chance for EINVAL or
+	// other caller-related errors. We can get interrupted from a signal.
+	if (nanosleep(&tv, &tv) != 0) {
+		return tv.tv_sec;
+	}
+	return 0;
 }
 
 int

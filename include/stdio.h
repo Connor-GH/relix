@@ -119,6 +119,8 @@ void rewind(FILE *stream) __NONNULL(1);
 int remove(const char *pathname);
 int rename(const char *oldpath, const char *newpath);
 long ftell(FILE *stream) __NONNULL(1);
+#define L_ctermid 10
+char *ctermid(char *str);
 
 #endif
 #endif /* USE_HOST_TOOLS */

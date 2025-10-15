@@ -16,6 +16,9 @@ typedef __clock_t clock_t;
 typedef __size_t size_t;
 
 #define CLOCK_MONOTONIC 1
+#define CLOCK_REALTIME 2
+
+#define TIMER_ABSTIME 1
 
 struct tm {
 	int tm_sec;
@@ -35,7 +38,8 @@ struct tm *localtime(const time_t *timep);
 void tzset(void);
 int clock_gettime(clockid_t clock_id, struct timespec *tp);
 int nanosleep(const struct timespec *duration, struct timespec *rem);
-
+int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
+                    struct timespec *rmtp);
 extern int daylight;
 extern long timezone;
 extern char *tzname[2];

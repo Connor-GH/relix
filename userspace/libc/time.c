@@ -157,7 +157,19 @@ time(time_t *tloc)
 }
 
 int
+clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *duration,
+                struct timespec *rem)
+{
+	return __syscall_ret(__syscall4(SYS_clock_nanosleep, clock_id, flags,
+	                                (long)duration, (long)rem));
+}
+
+int
 nanosleep(const struct timespec *duration, struct timespec *rem)
 {
-	return __syscall_ret(__syscall2(SYS_nanosleep, (long)duration, (long)rem));
+	// POSIX.1-2024:
+	// "Calling clock_nanosleep() with the value TIMER_ABSTIME not set in the
+	// flags argument and with a clock_id of CLOCK_REALTIME is equivalent to
+	// calling nanosleep() with the same rqtp and rmtp arguments."
+	return clock_nanosleep(CLOCK_REALTIME, 0, duration, rem);
 }

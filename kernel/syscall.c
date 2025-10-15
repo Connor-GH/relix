@@ -187,7 +187,7 @@ extern size_t sys_faccessat(void);
 extern size_t sys_fcntl(void);
 extern size_t sys_uname(void);
 extern size_t sys_getdents(void);
-extern size_t sys_nanosleep(void);
+extern size_t sys_clock_nanosleep(void);
 extern size_t sys_geteuid(void);
 extern size_t sys_getegid(void);
 extern size_t sys_seteuid(void);
@@ -257,7 +257,7 @@ static size_t (*syscalls[])(void) = {
 	[SYS_fcntl] = sys_fcntl,
 	[SYS_uname] = sys_uname,
 	[SYS_getdents] = sys_getdents,
-	[SYS_nanosleep] = sys_nanosleep,
+	[SYS_clock_nanosleep] = sys_clock_nanosleep,
 	[SYS_geteuid] = sys_geteuid,
 	[SYS_getegid] = sys_getegid,
 	[SYS_seteuid] = sys_seteuid,

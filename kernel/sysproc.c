@@ -138,17 +138,29 @@ sys_uptime(void)
 }
 
 size_t
-sys_nanosleep(void)
+sys_clock_nanosleep(void)
 {
+	clockid_t clockid;
+	int flags;
 	struct timespec *duration;
 	struct timespec *rem;
 
-	PROPOGATE_ERR(argptr(0, (char **)&duration, sizeof(*duration)));
-	PROPOGATE_ERR(argptr(1, (char **)&rem, sizeof(*rem)));
+	PROPOGATE_ERR(argclockid_t(0, &clockid));
+	PROPOGATE_ERR(argint(1, &flags));
+	PROPOGATE_ERR(argptr(2, (char **)&duration, sizeof(*duration)));
+	PROPOGATE_ERR(argptr(3, (char **)&rem, sizeof(*rem)));
 
-	if (duration == NULL) {
+	if (duration == NULL && (uintptr_t)duration >= (uintptr_t)__kernel_begin) {
 		return -EFAULT;
 	}
+	if (clockid != CLOCK_REALTIME) {
+		return -ENOSYS;
+	}
+
+	if (flags & ~(TIMER_ABSTIME)) {
+		return -EINVAL;
+	}
+
 	long n = duration->tv_nsec;
 	if (n < 0 || n > 9999999999) {
 		return -EINVAL;
@@ -158,6 +170,8 @@ sys_nanosleep(void)
 	// a safe conversion.
 	time_t nseconds = (time_t)n + duration->tv_sec * NSEC_PER_SEC;
 	hpet_timer_set_ns(hpet_get_timer_n(0), nseconds);
+
+	// We do a sleep-wakeup loop. The other side is in trap.c.
 	hpet_waiting = true;
 
 	acquire(&hpet_lock);
@@ -177,15 +191,14 @@ sys_clock_gettime(void)
 	struct timespec *tp;
 	PROPOGATE_ERR(argclockid_t(0, &clockid));
 	PROPOGATE_ERR(argptr(1, (char **)&tp, sizeof(*tp)));
-	if (tp != NULL && (uintptr_t)tp >= (uintptr_t)__kernel_begin) {
+
+	if (tp == NULL || (uintptr_t)tp >= (uintptr_t)__kernel_begin) {
 		return -EFAULT;
 	}
 	if (clockid != CLOCK_MONOTONIC) {
 		return -ENOSYS;
 	}
-	if (tp != NULL) {
-		*tp = (struct timespec){ rtc_now(), 0 };
-	}
+	*tp = (struct timespec){ rtc_now(), 0 };
 	return 0;
 }
 
@@ -201,6 +214,7 @@ poweroff(void)
 	// get rid of "noreturn" warning
 	panic("Unreachable.");
 }
+
 size_t
 sys_reboot(void)
 {

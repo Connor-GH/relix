@@ -74,6 +74,9 @@ struct cpu *
 mycpu(void)
 {
 	struct cpu *c;
+	if (readrflags() & FL_IF) {
+		panic("mycpu called with interrupts enabled");
+	}
 	// c->self is located at offset 0.
 	// This is initialized in seginit.
 	__asm__ __volatile__("mov %%gs:0, %0" : "=r"(c));
@@ -450,21 +453,6 @@ waitpid(pid_t pid, int *wstatus, int options)
 	}
 }
 
-struct proc *
-last_proc_ran(void)
-{
-	struct proc *p;
-	acquire(&ptable.lock);
-	for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-		if (p != initproc && p->pid != 2 &&
-		    (p->state == RUNNING || p->state == SLEEPING)) {
-			release(&ptable.lock);
-			return p;
-		}
-	}
-	release(&ptable.lock);
-	return NULL;
-}
 #define GET(reg)                                            \
 	({                                                        \
 		uintptr_t reg;                                          \

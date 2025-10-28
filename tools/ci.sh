@@ -28,11 +28,11 @@ for TOOLCHAIN in "${TOOLCHAINS[@]}"; do
 			RELEASE=1
 		fi
 
-		make clean iso RELEASE=$RELEASE LLVM=$LLVM -j$(nproc)
+		make clean
+		make iso RELEASE=$RELEASE LLVM=$LLVM -j$(nproc)
 
 		if [ "$?" != "0" ]; then
-			echo "Error: build $TOOLCHAIN $BUILD_TYPE exited with an error"
-			exit 1
+			panic "Error: build $TOOLCHAIN $BUILD_TYPE exited with an error"
 		fi
 
 		make qemu RELEASE=$RELEASE LLVM=$LLVM CONSOLE_LOG=1 QEMUEXTRA="$SATA_DISK"

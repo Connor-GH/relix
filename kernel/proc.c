@@ -804,8 +804,9 @@ kernel_attach_signal(int signum, sighandler_t handler)
 	if (signum >= NSIG || signum < 0) {
 		return SIG_ERR;
 	} else {
-		sighandler_t old = myproc()->sig_handlers[signum];
-		myproc()->sig_handlers[signum] = handler;
+		struct proc *curproc = myproc();
+		sighandler_t old = curproc->sig_handlers[signum];
+		curproc->sig_handlers[signum] = handler;
 		return old;
 	}
 }

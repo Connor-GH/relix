@@ -112,16 +112,17 @@ sys_alarm(void)
 
 	// Convert seconds to milliseconds.
 	n *= 1000;
+	struct proc *curproc = myproc();
 	acquire(&tickslock);
 	ticks0 = ticks;
 	while (ticks - ticks0 < n) {
-		if (myproc()->killed) {
+		if (curproc->killed) {
 			release(&tickslock);
 			return -ESRCH;
 		}
 		sleep(&ticks, &tickslock);
 	}
-	kill(myproc()->pid, SIGALRM);
+	kill(curproc->pid, SIGALRM);
 	release(&tickslock);
 	return 0;
 }
@@ -245,56 +246,60 @@ sys_reboot(void)
 size_t
 sys_setgid(void)
 {
+	struct proc *curproc = myproc();
 	// cannot setgid if not root
-	if (myproc()->cred.gid != 0) {
+	if (curproc->cred.gid != 0) {
 		return -EPERM;
 	}
 	gid_t gid;
 	PROPOGATE_ERR(arggid_t(0, &gid));
 
-	myproc()->cred.gid = gid;
+	curproc->cred.gid = gid;
 	return 0;
 }
 
 size_t
 sys_setuid(void)
 {
+	struct proc *curproc = myproc();
 	// cannot setuid if not root
-	if (myproc()->cred.uid != 0) {
+	if (curproc->cred.uid != 0) {
 		return -EPERM;
 	}
 	uid_t uid;
 	PROPOGATE_ERR(arguid_t(0, &uid));
 
-	myproc()->cred.uid = uid;
+	curproc->cred.uid = uid;
 	return 0;
 }
 
 size_t
 sys_seteuid(void)
 {
+	struct proc *curproc = myproc();
 	// cannot setuid if not root
-	if (myproc()->cred.uid != 0) {
+	if (curproc->cred.uid != 0) {
 		return -EPERM;
 	}
 	uid_t euid;
 	PROPOGATE_ERR(arguid_t(0, &euid));
 
-	myproc()->cred.euid = euid;
+	curproc->cred.euid = euid;
 	return 0;
 }
 
 size_t
 sys_setegid(void)
 {
+	struct proc *curproc = myproc();
 	// cannot setuid if not root
-	if (myproc()->cred.uid != 0) {
+	if (curproc->cred.uid != 0) {
 		return -EPERM;
 	}
 	gid_t egid;
 	PROPOGATE_ERR(arggid_t(0, &egid));
 
-	myproc()->cred.egid = egid;
+	curproc->cred.egid = egid;
 	return 0;
 }
 

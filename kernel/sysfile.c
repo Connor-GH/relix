@@ -384,6 +384,8 @@ sys_openat(void)
 	mode_t mode;
 	int dirfd;
 
+	struct proc *curproc = myproc();
+
 	PROPOGATE_ERR(argfd(0, &dirfd, NULL));
 	PROPOGATE_ERR(argstr(1, &path));
 	PROPOGATE_ERR(argint(2, &flags));
@@ -396,11 +398,11 @@ sys_openat(void)
 	}
 
 	// Myproc is NULL? Uh, ask it to try again later...
-	if (myproc() == NULL) {
+	if (curproc == NULL) {
 		return -EAGAIN;
 	}
 
-	return vfs_openat(dirfd, path, flags, mode & ~(myproc()->umask));
+	return vfs_openat(dirfd, path, flags, mode & ~(curproc->umask));
 }
 
 static int
@@ -510,17 +512,18 @@ sys_mkdirat(void)
 	struct inode *ip;
 	mode_t mode;
 	int fd;
+	struct proc *curproc = myproc();
 
 	PROPOGATE_ERR(argfd(0, &fd, NULL));
 	PROPOGATE_ERR(argstr(1, &path));
 	PROPOGATE_ERR(argmode_t(2, &mode));
 
-	if (myproc() == NULL) {
+	if (curproc == NULL) {
 		return -EAGAIN;
 	}
 	begin_op();
 	if ((ip = vfs_locked_inode_create(
-				 fd, path, (S_IFDIR | mode) & ~myproc()->umask, 0)) == NULL) {
+				 fd, path, (S_IFDIR | mode) & ~curproc->umask, 0)) == NULL) {
 		end_op();
 		return -ENOENT;
 	}
@@ -694,15 +697,16 @@ sys_fchmodat(void)
 	PROPOGATE_ERR(argmode_t(2, &mode));
 	PROPOGATE_ERR(argint(3, &flags));
 
-	begin_op();
 	if ((ip = ((flags & AT_SYMLINK_NOFOLLOW) ? namei_with_fd : resolve_nameat)(
 				 fd, path)) == NULL) {
 		end_op();
 		return -EINVAL;
 	}
+	begin_op();
 	inode_lock(ip);
 	// capture the file type and change the permissions
 	ip->mode = (ip->mode & S_IFMT) | mode;
+	inode_update(ip);
 	inode_unlock(ip);
 	end_op();
 	return 0;
@@ -713,14 +717,15 @@ sys_fchmod(void)
 {
 	struct file *file;
 	mode_t mode;
-	begin_op();
 	PROPOGATE_ERR_WITH(argfd(0, NULL, &file), { end_op(); });
 	PROPOGATE_ERR_WITH(argmode_t(1, &mode), { end_op(); });
 	if (file == NULL) {
 		return -ENOENT;
 	}
+	begin_op();
 	inode_lock(file->ip);
 	file->ip->mode = (file->ip->mode & S_IFMT) | mode;
+	inode_update(file->ip);
 	inode_unlock(file->ip);
 	end_op();
 	return 0;
@@ -741,6 +746,7 @@ sys_symlinkat(void)
 
 	begin_op();
 	if ((eexist = namei_with_fd(newdirfd, linkpath)) != NULL) {
+		inode_put(eexist);
 		end_op();
 		return -EEXIST;
 	}
@@ -1140,15 +1146,15 @@ sys_mmap(void)
 
 		uintptr_t user_phys_addr;
 		if (info.addr == 0) {
-			PROPOGATE_ERR(alloc_user_bytes(myproc()->pgdir, info.length,
-			                               info.virt_addr, &user_phys_addr));
+			PROPOGATE_ERR(alloc_user_bytes(proc->pgdir, info.length, info.virt_addr,
+			                               &user_phys_addr));
 			info.addr = user_phys_addr;
 		} else {
-			PROPOGATE_ERR(mappages(myproc()->pgdir, (void *)info.virt_addr,
-			                       info.length, info.addr, info.perm));
+			PROPOGATE_ERR(mappages(proc->pgdir, (void *)info.virt_addr, info.length,
+			                       info.addr, info.perm));
 		}
 
-		myproc()->heapsz += info.length;
+		proc->heapsz += info.length;
 		proc->mmap_info[proc->mmap_count++] = info;
 		return (size_t)info.virt_addr;
 	} else {
@@ -1166,11 +1172,11 @@ sys_mmap(void)
 				kfree(ptr);
 				return -ENOMEM;
 			}
-			myproc()->heapsz += info.length;
+			proc->heapsz += info.length;
 			proc->mmap_info[proc->mmap_count++] = info;
 			return (size_t)ptr;
 		}
-		myproc()->heapsz += info.length;
+		proc->heapsz += info.length;
 		proc->mmap_info[proc->mmap_count++] = info;
 		return (size_t)user_virt_addr;
 	}
@@ -1237,7 +1243,8 @@ sys_umask(void)
 	if (argmode_t(0, &mask) < 0) {
 		return S_IWGRP | S_IWOTH;
 	}
-	return myproc() ? myproc()->umask : (S_IWGRP | S_IWOTH);
+	struct proc *curproc = myproc();
+	return curproc ? curproc->umask : (S_IWGRP | S_IWOTH);
 }
 
 size_t
@@ -1362,6 +1369,9 @@ sys_faccessat(void)
 	bool exec_ok = false;
 	bool correct_uid;
 	bool correct_gid;
+
+	struct proc *curproc = myproc();
+
 	PROPOGATE_ERR(argfd(0, &fd, NULL));
 	PROPOGATE_ERR(argstr(1, &path));
 	PROPOGATE_ERR(argint(2, &mode));
@@ -1386,12 +1396,12 @@ sys_faccessat(void)
 	// evaluated here (the only use of ip).
 	inode_lock(ip);
 	// UID 0 (root) is always the "correct UID".
-	if (myproc()->cred.uid == 0) {
+	if (curproc->cred.uid == 0) {
 		correct_uid = true;
 	} else {
-		correct_uid = myproc()->cred.uid == ip->uid;
+		correct_uid = curproc->cred.uid == ip->uid;
 	}
-	correct_gid = is_in_group(ip->gid, &myproc()->cred);
+	correct_gid = is_in_group(ip->gid, &curproc->cred);
 
 	inode_unlockput(ip);
 	end_op();

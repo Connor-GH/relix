@@ -27,4 +27,4 @@ swtch:
   pop %rbx
   pop %rbp
 
-  ret #??
+  ret # pop %rip; jmp %rip

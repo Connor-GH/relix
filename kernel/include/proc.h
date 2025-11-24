@@ -66,6 +66,7 @@ struct context {
 	uintptr_t r12;
 	uintptr_t rbx;
 	uintptr_t rbp;
+	// Used in swtch.S
 	uintptr_t rip;
 #endif
 };

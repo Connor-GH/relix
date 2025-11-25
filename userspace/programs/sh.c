@@ -93,6 +93,7 @@ runcmd(struct cmd *cmd)
 
 		execvp(ecmd->argv[0], ecmd->argv);
 		fprintf(stderr, "exec %s failed: %s\n", ecmd->argv[0], strerror(errno));
+		exit(-1);
 		break;
 
 	case REDIR:
@@ -171,6 +172,7 @@ main(int argc, char *argv[])
 	int fd;
 	int c;
 	bool iflag = false;
+	bool cflag = false;
 
 	// Ensure that three file descriptors are open.
 	while ((fd = open("console", O_RDWR)) >= 0) {
@@ -179,11 +181,29 @@ main(int argc, char *argv[])
 			break;
 		}
 	}
-	while ((c = getopt(argc, argv, "i")) != -1) {
+	while ((c = getopt(argc, argv, "ic:")) != -1) {
 		switch (c) {
 		case 'i':
 			iflag = true;
 			break;
+		// Handle the case of "sh -c" as used in system(3).
+		case 'c':
+			char argsbuf[ARG_MAX] = {};
+
+			for (int i = optind - 1; i < argc; i++) {
+				strcat(argsbuf, argv[i]);
+				strcat(argsbuf, " ");
+			}
+			argsbuf[ARG_MAX - 1] = '\0';
+
+			int status;
+			int pid = fork1();
+			if (pid == 0) {
+				runcmd(parsecmd(argsbuf));
+			}
+			pid = waitpid(pid, &status, 0);
+			// We return whatever status is returned from the program we ran.
+			exit(WEXITSTATUS(status));
 		default:
 			break;
 		}

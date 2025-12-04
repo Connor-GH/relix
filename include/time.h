@@ -40,6 +40,7 @@ int clock_gettime(clockid_t clock_id, struct timespec *tp);
 int nanosleep(const struct timespec *duration, struct timespec *rem);
 int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
                     struct timespec *rmtp);
+double difftime(time_t time1, time_t time0);
 extern int daylight;
 extern long timezone;
 extern char *tzname[2];

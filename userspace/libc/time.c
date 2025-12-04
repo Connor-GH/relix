@@ -173,3 +173,9 @@ nanosleep(const struct timespec *duration, struct timespec *rem)
 	// calling nanosleep() with the same rqtp and rmtp arguments."
 	return clock_nanosleep(CLOCK_REALTIME, 0, duration, rem);
 }
+
+double
+difftime(time_t time1, time_t time0)
+{
+	return (double)(time1 - time0);
+}

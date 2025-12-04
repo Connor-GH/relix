@@ -968,6 +968,22 @@ sys_ioctl(void)
 		return 0;
 		break;
 	}
+	case TIOCGWINSZ: {
+		struct winsize *ws;
+		PROPOGATE_ERR(argptr(2, (char **)&ws, sizeof(struct winsize *)));
+		if (file->ip->major != DEV_TTY) {
+			return -ENOTTY;
+		}
+
+		ws->ws_col = vga_get_winsize_column();
+		ws->ws_row = vga_get_winsize_row();
+		return 0;
+		break;
+	}
+	// TODO: implement TIOCSWINSZ
+	case TIOCSWINSZ: {
+		return -ENOSYS;
+	}
 	default: {
 		return -EINVAL;
 	}

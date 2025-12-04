@@ -126,6 +126,18 @@ screen_height_in_chars(uint8_t height)
 	return SCREEN_HEIGHT / height;
 }
 
+unsigned short
+vga_get_winsize_column(void)
+{
+	return SCREEN_WIDTH / FONT_WIDTH;
+}
+
+unsigned short
+vga_get_winsize_row(void)
+{
+	return SCREEN_HEIGHT / FONT_HEIGHT;
+}
+
 void
 ansi_set_cursor_location(uint16_t x, uint16_t y)
 {

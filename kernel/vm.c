@@ -311,7 +311,7 @@ freevm(uintptr_t *pgdir)
 	if (pgdir == NULL) {
 		panic("freevm: no pgdir");
 	}
-	deallocuvm(pgdir, /*KERNBASE*/ 0x3fa00000, 0);
+	deallocuvm(pgdir, /*KERNBASE*/ 0x1da00000, 0);
 	// "- 2" because of the page back pointers.
 	for (uint32_t i = 0; i < NPDENTRIES - 2; i++) {
 		if (pgdir[i] & PTE_P) {

@@ -168,6 +168,8 @@ trap(struct trapframe *tf)
 		break;
 	case 7: {
 		// We eagerly save FPU state so just clear the task switch bit.
+		// Strictly speaking, this handler being called is probably an indication of
+		// an error.
 		__asm__ __volatile__("clts");
 		break;
 	}
@@ -234,6 +236,10 @@ out:
 		kill(myproc()->pid, SIGFPE);
 		break;
 	case T_SIMDERR:
+		uart_printf("%s[%d]: simd error: %#lx\n", myproc()->name, myproc()->pid,
+		            tf->rip);
+		kill(myproc()->pid, SIGFPE);
+		break;
 	case T_FPERR:
 		uart_printf("%s[%d]: floating point error: %#lx\n", myproc()->name,
 		            myproc()->pid, tf->rip);

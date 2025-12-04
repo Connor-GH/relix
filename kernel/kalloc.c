@@ -77,9 +77,15 @@ kpage_free(char *v) __releases(kpage)
 		return;
 	}
 
-	if ((uintptr_t)v % PGSIZE || v < __kernel_end ||
-	    (V2P(v) >= available_memory && __likely(available_memory > 0))) {
+	if ((uintptr_t)v % PGSIZE) {
 		panic("kpage_free");
+	}
+	if (v < __kernel_end) {
+		panic("kpage_free within kernel memory: %p < %p", v, __kernel_end);
+	}
+
+	if (V2P(v) >= available_memory && __likely(available_memory > 0)) {
+		panic("kpage_free mem things: %llx >= %lx", V2P(v), available_memory);
 	}
 
 	if (kmem.use_lock) {

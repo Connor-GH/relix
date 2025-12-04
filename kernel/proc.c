@@ -3,6 +3,7 @@
 #include "lib/compiler_attributes.h"
 
 #include "console.h"
+#include "cpu.h"
 #include "defs.h"
 #include "file.h"
 #include "fs.h"
@@ -188,6 +189,7 @@ found:
 	memset(p->context, 0, sizeof *p->context);
 	p->context->rip = (uintptr_t)forkret;
 	p->mmap_count = 0;
+	memcpy(p->legacy_fpu_state, cpu_clean_fpu(), sizeof(p->legacy_fpu_state));
 
 	// FIXME: This is an arbitrary number.
 	// Right now, the virtual memory system isn't
@@ -664,25 +666,30 @@ prockill(struct proc *p, int signal)
 	p->last_signal = signal;
 	if (p->sig_handlers[signal] == SIG_DFL) {
 		switch (signal) {
+		// These should do a coredump (we currently don't do that).
 		case SIGABRT:
+		case SIGFPE:
+		case SIGBUS:
+		case SIGILL:
+		case SIGQUIT:
+		case SIGSEGV:
+		case SIGSYS:
+		case SIGTRAP:
+		case SIGXCPU:
+		case SIGXFSZ:
+
+		// These should immediately terminate the process.
 		case SIGALRM:
 		case SIGHUP:
-		case SIGQUIT:
-		case SIGSYS:
 		case SIGTERM:
-		case SIGTRAP:
 		case SIGUSR1:
 		case SIGUSR2:
 		case SIGVTALRM:
-		case SIGXCPU:
-		case SIGXFSZ:
-		case SIGSEGV:
-		case SIGBUS:
-		case SIGILL:
 		case SIGKILL:
 		case SIGPIPE:
 		case SIGINT:
 			p->killed = 1;
+			uart_printf("Attempting to kill process with signal %d\n", signal);
 			break;
 		case SIGTSTP:
 		case SIGTTIN:
@@ -694,10 +701,14 @@ prockill(struct proc *p, int signal)
 			// Continue
 			p->state = RUNNABLE;
 			break;
-		default:
 		// Ignore signals
 		case SIGURG:
+		case SIGCHLD:
 		case SIGWINCH:
+			break;
+		default:
+			uart_printf("WARNING: signal handler with no default action: %d\n",
+			            signal);
 			break;
 		}
 	} else if (p->sig_handlers[signal] != SIG_IGN) {

@@ -175,4 +175,5 @@ enum {
 };
 
 void cpu_features_init(void);
+uint8_t *cpu_clean_fpu(void);
 #endif /* CPU_H */

@@ -288,6 +288,12 @@ wrmsr(uint32_t msr, uint64_t val)
 	__asm__ __volatile__("wrmsr" : : "a"(lo), "d"(hi), "c"(msr));
 }
 
+static __always_inline void
+stmxcsr(uint32_t *addr)
+{
+	__asm__ __volatile__("stmxcsr %0" : "=m"(*addr));
+}
+
 // Layout of the trap frame built on the stack by the
 // hardware and by trapasm.S, and passed to trap().
 struct trapframe {

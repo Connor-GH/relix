@@ -22,6 +22,8 @@ enum {
 	XCR0_AVX = 1 << 2,
 };
 
+static uint8_t clean_fpu[512];
+
 static void
 fpu_load_control_word(uint16_t control)
 {
@@ -31,7 +33,7 @@ fpu_load_control_word(uint16_t control)
 static void
 fpu_init(void)
 {
-	uint16_t fcw = 0, fsw = 0;
+	uint16_t fsw = 0;
 	uint64_t cr0 = read_cr0();
 
 	// Needed for both fpu and SSE.
@@ -41,12 +43,11 @@ fpu_init(void)
 
 	write_cr0(cr0);
 
+	// fninit initializes the FPU and also sets the
+	// control word to 0x37F and clears the status word.
 	__asm__ __volatile__("fninit\n"
 	                     "fnstsw %0\n"
-	                     "fnstcw %1\n"
-	                     : "+m"(fsw), "+m"(fcw));
-	fpu_load_control_word(0x37F);
-	fpu_load_control_word(0x37E);
+	                     : "+m"(fsw));
 	fpu_load_control_word(0x37A);
 }
 
@@ -81,6 +82,19 @@ sse_init(CpuFeatures *features)
 		cr4 |= CR4_OSXSAVE;
 	}
 	write_cr4(cr4);
+	uint32_t mxcsr = 0;
+	// Don't mask:
+	// - Invalid Operation
+	// - Divide-By-Zero
+	//
+	// Do mask:
+	// - Denormal Operand
+	// - Numeric Overflow / Numeric Underflow
+	// - Inexact-Result (Precision)
+	mxcsr |= (0b111010u << 7);
+	// Also, the rounding mode we set is 0b00, which is round to even.
+	__asm__ __volatile__("ldmxcsr %0" ::"m"(mxcsr));
+	__asm__ __volatile__("fxsave %0" : "=m"(clean_fpu));
 }
 
 static CpuFeatures
@@ -456,4 +470,10 @@ cpu_features_init(void)
 #endif
 
 	model_family_stepping();
+}
+
+uint8_t *
+cpu_clean_fpu(void)
+{
+	return clean_fpu;
 }

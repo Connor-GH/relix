@@ -34,8 +34,6 @@ __libc_start_main(int argc, char **argv, char **envp,
                   int (*mainfunc)(int argc, char **argv, char **envp))
 {
 	environ = envp;
-	optind = 1;
-	opterr = 1;
 
 	startup();
 	atexit(cleanup);

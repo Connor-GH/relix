@@ -59,13 +59,11 @@ static char sccsid[] = "@(#)egetopt.c	8.1 (Berkeley) 6/6/93";
  *    no white space between the arg and the number). The - may be
  *    combined with other options, but the + cannot.
  */
-#if 0
-extern int opterr;
-int	opterr = 1;		/* if error message should be printed */
-int	optind = 1;		/* index into parent argv vector */
-int	optopt;		/* character checked for validity */
-char	*optarg;		/* argument associated with option */
-#endif
+
+int opterr = 1; /* if error message should be printed */
+int optind = 1; /* index into parent argv vector */
+int optopt; /* character checked for validity */
+char *optarg; /* argument associated with option */
 #define BADCH (int)'?'
 
 int optind;

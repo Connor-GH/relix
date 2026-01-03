@@ -1,8 +1,8 @@
 #![no_std]
-use core::ffi::{c_int, c_void, CStr};
-use userspace_bindings::bindings::{open, O_RDWR};
+use core::ffi::{CStr, c_int, c_void};
 use userspace_bindings::bindings::close;
-use userspace_bindings::bindings::{mmap, munmap, PROT_READ, PROT_WRITE, MAP_SHARED};
+use userspace_bindings::bindings::{MAP_SHARED, PROT_READ, PROT_WRITE, mmap, munmap};
+use userspace_bindings::bindings::{O_RDWR, open};
 pub const MMAP_FAILED: i32 = -1;
 
 const LIBGUI_BUFFER_SIZE: usize = 960;
@@ -25,12 +25,20 @@ impl<const WIDTH: usize, const HEIGHT: usize, const DEPTH: usize>
         Self::with_filename(&c"/dev/fb0")
     }
     fn with_filename(filename: &CStr) -> Option<Self> {
-        let fd = unsafe { open(filename.as_ptr(), O_RDWR as i32)};
+        let fd = unsafe { open(filename.as_ptr(), O_RDWR as i32) };
         if fd == -1 {
             None
         } else {
-            let ptr = unsafe { mmap(core::ptr::null_mut(),
-            WIDTH * HEIGHT * (DEPTH/8), (PROT_WRITE | PROT_READ) as i32, MAP_SHARED as i32, fd, 0) };
+            let ptr = unsafe {
+                mmap(
+                    core::ptr::null_mut(),
+                    WIDTH * HEIGHT * (DEPTH / 8),
+                    (PROT_WRITE | PROT_READ) as i32,
+                    MAP_SHARED as i32,
+                    fd,
+                    0,
+                )
+            };
             if ptr == (MMAP_FAILED as *mut c_void) {
                 return None;
             }
@@ -38,7 +46,8 @@ impl<const WIDTH: usize, const HEIGHT: usize, const DEPTH: usize>
         }
     }
     fn write_pixel(&mut self, p: Point, color: u32) {
-        libgui_pixel_write_ptr(self.ptr, p.0, p.1, color);
+        let (x, y) = p;
+        libgui_pixel_write_ptr(self.ptr, x, y, color);
     }
 }
 
@@ -48,7 +57,7 @@ impl<const WIDTH: usize, const HEIGHT: usize, const DEPTH: usize> Drop
     fn drop(&mut self) {
         unsafe {
             close(self.fd);
-            munmap(self.ptr, WIDTH * HEIGHT * (DEPTH/8));
+            munmap(self.ptr, WIDTH * HEIGHT * (DEPTH / 8));
         }
     }
 }
@@ -67,11 +76,9 @@ pub extern "C" fn libgui_pixel_write_ptr(ptr: *mut c_void, x: u32, y: u32, color
 
 #[unsafe(no_mangle)]
 pub extern "C" fn libgui_pixel_write(x: u32, y: u32, color: u32) -> isize {
-    let fb = FrameBuffer::<640, 480, 32>::new();
-    if fb.is_none() {
+    let Some(mut fb) = FrameBuffer::<640, 480, 32>::new() else {
         return -1;
-    }
-    let mut fb = fb.unwrap();
+    };
     fb.write_pixel((x, y), color);
 
     return 0;
@@ -87,8 +94,14 @@ pub extern "C" fn libgui_init(file: *const core::ffi::c_char) -> *mut c_void {
      * C handles it when the pointer is null.
      */
     unsafe {
-        let ptr = mmap(core::ptr::null_mut(),
-            640 * 480 * 4, (PROT_WRITE | PROT_READ) as i32, MAP_SHARED as i32, fd, 0);
+        let ptr = mmap(
+            core::ptr::null_mut(),
+            640 * 480 * 4,
+            (PROT_WRITE | PROT_READ) as i32,
+            MAP_SHARED as i32,
+            fd,
+            0,
+        );
         close(fd);
         if ptr == (MMAP_FAILED as *mut c_void) {
             return core::ptr::null_mut();
@@ -96,7 +109,6 @@ pub extern "C" fn libgui_init(file: *const core::ffi::c_char) -> *mut c_void {
             return ptr;
         }
     }
-
 }
 #[unsafe(no_mangle)]
 pub extern "C" fn libgui_fini(ptr: *mut c_void) {
@@ -107,9 +119,17 @@ pub extern "C" fn libgui_fini(ptr: *mut c_void) {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn libgui_fill_rect(rect: *const Rectangle, hex_color: u32) {
-    let fd = unsafe { open(c"/dev/fb0".as_ptr(), O_RDWR as i32)};
-    let ptr = unsafe { mmap(core::ptr::null_mut(),
-        640 * 480 * 4, (PROT_WRITE | PROT_READ) as i32, MAP_SHARED as i32, fd, 0) };
+    let fd = unsafe { open(c"/dev/fb0".as_ptr(), O_RDWR as i32) };
+    let ptr = unsafe {
+        mmap(
+            core::ptr::null_mut(),
+            640 * 480 * 4,
+            (PROT_WRITE | PROT_READ) as i32,
+            MAP_SHARED as i32,
+            fd,
+            0,
+        )
+    };
     if ptr == (MMAP_FAILED as *mut c_void) {
         return;
     }
@@ -122,14 +142,14 @@ pub extern "C" fn libgui_fill_rect(rect: *const Rectangle, hex_color: u32) {
 }
 #[unsafe(no_mangle)]
 pub extern "C" fn libgui_fill_rect_ptr(ptr: *mut c_void, rect: *const Rectangle, hex_color: u32) {
-    for x in 0..(unsafe { &*rect }).xlen {
-        for y in 0..(unsafe { &*rect }).ylen {
-            libgui_pixel_write_ptr(
-                ptr,
-                x + (unsafe { &*rect }).x,
-                y + (unsafe { &*rect }).y,
-                hex_color,
-            );
+    if rect.is_null() {
+        return;
+    }
+    // SAFETY: we bail out early if rect is a NULL pointer.
+    let rect = unsafe { &*rect };
+    for x in 0..rect.xlen {
+        for y in 0..rect.ylen {
+            libgui_pixel_write_ptr(ptr, x + rect.x, y + rect.y, hex_color);
         }
     }
 }

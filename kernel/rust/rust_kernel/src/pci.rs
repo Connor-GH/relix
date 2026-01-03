@@ -381,11 +381,10 @@ impl core::fmt::Debug for PCICommonHeader {
 impl PCICommonHeader {
     fn from(bus: u8, device: u8, function: u8) -> Option<Self> {
         let tuple = (bus, device, function);
-        let vendor_id = pci_get_vendor_id(tuple);
-        if vendor_id.is_none() {
+        let Some(vendor_id) = pci_get_vendor_id(tuple) else {
             return None;
-        }
-        let vendor_id = vendor_id.unwrap();
+        };
+        let vendor_id = vendor_id;
         let device_id = pci_get_device_id(tuple);
         let command = pci_config_read_word(tuple, 0x4);
         let status = pci_config_read_word(tuple, 0x6);
@@ -596,10 +595,9 @@ fn command_and_status_registers(hdr: &mut PCICommonHeader) {
 }
 
 fn check_device(bus: u8, device: u8) {
-    let vendor_id = pci_get_vendor_id((bus, device, 0));
-    if vendor_id.is_none() {
+    let Some(_vendor_id) = pci_get_vendor_id((bus, device, 0)) else {
         return;
-    }
+    };
     let header_type = get_header_type((bus, device, 0));
     if (header_type & 0x80) != 0 {
         for func in 1..8 {

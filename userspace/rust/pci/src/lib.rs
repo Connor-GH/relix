@@ -75,50 +75,34 @@ fn internal_libpci_device_info_pci_ids(
     subclass: u8,
     prog_if: u8,
 ) -> Option<*mut *mut c_char> {
-    let device = Device::from_vid_pid(vendor_id, device_id);
-    let device_name = device.map_or_else(|| "Device", |device| device.name());
-    let device_vendor_name = if device.is_some() {
-        device.unwrap().vendor().name()
-    } else {
-        "Vendor"
+    let Some(device) = Device::from_vid_pid(vendor_id, device_id) else {
+        return None;
     };
+    let device_name = device.name();
+    let device_vendor_name = device.vendor().name();
 
-    let subsys_device = if device.is_some() {
-        device.unwrap().subsystems().find(|subsys| {
-            subsys.subvendor() == subsystem_vendor_id && subsys.subdevice() == subsystem_id
-        })
-    } else {
-        None
+    let Some(subsys_device) = device.subsystems().find(|subsys| {
+        subsys.subvendor() == subsystem_vendor_id && subsys.subdevice() == subsystem_id
+    }) else {
+        return None;
     };
-    let subsys_device_name = if subsys_device.is_some() {
-        subsys_device.unwrap().name()
-    } else {
-        "Subsystem Device"
-    };
+    let subsys_device_name = subsys_device.name();
 
-    let subsys_vendor = if subsys_device.is_some() {
-        pci_ids::Vendor::from_id(subsys_device.unwrap().subvendor())
-    } else {
-        None
+    let Some(subsys_vendor) = pci_ids::Vendor::from_id(subsys_device.subvendor()) else {
+        return None;
     };
-    let subsys_vendor_name = if subsys_vendor.is_some() {
-        subsys_vendor.unwrap().name()
-    } else {
-        "Subsystem Vendor"
+    let subsys_vendor_name = subsys_vendor.name();
+
+    let Some(subclass) = pci_ids::Subclass::from_cid_sid(base_class, subclass) else {
+        return None;
     };
+    let subclass_string = subclass.name();
 
-    let subclass = pci_ids::Subclass::from_cid_sid(base_class, subclass);
-    let subclass_string = subclass.map_or_else(|| "Subclass", |subclass| subclass.name());
+    let prog_if = subclass
+        .prog_ifs()
+        .find(|prog| prog.id() == prog_if)
+        .map_or_else(|| "", |s| s.name());
 
-    let prog_if = subclass.map_or_else(
-        || "",
-        |subclass| {
-            subclass
-                .prog_ifs()
-                .find(|prog| prog.id() == prog_if)
-                .map_or_else(|| "", |s| s.name())
-        },
-    );
     let mut slice = alloc::vec::Vec::with_capacity(6);
     slice.push(CString::new(device_vendor_name).ok()?.into_raw());
     slice.push(CString::new(device_name).ok()?.into_raw());
@@ -142,10 +126,7 @@ pub extern "C" fn libpci_device_info_alloc(pci: pci_conf) -> *mut *mut c_char {
         pci.subclass,
         pci.prog_if,
     );
-    match ret {
-        Some(s) => s,
-        _ => core::ptr::null_mut(),
-    }
+    ret.unwrap_or(core::ptr::null_mut())
 }
 #[unsafe(no_mangle)]
 // SAFETY: arr must not have been modified by C code.

@@ -189,8 +189,8 @@ model_family_stepping(void)
 		PROCESSOR_STRING_UNPACK_U32(bytes, 12 + i * 16, d);
 	}
 	bytes[48] = '\0';
-	uart_printf("Cpu is \"%s\" (model=%x family=%x stepping=%x)\n", bytes, model,
-	            family, processor_stepping);
+	log_printf("Cpu is \"%s\" (model=%x family=%x stepping=%x)\n", bytes, model,
+	           family, processor_stepping);
 }
 static void
 set_remaining_features(CpuFeatures *cpu_features)
@@ -307,7 +307,7 @@ set_remaining_features(CpuFeatures *cpu_features)
 		{ 0 },
 	};
 
-	pr_debug("Cpu features: ");
+	pr_debug_file("Cpu features: ");
 	uint32_t a, b, c, d;
 	cpuid(CPUID_EAX_GETFEATURES, 0, &a, &b, &c, &d);
 	for (size_t i = 0; i < 31; i++) {

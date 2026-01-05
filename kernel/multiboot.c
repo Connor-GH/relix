@@ -96,14 +96,14 @@ void
 parse_multiboot(struct multiboot_info *mbinfo)
 {
 	if (mbinfo->reserved != 0)
-		uart_printf("multiboot reserved is not zero like it should be");
+		log_printf("multiboot reserved is not zero like it should be");
 
 	for (struct multiboot_tag *tag = (struct multiboot_tag *)((uint64_t)mbinfo + MULTIBOOT_TAG_ALIGN);
 			 tag->type != MULTIBOOT_TAG_TYPE_END;
 			 tag = (struct multiboot_tag *)((uint8_t *)tag + ((tag->size + 7) & ~7))) {
 		switch (tag->type) {
 		case MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME:
-			uart_printf("Bootloader is %s\n", ((struct multiboot_tag_string *)tag)->string);
+			log_printf("Bootloader is %s\n", ((struct multiboot_tag_string *)tag)->string);
 			break;
 		case MULTIBOOT_TAG_TYPE_MMAP: {
 			multiboot_memory_map_t *memmap = ((struct multiboot_tag_mmap *)tag)->entries;
@@ -112,7 +112,7 @@ parse_multiboot(struct multiboot_info *mbinfo)
 			for (; (multiboot_uint8_t *)memmap < (multiboot_uint8_t *)tag + tag->size;
 					 memmap = (multiboot_memory_map_t *)((uint64_t)memmap +
 						((struct multiboot_tag_mmap *)tag)->entry_size)) {
-				uart_printf("%#018llx-%#018llx %s\n", memmap->addr,
+				log_printf("%#018llx-%#018llx %s\n", memmap->addr,
 								memmap->addr + memmap->len - 1,
 								multiboot_mmap_type(memmap->type));
 				if (memmap->type == MULTIBOOT_MEMORY_AVAILABLE) {
@@ -121,13 +121,13 @@ parse_multiboot(struct multiboot_info *mbinfo)
 				}
 			}
 			available_memory = total_mem_bytes;
-			uart_printf("%ld MiB available\n", total_mem_bytes / 1024 / 1024);
+			log_printf("%ld MiB available\n", total_mem_bytes / 1024 / 1024);
 			break;
 		}
 		case MULTIBOOT_TAG_TYPE_FRAMEBUFFER: {
 			struct multiboot_tag_framebuffer *fb = (struct multiboot_tag_framebuffer *)tag;
 			struct multiboot_tag_framebuffer_common fbtag = fb->common;
-			uart_printf("Fb addr: %p pitch: %d %dx%d bpp %d type %d\n",
+			log_printf("Fb addr: %p pitch: %d %dx%d bpp %d type %d\n",
 							(void *)fbtag.framebuffer_addr, fbtag.framebuffer_pitch,
 							fbtag.framebuffer_width, fbtag.framebuffer_height,
 							fbtag.framebuffer_bpp, fbtag.framebuffer_type);
@@ -136,7 +136,7 @@ parse_multiboot(struct multiboot_info *mbinfo)
 			if (fbtag.framebuffer_type == MULTIBOOT_FRAMEBUFFER_TYPE_RGB) {
 				struct fb_rgb color = fb->rgb;
 					mb_fb = *fb;
-					uart_printf("rgb offsets %d/%d/%d and sizes %d/%d/%d\n",
+					log_printf("rgb offsets %d/%d/%d and sizes %d/%d/%d\n",
 								color.framebuffer_red_field_position,
 								color.framebuffer_green_field_position,
 								color.framebuffer_blue_field_position,
@@ -153,7 +153,7 @@ parse_multiboot(struct multiboot_info *mbinfo)
 			break;
 		}
 		default:
-			uart_printf("Skipping over multiboot tag %d (\"%s\")\n", tag->type,
+			log_printf("Skipping over multiboot tag %d (\"%s\")\n", tag->type,
 							 multiboot_tag_type(tag->type));
 			break;
 		}

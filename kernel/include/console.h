@@ -31,6 +31,12 @@ __nonnull(1) void ksprintf(char *restrict str, const char *fmt, ...);
 #define pr_debug_file(...)
 #endif
 
+#if defined(__FILE_NAME__)
+#define log_printf(...) uart_printf(__FILE_NAME__ ": " __VA_ARGS__)
+#else
+#define log_printf(...) uart_printf(__VA_ARGS__)
+#endif
+
 void consputc(int);
 void consoleintr(int (*)(void));
 __cold void panic_print_before(bool locking);

@@ -26,7 +26,7 @@
 #define WRITE_TO_AUX 0xD4
 #define MOUSEID 0xF2
 
-#define MOUSE_QUEUE_SIZE 256
+#define MOUSE_QUEUE_SIZE 16
 
 static uint8_t mouse_data[3];
 static uint8_t count = 0;
@@ -146,8 +146,8 @@ mouseopen(__unused short minor, __unused int flags)
 		acquire(&mouselock.lock);
 		clean_queue_mouse_packet(mouselock.mouse_queue, kfree);
 		release(&mouselock.lock);
-		mouse_file_ref++;
 	}
+	mouse_file_ref++;
 	return 0;
 }
 
@@ -158,6 +158,10 @@ mouseclose(__unused short minor)
 	return 0;
 }
 
+// Valid mouse IDs:
+// 0: default; 3-byte packets, left, right, middle click, movement.
+// 3: same as (0), but also scroll wheel. 4-byte packets.
+// 4: same as (3), but also 4th and 5th mouse buttons.
 void
 ps2mouseinit(void)
 {
@@ -165,7 +169,7 @@ ps2mouseinit(void)
 	mouse_wait(1);
 	outb(MOUSE_STATUS, MOUSE_CONTROLLER_RAM_READ);
 	mouse_wait(0);
-	// set bit 1, clear bit 5
+	// set bit 1, clear bit 5 (automatic packet streaming mode)
 	status = (inb(MOUSE_DATA) | 2) & ~0x20;
 	mouse_wait(1);
 	outb(MOUSE_STATUS, MOUSE_CONTROLLER_RAM_WRITE);

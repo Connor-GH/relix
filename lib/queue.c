@@ -33,24 +33,22 @@
 		return q;                                                                \
 	}                                                                          \
                                                                              \
-	int is_empty_and_initialized_##T(struct queue_##T *q)                      \
+	int is_initialized_##T(struct queue_##T *q)                                \
 	{                                                                          \
-		if (q == NULL) {                                                         \
-			return QUEUE_UNINITIALIZED;                                            \
-		}                                                                        \
-		return q->size == 0;                                                     \
+		return q != NULL;                                                        \
 	}                                                                          \
                                                                              \
 	int is_empty_##T(struct queue_##T *q)                                      \
 	{                                                                          \
-		return q == NULL || q->size == 0;                                        \
+		return q->size == 0;                                                     \
 	}                                                                          \
                                                                              \
 	int enqueue_##T(struct queue_##T *q, T value, void *(*allocator)(size_t),  \
 	                size_t limit)                                              \
 	{                                                                          \
-		if (is_empty_and_initialized_##T(q) == QUEUE_UNINITIALIZED)              \
+		if (!is_initialized_##T(q)) {                                            \
 			return QUEUE_UNINITIALIZED;                                            \
+		}                                                                        \
                                                                              \
 		if (q->size >= limit)                                                    \
 			return QUEUE_FULL;                                                     \
@@ -74,6 +72,9 @@
                                                                              \
 	void clean_queue_##T(struct queue_##T *q, void (*deallocator)(void *))     \
 	{                                                                          \
+		if (!is_initialized_##T(q)) {                                            \
+			return;                                                                \
+		}                                                                        \
 		while (!is_empty_##T(q)) {                                               \
 			dequeue_##T(q, NULL, deallocator);                                     \
 		}                                                                        \
@@ -81,9 +82,11 @@
                                                                              \
 	int dequeue_##T(struct queue_##T *q, T *data, void (*deallocator)(void *)) \
 	{                                                                          \
-		if (is_empty_and_initialized_##T(q) == QUEUE_UNINITIALIZED ||            \
-		    q->front == NULL) {                                                  \
+		if (!is_initialized_##T(q)) {                                            \
 			return QUEUE_UNINITIALIZED;                                            \
+		}                                                                        \
+		if (is_empty_##T(q)) {                                                   \
+			return QUEUE_EMPTY;                                                    \
 		}                                                                        \
                                                                              \
 		struct queue_##T##_node *temp = q->front;                                \
@@ -95,11 +98,9 @@
 		}                                                                        \
 		if (temp != NULL)                                                        \
 			deallocator(temp);                                                     \
-		if ((signed)q->size > 0) {                                               \
-			q->size--;                                                             \
-		} else {                                                                 \
-			return QUEUE_EMPTY;                                                    \
-		}                                                                        \
+                                                                             \
+		q->size--;                                                               \
+                                                                             \
 		if (data != NULL) {                                                      \
 			*data = result;                                                        \
 		}                                                                        \
@@ -109,7 +110,9 @@
 	void free_queue_##T(struct queue_##T *q, void (*deallocator)(void *))      \
 	{                                                                          \
 		clean_queue_##T(q, deallocator);                                         \
-		deallocator(q);                                                          \
+		if (is_initialized_##T(q)) {                                             \
+			deallocator(q);                                                        \
+		}                                                                        \
 	}
 
 QUEUE_T(int)

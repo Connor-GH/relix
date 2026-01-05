@@ -459,8 +459,8 @@ kbdopen(short minor, int flags)
 		acquire(&kbdlock.lock);
 		clean_queue_unsigned_char(kbdlock.kbd_queue, kfree);
 		release(&kbdlock.lock);
-		kbd_file_ref++;
 	}
+	kbd_file_ref++;
 	return 0;
 }
 

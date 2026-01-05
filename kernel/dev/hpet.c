@@ -151,18 +151,17 @@ hpet_init(struct acpi_hpet *hpet)
 	bool leg_rt_cnf = GENCONF_LEG_RT_CNF(general_config);
 
 	uint64_t ticks = FSEC_PER_SEC / counter_clock_period_fs;
-	uart_printf(
-		"hpet: vendor %#x v%d, %d-bit, %d timers, period=%luns (%lu.%03luMHz)\n",
-		vendor_id, rev_id, count_size_cap ? 64 : 32, num_time_cap,
-		fsec_to_nsec(counter_clock_period_fs), ticks / MHz, ticks % MHz);
+	log_printf("vendor %#x v%d, %d-bit, %d timers, period=%luns (%lu.%03luMHz)\n",
+	           vendor_id, rev_id, count_size_cap ? 64 : 32, num_time_cap,
+	           fsec_to_nsec(counter_clock_period_fs), ticks / MHz, ticks % MHz);
 	hpet_set_legacy_replacement();
 
 	for (int i = 0; i < num_time_cap; i++) {
 		struct hpet_timer timer = regs->timers[i];
 
 		uint64_t caps = timer.config_and_capabilities;
-		uart_printf("periodic_capable=%d %dbit\n", Tn_PER_INT_CAP(caps),
-		            Tn_SIZE_CAP(caps) ? 64 : 32);
+		log_printf("periodic_capable=%d %dbit\n", Tn_PER_INT_CAP(caps),
+		           Tn_SIZE_CAP(caps) ? 64 : 32);
 
 		// caps |= (1 << 1); // leveled, not edge
 		caps &= ~(1 << 1); // edge, not leveled
@@ -175,12 +174,12 @@ hpet_init(struct acpi_hpet *hpet)
 		caps &= ~(0b11111 << 9); // clear ioapic routing
 		caps &= ~(1 << 14); // disable FSB interrupts
 
-		uart_printf("%s-triggered enabled=%d %s accumulator_setting=%s\n",
-		            Tn_INT_TYPE_CNF(caps) ? "level" : "edge", Tn_INT_ENB_CNF(caps),
-		            Tn_TYPE_CNF(caps) ? "periodic" : "oneshot",
-		            Tn_VAL_SET_CNF(caps) ? "yes" : "no");
+		log_printf("%s-triggered enabled=%d %s accumulator_setting=%s\n",
+		           Tn_INT_TYPE_CNF(caps) ? "level" : "edge", Tn_INT_ENB_CNF(caps),
+		           Tn_TYPE_CNF(caps) ? "periodic" : "oneshot",
+		           Tn_VAL_SET_CNF(caps) ? "yes" : "no");
 
-		uart_printf("Can map to one of these: ");
+		log_printf("Can map to one of these: ");
 		for (int j = 0; j < 32; j++) {
 			if (Tn_INT_ROUTE_CAP_N(caps, j)) {
 				uart_printf("IRQ%d ", j);
@@ -189,11 +188,11 @@ hpet_init(struct acpi_hpet *hpet)
 		uart_printf("\n");
 	}
 	if ((regs->timers[0].config_and_capabilities >> 32) & (1 << 2)) {
-		uart_printf("Timer 0 irq 2: enabling\n");
+		log_printf("Timer 0 irq 2: enabling\n");
 		regs->timers[0].config_and_capabilities |= 2 << 9; // ioapic routing = 2
-		uart_printf("enabled=%d, ioapic routing: %d\n",
-		            Tn_INT_ENB_CNF(regs->timers[0].config_and_capabilities),
-		            Tn_INT_ROUTE_CNF(regs->timers[0].config_and_capabilities));
+		log_printf("enabled=%d, ioapic routing: %d\n",
+		           Tn_INT_ENB_CNF(regs->timers[0].config_and_capabilities),
+		           Tn_INT_ROUTE_CNF(regs->timers[0].config_and_capabilities));
 	}
 	hpet_enable();
 

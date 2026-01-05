@@ -156,6 +156,9 @@ endif
 QEMUOPTS = -drive file=$(BIN)/fs.img,index=1,media=disk,format=raw,if=ide,aio=native,cache.direct=on \
 					 -enable-kvm -smp cpus=$(CPUS),cores=1,threads=1,sockets=$(CPUS) -m $(MEM) \
 					 -vga std -device intel-hda $(QEMUEXTRA)
+# work around GTK bug:
+# https://gitlab.gnome.org/GNOME/gtk/-/issues/7656
+ENV_VARS = GDK_BACKEND=x11
 
 ifdef CONSOLE_LOG
 	QEMUOPTS += -serial mon:stdio
@@ -166,7 +169,7 @@ iso: default
 	grub-mkrescue -o $(BIN)/$(ISO).iso iso/
 
 qemu-grub: iso
-	$(QEMU) -cdrom $(BIN)/$(ISO).iso $(QEMUOPTS)
+	$(ENV_VARS) $(QEMU) -cdrom $(BIN)/$(ISO).iso $(QEMUOPTS)
 
 qemu: qemu-grub
 
